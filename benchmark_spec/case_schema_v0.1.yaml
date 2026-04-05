@@ -1,0 +1,34 @@
+required_fields:
+  - case_id
+  - pool
+  - provenance
+  - source
+  - targets
+  - features
+  - rewrite_opportunities
+  - validation
+  - status
+
+manifest_template:
+  case_id: ""
+  pool: ""
+  provenance:
+    source: ""
+    raw_file: ""
+  source:
+    dialect: ""
+    file: "source.sql"
+  targets:
+    engines: []
+  features: []
+  rewrite_opportunities: []
+  variants:
+    positives: []
+    negatives: []
+  validation:
+    witness_dataset: ""
+    requires_manual_review: true
+  status:
+    parse_checked: false
+    exec_checked: false
+    plan_checked: false

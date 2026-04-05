@@ -1,0 +1,19 @@
+model = "gpt-5.4"
+
+[env_policy]
+inherit = false
+allow = [
+  "PGHOST",
+  "PGPORT",
+  "PGDATABASE",
+  "PGUSER",
+  "PGPASSWORD",
+  "MYSQL_HOST",
+  "MYSQL_PORT",
+  "MYSQL_DATABASE",
+  "MYSQL_USER",
+  "MYSQL_PASSWORD",
+  "JAVA_HOME",
+  "SPARK_LOCAL_IP",
+  "SPARK_DRIVER_MEMORY"
+]

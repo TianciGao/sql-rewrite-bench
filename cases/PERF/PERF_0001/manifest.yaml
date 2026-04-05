@@ -1,0 +1,27 @@
+case_id: PERF_0001
+pool: performance
+provenance:
+  source: manual_smoke
+  raw_file: ""
+source:
+  dialect: postgres
+  file: source.sql
+targets:
+  engines: [postgres, mysql, spark]
+features:
+  - filter
+  - order_by
+rewrite_opportunities:
+  - predicate_pushdown
+variants:
+  positives:
+    - rewrite_pos_01.sql
+  negatives:
+    - rewrite_neg_01.sql
+validation:
+  witness_dataset: manual_smoke_v1
+  requires_manual_review: true
+status:
+  parse_checked: false
+  exec_checked: false
+  plan_checked: false

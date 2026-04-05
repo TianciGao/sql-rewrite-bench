@@ -1,0 +1,41 @@
+features:
+  - feature_id: cte
+    family: sql_feature
+    engines_supported: [spark, postgres, mysql]
+  - feature_id: correlated_subquery
+    family: sql_feature
+    engines_supported: [spark, postgres, mysql]
+  - feature_id: outer_join
+    family: sql_feature
+    engines_supported: [spark, postgres, mysql]
+  - feature_id: non_equi_join
+    family: sql_feature
+    engines_supported: [spark, postgres, mysql]
+  - feature_id: window
+    family: sql_feature
+    engines_supported: [spark, postgres, mysql]
+  - feature_id: set_operation
+    family: sql_feature
+    engines_supported: [spark, postgres, mysql]
+  - feature_id: deep_nesting
+    family: sql_feature
+    engines_supported: [spark, postgres, mysql]
+  - feature_id: date_function
+    family: portability
+    engines_supported: [spark, postgres, mysql]
+  - feature_id: string_function
+    family: portability
+    engines_supported: [spark, postgres, mysql]
+
+plan_ops:
+  - Scan
+  - Filter
+  - Project
+  - Join
+  - Aggregate
+  - Sort
+  - Limit
+  - Window
+  - SetOp
+  - Materialize
+  - Exchange
