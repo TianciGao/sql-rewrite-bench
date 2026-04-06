@@ -19,7 +19,6 @@ rewrite_opportunity_tags:
   - cte_strategy
 
 plan_operator_tags:
-  status: provisional_until_plan_collection
   shared_across_engines:
     - scan
     - filter
@@ -28,8 +27,10 @@ plan_operator_tags:
   engine_specific:
     spark:
       - exchange
-    postgres: []
-    mysql: []
+    postgres:
+      - subquery
+    mysql:
+      - materialize
 
 workload_realism_tags:
   - long_tail_structure
@@ -60,3 +61,7 @@ evidence:
     postgres: runs/longtail_case/pg/source.tsv
     mysql: runs/longtail_case/mysql/source.tsv
     spark: runs/longtail_case/spark/source.tsv
+  plans:
+    postgres: runs/plans_longtail/pg/source.json
+    mysql: runs/plans_longtail/mysql/source.json
+    spark: runs/plans_longtail/spark/source.txt

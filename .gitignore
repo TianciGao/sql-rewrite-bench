@@ -29,3 +29,5 @@ secrets/
 metastore_db/
 spark-warehouse/
 *.log
+
+*:Zone.Identifier
