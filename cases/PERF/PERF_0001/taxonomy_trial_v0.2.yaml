@@ -1,0 +1,44 @@
+case_id: PERF_0001
+trial_version: "0.2"
+status: trial_labeled
+
+context:
+  purpose: >
+    This is a smoke / sanity case used to validate tri-engine execution,
+    consistency checking, and basic plan collection.
+  note: >
+    PERF_0001 is intentionally simple. Sparse taxonomy output is expected and
+    acceptable for this case.
+
+sql_feature_tags: []
+
+rewrite_opportunity_tags: []
+
+plan_operator_tags:
+  shared_across_engines:
+    - scan
+    - filter
+    - sort
+  engine_specific:
+    spark:
+      - exchange
+    postgres: []
+    mysql: []
+
+workload_realism_tags: []
+
+portability_tags: []
+
+review_notes:
+  - PERF_0001 should not be treated as a long-tail or portability-rich case.
+  - This case is useful as a pipeline smoke case, not as a high-coverage benchmark representative.
+  - The absence of SQL feature and rewrite-opportunity tags is intentional under taxonomy v0.2.
+
+evidence:
+  source_sql: cases/PERF/PERF_0001/source.sql
+  positive_sql: cases/PERF/PERF_0001/rewrite_pos_01.sql
+  negative_sql: cases/PERF/PERF_0001/rewrite_neg_01.sql
+  plans:
+    postgres: runs/plans/pg/source.json
+    mysql: runs/plans/mysql/source.json
+    spark: runs/plans/spark/source.txt
