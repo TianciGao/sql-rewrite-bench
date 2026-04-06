@@ -76,3 +76,26 @@ Current repository state after Week 1 is treated as a valid closeout checkpoint.
 - PERF_0001 tri-engine consistency closure passed
 - first plans collected
 - first commit completed
+
+## DL-009
+### Decision
+Week 1 bootstrap closeout and minimal CLI scaffolding are considered complete.
+
+### Rationale
+The repository now has:
+- tri-engine smoke closure
+- first case-package closure
+- first plan artifacts
+- minimal CLI commands
+- artifact-preflight reports
+
+### Next step
+Proceed to source inventory design and pool mapping preparation, while still not entering workload curation.
+
+## DL-010
+### Decision
+For v0 source inventory, the consistency-oriented equivalence benchmark source is initialized with SQLEquiQuest rather than VeriEQL.
+
+### Rationale
+A single equivalence benchmark source is sufficient for early pilot inventory design.
+Additional equivalence sources may be added later if needed.

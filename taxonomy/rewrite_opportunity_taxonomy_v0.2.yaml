@@ -1,0 +1,115 @@
+taxonomy_name: rewrite_opportunity_taxonomy
+version: "0.2"
+status: pilot
+scope:
+  engines:
+    - spark
+    - postgres
+    - mysql
+  applies_to:
+    - source_sql
+    - case_package
+  intent: >
+    Record why a query is interesting for SQL rewriting. These tags describe
+    the intended rewrite opportunity or transformation class, not just syntax
+    or plan shape.
+design_principles:
+  - Separate rewrite intent from SQL feature presence.
+  - Use coarse rewrite families for v0.2.
+  - A case may carry multiple rewrite-opportunity tags.
+tag_schema:
+  required_fields:
+    - tag_id
+    - label
+    - definition
+    - examples
+    - notes
+  optional_fields:
+    - related_sql_features
+    - related_plan_ops
+tags:
+  - tag_id: predicate_pushdown
+    label: Predicate Pushdown
+    definition: Query presents an opportunity to move filtering logic closer to data access or below joins/subqueries.
+    examples:
+      - "Filter can be applied before join or before derived-table materialization."
+    notes: Often visible as reduced rows in scan/filter plan segments.
+    related_sql_features: [subquery_in_from, correlated_subquery]
+    related_plan_ops: [scan, filter, join]
+
+  - tag_id: projection_pruning
+    label: Projection Pruning
+    definition: Query carries columns that may be removed earlier to reduce width or intermediate materialization.
+    examples:
+      - "Outer query only needs a subset of columns selected inside a derived table."
+    notes: Common but still worth tagging explicitly in v0.2.
+    related_plan_ops: [project, materialize]
+
+  - tag_id: join_reorder
+    label: Join Reordering Opportunity
+    definition: Query contains a join structure where alternative join ordering may materially affect performance.
+    examples:
+      - "Multi-join analytical query with selective predicates."
+    notes: Especially relevant in performance and realism-heavy cases.
+    related_sql_features: [non_equi_join, outer_join]
+    related_plan_ops: [join]
+
+  - tag_id: subquery_decorrelation
+    label: Subquery Decorrelation
+    definition: Correlated or nested subquery structure may be rewritten into joins or semijoins.
+    examples:
+      - "EXISTS / IN subquery referencing outer block."
+    notes: Strong bridge between SQL structure and plan observability.
+    related_sql_features: [correlated_subquery, subquery_in_from]
+    related_plan_ops: [subquery, join]
+
+  - tag_id: cte_strategy
+    label: CTE Strategy Change
+    definition: Query may benefit from changing CTE inlining, factoring, or materialization behavior.
+    examples:
+      - "Repeated CTE reference or expensive CTE body."
+    notes: Relevant even when engines handle CTEs differently.
+    related_sql_features: [cte, recursive_cte]
+    related_plan_ops: [materialize]
+
+  - tag_id: aggregation_rewrite
+    label: Aggregation Rewrite
+    definition: Query may benefit from moving, factoring, or simplifying aggregate computations.
+    examples:
+      - "Pre-aggregation before join, or aggregate simplification."
+    notes: Important for both correctness and performance.
+    related_sql_features: [grouping_sets, window_function]
+    related_plan_ops: [aggregate, join]
+
+  - tag_id: order_limit_simplification
+    label: Order / Limit Simplification
+    definition: Query may benefit from simplifying ORDER BY or LIMIT interactions, or preserving semantic order constraints carefully.
+    examples:
+      - "LIMIT with redundant ordering path."
+    notes: Use carefully; semantic equivalence must remain explicit.
+    related_sql_features: [large_limit]
+    related_plan_ops: [sort, limit]
+
+  - tag_id: expression_simplification
+    label: Expression Simplification
+    definition: Query contains expressions that can be normalized, simplified, or made more optimizer-friendly without changing semantics.
+    examples:
+      - "Repeated casts, redundant arithmetic, nested conditionals."
+    notes: Often cross-cuts many source families.
+    related_plan_ops: [project, filter]
+
+  - tag_id: function_normalization
+    label: Function Normalization
+    definition: Query can be rewritten to use equivalent but more portable or optimizer-friendly function forms.
+    examples:
+      - "Normalize date or string function usage."
+    notes: Frequently overlaps with portability concerns.
+    related_sql_features: [date_time_function, string_function]
+
+  - tag_id: dialect_adaptation
+    label: Dialect Adaptation
+    definition: Query is interesting because it requires translation or adaptation across Spark / PostgreSQL / MySQL.
+    examples:
+      - "Replace engine-specific syntax with a target-engine equivalent."
+    notes: Primary rewrite-opportunity tag for portability-oriented cases.
+    related_plan_ops: []

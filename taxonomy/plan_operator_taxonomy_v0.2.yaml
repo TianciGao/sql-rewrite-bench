@@ -1,0 +1,154 @@
+taxonomy_name: plan_operator_taxonomy
+version: "0.2"
+status: pilot
+scope:
+  engines:
+    - spark
+    - postgres
+    - mysql
+  applies_to:
+    - source_plan
+    - rewritten_plan
+  intent: >
+    Provide a canonical operator vocabulary so plans from different engines can
+    be normalized and compared. These tags should be applied to plan nodes, not
+    to raw SQL text.
+design_principles:
+  - Canonical operators should be coarse enough to map across engines.
+  - Engine-specific node names are captured as aliases or examples.
+  - Use this taxonomy for plan normalization and observability, not for source inventory.
+tag_schema:
+  required_fields:
+    - tag_id
+    - label
+    - definition
+    - engine_aliases
+    - plan_level
+    - notes
+  optional_fields:
+    - examples
+    - related_tags
+allowed_plan_levels:
+  - logical
+  - physical
+  - both
+tags:
+  - tag_id: scan
+    label: Scan
+    definition: Reads data from a base relation, file, index, or materialized source.
+    engine_aliases:
+      spark: [Scan, BatchScan, ExistingRDD]
+      postgres: [Seq Scan, Index Scan, Index Only Scan, Bitmap Heap Scan]
+      mysql: [table, range scan, full table scan]
+    plan_level: both
+    notes: Core data-access operator family.
+
+  - tag_id: filter
+    label: Filter
+    definition: Applies a boolean predicate to rows flowing through the plan.
+    engine_aliases:
+      spark: [Filter]
+      postgres: [Filter]
+      mysql: [attached_condition]
+    plan_level: both
+    notes: Use when a predicate is enforced at a distinct plan stage.
+
+  - tag_id: project
+    label: Project
+    definition: Produces a subset or transformation of columns without changing row multiplicity.
+    engine_aliases:
+      spark: [Project]
+      postgres: [Result, Output]
+      mysql: [select_list]
+    plan_level: logical
+    notes: Often implicit in some engines; may need synthetic normalization.
+
+  - tag_id: join
+    label: Join
+    definition: Combines rows from two or more relations based on join semantics.
+    engine_aliases:
+      spark: [BroadcastHashJoin, SortMergeJoin, ShuffledHashJoin, BroadcastNestedLoopJoin]
+      postgres: [Hash Join, Merge Join, Nested Loop]
+      mysql: [nested_loop, hash_join]
+    plan_level: both
+    notes: Join subtypes can be stored separately as attributes if needed.
+
+  - tag_id: aggregate
+    label: Aggregate
+    definition: Performs grouping and aggregate computation.
+    engine_aliases:
+      spark: [HashAggregate, SortAggregate, ObjectHashAggregate]
+      postgres: [Aggregate, HashAggregate, GroupAggregate]
+      mysql: [grouping_operation, aggregate]
+    plan_level: both
+    notes: Includes partial/final aggregation stages.
+
+  - tag_id: sort
+    label: Sort
+    definition: Orders rows according to one or more keys.
+    engine_aliases:
+      spark: [Sort]
+      postgres: [Sort, Incremental Sort]
+      mysql: [ordering_operation, filesort]
+    plan_level: both
+    notes: Important for attribution and portability.
+
+  - tag_id: limit
+    label: Limit
+    definition: Restricts the number of output rows.
+    engine_aliases:
+      spark: [GlobalLimit, LocalLimit, CollectLimit]
+      postgres: [Limit]
+      mysql: [limit]
+    plan_level: both
+    notes: Distinguish from large-limit SQL feature at the SQL layer.
+
+  - tag_id: window
+    label: Window
+    definition: Computes analytic/window expressions over partitions or ordered frames.
+    engine_aliases:
+      spark: [Window]
+      postgres: [WindowAgg]
+      mysql: [windowing]
+    plan_level: both
+    notes: Distinct from aggregate.
+
+  - tag_id: set_op
+    label: Set Operation
+    definition: Combines or compares result sets using UNION / INTERSECT / EXCEPT-like semantics.
+    engine_aliases:
+      spark: [Union, Intersect, Except]
+      postgres: [Append, SetOp]
+      mysql: [union_result]
+    plan_level: both
+    notes: Keep operator family broad for cross-engine normalization.
+
+  - tag_id: subquery
+    label: Subquery / Subplan
+    definition: Represents subplan execution related to nested queries, semi/anti joins, or apply-like behavior.
+    engine_aliases:
+      spark: [SubqueryBroadcast, ScalarSubquery]
+      postgres: [SubPlan, InitPlan]
+      mysql: [materialized_subquery, dependent_subquery]
+    plan_level: both
+    notes: Useful for decorrelation analysis.
+
+  - tag_id: materialize
+    label: Materialize / Spool
+    definition: Stores intermediate results for later reuse or buffering.
+    engine_aliases:
+      spark: [InMemoryRelation, ReusedExchange]
+      postgres: [Materialize, Memoize]
+      mysql: [materialize]
+    plan_level: physical
+    notes: Important for rewrite attribution and observability.
+
+  - tag_id: exchange
+    label: Exchange / Data Movement
+    definition: Redistributes data across partitions or execution units.
+    engine_aliases:
+      spark: [Exchange, ShuffleExchange]
+      postgres: [Gather, Gather Merge]
+      mysql: [none]
+    plan_level: physical
+    notes: Most visible in distributed engines; may be absent in MySQL plans.

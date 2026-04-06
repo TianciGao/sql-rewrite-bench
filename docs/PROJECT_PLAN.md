@@ -238,5 +238,7 @@ Current repository status:
 - tri-engine smoke completed
 - first case package closure completed
 - first plan artifacts collected
-- ready for Week 1 CLI scaffolding
+- minimal CLI scaffolding completed
+- artifact-preflight completed
+- ready for Week 2 inventory design and taxonomy refinement
 - not yet entered workload curation

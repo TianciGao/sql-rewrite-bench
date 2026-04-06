@@ -1,0 +1,239 @@
+taxonomy_name: sql_feature_taxonomy
+version: "0.2"
+status: pilot
+scope:
+  engines:
+    - spark
+    - postgres
+    - mysql
+  applies_to:
+    - source_sql
+    - rewrite_sql
+  intent: >
+    Describe SQL surface structure and semantic constructs that matter for rewrite
+    coverage analysis. Tags in this taxonomy should be assigned to the SQL text
+    itself, not to execution plans and not to source families.
+design_principles:
+  - Prefer coarse, stable tags over narrow tags for v0.2.
+  - A tag should answer "what construct is present?" rather than "why is it hard?".
+  - Use multiple tags when a query contains multiple distinct constructs.
+  - Avoid encoding rewrite intent here; use rewrite_opportunity_taxonomy for that.
+tag_schema:
+  required_fields:
+    - tag_id
+    - label
+    - definition
+    - positive_examples
+    - negative_examples
+    - engines_supported
+    - auto_detectable
+  optional_fields:
+    - aliases
+    - notes
+    - related_tags
+allowed_auto_detectable_values:
+  - yes
+  - partial
+  - no
+tags:
+  - tag_id: cte
+    label: Common Table Expression
+    definition: SQL contains a WITH clause that defines one or more named subqueries.
+    positive_examples:
+      - "WITH x AS (SELECT * FROM t) SELECT * FROM x"
+    negative_examples:
+      - "SELECT * FROM (SELECT * FROM t) x"
+    engines_supported:
+      spark: yes
+      postgres: yes
+      mysql: yes
+    auto_detectable: yes
+    aliases: [with_clause]
+    related_tags: [recursive_cte]
+    notes: Use this tag for any WITH clause, recursive or non-recursive.
+
+  - tag_id: recursive_cte
+    label: Recursive CTE
+    definition: SQL contains a recursive WITH construct used for iterative expansion.
+    positive_examples:
+      - "WITH RECURSIVE x AS (...) SELECT * FROM x"
+    negative_examples:
+      - "WITH x AS (...) SELECT * FROM x"
+    engines_supported:
+      spark: partial
+      postgres: yes
+      mysql: yes
+    auto_detectable: partial
+    related_tags: [cte]
+    notes: Keep separate from plain CTE because portability and execution support differ.
+
+  - tag_id: correlated_subquery
+    label: Correlated Subquery
+    definition: A subquery references columns from an outer query block.
+    positive_examples:
+      - "SELECT * FROM t WHERE EXISTS (SELECT 1 FROM s WHERE s.k = t.k)"
+    negative_examples:
+      - "SELECT * FROM t WHERE id IN (SELECT id FROM s)"
+    engines_supported:
+      spark: yes
+      postgres: yes
+      mysql: yes
+    auto_detectable: partial
+    aliases: [correlated_exists, correlated_in]
+    related_tags: [subquery_in_from]
+    notes: Often linked to decorrelation opportunities and plan complexity.
+
+  - tag_id: subquery_in_from
+    label: Derived Table / Subquery in FROM
+    definition: SQL contains a nested SELECT used as a relation in the FROM clause.
+    positive_examples:
+      - "SELECT * FROM (SELECT id FROM t) x"
+    negative_examples:
+      - "SELECT * FROM t"
+    engines_supported:
+      spark: yes
+      postgres: yes
+      mysql: yes
+    auto_detectable: yes
+    aliases: [derived_table, inline_view]
+    related_tags: [cte]
+    notes: Includes single and multi-level nesting under FROM.
+
+  - tag_id: outer_join
+    label: Outer Join
+    definition: SQL contains LEFT, RIGHT, or FULL OUTER JOIN semantics.
+    positive_examples:
+      - "SELECT * FROM a LEFT JOIN b ON a.k = b.k"
+    negative_examples:
+      - "SELECT * FROM a JOIN b ON a.k = b.k"
+    engines_supported:
+      spark: yes
+      postgres: yes
+      mysql: partial
+    auto_detectable: yes
+    aliases: [left_join, right_join, full_join]
+    related_tags: [join]
+    notes: FULL OUTER JOIN support differs across engines; use portability tags too when needed.
+
+  - tag_id: non_equi_join
+    label: Non-equality Join Predicate
+    definition: A join condition includes >, <, BETWEEN, !=, or other non-equality relation predicates.
+    positive_examples:
+      - "SELECT * FROM a JOIN b ON a.ts BETWEEN b.l AND b.r"
+    negative_examples:
+      - "SELECT * FROM a JOIN b ON a.k = b.k"
+    engines_supported:
+      spark: yes
+      postgres: yes
+      mysql: yes
+    auto_detectable: partial
+    related_tags: [outer_join]
+    notes: Use in addition to join tags when join semantics are not pure equality.
+
+  - tag_id: window_function
+    label: Window Function
+    definition: SQL contains OVER(...) analytic/window expressions.
+    positive_examples:
+      - "SELECT sum(v) OVER (PARTITION BY k ORDER BY ts) FROM t"
+    negative_examples:
+      - "SELECT sum(v) FROM t GROUP BY k"
+    engines_supported:
+      spark: yes
+      postgres: yes
+      mysql: yes
+    auto_detectable: yes
+    aliases: [analytic_function]
+    related_tags: [grouping_sets]
+    notes: Includes ranking, running aggregates, lag/lead, etc.
+
+  - tag_id: set_operation
+    label: Set Operation
+    definition: SQL combines query blocks using UNION, UNION ALL, INTERSECT, or EXCEPT/MINUS-like semantics.
+    positive_examples:
+      - "SELECT a FROM t1 UNION ALL SELECT a FROM t2"
+    negative_examples:
+      - "SELECT a FROM t1"
+    engines_supported:
+      spark: yes
+      postgres: yes
+      mysql: partial
+    auto_detectable: yes
+    aliases: [union, intersect, except]
+    notes: Keep operator-specific portability differences in portability taxonomy.
+
+  - tag_id: grouping_sets
+    label: Advanced Grouping
+    definition: SQL uses GROUPING SETS, ROLLUP, CUBE, or equivalent advanced grouping constructs.
+    positive_examples:
+      - "SELECT k, sum(v) FROM t GROUP BY ROLLUP (k)"
+    negative_examples:
+      - "SELECT k, sum(v) FROM t GROUP BY k"
+    engines_supported:
+      spark: yes
+      postgres: yes
+      mysql: partial
+    auto_detectable: yes
+    aliases: [rollup, cube]
+    related_tags: [window_function]
+    notes: Important for both coverage and portability.
+
+  - tag_id: deep_nesting
+    label: Deep Nesting
+    definition: SQL contains multiple nested relational layers beyond a simple single-block query.
+    positive_examples:
+      - "SELECT * FROM (SELECT * FROM (SELECT * FROM t) x) y"
+    negative_examples:
+      - "SELECT * FROM t"
+    engines_supported:
+      spark: yes
+      postgres: yes
+      mysql: yes
+    auto_detectable: partial
+    aliases: [multi_level_nesting]
+    notes: Use when nesting itself is a meaningful structural property.
+
+  - tag_id: large_limit
+    label: Large LIMIT / TOP / FETCH
+    definition: SQL contains a limit-style clause with a relatively large explicit bound or extraction intent.
+    positive_examples:
+      - "SELECT * FROM t ORDER BY ts LIMIT 100000"
+    negative_examples:
+      - "SELECT * FROM t ORDER BY ts LIMIT 10"
+    engines_supported:
+      spark: yes
+      postgres: yes
+      mysql: yes
+    auto_detectable: partial
+    notes: Threshold may be engine- or workload-dependent; document concrete threshold elsewhere.
+
+  - tag_id: date_time_function
+    label: Date / Time Function Variation
+    definition: SQL uses date, time, timestamp, interval, or time-zone-sensitive functions.
+    positive_examples:
+      - "SELECT date_trunc('day', ts) FROM t"
+    negative_examples:
+      - "SELECT id FROM t"
+    engines_supported:
+      spark: yes
+      postgres: yes
+      mysql: yes
+    auto_detectable: partial
+    aliases: [datetime_function]
+    related_tags: [string_function]
+    notes: This is a surface SQL feature; portability differences are recorded separately.
+
+  - tag_id: string_function
+    label: String Function Variation
+    definition: SQL uses string normalization, regex, substring, concat, trim, or similar string-processing functions.
+    positive_examples:
+      - "SELECT regexp_replace(name, ' +', ' ') FROM t"
+    negative_examples:
+      - "SELECT name FROM t"
+    engines_supported:
+      spark: yes
+      postgres: yes
+      mysql: yes
+    auto_detectable: partial
+    aliases: [text_function]
+    related_tags: [date_time_function]
+    notes: This is useful both for long-tail coverage and portability review.

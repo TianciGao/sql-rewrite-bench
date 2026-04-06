@@ -33,7 +33,9 @@ Case package
 
 ## Current phase
 - Week 1 closeout completed
-- Next step: minimal CLI scaffolding and artifact-preflight
+- Minimal CLI scaffolding completed
+- Artifact-preflight completed
+- Next step: source inventory design and pool mapping preparation
 - Not yet in workload curation / Phase 2
 
 ## Current rules

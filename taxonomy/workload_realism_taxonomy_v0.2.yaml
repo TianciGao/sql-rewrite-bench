@@ -1,0 +1,115 @@
+taxonomy_name: workload_realism_taxonomy
+version: "0.2"
+status: pilot
+scope:
+  engines:
+    - spark
+    - postgres
+    - mysql
+  applies_to:
+    - source
+    - case_package
+  intent: >
+    Capture why a source or case is representative of realistic, non-trivial,
+    or hard-to-benchmark SQL behavior. These tags are not about SQL syntax
+    itself but about workload shape and realism properties.
+design_principles:
+  - Use broad realism tags in v0.2 rather than exact numeric thresholds.
+  - Apply at source level first, then refine at case level later.
+  - Keep realism tags orthogonal to primary_pool assignment.
+tag_schema:
+  required_fields:
+    - tag_id
+    - label
+    - definition
+    - applies_to
+    - examples
+    - notes
+  optional_fields:
+    - related_tags
+allowed_applies_to_values:
+  - source
+  - case_package
+  - both
+tags:
+  - tag_id: classic_analytical_baseline
+    label: Classic Analytical Baseline
+    definition: Represents stable, widely reused analytical benchmark structure suitable for comparison against prior systems.
+    applies_to: both
+    examples:
+      - TPC-H style decision-support queries
+      - TPC-DS style BI queries
+    notes: Useful for performance baselines, even if not fully realistic.
+
+  - tag_id: dynamic_workload_characteristic
+    label: Dynamic Workload Characteristic
+    definition: Source or case reflects workload variability over time, changing distributions, or non-static execution context.
+    applies_to: source
+    examples:
+      - DSB-like workload notions
+    notes: Usually attached at source level first.
+
+  - tag_id: real_data_correlation
+    label: Real Data Correlation
+    definition: Source or case is valued because it captures realistic join/predicate correlation rather than synthetic independence assumptions.
+    applies_to: both
+    examples:
+      - JOB-like real-data join behavior
+    notes: Important for realism, cardinality stress, and rewrite evaluation.
+
+  - tag_id: realistic_query_style
+    label: Realistic Query Style
+    definition: Query form resembles real application or analyst-authored SQL rather than tightly curated benchmark templates.
+    applies_to: both
+    examples:
+      - Stack query patterns
+      - manually observed BI-style SQL
+    notes: Distinct from long SQL length alone.
+
+  - tag_id: long_tail_structure
+    label: Long-tail Structural Coverage
+    definition: Source or case contributes structures that are infrequent in classic benchmarks but important in practice.
+    applies_to: both
+    examples:
+      - unusual combinations of joins, windows, and nesting
+    notes: Often overlaps with longtail pool but is a realism tag, not a pool.
+
+  - tag_id: high_join_count
+    label: High Join Count
+    definition: Query includes enough joins that join graph complexity becomes part of its realism.
+    applies_to: case_package
+    examples:
+      - many-table analytical joins
+    notes: Exact thresholds can be maintained elsewhere.
+
+  - tag_id: deep_nesting_realism
+    label: Deep Nesting Realism
+    definition: Query depth is itself a realism-relevant property, not just a syntactic curiosity.
+    applies_to: case_package
+    examples:
+      - deeply nested derived tables or subqueries
+    notes: Use in addition to SQL feature tag deep_nesting where appropriate.
+
+  - tag_id: complex_expression_density
+    label: Complex Expression Density
+    definition: Query contains many non-trivial expressions, conditional logic, or function-heavy projections/predicates.
+    applies_to: both
+    examples:
+      - expression-heavy analyst SQL
+    notes: Useful for long-tail and portability analyses.
+
+  - tag_id: result_size_sensitivity
+    label: Result Size Sensitivity
+    definition: Case meaningfully depends on output cardinality, limit style, or large intermediate result behavior.
+    applies_to: case_package
+    examples:
+      - queries where LIMIT semantics or output scale matter
+    notes: Can matter for both performance and portability.
+
+  - tag_id: manual_gap_fill_realism
+    label: Manual Gap-Fill Realism
+    definition: Case or source was manually introduced to fill an identified realism or coverage hole not addressed by public sources.
+    applies_to: both
+    examples:
+      - team-authored long-tail cases
+    notes: This is not a formal pool; it is a realism/channel tag.

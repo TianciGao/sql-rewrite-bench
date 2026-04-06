@@ -1,0 +1,27 @@
+case_id: LONGTAIL_0001
+pool: longtail
+provenance:
+  source: manual_seed
+  raw_file: ""
+source:
+  dialect: common_sql
+  file: source.sql
+targets:
+  engines: [postgres, mysql, spark]
+features:
+  - cte
+  - window_function
+rewrite_opportunities:
+  - cte_strategy
+variants:
+  positives:
+    - rewrite_pos_01.sql
+  negatives:
+    - rewrite_neg_01.sql
+validation:
+  witness_dataset: longtail_0001_v1
+  requires_manual_review: true
+status:
+  parse_checked: false
+  exec_checked: false
+  plan_checked: false

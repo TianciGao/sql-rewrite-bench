@@ -1,0 +1,149 @@
+taxonomy_name: portability_taxonomy
+version: "0.2"
+status: pilot
+scope:
+  engines:
+    - spark
+    - postgres
+    - mysql
+  applies_to:
+    - source_sql
+    - rewrite_sql
+    - portability_case
+  intent: >
+    Capture cross-dialect and cross-engine compatibility risks that matter for
+    Spark / PostgreSQL / MySQL rewrites and translation-style evaluation.
+design_principles:
+  - Tags should describe portability risk, not generic SQL complexity.
+  - Use when semantics or syntax may differ across engines.
+  - A portability tag may coexist with SQL feature or rewrite-opportunity tags.
+tag_schema:
+  required_fields:
+    - tag_id
+    - label
+    - definition
+    - engines_supported
+    - examples
+    - notes
+  optional_fields:
+    - related_tags
+tags:
+  - tag_id: identifier_quoting
+    label: Identifier Quoting Difference
+    definition: Portability depends on quoting rules for identifiers, reserved keywords, or case sensitivity.
+    engines_supported:
+      spark: yes
+      postgres: yes
+      mysql: yes
+    examples:
+      - "SELECT `col` FROM t"
+      - 'SELECT "col" FROM t'
+    notes: Important when normalizing query text across engines.
+
+  - tag_id: null_semantics_gap
+    label: NULL Semantics Gap
+    definition: Query behavior may differ because of NULL handling, null-safe equality, or ordering semantics.
+    engines_supported:
+      spark: yes
+      postgres: yes
+      mysql: yes
+    examples:
+      - "a <=> b"
+      - "NULLS FIRST / NULLS LAST"
+    notes: Frequently relevant for portability and hard negatives.
+
+  - tag_id: boolean_semantics_gap
+    label: Boolean Semantics Gap
+    definition: Portability depends on engine-specific boolean typing, coercion, or truth-value handling.
+    engines_supported:
+      spark: yes
+      postgres: yes
+      mysql: partial
+    examples:
+      - "WHERE some_bool_col"
+      - "TRUE/FALSE typed expressions"
+    notes: MySQL behavior may rely on numeric coercion.
+
+  - tag_id: datetime_semantics_gap
+    label: Date-Time Semantics Gap
+    definition: Query uses date/time functions or timestamp behavior that differ across engines.
+    engines_supported:
+      spark: yes
+      postgres: yes
+      mysql: yes
+    examples:
+      - "date_trunc"
+      - "date_format"
+      - "interval arithmetic"
+    notes: Tag even if SQL surface also uses date_time_function.
+
+  - tag_id: string_function_gap
+    label: String Function Gap
+    definition: Query relies on string functions whose names, semantics, or regex behavior differ across engines.
+    engines_supported:
+      spark: yes
+      postgres: yes
+      mysql: yes
+    examples:
+      - "regexp_replace"
+      - "substring / substr variants"
+      - "split / regexp_extract"
+    notes: One of the most common portability surfaces.
+
+  - tag_id: type_semantics_gap
+    label: Type Semantics Gap
+    definition: Portability depends on type coercion, cast syntax, or numeric/string conversion behavior.
+    engines_supported:
+      spark: yes
+      postgres: yes
+      mysql: yes
+    examples:
+      - "CAST(x AS ...)"
+      - implicit numeric/string coercion
+    notes: Often relevant to both parser acceptance and result consistency.
+
+  - tag_id: limit_fetch_gap
+    label: LIMIT / FETCH Semantics Gap
+    definition: Query depends on engine-specific row-limiting syntax or semantics.
+    engines_supported:
+      spark: yes
+      postgres: yes
+      mysql: yes
+    examples:
+      - "LIMIT n"
+      - "FETCH FIRST n ROWS ONLY"
+    notes: Important for cross-engine normalization.
+
+  - tag_id: grouping_feature_gap
+    label: Advanced Grouping Feature Gap
+    definition: Portability depends on support differences for GROUPING SETS, ROLLUP, CUBE, or grouping metadata.
+    engines_supported:
+      spark: yes
+      postgres: yes
+      mysql: partial
+    examples:
+      - "GROUP BY ROLLUP (...)"
+      - "GROUPING SETS (...)"
+    notes: Use together with SQL feature tag grouping_sets.
+
+  - tag_id: outer_join_support_gap
+    label: Outer Join Support / Syntax Gap
+    definition: Portability depends on outer join syntax or support differences, especially FULL OUTER JOIN.
+    engines_supported:
+      spark: yes
+      postgres: yes
+      mysql: partial
+    examples:
+      - "FULL OUTER JOIN"
+    notes: Important for deciding common-core vs extended cases.
+
+  - tag_id: recursive_cte_support_gap
+    label: Recursive CTE Support Gap
+    definition: Portability depends on recursive CTE behavior or support differences across engines.
+    engines_supported:
+      spark: partial
+      postgres: yes
+      mysql: yes
+    examples:
+      - "WITH RECURSIVE ..."
+    notes: Often determines whether a candidate remains in v1 common-core or moves to extended backlog.
