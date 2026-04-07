@@ -1,0 +1,25 @@
+case_id: CONS_0001
+pool: consistency
+provenance:
+  source: manual_seed
+  raw_file: ""
+source:
+  dialect: postgres
+  file: source.sql
+targets:
+  engines: [postgres, mysql, spark]
+features: []
+rewrite_opportunities:
+  - aggregation_rewrite
+variants:
+  positives:
+    - rewrite_pos_01.sql
+  negatives:
+    - rewrite_neg_01.sql
+validation:
+  witness_dataset: employees_nulls_v1
+  requires_manual_review: true
+status:
+  parse_checked: false
+  exec_checked: false
+  plan_checked: false
