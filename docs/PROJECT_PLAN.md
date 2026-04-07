@@ -202,43 +202,103 @@ Planned experiment groups:
 - E4 Generalization study
 
 ## 11. Project execution roadmap
+
 ### Step 1
-Bring up the machine and three-engine smoke
+Bring up the machine and three-engine smoke.
 
 ### Step 2
-Taxonomy and case schema
+Taxonomy and case schema.
 
-### Step 3
-Download and stage the first benchmark sources
+### Step 3A
+Controlled Batch-1 source acquisition and staging.
+
+Goals:
+- acquire only the first-wave benchmark sources needed to stabilize the benchmark source layer
+- keep source provenance, license/access status, and storage paths explicit
+- avoid immediate large-scale workload curation or uncontrolled case expansion
+
+Batch-1 target sources:
+- TPC-H
+- TPC-DS
+- SQLStorm
+- Calcite Seeds
+- PARROT
+
+Batch-1 expected actions:
+- create and verify `datasets/raw/*` subdirectories
+- stage the acquired source artifacts into their corresponding raw directories
+- record provenance / access / license information in `inventory/source_registry.csv`
+- confirm that the source-to-pool mapping remains aligned with:
+  - performance
+  - longtail
+  - consistency
+  - portability
+- stop after source staging and basic integrity inspection
+- do not yet perform broad case expansion
+
+### Step 3B
+Controlled Batch-2 source acquisition.
+
+Candidate Batch-2 sources:
+- DSB
+- JOB
+- Stack Queries
+- SQLEquiQuest or VeriEQL
+- continuing Manual Seed Cases under explicit review
+
+Goals:
+- augment realism, join-heavy cases, and additional consistency coverage
+- keep acquisition incremental and traceable
+- only proceed after Batch-1 staging is stable
 
 ### Step 4
-Data loading and preprocessing
+Data loading and preprocessing.
+
+Expected activities:
+- generate initial benchmark data instances where needed
+- load selected sources into PostgreSQL / MySQL / Spark when appropriate
+- unify timezone / collation / SQL mode / Spark config assumptions
+- perform SQL parsing, formatting, AST hashing, and basic deduplication
+- begin the first source-to-coverage mapping pass
 
 ### Step 5
-Manually construct the first batch of case packages
+Manually construct the first batch of case packages.
 
 ### Step 6
-Plan collection and node alignment
+Plan collection and node alignment.
 
 ### Step 7
-Constrained LLM entry into the pipeline
+Constrained LLM entry into the pipeline.
 
 ### Step 8
-Four-pool pilot formation
+Four-pool pilot formation.
 
 ### Step 9
-Baseline runs
+Baseline runs.
 
 ### Step 10
-Draft the first benchmark paper story
+Draft the first benchmark paper story.
 
 ## 12. Current status
+
 Current repository status:
 - Week 1 closeout completed
 - tri-engine smoke completed
-- first case package closure completed
-- first plan artifacts collected
 - minimal CLI scaffolding completed
 - artifact-preflight completed
-- ready for Week 2 inventory design and taxonomy refinement
-- not yet entered workload curation
+- source inventory v0 established
+- pool mapping rules established
+- common-core / extended rules established
+- primary metrics v0 established
+- taxonomy v0.2 established
+- four anchor cases established:
+  - PERF_0001
+  - LONGTAIL_0001
+  - CONS_0001
+  - PORT_0001
+- all four anchor cases have completed tri-engine result closure
+- all four anchor cases have completed tri-engine plan closure
+- anchor case summary has been updated
+- ready for Phase 3A Batch-1 source acquisition and staging
+- not yet in large-scale workload curation
+- not yet in broad benchmark expansion beyond the anchor set
