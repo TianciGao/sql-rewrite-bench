@@ -1,0 +1,63 @@
+case_id: PORT_0001
+trial_version: "0.2"
+status: trial_labeled
+candidate_primary_pool: portability
+
+context:
+  purpose: >
+    This case is used to validate a simple but important portability trap:
+    month-selection written with a date-time function versus a common-core
+    half-open time range across PostgreSQL, MySQL, and Spark.
+  note: >
+    PORT_0001 is intentionally simple and pedagogical. Its purpose is to
+    establish a clean portability anchor case before moving to more complex
+    dialect-specific semantic traps.
+
+sql_feature_tags:
+  - date_time_function
+
+rewrite_opportunity_tags:
+  - dialect_adaptation
+
+plan_operator_tags:
+  shared_across_engines:
+    - scan
+    - filter
+    - sort
+  engine_specific:
+    spark:
+      - exchange
+    postgres: []
+    mysql: []
+
+workload_realism_tags: []
+
+portability_tags:
+  - datetime_semantics_gap
+
+review_notes:
+  - The positive rewrite replaces function-based month extraction with a common-core half-open range predicate.
+  - The negative rewrite uses an inclusive upper bound at midnight and therefore drops end-of-month records later in the day.
+  - This case should be treated as a portability anchor case, not as a long-tail or consistency case.
+
+expected_outputs:
+  source_and_positive:
+    - "1\teng"
+    - "2\teng"
+    - "4\tsales"
+  negative:
+    - "1\teng"
+    - "4\tsales"
+
+evidence:
+  source_sql: cases/PORT/PORT_0001/source.sql
+  positive_sql: cases/PORT/PORT_0001/rewrite_pos_01.sql
+  negative_sql: cases/PORT/PORT_0001/rewrite_neg_01.sql
+  outputs:
+    postgres: runs/port_case/pg/source.tsv
+    mysql: runs/port_case/mysql/source.tsv
+    spark: runs/port_case/spark/source.tsv
+  plans:
+    postgres: runs/plans_port/pg/source.json
+    mysql: runs/plans_port/mysql/source.json
+    spark: runs/plans_port/spark/source.txt

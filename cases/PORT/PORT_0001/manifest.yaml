@@ -1,0 +1,26 @@
+case_id: PORT_0001
+pool: portability
+provenance:
+  source: manual_portability_seed
+  raw_file: ""
+source:
+  dialect: portable_datetime_filter
+  file: source.sql
+targets:
+  engines: [postgres, mysql, spark]
+features:
+  - date_time_function
+rewrite_opportunities:
+  - dialect_adaptation
+variants:
+  positives:
+    - rewrite_pos_01.sql
+  negatives:
+    - rewrite_neg_01.sql
+validation:
+  witness_dataset: events_monthly_v1
+  requires_manual_review: true
+status:
+  parse_checked: false
+  exec_checked: false
+  plan_checked: false
