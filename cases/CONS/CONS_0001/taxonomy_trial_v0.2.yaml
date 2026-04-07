@@ -1,0 +1,59 @@
+case_id: CONS_0001
+trial_version: "0.2"
+status: trial_labeled
+candidate_primary_pool: consistency
+
+context:
+  purpose: >
+    This case is used to validate a basic but important consistency trap:
+    COUNT(*) versus COUNT(column) under NULL values across PostgreSQL, MySQL, and Spark.
+  note: >
+    CONS_0001 is intentionally simple and pedagogical. Its purpose is to
+    establish a clean consistency anchor case before moving to more complex
+    semantic traps.
+
+sql_feature_tags: []
+
+rewrite_opportunity_tags:
+  - aggregation_rewrite
+
+plan_operator_tags:
+  shared_across_engines:
+    - scan
+    - aggregate
+    - filter
+    - sort
+  engine_specific:
+    spark:
+      - exchange
+    postgres: []
+    mysql: []
+
+workload_realism_tags: []
+
+portability_tags: []
+
+review_notes:
+  - The positive rewrite keeps COUNT(*) and only rewrites HAVING into an outer filter, so it should remain equivalent.
+  - The negative rewrite changes COUNT(*) into COUNT(manager_id), which ignores NULL values and changes semantics.
+  - This case should be treated as a consistency anchor case, not as a long-tail or portability case.
+
+expected_outputs:
+  source_and_positive:
+    - "eng\t3"
+    - "sales\t2"
+  negative:
+    - "eng\t2"
+
+evidence:
+  source_sql: cases/CONS/CONS_0001/source.sql
+  positive_sql: cases/CONS/CONS_0001/rewrite_pos_01.sql
+  negative_sql: cases/CONS/CONS_0001/rewrite_neg_01.sql
+  outputs:
+    postgres: runs/cons_case/pg/source.tsv
+    mysql: runs/cons_case/mysql/source.tsv
+    spark: runs/cons_case/spark/source.tsv
+  plans:
+    postgres: runs/plans_cons/pg/source.json
+    mysql: runs/plans_cons/mysql/source.json
+    spark: runs/plans_cons/spark/source.txt
