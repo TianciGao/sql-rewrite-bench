@@ -58,14 +58,14 @@ This classification may change later if the benchmark grows more complex.
 
 ---
 
-## 4. Anchor Case Table
+## 4. Anchor Characterization Snapshot
 
-| case_id | representative structure / trap | main taxonomy emphasis | notes |
-|---|---|---|---|
-| PERF_0001 | simple filter + order-by sanity case | basic plan operators only | lowest-complexity pipeline anchor |
-| LONGTAIL_0001 | CTE + window + top-k-per-group | sql_feature + plan_operator + longtail realism | first structure-rich long-tail anchor |
-| CONS_0001 | `COUNT(*)` vs `COUNT(column)` under NULL values | rewrite_opportunity + consistency semantics | first clean correctness anchor |
-| PORT_0001 | function-style month selection vs half-open time range | portability + dialect adaptation | first clean portability anchor |
+| case_id | representative structure / trap | main taxonomy emphasis | positive / negative semantics | current interpretation |
+|---|---|---|---|---|
+| PERF_0001 | simple filter + order-by sanity case | basic plan operators only | positive preserves predicate semantics; negative changes filter boundary | lowest-complexity pipeline anchor |
+| LONGTAIL_0001 | CTE + window + top-k-per-group | sql_feature + plan_operator + longtail realism | positive preserves top-k-per-group semantics; negative changes top-2 into top-1 | first structure-rich longtail anchor |
+| CONS_0001 | `COUNT(*)` vs `COUNT(column)` under NULL values | rewrite_opportunity + consistency semantics | positive preserves aggregation semantics; negative ignores NULL-sensitive rows | first clean correctness anchor |
+| PORT_0001 | function-style month selection vs half-open time range | portability + dialect adaptation | positive preserves month-selection semantics; negative uses a wrong inclusive upper bound | first clean portability anchor |
 
 ---
 
@@ -209,7 +209,7 @@ source SQL
 
 ### 6.4 Taxonomy coverage (high-level)
 - PERF_0001: minimal plan/operator anchor
-- LONGTAIL_0001: SQL structure and long-tail anchor
+- LONGTAIL_0001: SQL structure and longtail anchor
 - CONS_0001: consistency semantics anchor
 - PORT_0001: portability semantics anchor
 
