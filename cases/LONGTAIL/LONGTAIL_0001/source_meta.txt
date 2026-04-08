@@ -1,0 +1,4 @@
+query=12033.sql
+semantics=correct
+comment=
+explanation=The query retrieves each user's name along with their total posts, questions, answers, scores, average post views, and badge counts, ordered by highest total score and posts.

@@ -1,15 +1,38 @@
-SELECT dept, emp_name, salary
-FROM (
-  SELECT
-    dept,
-    emp_id,
-    emp_name,
-    salary,
-    ROW_NUMBER() OVER (
-      PARTITION BY dept
-      ORDER BY salary DESC, emp_id ASC
-    ) AS rn
-  FROM employees
-) ranked
-WHERE rn <= 2
-ORDER BY dept, salary DESC, emp_name ASC;
+WITH PostAgg AS (
+    SELECT
+        p.OwnerUserId AS UserId,
+        COUNT(*) AS TotalPosts,
+        SUM(CASE WHEN p.PostTypeId = 1 THEN 1 ELSE 0 END) AS TotalQuestions,
+        SUM(CASE WHEN p.PostTypeId = 2 THEN 1 ELSE 0 END) AS TotalAnswers,
+        SUM(p.Score) AS TotalScore,
+        AVG(p.ViewCount) AS AvgViewCount
+    FROM Posts p
+    GROUP BY p.OwnerUserId
+),
+BadgeStats AS (
+    SELECT
+        b.UserId,
+        COUNT(b.Id) AS TotalBadges,
+        SUM(CASE WHEN b.Class = 1 THEN 1 ELSE 0 END) AS TotalGoldBadges,
+        SUM(CASE WHEN b.Class = 2 THEN 1 ELSE 0 END) AS TotalSilverBadges,
+        SUM(CASE WHEN b.Class = 3 THEN 1 ELSE 0 END) AS TotalBronzeBadges
+    FROM Badges b
+    GROUP BY b.UserId
+)
+SELECT
+    u.DisplayName,
+    COALESCE(pa.TotalPosts, 0) AS TotalPosts,
+    COALESCE(pa.TotalQuestions, 0) AS TotalQuestions,
+    COALESCE(pa.TotalAnswers, 0) AS TotalAnswers,
+    pa.TotalScore,
+    pa.AvgViewCount,
+    bs.TotalBadges,
+    bs.TotalGoldBadges,
+    bs.TotalSilverBadges,
+    bs.TotalBronzeBadges
+FROM Users u
+LEFT JOIN PostAgg pa
+    ON u.Id = pa.UserId
+LEFT JOIN BadgeStats bs
+    ON u.Id = bs.UserId
+ORDER BY pa.TotalScore DESC, COALESCE(pa.TotalPosts, 0) DESC;
