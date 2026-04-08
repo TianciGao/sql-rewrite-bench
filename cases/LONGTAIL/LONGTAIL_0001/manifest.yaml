@@ -1,51 +1,27 @@
 case_id: LONGTAIL_0001
-trial_version: "0.2"
-status: trial_labeled
-
-context:
-  purpose: >
-    This case is used to validate a non-trivial long-tail SQL structure with
-    a CTE and a window function across PostgreSQL, MySQL, and Spark.
-  note: >
-    LONGTAIL_0001 is intentionally richer than PERF_0001 and should exercise
-    sql_feature, plan_operator, and longtail-oriented realism tags.
-
-sql_feature_tags:
+pool: longtail
+provenance:
+  source: manual_seed
+  raw_file: ""
+source:
+  dialect: common_sql
+  file: source.sql
+targets:
+  engines: [postgres, mysql, spark]
+features:
   - cte
   - window_function
-
-rewrite_opportunity_tags:
+rewrite_opportunities:
   - cte_strategy
-
-plan_operator_tags:
-  shared_across_engines:
-    - scan
-    - window
-    - filter
-    - sort
-  engine_specific:
-    spark:
-      - exchange
-    postgres: []
-    mysql: []
-
-workload_realism_tags:
-  - long_tail_structure
-  - manual_gap_fill_realism
-
-portability_tags: []
-
-review_notes:
-  - This case is long-tail because it combines a CTE with a window function in a tri-engine-compatible form.
-  - The positive rewrite validates CTE-vs-derived-table strategy equivalence.
-  - The negative rewrite changes top-2-per-group into top-1-per-group and should be rejected by consistency checks.
-
-expected_outputs:
-  source_and_positive:
-    - "eng\talice\t120"
-    - "eng\tbob\t115"
-    - "sales\temma\t110"
-    - "sales\tdan\t95"
-  negative:
-    - "eng\talice\t120"
-    - "sales\temma\t110"
+variants:
+  positives:
+    - rewrite_pos_01.sql
+  negatives:
+    - rewrite_neg_01.sql
+validation:
+  witness_dataset: longtail_0001_v1
+  requires_manual_review: true
+status:
+  parse_checked: false
+  exec_checked: false
+  plan_checked: false
