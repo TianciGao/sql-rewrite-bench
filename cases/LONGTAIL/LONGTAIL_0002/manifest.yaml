@@ -1,0 +1,33 @@
+case_id: LONGTAIL_0002
+pool: longtail
+provenance:
+  source_id: SRC_005
+  seed_id: SEED_002
+  candidate_label: sqlstorm_stackoverflow_12033_correct
+  raw_file: datasets/raw/sqlstorm/SQLStorm/v1.0/stackoverflow/meaningful_queries.csv
+source:
+  dialect: postgres
+  file: source.sql
+targets:
+  engines: [postgresql, mysql, spark]
+features:
+  - cte
+  - aggregate
+  - left_join
+  - case_when
+  - order_by
+rewrite_opportunities:
+  - pre_aggregation_before_join
+  - cte_refactor
+variants:
+  positives:
+    - rewrite_pos_01.sql
+  negatives:
+    - rewrite_neg_01.sql
+status:
+  parse_checked: false
+  exec_checked: false
+  plan_checked: false
+notes:
+  - first longtail pilot case from SQLStorm
+  - chosen for structural richness without obvious postgres-only operators
