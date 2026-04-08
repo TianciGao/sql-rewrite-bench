@@ -1,0 +1,5 @@
+seed_id,source_id,source_name,primary_pool,source_path,candidate_label,feature_tags,expected_case_role,target_engines,selection_reason,status,next_action,notes
+SEED_001,SRC_002,TPC-DS,performance,datasets/raw/tpcds/,TBD,TBD,performance_anchor,"postgresql|mysql|spark",first-wave performance seed from inspected good source,shortlist,inspect exact query template and extract candidate,
+SEED_002,SRC_005,SQLStorm,longtail,datasets/raw/sqlstorm/SQLStorm/,TBD,TBD,longtail_anchor,"postgresql|mysql|spark",first-wave longtail seed from inspected good source,shortlist,inspect workload definition and extract candidate,
+SEED_003,SRC_007,Calcite Seeds,consistency,datasets/raw/calcite/calcite/,TBD,TBD,consistency_anchor,"postgresql|mysql|spark",first-wave consistency seed from inspected good source,shortlist,inspect reusable rewrite/correctness seed and draft positive-negative pair,
+SEED_004,SRC_009,PARROT,portability,datasets/raw/parrot/PARROT/,TBD,TBD,portability_anchor,"postgresql|mysql|spark",first-wave portability seed from inspected good source,shortlist,identify validator-backed portable subset,
