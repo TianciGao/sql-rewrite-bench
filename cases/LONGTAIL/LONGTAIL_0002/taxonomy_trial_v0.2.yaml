@@ -1,68 +1,51 @@
-case_id: LONGTAIL_0001
+case_id: LONGTAIL_0002
 trial_version: "0.2"
 status: trial_labeled
 candidate_primary_pool: longtail
 
 context:
   purpose: >
-    This case is used to validate a non-trivial long-tail SQL structure with
-    a CTE and a window function across PostgreSQL, MySQL, and Spark.
+    This case stages a SQLStorm-derived long-tail query for pilot validation
+    across PostgreSQL, MySQL, and Spark.
   note: >
-    LONGTAIL_0001 is intentionally richer than PERF_0001 and is meant to
-    exercise sql_feature, plan_operator, and longtail-oriented tagging.
+    LONGTAIL_0002 focuses on a non-trivial CTE + aggregation + left-join shape
+    and is kept separate from the pre-existing manual LONGTAIL_0001 case.
 
 sql_feature_tags:
   - cte
-  - window_function
+  - aggregate
+  - left_join
+  - case_when
+  - order_by
 
 rewrite_opportunity_tags:
-  - cte_strategy
+  - pre_aggregation_before_join
+  - cte_refactor
 
 plan_operator_tags:
   shared_across_engines:
     - scan
-    - filter
-    - window
+    - aggregate
+    - join
     - sort
   engine_specific:
     spark:
       - exchange
-    postgres:
-      - subquery
-    mysql:
-      - materialize
+    postgres: []
+    mysql: []
 
 workload_realism_tags:
   - long_tail_structure
+  - external_seed_realism
 
 portability_tags: []
 
 review_notes:
-  - LONGTAIL_0001 should be treated as a long-tail trial case rather than a classic performance baseline.
-  - The positive rewrite validates CTE-vs-derived-table strategy equivalence.
-  - The negative rewrite changes top-2-per-group into top-1-per-group and should be rejected by consistency checks.
-  - Manual construction of this case should be tracked through source/provenance metadata rather than realism tags.
-
-expected_outputs:
-  source_and_positive:
-    - "eng\talice\t120"
-    - "eng\tbob\t115"
-    - "sales\temma\t110"
-    - "sales\tdan\t95"
-  negative:
-    - "eng\talice\t120"
-    - "sales\temma\t110"
+  - LONGTAIL_0002 is a SQLStorm-derived long-tail seed, not the manual tri-engine LONGTAIL_0001 case.
+  - The positive rewrite tests pre-aggregation-before-join equivalence and needs execution-based confirmation.
+  - The negative rewrite changes LEFT JOIN BadgeStats into INNER JOIN BadgeStats and should be rejected by consistency checks.
 
 evidence:
-  source_sql: cases/LONGTAIL/LONGTAIL_0001/source.sql
-  positive_sql: cases/LONGTAIL/LONGTAIL_0001/rewrite_pos_01.sql
-  negative_sql: cases/LONGTAIL/LONGTAIL_0001/rewrite_neg_01.sql
-  outputs:
-    postgres: runs/longtail_case/pg/source.tsv
-    mysql: runs/longtail_case/mysql/source.tsv
-    spark: runs/longtail_case/spark/source.tsv
-  plans:
-    postgres: runs/plans_longtail/pg/source.json
-    mysql: runs/plans_longtail/mysql/source.json
-    spark: runs/plans_longtail/spark/source.txt
-    
+  source_sql: cases/LONGTAIL/LONGTAIL_0002/source.sql
+  positive_sql: cases/LONGTAIL/LONGTAIL_0002/rewrite_pos_01.sql
+  negative_sql: cases/LONGTAIL/LONGTAIL_0002/rewrite_neg_01.sql
