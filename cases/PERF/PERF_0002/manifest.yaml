@@ -43,7 +43,7 @@ status:
   plan_checked_pg: true
   exec_checked_mysql: false
   exec_checked_spark: false
-  taxonomy_trial_ready: false
+  taxonomy_trial_ready: true
 
 artifacts:
   data_profile: cases/PERF/PERF_0002/data_profile.json
