@@ -1,0 +1,22 @@
+{
+  "case_id": "LONGTAIL_0002",
+  "dataset_id": "longtail_0002_pg_witness_v1",
+  "engine_validated": [
+    "postgres"
+  ],
+  "required_tables": [
+    "users",
+    "posts",
+    "badges"
+  ],
+  "row_counts": {
+    "users": 3,
+    "posts": 6,
+    "badges": 4
+  },
+  "notes": [
+    "Minimal witness dataset manually constructed for PostgreSQL validation",
+    "Current profile is for PostgreSQL loading validation only",
+    "This is not yet a tri-engine validated common-core case"
+  ]
+}

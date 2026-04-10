@@ -1,0 +1,22 @@
+source_id: SRC_005
+seed_id: SEED_002
+source_name: SQLStorm
+source_workload: stackoverflow
+query_id: 12033.sql
+
+localization_evidence:
+- v1.0/stackoverflow/queries/12033.sql
+- v1.0/stackoverflow/meaningful_queries.csv
+- v1.0/stackoverflow/semantic_queries.csv
+- v1.0/stackoverflow/valid_queries.csv
+- v1.0/stackoverflow/correct_joins.csv
+
+semantic_summary:
+The query retrieves each user's name together with post counts, question counts,
+answer counts, total score, average post view count, and badge counts, ordered by
+highest total score and post count.
+
+current_validation_signal:
+- SQLStorm metadata marks this query as meaningful/correct
+- SQLStorm valid_queries.csv currently indicates validation evidence for postgres/umbra and duckdb
+- No MySQL/Spark validation has yet been performed inside this benchmark repo

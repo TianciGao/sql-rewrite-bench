@@ -1,33 +1,46 @@
 case_id: LONGTAIL_0002
 pool: longtail
+dataset_line_candidate: not_yet_admitted
+
 provenance:
   source_id: SRC_005
   seed_id: SEED_002
-  candidate_label: sqlstorm_stackoverflow_12033_correct
-  raw_file: datasets/raw/sqlstorm/SQLStorm/v1.0/stackoverflow/meaningful_queries.csv
+  source_name: SQLStorm
+  source_workload: stackoverflow
+  source_query_id: 12033.sql
+  raw_sql_file: cases/LONGTAIL/LONGTAIL_0002/provenance/source_12033_raw.sql
+  provenance_notes: cases/LONGTAIL/LONGTAIL_0002/provenance/sqlstorm_seed_notes.txt
+
 source:
-  dialect: postgres
+  dialect: postgres_like_candidate
   file: source.sql
+
 targets:
-  engines: [postgresql, mysql, spark]
+  engines:
+    - postgres
+    - mysql
+    - spark
+
 features:
   - cte
-  - aggregate
-  - left_join
-  - case_when
-  - order_by
-rewrite_opportunities:
-  - pre_aggregation_before_join
-  - cte_refactor
-variants:
-  positives:
-    - rewrite_pos_01.sql
-  negatives:
-    - rewrite_neg_01.sql
+  - outer_join
+
 status:
-  parse_checked: false
-  exec_checked: false
-  plan_checked: false
+  seed_localized: true
+  source_frozen: true
+  exec_checked_pg: true
+  exec_checked_mysql: false
+  exec_checked_spark: false
+  plan_checked: true
+  taxonomy_trial_ready: true
+  rewrite_variants_ready: false
+
+artifacts:
+  data_profile: cases/LONGTAIL/LONGTAIL_0002/data_profile.json
+  pg_source_plan: runs/longtail_0002/plans/pg/source.json
+  pg_source_result: runs/longtail_0002/pg/source.tsv
+
 notes:
-  - first longtail pilot case from SQLStorm
-  - chosen for structural richness without obvious postgres-only operators
+  - LONGTAIL_0002 is currently a draft longtail case derived from SQLStorm StackOverflow query 12033.
+  - It should not yet be treated as common-core.
+  - External metadata indicates correctness/meaningfulness, but this repo has not yet performed tri-engine validation.

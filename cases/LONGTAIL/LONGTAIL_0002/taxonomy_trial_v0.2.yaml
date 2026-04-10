@@ -1,51 +1,44 @@
 case_id: LONGTAIL_0002
 trial_version: "0.2"
-status: trial_labeled
+status: provisional_trial_labeled
 candidate_primary_pool: longtail
+dataset_line_candidate: not_yet_admitted
 
 context:
   purpose: >
-    This case stages a SQLStorm-derived long-tail query for pilot validation
-    across PostgreSQL, MySQL, and Spark.
+    This case is derived from a SQLStorm StackOverflow seed and is used to
+    validate the external longtail seed-to-case pipeline.
   note: >
-    LONGTAIL_0002 focuses on a non-trivial CTE + aggregation + left-join shape
-    and is kept separate from the pre-existing manual LONGTAIL_0001 case.
+    LONGTAIL_0002 has not yet completed engine validation inside this repo.
+    Taxonomy entries below should therefore be treated as provisional.
 
 sql_feature_tags:
   - cte
-  - aggregate
-  - left_join
-  - case_when
-  - order_by
+  - outer_join
 
-rewrite_opportunity_tags:
-  - pre_aggregation_before_join
-  - cte_refactor
+rewrite_opportunity_tags: []
 
 plan_operator_tags:
-  shared_across_engines:
+  status: provisional_pg_only
+  observed_in_postgres:
     - scan
-    - aggregate
     - join
+    - aggregate
     - sort
-  engine_specific:
-    spark:
-      - exchange
-    postgres: []
-    mysql: []
 
 workload_realism_tags:
+  - realistic_query_style
   - long_tail_structure
-  - external_seed_realism
 
 portability_tags: []
 
 review_notes:
-  - LONGTAIL_0002 is a SQLStorm-derived long-tail seed, not the manual tri-engine LONGTAIL_0001 case.
-  - The positive rewrite tests pre-aggregation-before-join equivalence and needs execution-based confirmation.
-  - The negative rewrite changes LEFT JOIN BadgeStats into INNER JOIN BadgeStats and should be rejected by consistency checks.
+  - LONGTAIL_0002 is sourced from SQLStorm StackOverflow query 12033.
+  - SQLStorm metadata marks the candidate as meaningful/correct.
+  - SQLStorm validation metadata currently points to postgres/umbra and duckdb, not yet to the benchmark's full current engine set.
+  - Rewrite opportunity tags remain unfrozen because positive and negative rewrites have not yet been defined.
 
 evidence:
-  source_sql: cases/LONGTAIL/LONGTAIL_0002/source.sql
-  positive_sql: cases/LONGTAIL/LONGTAIL_0002/rewrite_pos_01.sql
-  negative_sql: cases/LONGTAIL/LONGTAIL_0002/rewrite_neg_01.sql
+  raw_sql: cases/LONGTAIL/LONGTAIL_0002/provenance/source_12033_raw.sql
+  frozen_source: cases/LONGTAIL/LONGTAIL_0002/source.sql
+  provenance_notes: cases/LONGTAIL/LONGTAIL_0002/provenance/sqlstorm_seed_notes.txt
