@@ -1,0 +1,54 @@
+case_id: PERF_0002
+trial_version: "0.2"
+status: provisional_trial_labeled
+candidate_primary_pool: performance
+dataset_line_candidate: common-core
+
+context:
+  purpose: >
+    This case is derived from a TPC-DS seed and is used to validate the
+    first external performance-oriented seed-to-case pipeline.
+  note: >
+    PERF_0002 is currently validated on PostgreSQL only. The taxonomy
+    entries below should be treated as provisional until multi-engine
+    execution and rewrite variants are completed.
+
+sql_feature_tags:
+  - window_function
+  - subquery_in_from
+
+rewrite_opportunity_tags: []
+
+plan_operator_tags:
+  status: provisional_pg_only
+  observed_in_postgres:
+    - scan
+    - join
+    - aggregate
+    - window
+    - filter
+    - sort
+    - limit
+    - subquery
+
+workload_realism_tags:
+  - classic_analytical_baseline
+
+portability_tags:
+  - limit_fetch_gap
+
+review_notes:
+  - PERF_0002 is derived from TPC-DS query53.tpl.
+  - The materialized seed contained TOP syntax and was normalized into a LIMIT-based common-core-friendly source candidate.
+  - Rewrite opportunity tags remain unfrozen because positive and negative rewrites have not yet been defined.
+  - Shared cross-engine plan operator tags should not be claimed before MySQL and Spark validation.
+  - This case should currently be treated as a PostgreSQL-validated draft external performance case.
+
+evidence:
+  source_template: cases/PERF/PERF_0002/provenance/query53.tpl
+  materialized_instance: cases/PERF/PERF_0002/provenance/query53_instance_raw.sql
+  generation_command: cases/PERF/PERF_0002/provenance/dsqgen_command.txt
+  normalized_source: cases/PERF/PERF_0002/source.sql
+  data_profile: cases/PERF/PERF_0002/data_profile.json
+  pg_source_plan: runs/perf_0002/plans/pg/source.json
+  pg_source_result: runs/perf_0002/pg/source.tsv

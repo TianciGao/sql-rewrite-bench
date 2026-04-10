@@ -1,0 +1,11 @@
+cd ~/code/sql-rewrite-bench/datasets/raw/tpcds/DSGen-software-code-4.0.0/tools
+
+./dsqgen \
+  -DIRECTORY /tmp/tpcds_query_templates_work \
+  -TEMPLATE query53.tpl \
+  -COUNT 1 \
+  -QUALIFY Y \
+  -SCALE 1 \
+  -DIALECT ansi \
+  -OUTPUT_DIR /tmp/tpcds_q53 \
+  -VERBOSE Y

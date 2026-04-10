@@ -1,0 +1,56 @@
+case_id: PERF_0002
+pool: performance
+dataset_line_candidate: common-core
+
+provenance:
+  source_id: SRC_002
+  seed_id: SEED_001
+  source_name: TPC-DS
+  source_template: query53.tpl
+  materialized_instance: cases/PERF/PERF_0002/provenance/query53_instance_raw.sql
+  generation_command: cases/PERF/PERF_0002/provenance/dsqgen_command.txt
+  notes: >
+    Materialized from TPC-DS query53.tpl via dsqgen. Current source.sql is a
+    normalized common-core-friendly candidate derived from the generated ANSI-style SQL.
+
+source:
+  dialect: common_core_candidate
+  file: source.sql
+
+targets:
+  engines:
+    - postgres
+    - mysql
+    - spark
+
+required_tables:
+  - item
+  - store_sales
+  - date_dim
+  - store
+
+features:
+  - window_function
+  - aggregate
+  - order_by
+  - subquery
+
+status:
+  seed_materialized: true
+  source_normalized: true
+  data_generation_ready: true
+  exec_checked_pg: true
+  plan_checked_pg: true
+  exec_checked_mysql: false
+  exec_checked_spark: false
+  taxonomy_trial_ready: false
+
+artifacts:
+  data_profile: cases/PERF/PERF_0002/data_profile.json
+  pg_source_plan: runs/perf_0002/plans/pg/source.json
+  pg_source_result: runs/perf_0002/pg/source.tsv
+
+notes:
+  - PERF_0002 is currently a draft case package derived from an external TPC-DS seed.
+  - Positive and negative rewrites have not yet been defined.
+  - Minimal TPC-DS data generation and loading path still needs to be validated.
