@@ -1,0 +1,18 @@
+{
+  "case_id": "CONS_0002",
+  "dataset_id": "cons_0002_pg_witness_v1",
+  "engine_validated": [
+    "postgres"
+  ],
+  "required_tables": [
+    "emps"
+  ],
+  "row_counts": {
+    "emps": 6
+  },
+  "notes": [
+    "Minimal witness dataset manually constructed from Calcite new-decorr.iq",
+    "Current profile is for PostgreSQL loading validation only",
+    "This is not yet a tri-engine validated common-core case"
+  ]
+}

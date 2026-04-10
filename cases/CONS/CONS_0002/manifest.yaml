@@ -1,0 +1,47 @@
+case_id: CONS_0002
+pool: consistency
+dataset_line_candidate: not_yet_admitted
+
+provenance:
+  source_id: SRC_007
+  seed_id: SEED_003
+  source_name: Calcite Seeds
+  source_file: core/src/test/resources/sql/new-decorr.iq
+  raw_sql_file: cases/CONS/CONS_0002/provenance/new_decorr_commission_case_raw.sql
+  provenance_notes: cases/CONS/CONS_0002/provenance/new_decorr_seed_notes.txt
+
+source:
+  dialect: postgres_like_candidate
+  file: source.sql
+
+targets:
+  engines:
+    - postgres
+    - mysql
+    - spark
+
+required_tables:
+  - emps
+
+features:
+  - correlated_subquery
+
+status:
+  seed_localized: true
+  source_frozen: true
+  exec_checked_pg: true
+  exec_checked_mysql: false
+  exec_checked_spark: false
+  plan_checked: true
+  taxonomy_trial_ready: true
+  rewrite_variants_ready: false
+
+artifacts:
+  data_profile: cases/CONS/CONS_0002/data_profile.json
+  pg_source_plan: runs/cons_0002/plans/pg/source.json
+  pg_source_result: runs/cons_0002/pg/source.tsv
+
+notes:
+  - CONS_0002 is currently a draft consistency case derived from a Calcite decorrelation test seed.
+  - It should not yet be treated as common-core.
+  - The witness dataset is intentionally small and embedded from the Calcite test context.

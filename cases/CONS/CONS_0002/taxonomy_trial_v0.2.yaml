@@ -1,0 +1,50 @@
+case_id: CONS_0002
+trial_version: "0.2"
+status: provisional_trial_labeled
+candidate_primary_pool: consistency
+dataset_line_candidate: not_yet_admitted
+
+context:
+  purpose: >
+    This case is derived from a Calcite decorrelation seed and is used to
+    validate the external consistency seed-to-case pipeline.
+  note: >
+    CONS_0002 has not yet completed engine validation inside this repo.
+    Taxonomy entries below should therefore be treated as provisional.
+
+sql_feature_tags:
+  - correlated_subquery
+
+rewrite_opportunity_tags:
+  - subquery_decorrelation
+
+plan_operator_tags:
+  status: provisional_pg_only
+  observed_in_postgres:
+    - scan
+    - sort
+    - subquery
+
+workload_realism_tags: []
+
+portability_tags: []
+
+review_notes:
+  - CONS_0002 is sourced from Calcite new-decorr.iq.
+  - The chosen candidate uses a correlated EXISTS structure over commission values.
+  - The witness dataset is embedded in the same Calcite iq file.
+  - Positive and negative rewrites have not yet been defined.
+
+expected_outputs:
+  source_pg_witness_v1:
+    - "100\tf"
+    - "110\tt"
+    - "140\tf"
+    - "150\tf"
+    - "170\tt"
+    - "200\tf"
+
+evidence:
+  raw_sql: cases/CONS/CONS_0002/provenance/new_decorr_commission_case_raw.sql
+  frozen_source: cases/CONS/CONS_0002/source.sql
+  provenance_notes: cases/CONS/CONS_0002/provenance/new_decorr_seed_notes.txt

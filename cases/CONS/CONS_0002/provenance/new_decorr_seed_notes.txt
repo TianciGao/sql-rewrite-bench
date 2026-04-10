@@ -1,0 +1,21 @@
+source_id: SRC_007
+seed_id: SEED_003
+source_name: Calcite Seeds
+source_file: core/src/test/resources/sql/new-decorr.iq
+
+localization_evidence:
+- core/src/test/resources/sql/new-decorr.iq
+- emps witness dataset appears in the same iq file
+- query returns empid + EXISTS(...) result ordered by empid
+- expected result table is embedded in the iq test
+
+semantic_summary:
+This candidate tests a correlated EXISTS subquery over commission values.
+The source returns whether an employee has at least one commission-matching
+employee in a different department.
+
+current_reason_for_selection:
+- self-contained witness dataset
+- clear expected outputs
+- decorrelation relevance is explicit in the Calcite test context
+- simpler than the multi-level nested EXISTS candidate
