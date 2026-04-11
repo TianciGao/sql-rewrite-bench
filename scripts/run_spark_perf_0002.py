@@ -9,7 +9,7 @@ from pyspark.sql.types import (
 ROOT = Path(__file__).resolve().parent.parent
 DDL_PATH = ROOT / "datasets/raw/tpcds/DSGen-software-code-4.0.0/tools/tpcds.sql"
 DATA_DIR = ROOT / "datasets/loaded/tpcds_sf1_perf0002_pg"
-SQL_PATH = ROOT / "cases/PERF/PERF_0002/source.sql"
+CASE_DIR = ROOT / "cases/PERF/PERF_0002"
 OUT_DIR = ROOT / "runs/perf_0002/spark"
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -90,7 +90,7 @@ table_ddls = parse_table_ddls(DDL_PATH, TARGETS)
 
 spark = (
     SparkSession.builder
-    .appName("sql-rewrite-bench-perf-0002")
+    .appName("sql-rewrite-bench-perf-0002-rewrites")
     .master("local[*]")
     .config("spark.sql.session.timeZone", "UTC")
     .config("spark.sql.shuffle.partitions", "8")
@@ -111,17 +111,16 @@ for table in TARGETS:
     )
     df.createOrReplaceTempView(table)
 
-sql_text = SQL_PATH.read_text(encoding="utf-8")
-result = spark.sql(sql_text)
-rows = result.collect()
-
-out_path = OUT_DIR / "source.tsv"
-with out_path.open("w", encoding="utf-8") as f:
-    for row in rows:
-        f.write("\t".join(format_value(v) for v in row) + "\n")
-
-print(f"Wrote {out_path}")
-for row in rows[:20]:
-    print(row)
+for name in ["source", "rewrite_pos_01", "rewrite_neg_01"]:
+    sql_text = (CASE_DIR / f"{name}.sql").read_text(encoding="utf-8")
+    result = spark.sql(sql_text)
+    rows = result.collect()
+    out_path = OUT_DIR / f"{name}.tsv"
+    with out_path.open("w", encoding="utf-8") as f:
+        for row in rows:
+            f.write("\t".join(format_value(v) for v in row) + "\n")
+    print(f"Wrote {out_path}")
+    for row in rows[:20]:
+        print(row)
 
 spark.stop()

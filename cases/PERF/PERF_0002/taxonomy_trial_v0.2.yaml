@@ -2,16 +2,16 @@ case_id: PERF_0002
 trial_version: "0.2"
 status: provisional_trial_labeled
 candidate_primary_pool: performance
-dataset_line_candidate: common-core
+dataset_line_candidate: common-core_candidate
 
 context:
   purpose: >
     This case is derived from a TPC-DS seed and is used to validate the
     first external performance-oriented seed-to-case pipeline.
   note: >
-    PERF_0002 is now source-validated on PostgreSQL, MySQL, and Spark.
-    Taxonomy entries below should still be treated as provisional until
-    rewrite variants are completed.
+    PERF_0002 is now validated across PostgreSQL, MySQL, and Spark for
+    source, positive rewrite, and negative rewrite. Taxonomy entries below
+    should still be treated as provisional until release-level admission.
 
 sql_feature_tags:
   - window_function
@@ -59,19 +59,34 @@ portability_tags:
 review_notes:
   - PERF_0002 is derived from TPC-DS query53.tpl.
   - The materialized seed contained TOP syntax and was normalized into a LIMIT-based common-core-friendly source candidate.
-  - PostgreSQL, MySQL, and Spark source execution all succeeded on the minimal subset.
+  - The positive rewrite replaces the CASE-based outer predicate with an equivalent direct inequality.
+  - The negative rewrite tightens the anomaly threshold from 0.1 to 0.5 and changes the result set.
+  - PostgreSQL, MySQL, and Spark all agree on source-versus-positive equivalence and source-versus-negative non-equivalence.
   - Numeric formatting differs slightly across engines, so cross-engine comparison should be value-normalized rather than raw-string-based.
-  - Rewrite opportunity tags remain unfrozen because positive and negative rewrites have not yet been defined.
 
 evidence:
   source_template: cases/PERF/PERF_0002/provenance/query53.tpl
   materialized_instance: cases/PERF/PERF_0002/provenance/query53_instance_raw.sql
   generation_command: cases/PERF/PERF_0002/provenance/dsqgen_command.txt
   normalized_source: cases/PERF/PERF_0002/source.sql
+  positive_candidate: cases/PERF/PERF_0002/rewrite_pos_01.sql
+  negative_candidate: cases/PERF/PERF_0002/rewrite_neg_01.sql
   data_profile: cases/PERF/PERF_0002/data_profile.json
   pg_source_plan: runs/perf_0002/plans/pg/source.json
+  pg_positive_plan: runs/perf_0002/plans/pg/rewrite_pos_01.json
+  pg_negative_plan: runs/perf_0002/plans/pg/rewrite_neg_01.json
   pg_source_result: runs/perf_0002/pg/source.tsv
+  pg_positive_result: runs/perf_0002/pg/rewrite_pos_01.tsv
+  pg_negative_result: runs/perf_0002/pg/rewrite_neg_01.tsv
   mysql_source_plan: runs/perf_0002/plans/mysql/source.json
+  mysql_positive_plan: runs/perf_0002/plans/mysql/rewrite_pos_01.json
+  mysql_negative_plan: runs/perf_0002/plans/mysql/rewrite_neg_01.json
   mysql_source_result: runs/perf_0002/mysql/source.tsv
+  mysql_positive_result: runs/perf_0002/mysql/rewrite_pos_01.tsv
+  mysql_negative_result: runs/perf_0002/mysql/rewrite_neg_01.tsv
   spark_source_plan: runs/perf_0002/plans/spark/source.txt
+  spark_positive_plan: runs/perf_0002/plans/spark/rewrite_pos_01.txt
+  spark_negative_plan: runs/perf_0002/plans/spark/rewrite_neg_01.txt
   spark_source_result: runs/perf_0002/spark/source.tsv
+  spark_positive_result: runs/perf_0002/spark/rewrite_pos_01.tsv
+  spark_negative_result: runs/perf_0002/spark/rewrite_neg_01.tsv

@@ -10,7 +10,7 @@ from pyspark.sql.types import (
 ROOT = Path(__file__).resolve().parent.parent
 DDL_PATH = ROOT / "datasets/raw/tpcds/DSGen-software-code-4.0.0/tools/tpcds.sql"
 DATA_DIR = ROOT / "datasets/loaded/tpcds_sf1_perf0002_pg"
-SQL_PATH = ROOT / "cases/PERF/PERF_0002/source.sql"
+CASE_DIR = ROOT / "cases/PERF/PERF_0002"
 OUT_DIR = ROOT / "runs/perf_0002/plans/spark"
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -107,13 +107,13 @@ for table in TARGETS:
     )
     df.createOrReplaceTempView(table)
 
-sql_text = SQL_PATH.read_text(encoding="utf-8")
-result = spark.sql(sql_text)
+for name in ["source", "rewrite_pos_01", "rewrite_neg_01"]:
+    sql_text = (CASE_DIR / f"{name}.sql").read_text(encoding="utf-8")
+    result = spark.sql(sql_text)
+    out_path = OUT_DIR / f"{name}.txt"
+    with out_path.open("w", encoding="utf-8") as f:
+        with redirect_stdout(f):
+            result.explain(mode="formatted")
+    print(f"Wrote {out_path}")
 
-out_path = OUT_DIR / "source.txt"
-with out_path.open("w", encoding="utf-8") as f:
-    with redirect_stdout(f):
-        result.explain(mode="formatted")
-
-print(f"Wrote {out_path}")
 spark.stop()

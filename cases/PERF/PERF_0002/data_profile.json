@@ -26,8 +26,8 @@
   },
   "notes": [
     "Minimal subset generated from TPC-DS SF1 using dsdgen",
-    "Source execution is now validated on PostgreSQL, MySQL, and Spark",
-    "PostgreSQL, MySQL, and Spark source outputs are value-normalized equivalent on the minimal subset",
-    "Positive and negative rewrites have not yet been defined"
+    "Source, positive rewrite, and negative rewrite are now validated on PostgreSQL, MySQL, and Spark",
+    "Source and positive rewrite are value-normalized equivalent across all three engines",
+    "Negative rewrite changes the result set across all three engines"
   ]
 }
