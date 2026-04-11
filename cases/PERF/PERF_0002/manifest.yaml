@@ -40,17 +40,20 @@ status:
   source_normalized: true
   data_generation_ready: true
   exec_checked_pg: true
-  plan_checked_pg: true
-  exec_checked_mysql: false
+  exec_checked_mysql: true
   exec_checked_spark: false
+  plan_checked: true
   taxonomy_trial_ready: true
 
 artifacts:
   data_profile: cases/PERF/PERF_0002/data_profile.json
   pg_source_plan: runs/perf_0002/plans/pg/source.json
   pg_source_result: runs/perf_0002/pg/source.tsv
+  mysql_source_plan: runs/perf_0002/plans/mysql/source.json
+  mysql_source_result: runs/perf_0002/mysql/source.tsv
 
 notes:
   - PERF_0002 is currently a draft case package derived from an external TPC-DS seed.
+  - Source execution has been validated on PostgreSQL and MySQL.
   - Positive and negative rewrites have not yet been defined.
-  - Minimal TPC-DS data generation and loading path still needs to be validated.
+  - Spark validation has not yet been completed.

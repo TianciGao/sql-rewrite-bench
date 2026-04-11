@@ -9,9 +9,9 @@ context:
     This case is derived from a TPC-DS seed and is used to validate the
     first external performance-oriented seed-to-case pipeline.
   note: >
-    PERF_0002 is currently validated on PostgreSQL only. The taxonomy
-    entries below should be treated as provisional until multi-engine
-    execution and rewrite variants are completed.
+    PERF_0002 is currently validated on PostgreSQL and MySQL only. The
+    taxonomy entries below should be treated as provisional until Spark
+    validation and rewrite variants are completed.
 
 sql_feature_tags:
   - window_function
@@ -20,7 +20,7 @@ sql_feature_tags:
 rewrite_opportunity_tags: []
 
 plan_operator_tags:
-  status: provisional_pg_only
+  status: provisional_pg_mysql_split
   observed_in_postgres:
     - scan
     - join
@@ -30,6 +30,15 @@ plan_operator_tags:
     - sort
     - limit
     - subquery
+  observed_in_mysql:
+    - scan
+    - join
+    - aggregate
+    - window
+    - filter
+    - sort
+    - subquery
+    - materialize
 
 workload_realism_tags:
   - classic_analytical_baseline
@@ -40,9 +49,9 @@ portability_tags:
 review_notes:
   - PERF_0002 is derived from TPC-DS query53.tpl.
   - The materialized seed contained TOP syntax and was normalized into a LIMIT-based common-core-friendly source candidate.
+  - PostgreSQL and MySQL source execution both succeeded on the minimal subset.
+  - Numeric formatting differs slightly across engines, so cross-engine comparison should be value-normalized rather than raw-string-based.
   - Rewrite opportunity tags remain unfrozen because positive and negative rewrites have not yet been defined.
-  - Shared cross-engine plan operator tags should not be claimed before MySQL and Spark validation.
-  - This case should currently be treated as a PostgreSQL-validated draft external performance case.
 
 evidence:
   source_template: cases/PERF/PERF_0002/provenance/query53.tpl
@@ -52,3 +61,5 @@ evidence:
   data_profile: cases/PERF/PERF_0002/data_profile.json
   pg_source_plan: runs/perf_0002/plans/pg/source.json
   pg_source_result: runs/perf_0002/pg/source.tsv
+  mysql_source_plan: runs/perf_0002/plans/mysql/source.json
+  mysql_source_result: runs/perf_0002/mysql/source.tsv
