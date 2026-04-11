@@ -54,7 +54,7 @@ At the current phase, all four external draft cases remain in:
 
 This is intentional.
 
-The project should not promote external draft cases into the formal admitted set merely because a single-engine or partial validation step has succeeded.
+The project should not promote external draft cases into the formal admitted set merely because one technical step has succeeded.
 
 Promotion should occur only after the next missing evidence is added in a controlled way.
 
@@ -64,7 +64,7 @@ Promotion should occur only after the next missing evidence is added in a contro
 
 | case_id | primary_pool | source | current maturity | current dataset-line interpretation | strongest validated evidence | main missing piece | recommended next step | promotion direction |
 |---|---|---|---|---|---|---|---|---|
-| `PERF_0002` | performance | TPC-DS `query53.tpl` | PG/MySQL-validated source draft | closest to `common-core` among current external drafts, but not yet admitted | source SQL runs on PostgreSQL and MySQL with value-normalized agreement; source plans collected | Spark source execution not yet validated; no positive/negative rewrites yet | validate Spark source execution | move toward `common-core candidate` |
+| `PERF_0002` | performance | TPC-DS `query53.tpl` | tri-engine source-validated draft | strongest current `common-core` promotion candidate among the external drafts | source SQL runs on PostgreSQL, MySQL, and Spark with value-normalized agreement; source plans collected | no positive/negative rewrites yet | define conservative positive and hard negative rewrites | move toward `common-core candidate` |
 | `LONGTAIL_0002` | longtail | SQLStorm StackOverflow `12033.sql` | PG-validated draft with positive/negative pair | remain `not_yet_admitted` for now | source and positive rewrite agree on PostgreSQL; negative rewrite changes result on PostgreSQL witness dataset | MySQL/Spark not yet validated; cross-engine stability not yet established | keep as staged longtail draft; do not rush common-core promotion | remain `not_yet_admitted` |
 | `CONS_0002` | consistency | Calcite `new-decorr.iq` commission candidate | PG-validated draft with positive/negative pair | remain `not_yet_admitted` for now | source and positive rewrite agree on PostgreSQL; negative rewrite changes result on PostgreSQL witness dataset | broader engine validation not yet completed; current evidence is still PG-only | keep as staged consistency draft; next step is broader validation or checker/report consolidation | remain `not_yet_admitted` |
 | `PORT_0002` | portability | PARROT BIRD `pg_res.json[0]` | PG/MySQL-validated portability draft | close to `common-core`, but not yet admitted | PostgreSQL source query and MySQL positive rewrite both return `1.5` on the witness dataset; PG/MySQL plans collected | no negative rewrite yet; Spark not yet validated | define one portability-oriented negative rewrite | move toward `common-core candidate` |
@@ -83,23 +83,23 @@ Promotion should occur only after the next missing evidence is added in a contro
 - minimal generated dataset
 - PostgreSQL execution
 - MySQL execution
+- Spark execution
 - source-level plan collection
 
 **Current reading**
 
-This case is the strongest current candidate for eventual `common-core` promotion among the external drafts.
+This case is now the strongest current candidate for eventual `common-core` promotion among the external drafts.
 
 **Why it is not yet admitted**
 
 It still lacks:
 
-- Spark source execution
 - positive rewrite
 - negative rewrite
 
 **Immediate next step**
 
-Validate source execution on Spark before deciding whether to define rewrite variants or promote the case further.
+Define conservative positive and hard negative rewrites before deciding whether to promote the case further.
 
 ---
 
@@ -195,9 +195,9 @@ At the current phase, the recommended priority order is:
 `PERF_0002`
 
 Reason:
-- already validated on PostgreSQL and MySQL
-- closest current external draft to a `common-core` admission path
-- Spark source execution is the most informative next test
+- already validated on PostgreSQL, MySQL, and Spark
+- strongest current external draft for `common-core` promotion
+- now needs rewrite variants rather than more source-only validation
 
 ### Priority 2
 `PORT_0002`
@@ -224,11 +224,12 @@ Reason:
 
 ## 7. Current Decision
 
-The project should **not** immediately promote any of the four external draft cases into the formal admitted set.
+The project should **not** immediately promote all four external draft cases into the formal admitted set.
 
 Instead, the current decision is:
 
-- `PERF_0002` and `PORT_0002` should be treated as the two external drafts that are **closest to common-core promotion**
+- `PERF_0002` should be treated as the strongest external draft for near-term `common-core` promotion
+- `PORT_0002` should be treated as the second external draft closest to `common-core`
 - `LONGTAIL_0002` and `CONS_0002` should continue to be treated as **high-value staged draft cases**
 - all four should remain tracked explicitly as **external draft cases**, not silently merged into the admitted benchmark population
 
@@ -279,7 +280,13 @@ At the present stage, the project has successfully demonstrated that all four fo
 
 That is already a meaningful construction milestone.
 
-The next phase is not “collect more source data first,” but rather:
+However, the four external draft cases are no longer equally mature:
+
+- `PERF_0002` has become a tri-engine source-validated external performance draft and is the strongest current `common-core` promotion candidate
+- `PORT_0002` is the next closest case to a `common-core` promotion path
+- `LONGTAIL_0002` and `CONS_0002` are already high-value staged drafts and should remain staged rather than be promoted prematurely
+
+The next phase is therefore not “collect more source data first,” but rather:
 
 - selectively deepen the strongest external drafts
 - keep weaker-but-valuable drafts staged
