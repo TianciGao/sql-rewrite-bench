@@ -1,9 +1,10 @@
 {
   "case_id": "PERF_0002",
-  "dataset_id": "tpcds_sf1_perf0002_pg_mysql_minimal",
+  "dataset_id": "tpcds_sf1_perf0002_pg_mysql_spark_minimal",
   "engine_validated": [
     "postgres",
-    "mysql"
+    "mysql",
+    "spark"
   ],
   "required_tables": [
     "date_dim",
@@ -25,8 +26,8 @@
   },
   "notes": [
     "Minimal subset generated from TPC-DS SF1 using dsdgen",
-    "Current profile is validated on PostgreSQL and MySQL for source.sql only",
-    "PostgreSQL and MySQL source outputs are semantically aligned on the witness subset",
+    "Source execution is now validated on PostgreSQL, MySQL, and Spark",
+    "PostgreSQL, MySQL, and Spark source outputs are value-normalized equivalent on the minimal subset",
     "Positive and negative rewrites have not yet been defined"
   ]
 }

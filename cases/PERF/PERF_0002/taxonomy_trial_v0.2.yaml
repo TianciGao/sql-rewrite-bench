@@ -9,9 +9,9 @@ context:
     This case is derived from a TPC-DS seed and is used to validate the
     first external performance-oriented seed-to-case pipeline.
   note: >
-    PERF_0002 is currently validated on PostgreSQL and MySQL only. The
-    taxonomy entries below should be treated as provisional until Spark
-    validation and rewrite variants are completed.
+    PERF_0002 is now source-validated on PostgreSQL, MySQL, and Spark.
+    Taxonomy entries below should still be treated as provisional until
+    rewrite variants are completed.
 
 sql_feature_tags:
   - window_function
@@ -20,7 +20,7 @@ sql_feature_tags:
 rewrite_opportunity_tags: []
 
 plan_operator_tags:
-  status: provisional_pg_mysql_split
+  status: provisional_pg_mysql_spark_split
   observed_in_postgres:
     - scan
     - join
@@ -39,6 +39,16 @@ plan_operator_tags:
     - sort
     - subquery
     - materialize
+  observed_in_spark:
+    - scan
+    - filter
+    - project
+    - join
+    - aggregate
+    - window
+    - sort
+    - exchange
+    - limit
 
 workload_realism_tags:
   - classic_analytical_baseline
@@ -49,7 +59,7 @@ portability_tags:
 review_notes:
   - PERF_0002 is derived from TPC-DS query53.tpl.
   - The materialized seed contained TOP syntax and was normalized into a LIMIT-based common-core-friendly source candidate.
-  - PostgreSQL and MySQL source execution both succeeded on the minimal subset.
+  - PostgreSQL, MySQL, and Spark source execution all succeeded on the minimal subset.
   - Numeric formatting differs slightly across engines, so cross-engine comparison should be value-normalized rather than raw-string-based.
   - Rewrite opportunity tags remain unfrozen because positive and negative rewrites have not yet been defined.
 
@@ -63,3 +73,5 @@ evidence:
   pg_source_result: runs/perf_0002/pg/source.tsv
   mysql_source_plan: runs/perf_0002/plans/mysql/source.json
   mysql_source_result: runs/perf_0002/mysql/source.tsv
+  spark_source_plan: runs/perf_0002/plans/spark/source.txt
+  spark_source_result: runs/perf_0002/spark/source.tsv
