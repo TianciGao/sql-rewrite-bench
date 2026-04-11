@@ -18,6 +18,8 @@ source:
 variants:
   positives:
     - rewrite_pos_01.sql
+  negatives:
+    - rewrite_neg_01.sql
 
 targets:
   engines:
@@ -46,10 +48,12 @@ artifacts:
   pg_source_plan: runs/port_0002/plans/pg/source.json
   pg_source_result: runs/port_0002/pg/source.tsv
   mysql_positive_plan: runs/port_0002/plans/mysql/rewrite_pos_01.json
+  mysql_negative_plan: runs/port_0002/plans/mysql/rewrite_neg_01.json
   mysql_positive_result: runs/port_0002/mysql/rewrite_pos_01.tsv
+  mysql_negative_result: runs/port_0002/mysql/rewrite_neg_01.tsv
 
 notes:
   - PORT_0002 is currently a draft portability case derived from PARROT BIRD pg_res.json entry 0.
-  - The positive rewrite candidate is available from the same PARROT entry.
-  - No negative rewrite has been defined yet.
+  - The positive rewrite candidate is available from the same PARROT entry and has been validated on MySQL.
+  - The negative rewrite uses an inclusive year-end range boundary and changes the result on the witness dataset.
   - This case should not yet be treated as common-core.
