@@ -9,14 +9,16 @@ context:
     This case is derived from a SQLStorm StackOverflow seed and is used to
     validate the external longtail seed-to-case pipeline.
   note: >
-    LONGTAIL_0002 has not yet completed engine validation inside this repo.
-    Taxonomy entries below should therefore be treated as provisional.
+    LONGTAIL_0002 currently has PostgreSQL witness execution and provisional
+    positive/negative rewrites. Taxonomy entries below should still be treated
+    as provisional until broader engine validation is completed.
 
 sql_feature_tags:
   - cte
   - outer_join
 
-rewrite_opportunity_tags: []
+rewrite_opportunity_tags:
+  - cte_strategy
 
 plan_operator_tags:
   status: provisional_pg_only
@@ -34,11 +36,26 @@ portability_tags: []
 
 review_notes:
   - LONGTAIL_0002 is sourced from SQLStorm StackOverflow query 12033.
-  - SQLStorm metadata marks the candidate as meaningful/correct.
-  - SQLStorm validation metadata currently points to postgres/umbra and duckdb, not yet to the benchmark's full current engine set.
-  - Rewrite opportunity tags remain unfrozen because positive and negative rewrites have not yet been defined.
+  - The positive rewrite removes the CTE wrapper and rewrites the same logic using inline derived tables.
+  - The negative rewrite strengthens the badge-side LEFT JOIN into an INNER JOIN.
+  - The witness dataset includes Dave, who has posts but no badges, making the negative rewrite observably non-equivalent.
+
+expected_outputs:
+  source_and_positive:
+    - "Alice\t3\t1\t2\t22\t90.0000000000000000\t2\t1\t1\t0"
+    - "Bob\t2\t2\t0\t15\t60.0000000000000000\t1\t0\t0\t1"
+    - "Carol\t1\t0\t1\t8\t40.0000000000000000\t1\t0\t1\t0"
+    - "Dave\t2\t1\t1\t5\t20.0000000000000000"
+  negative:
+    - "Alice\t3\t1\t2\t22\t90.0000000000000000\t2\t1\t1\t0"
+    - "Bob\t2\t2\t0\t15\t60.0000000000000000\t1\t0\t0\t1"
+    - "Carol\t1\t0\t1\t8\t40.0000000000000000\t1\t0\t1\t0"
 
 evidence:
   raw_sql: cases/LONGTAIL/LONGTAIL_0002/provenance/source_12033_raw.sql
   frozen_source: cases/LONGTAIL/LONGTAIL_0002/source.sql
+  positive_candidate: cases/LONGTAIL/LONGTAIL_0002/rewrite_pos_01.sql
+  negative_candidate: cases/LONGTAIL/LONGTAIL_0002/rewrite_neg_01.sql
   provenance_notes: cases/LONGTAIL/LONGTAIL_0002/provenance/sqlstorm_seed_notes.txt
+  data_profile: cases/LONGTAIL/LONGTAIL_0002/data_profile.json
+  pg_source_plan: runs/longtail_0002/plans/pg/source.json

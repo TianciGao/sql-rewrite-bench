@@ -1,6 +1,6 @@
 {
   "case_id": "LONGTAIL_0002",
-  "dataset_id": "longtail_0002_pg_witness_v1",
+  "dataset_id": "longtail_0002_pg_witness_v2",
   "engine_validated": [
     "postgres"
   ],
@@ -10,13 +10,13 @@
     "badges"
   ],
   "row_counts": {
-    "users": 3,
-    "posts": 6,
+    "users": 4,
+    "posts": 8,
     "badges": 4
   },
   "notes": [
     "Minimal witness dataset manually constructed for PostgreSQL validation",
-    "Current profile is for PostgreSQL loading validation only",
+    "Dave has posts but no badges, making LEFT JOIN versus INNER JOIN behavior observable",
     "This is not yet a tri-engine validated common-core case"
   ]
 }

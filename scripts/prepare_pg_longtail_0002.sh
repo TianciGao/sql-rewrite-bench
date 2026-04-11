@@ -30,7 +30,8 @@ CREATE TABLE badges (
 INSERT INTO users (id, displayname) VALUES
   (1, 'Alice'),
   (2, 'Bob'),
-  (3, 'Carol');
+  (3, 'Carol'),
+  (4, 'Dave');
 
 INSERT INTO posts (id, owneruserid, posttypeid, score, viewcount) VALUES
   (1, 1, 1, 10, 60),
@@ -38,7 +39,9 @@ INSERT INTO posts (id, owneruserid, posttypeid, score, viewcount) VALUES
   (3, 1, 2, 7, 120),
   (4, 2, 1, 8, 50),
   (5, 2, 1, 7, 70),
-  (6, 3, 2, 8, 40);
+  (6, 3, 2, 8, 40),
+  (7, 4, 1, 4, 30),
+  (8, 4, 2, 1, 10);
 
 INSERT INTO badges (id, userid, class) VALUES
   (1, 1, 1),
