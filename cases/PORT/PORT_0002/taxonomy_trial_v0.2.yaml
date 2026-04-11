@@ -19,10 +19,12 @@ rewrite_opportunity_tags:
   - dialect_adaptation
 
 plan_operator_tags:
-  status: provisional_pg_only
+  status: provisional_pg_mysql_split
   observed_in_postgres:
     - scan
     - aggregate
+  observed_in_mysql:
+    - scan
 
 workload_realism_tags: []
 
