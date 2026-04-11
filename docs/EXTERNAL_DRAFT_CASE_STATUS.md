@@ -46,17 +46,29 @@ At the current stage, these cases are still treated as **draft external cases**,
 
 ## 3. Current Consolidation Principle
 
-At the current phase, all four external draft cases remain in one of the following states:
+At the current phase, the four external draft cases no longer have the same maturity.
 
-- `dataset_line_candidate: not_yet_admitted`
-- provisional `common-core`-leaning status only
-- provisional `common-core candidate` only
+They now fall into two broad groups:
 
-This is intentional.
+### Group A: promotion candidates
+These are the external drafts that are now close enough to support a `common-core` promotion discussion.
 
-The project should not promote external draft cases into the formal admitted set merely because one technical step has succeeded.
+- `PERF_0002`
+- `PORT_0002`
 
-Promotion should occur only after the next missing evidence is added in a controlled way.
+### Group B: staged draft cases
+These are already valuable draft cases, but should remain staged rather than be promoted prematurely.
+
+- `LONGTAIL_0002`
+- `CONS_0002`
+
+This split is intentional.
+
+The project should not promote all external draft cases uniformly.  
+Instead, it should distinguish between:
+
+- cases that are already strong enough for promotion review
+- cases that are already useful, but are still better treated as staged draft cases
 
 ---
 
@@ -64,10 +76,10 @@ Promotion should occur only after the next missing evidence is added in a contro
 
 | case_id | primary_pool | source | current maturity | current dataset-line interpretation | strongest validated evidence | main missing piece | recommended next step | promotion direction |
 |---|---|---|---|---|---|---|---|---|
-| `PERF_0002` | performance | TPC-DS `query53.tpl` | tri-engine source + positive/negative validated draft | strongest current `common-core` promotion candidate among the external drafts | source SQL runs on PostgreSQL, MySQL, and Spark with value-normalized agreement; positive rewrite is result-preserving and negative rewrite is result-changing on all three engines | release-level admission decision still pending; rewrite-opportunity taxonomy still unfrozen | decide whether to promote toward admitted `common-core` or keep as external `common-core candidate` | move toward `common-core promotion decision` |
+| `PERF_0002` | performance | TPC-DS `query53.tpl` | tri-engine source + positive/negative validated draft | provisional `common-core candidate` | source and positive rewrite are equivalent on PostgreSQL, MySQL, and Spark; negative rewrite changes results on all three engines; plans collected across all three engines | formal promotion decision still pending; release-level stabilization still needed | use as the primary candidate in the next `common-core` promotion review | strongest current promotion candidate |
 | `LONGTAIL_0002` | longtail | SQLStorm StackOverflow `12033.sql` | PG-validated draft with positive/negative pair | remain `not_yet_admitted` for now | source and positive rewrite agree on PostgreSQL; negative rewrite changes result on PostgreSQL witness dataset | MySQL/Spark not yet validated; cross-engine stability not yet established | keep as staged longtail draft; do not rush common-core promotion | remain `not_yet_admitted` |
 | `CONS_0002` | consistency | Calcite `new-decorr.iq` commission candidate | PG-validated draft with positive/negative pair | remain `not_yet_admitted` for now | source and positive rewrite agree on PostgreSQL; negative rewrite changes result on PostgreSQL witness dataset | broader engine validation not yet completed; current evidence is still PG-only | keep as staged consistency draft; next step is broader validation or checker/report consolidation | remain `not_yet_admitted` |
-| `PORT_0002` | portability | PARROT BIRD `pg_res.json[0]` | PG/MySQL-validated portability draft | close to `common-core`, but not yet admitted | PostgreSQL source query and MySQL positive rewrite both return `1.5` on the witness dataset; PG/MySQL plans collected | no negative rewrite yet; Spark not yet validated | define one portability-oriented negative rewrite | move toward `common-core candidate` |
+| `PORT_0002` | portability | PARROT BIRD `pg_res.json[0]` | PG source + MySQL positive/negative validated portability draft | provisional `common-core candidate` | PostgreSQL source query returns `1.5`; MySQL positive rewrite also returns `1.5`; MySQL negative rewrite returns `1`; PG/MySQL plans collected | formal promotion decision still pending; broader engine coverage still absent | use as the second candidate in the next promotion review, after `PERF_0002` | second strongest promotion candidate |
 
 ---
 
@@ -90,20 +102,20 @@ Promotion should occur only after the next missing evidence is added in a contro
 
 **Current reading**
 
-This case is now the strongest current candidate for eventual `common-core` promotion among the external drafts.
+This is currently the strongest external draft in the repository.
 
 **Why it is not yet fully admitted**
 
 It still lacks:
 
 - a formal promotion decision
-- release-level stabilization of rewrite-opportunity taxonomy
-- a decision on whether the current evidence is sufficient for admission
+- release-level stabilization
+- a final judgment on whether the current draft evidence is sufficient for admission
 
 **Immediate next step**
 
-Do not add more engine work first.  
-Instead, use this case as the primary candidate in the next `common-core` promotion decision.
+Do not add more technical expansion first.  
+Use this case as the primary candidate in the next `common-core` promotion review.
 
 ---
 
@@ -130,11 +142,11 @@ Its current value lies in:
 - rewrite sensitivity
 - longtail realism
 
-rather than in immediate common-core cross-engine admission.
+rather than in immediate cross-engine common-core admission.
 
 **Immediate next step**
 
-Keep it staged. Do not force common-core promotion yet.
+Keep it staged. Do not force promotion yet.
 
 ---
 
@@ -167,27 +179,27 @@ Keep it staged. Its next value comes from broader validation or improved checker
 
 **Why it matters**
 
-`PORT_0002` is the first external portability draft case that already demonstrates the core portability story:
+`PORT_0002` is the first external portability draft case that now demonstrates the core portability story with both a positive and a negative rewrite:
 
 - a PostgreSQL-style source expression
-- a MySQL-style positive rewrite
-- matching results on a controlled witness dataset
+- a MySQL-style positive rewrite that preserves the result
+- a MySQL-style negative rewrite that changes the result on the witness dataset
 
 **Current reading**
 
-This case is already close to a compelling portability benchmark unit.
+This case is now close to a meaningful portability promotion discussion.
 
 **Why it is not yet admitted**
 
 It still lacks:
 
-- a portability-oriented negative rewrite
+- a formal promotion decision
 - broader engine coverage
-- a more complete cross-engine closure story
+- a final decision on whether the current two-engine portability evidence is sufficient for admission
 
 **Immediate next step**
 
-Define a negative portability rewrite before considering further promotion.
+Use this case as the second promotion-review candidate, after `PERF_0002`.
 
 ---
 
@@ -196,19 +208,21 @@ Define a negative portability rewrite before considering further promotion.
 At the current phase, the recommended priority order is:
 
 ### Priority 1
+`PERF_0002`
+
+Reason:
+- strongest current external draft
+- already validated on PostgreSQL, MySQL, and Spark
+- already has validated positive and negative rewrites
+- should now move into promotion review rather than further technical deepening
+
+### Priority 2
 `PORT_0002`
 
 Reason:
 - already demonstrates the core portability story
-- needs a negative rewrite to become a stronger portability case
-- is now the most valuable next deepening target because `PERF_0002` has already advanced substantially
-
-### Priority 2
-`PERF_0002`
-
-Reason:
-- already has the strongest validation evidence among all external drafts
-- now needs a promotion decision more than additional technical expansion
+- now has both positive and negative rewrite evidence
+- should enter promotion review after `PERF_0002`
 
 ### Priority 3
 `CONS_0002`
@@ -232,8 +246,8 @@ The project should **not** immediately promote all four external draft cases int
 
 Instead, the current decision is:
 
-- `PERF_0002` should be treated as the strongest external draft for near-term `common-core` promotion discussion
-- `PORT_0002` should be treated as the next external draft closest to a `common-core` promotion path
+- `PERF_0002` should be treated as the strongest external draft for near-term `common-core` promotion review
+- `PORT_0002` should be treated as the second external draft to enter that same review path
 - `LONGTAIL_0002` and `CONS_0002` should continue to be treated as **high-value staged draft cases**
 - all four should remain tracked explicitly as **external draft cases**, not silently merged into the admitted benchmark population
 
@@ -286,12 +300,12 @@ That is already a meaningful construction milestone.
 
 However, the four external draft cases are no longer equally mature:
 
-- `PERF_0002` has become a tri-engine source + rewrite validated external performance draft and is the strongest current candidate for a `common-core` promotion discussion
-- `PORT_0002` is the next closest case to a `common-core` promotion path
+- `PERF_0002` has become a tri-engine source + rewrite validated external performance draft and is now the strongest current promotion-review candidate
+- `PORT_0002` has become a PG/MySQL portability draft with validated positive and negative rewrites and is now the second promotion-review candidate
 - `LONGTAIL_0002` and `CONS_0002` are already high-value staged drafts and should remain staged rather than be promoted prematurely
 
 The next phase is therefore not “collect more source data first,” but rather:
 
-- selectively deepen the strongest external drafts
+- selectively review the strongest external drafts for promotion
 - keep weaker-but-valuable drafts staged
-- promote only when the missing validation evidence is actually present
+- promote only when the missing admission evidence is actually judged sufficient
