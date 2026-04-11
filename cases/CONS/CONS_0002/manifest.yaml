@@ -14,6 +14,12 @@ source:
   dialect: postgres_like_candidate
   file: source.sql
 
+variants:
+  positives:
+    - rewrite_pos_01.sql
+  negatives:
+    - rewrite_neg_01.sql
+
 targets:
   engines:
     - postgres
@@ -29,19 +35,24 @@ features:
 status:
   seed_localized: true
   source_frozen: true
+  rewrite_variants_ready: true
   exec_checked_pg: true
   exec_checked_mysql: false
   exec_checked_spark: false
   plan_checked: true
   taxonomy_trial_ready: true
-  rewrite_variants_ready: false
 
 artifacts:
   data_profile: cases/CONS/CONS_0002/data_profile.json
   pg_source_plan: runs/cons_0002/plans/pg/source.json
+  pg_positive_plan: runs/cons_0002/plans/pg/rewrite_pos_01.json
+  pg_negative_plan: runs/cons_0002/plans/pg/rewrite_neg_01.json
   pg_source_result: runs/cons_0002/pg/source.tsv
+  pg_positive_result: runs/cons_0002/pg/rewrite_pos_01.tsv
+  pg_negative_result: runs/cons_0002/pg/rewrite_neg_01.tsv
 
 notes:
   - CONS_0002 is currently a draft consistency case derived from a Calcite decorrelation test seed.
   - It should not yet be treated as common-core.
   - The witness dataset is intentionally small and embedded from the Calcite test context.
+  - Positive and negative rewrites are now defined but have not yet been validated on MySQL or Spark.

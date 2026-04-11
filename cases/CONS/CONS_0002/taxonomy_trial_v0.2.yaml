@@ -9,8 +9,9 @@ context:
     This case is derived from a Calcite decorrelation seed and is used to
     validate the external consistency seed-to-case pipeline.
   note: >
-    CONS_0002 has not yet completed engine validation inside this repo.
-    Taxonomy entries below should therefore be treated as provisional.
+    CONS_0002 currently has PostgreSQL witness execution and provisional
+    positive/negative rewrites. Taxonomy entries below should still be treated
+    as provisional until broader engine validation is completed.
 
 sql_feature_tags:
   - correlated_subquery
@@ -33,18 +34,30 @@ review_notes:
   - CONS_0002 is sourced from Calcite new-decorr.iq.
   - The chosen candidate uses a correlated EXISTS structure over commission values.
   - The witness dataset is embedded in the same Calcite iq file.
-  - Positive and negative rewrites have not yet been defined.
+  - The positive rewrite removes the derived-table wrapper while preserving semantics.
+  - The negative rewrite drops the cross-department condition and therefore changes semantics.
 
 expected_outputs:
-  source_pg_witness_v1:
+  source_and_positive:
     - "100\tf"
     - "110\tt"
     - "140\tf"
     - "150\tf"
     - "170\tt"
     - "200\tf"
+  negative:
+    - "100\tt"
+    - "110\tt"
+    - "140\tf"
+    - "150\tf"
+    - "170\tt"
+    - "200\tt"
 
 evidence:
   raw_sql: cases/CONS/CONS_0002/provenance/new_decorr_commission_case_raw.sql
   frozen_source: cases/CONS/CONS_0002/source.sql
+  positive_candidate: cases/CONS/CONS_0002/rewrite_pos_01.sql
+  negative_candidate: cases/CONS/CONS_0002/rewrite_neg_01.sql
   provenance_notes: cases/CONS/CONS_0002/provenance/new_decorr_seed_notes.txt
+  data_profile: cases/CONS/CONS_0002/data_profile.json
+  pg_source_plan: runs/cons_0002/plans/pg/source.json
