@@ -1,0 +1,42 @@
+case_id: PORT_0002
+trial_version: "0.2"
+status: provisional_trial_labeled
+candidate_primary_pool: portability
+dataset_line_candidate: not_yet_admitted
+
+context:
+  purpose: >
+    This case is derived from a PARROT BIRD portability seed and is used to
+    validate the external portability seed-to-case pipeline.
+  note: >
+    PORT_0002 has not yet completed engine validation inside this repo.
+    Taxonomy entries below should therefore be treated as provisional.
+
+sql_feature_tags:
+  - date_time_function
+
+rewrite_opportunity_tags:
+  - dialect_adaptation
+
+plan_operator_tags:
+  status: provisional_pg_only
+  observed_in_postgres:
+    - scan
+    - aggregate
+
+workload_realism_tags: []
+
+portability_tags:
+  - datetime_semantics_gap
+
+review_notes:
+  - PORT_0002 is sourced from PARROT benchmark/BIRD/pg_res.json entry 0.
+  - The source query uses PostgreSQL-style TO_CHAR(CAST(... AS TIMESTAMP), 'YYYY').
+  - The positive rewrite candidate uses MySQL-style DATE_FORMAT(..., '%Y').
+  - The query pair is validator-backed in PARROT metadata, but has not yet been executed inside this repo.
+
+evidence:
+  raw_record: cases/PORT/PORT_0002/provenance/parrot_bird_pg_res_entry0.json
+  provenance_notes: cases/PORT/PORT_0002/provenance/parrot_bird_pg_res_entry0_notes.txt
+  frozen_source: cases/PORT/PORT_0002/source.sql
+  positive_candidate: cases/PORT/PORT_0002/rewrite_pos_01.sql

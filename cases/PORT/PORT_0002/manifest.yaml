@@ -1,0 +1,53 @@
+case_id: PORT_0002
+pool: portability
+dataset_line_candidate: not_yet_admitted
+
+provenance:
+  source_id: SRC_009
+  seed_id: SEED_004
+  source_name: PARROT
+  source_subset: BIRD
+  source_entry: benchmark/BIRD/pg_res.json[0]
+  raw_record_file: cases/PORT/PORT_0002/provenance/parrot_bird_pg_res_entry0.json
+  provenance_notes: cases/PORT/PORT_0002/provenance/parrot_bird_pg_res_entry0_notes.txt
+
+source:
+  dialect: postgres_like_candidate
+  file: source.sql
+
+variants:
+  positives:
+    - rewrite_pos_01.sql
+
+targets:
+  engines:
+    - postgres
+    - mysql
+    - spark
+
+required_tables:
+  - votes
+
+features:
+  - date_time_function
+
+status:
+  seed_localized: true
+  source_frozen: true
+  rewrite_variants_ready: true
+  exec_checked_pg: true
+  exec_checked_mysql: false
+  exec_checked_spark: false
+  plan_checked: true
+  taxonomy_trial_ready: true
+
+artifacts:
+  data_profile: cases/PORT/PORT_0002/data_profile.json
+  pg_source_plan: runs/port_0002/plans/pg/source.json
+  pg_source_result: runs/port_0002/pg/source.tsv
+
+notes:
+  - PORT_0002 is currently a draft portability case derived from PARROT BIRD pg_res.json entry 0.
+  - The positive rewrite candidate is available from the same PARROT entry.
+  - No negative rewrite has been defined yet.
+  - This case should not yet be treated as common-core.
