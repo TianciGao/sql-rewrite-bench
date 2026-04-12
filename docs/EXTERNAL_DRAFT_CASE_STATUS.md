@@ -23,6 +23,8 @@ Related files:
 - `benchmark_spec/common_core_extended_rules_v0.md`
 - `benchmark_spec/COMMON_CORE_ADMISSION_CHECK_v0.md`
 - `benchmark_spec/EXTERNAL_CASE_PROMOTION_REVIEW_v0.md`
+- `benchmark_spec/PORT_0002_ADMISSION_REVIEW_v0.md`
+- `benchmark_spec/PORT_0002_ADMISSION_REVIEW_v1.md`
 - `inventory/seed_candidates_phase3a_batch1.csv`
 
 ---
@@ -48,15 +50,13 @@ At the current stage, these cases are no longer all at the same maturity level.
 
 ## 3. Current Consolidation Principle
 
-At the current phase, the four external draft cases fall into three groups:
+At the current phase, the four external draft cases fall into two groups:
 
-### Group A: admitted external common-core case
+### Group A: admitted external common-core cases
 - `PERF_0002`
-
-### Group B: common-core candidate
 - `PORT_0002`
 
-### Group C: staged draft cases
+### Group B: staged draft cases
 - `LONGTAIL_0002`
 - `CONS_0002`
 
@@ -67,7 +67,6 @@ The project should not treat all external draft cases as equally mature.
 Instead, it should distinguish between:
 
 - cases already strong enough to be admitted
-- cases strong enough to be reviewed as candidates
 - cases already useful, but still better treated as staged drafts
 
 ---
@@ -79,7 +78,7 @@ Instead, it should distinguish between:
 | `PERF_0002` | performance | TPC-DS `query53.tpl` | tri-engine source + positive/negative validated draft | **admitted external common-core** | source and positive rewrite are equivalent on PostgreSQL, MySQL, and Spark; negative rewrite changes the result on all three engines; plan artifacts are collected across all three engines | no immediate technical gap for admission; remaining work is release-level stabilization only | treat as the admitted reference external common-core case | already admitted |
 | `LONGTAIL_0002` | longtail | SQLStorm StackOverflow `12033.sql` | PG-validated draft with positive/negative pair | remain `not_yet_admitted` for now | source and positive rewrite agree on PostgreSQL; negative rewrite changes result on PostgreSQL witness dataset | MySQL/Spark not yet validated; cross-engine stability not yet established | keep as staged longtail draft; do not rush common-core promotion | remain `not_yet_admitted` |
 | `CONS_0002` | consistency | Calcite `new-decorr.iq` commission candidate | PG-validated draft with positive/negative pair | remain `not_yet_admitted` for now | source and positive rewrite agree on PostgreSQL; negative rewrite changes result on PostgreSQL witness dataset | broader engine validation not yet completed; current evidence is still PG-only | keep as staged consistency draft; next step is broader validation or checker/report consolidation | remain `not_yet_admitted` |
-| `PORT_0002` | portability | PARROT BIRD `pg_res.json[0]` | PG source + MySQL positive/negative validated portability draft | **common-core candidate** | PostgreSQL source query returns `1.5`; MySQL positive rewrite returns `1.5`; MySQL negative rewrite returns `1`; PG/MySQL plans collected | Spark is still missing; full cross-engine closure is incomplete | decide whether to deepen with broader validation or retain as candidate for later admission review | remain `common-core candidate` |
+| `PORT_0002` | portability | PARROT BIRD `pg_res.json[0]` | PG source + MySQL positive/negative + Spark positive/negative validated portability draft | **admitted external common-core** | PostgreSQL source returns `1.5`; MySQL positive returns `1.5`; MySQL negative returns `1`; Spark positive returns `1.5`; Spark negative returns `1.0`; plan artifacts are collected for the validated source/rewrite sides | no immediate technical gap for admission; remaining work is release-level stabilization only | treat as the admitted external portability reference case | already admitted |
 
 ---
 
@@ -102,7 +101,7 @@ Instead, it should distinguish between:
 
 **Current reading**
 
-This case is now the strongest external case in the repository and has already passed the current admission threshold.
+This case is now the strongest external performance case in the repository and has already passed the current admission threshold.
 
 **Current status**
 
@@ -177,26 +176,28 @@ Keep it staged. Its next value comes from broader validation or improved checker
 
 **Why it matters**
 
-`PORT_0002` is the first external portability draft case that now demonstrates the core portability story with both a positive and a negative rewrite:
+`PORT_0002` is the first external portability draft case that now demonstrates the portability story with:
 
 - a PostgreSQL-style source expression
-- a MySQL-style positive rewrite that preserves the result
-- a MySQL-style negative rewrite that changes the result on the witness dataset
+- a MySQL-style positive rewrite preserving the result
+- a MySQL-style negative rewrite changing the result
+- a Spark-style positive rewrite preserving the result
+- a Spark-style negative rewrite changing the result
 
 **Current reading**
 
-This case is now a real candidate for later admission review.
+This case is now strong enough to be treated as an admitted external common-core portability case.
 
-**Why it is not yet admitted**
+**Current status**
 
-It still lacks:
+`PORT_0002` is now treated as:
 
-- broader engine coverage
-- a final decision on whether the current two-engine portability evidence is sufficient for admission
+> **the second admitted external common-core case**
 
 **Immediate next step**
 
-Keep it under candidate review. Do not admit it yet.
+Do not deepen it technically before needed.  
+Use it as the admitted external portability reference case in later benchmark discussions.
 
 ---
 
@@ -205,29 +206,28 @@ Keep it under candidate review. Do not admit it yet.
 At the current phase, the recommended priority order is:
 
 ### Priority 1
-`PORT_0002`
-
-Reason:
-- it is now the most valuable remaining case to deepen or review
-- it already has positive and negative portability evidence
-- it is the strongest remaining case that is not yet admitted
-
-### Priority 2
 `CONS_0002`
 
 Reason:
 - already has a strong source/positive/negative witness setup
-- may benefit from broader validation or checker/report consolidation
+- is now the strongest remaining staged draft that may later deserve broader validation or checker/report consolidation
 
-### Priority 3
+### Priority 2
 `LONGTAIL_0002`
 
 Reason:
 - already valuable as a longtail structural draft
-- should remain staged rather than be pushed prematurely toward common-core
+- should remain staged, but is the next staged archetype to revisit if the project wants to deepen non-admitted archetypes
+
+### Priority 3
+`PERF_0002`
+
+Reason:
+- already admitted
+- no immediate technical deepening is required
 
 ### Priority 4
-`PERF_0002`
+`PORT_0002`
 
 Reason:
 - already admitted
@@ -239,10 +239,8 @@ Reason:
 
 The current project-level decision is:
 
-### Admitted external common-core case
+### Admitted external common-core cases
 - `PERF_0002`
-
-### Common-core candidate
 - `PORT_0002`
 
 ### Staged draft cases
@@ -252,7 +250,6 @@ The current project-level decision is:
 This means the project now explicitly distinguishes between:
 
 - admitted external common-core cases
-- promotion-review candidates
 - staged draft cases
 
 ---
@@ -305,12 +302,11 @@ That is already a meaningful construction milestone.
 However, the four external draft cases are no longer equally mature:
 
 - `PERF_0002` has become the first admitted external common-core case
-- `PORT_0002` is now the strongest remaining `common-core candidate`
+- `PORT_0002` has become the second admitted external common-core case
 - `LONGTAIL_0002` and `CONS_0002` are already high-value staged drafts and should remain staged rather than be promoted prematurely
 
 The next phase is therefore not “collect more source data first,” but rather:
 
-- use the admitted case as a reference point
-- review the strongest remaining candidate
-- keep weaker-but-valuable drafts staged
-- promote only when the missing admission evidence is actually judged sufficient
+- use the admitted cases as reference points
+- keep staged drafts stable
+- revisit staged cases only when broader validation or stronger methodological need justifies it
