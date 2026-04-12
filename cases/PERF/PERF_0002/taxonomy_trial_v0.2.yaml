@@ -1,17 +1,17 @@
 case_id: PERF_0002
 trial_version: "0.2"
-status: provisional_trial_labeled
+status: admitted_common_core_case
 candidate_primary_pool: performance
-dataset_line_candidate: common-core_candidate
+dataset_line_candidate: common-core
 
 context:
   purpose: >
     This case is derived from a TPC-DS seed and is used to validate the
     first external performance-oriented seed-to-case pipeline.
   note: >
-    PERF_0002 is now validated across PostgreSQL, MySQL, and Spark for
-    source, positive rewrite, and negative rewrite. It is currently under
-    common-core candidate review rather than ordinary external staging.
+    PERF_0002 has passed the current common-core admission check and is now
+    treated as an admitted external common-core case. Taxonomy labels remain
+    recorded at v0.2 granularity.
 
 sql_feature_tags:
   - window_function
@@ -63,6 +63,7 @@ review_notes:
   - The negative rewrite tightens the anomaly threshold from 0.1 to 0.5 and changes the result set.
   - PostgreSQL, MySQL, and Spark all agree on source-versus-positive equivalence and source-versus-negative non-equivalence.
   - Numeric formatting differs slightly across engines, so cross-engine comparison should be value-normalized rather than raw-string-based.
+  - This case has passed COMMON_CORE_ADMISSION_CHECK_v0 and is now treated as an admitted external common-core case.
 
 evidence:
   source_template: cases/PERF/PERF_0002/provenance/query53.tpl

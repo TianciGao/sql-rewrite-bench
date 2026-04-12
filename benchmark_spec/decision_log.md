@@ -100,7 +100,7 @@ For v0 source inventory, the consistency-oriented equivalence benchmark source i
 A single equivalence benchmark source is sufficient for early pilot inventory design.
 Additional equivalence sources may be added later if needed.
 
-## 2026-04-12 external promotion review applied
+### 2026-04-12 external promotion review applied
 
 Applied the first external-case promotion review to case-local metadata.
 
@@ -116,3 +116,19 @@ Decisions reflected in manifests and taxonomy trial files:
 Rationale:
 the project has now reached the point where promotion review outcomes should
 be reflected in case-local metadata rather than only in cross-case documents.
+
+## DL-011
+### Decision
+`PERF_0002` is admitted as the first external common-core case in the repository.
+
+### Rationale
+`PERF_0002` now satisfies the current common-core admission check:
+- provenance is complete
+- source, positive, and negative rewrites are all present
+- PostgreSQL, MySQL, and Spark all validate source behavior
+- PostgreSQL, MySQL, and Spark all validate source/positive equivalence
+- PostgreSQL, MySQL, and Spark all validate source/negative divergence
+- plan artifacts are collected across the validated engines
+
+### Next step
+Keep `PORT_0002` under `common-core_candidate` review, while `LONGTAIL_0002` and `CONS_0002` remain staged draft cases.
