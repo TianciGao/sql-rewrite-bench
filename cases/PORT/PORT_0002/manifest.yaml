@@ -1,6 +1,6 @@
 case_id: PORT_0002
 pool: portability
-dataset_line_candidate: common-core_candidate
+dataset_line_candidate: common-core
 
 provenance:
   source_id: SRC_009
@@ -11,6 +11,15 @@ provenance:
   raw_record_file: cases/PORT/PORT_0002/provenance/parrot_bird_pg_res_entry0.json
   provenance_notes: cases/PORT/PORT_0002/provenance/parrot_bird_pg_res_entry0_notes.txt
 
+admission:
+  review_file: benchmark_spec/PORT_0002_ADMISSION_REVIEW_v1.md
+  outcome: admitted_external_common_core
+  decision_date: "2026-04-12"
+  rationale: >
+    PORT_0002 now has PostgreSQL source validation, MySQL positive/negative
+    validation, and Spark positive/negative validation, with explicit
+    preservation and divergence on the witness dataset.
+
 source:
   dialect: postgres_like_candidate
   file: source.sql
@@ -18,8 +27,10 @@ source:
 variants:
   positives:
     - rewrite_pos_01.sql
+    - rewrite_pos_02_spark.sql
   negatives:
     - rewrite_neg_01.sql
+    - rewrite_neg_02_spark.sql
 
 targets:
   engines:
@@ -39,9 +50,10 @@ status:
   rewrite_variants_ready: true
   exec_checked_pg: true
   exec_checked_mysql: true
-  exec_checked_spark: false
+  exec_checked_spark: true
   plan_checked: true
   taxonomy_trial_ready: true
+  admitted_common_core: true
 
 artifacts:
   data_profile: cases/PORT/PORT_0002/data_profile.json
@@ -51,9 +63,13 @@ artifacts:
   mysql_negative_plan: runs/port_0002/plans/mysql/rewrite_neg_01.json
   mysql_positive_result: runs/port_0002/mysql/rewrite_pos_01.tsv
   mysql_negative_result: runs/port_0002/mysql/rewrite_neg_01.tsv
+  spark_positive_plan: runs/port_0002/plans/spark/rewrite_pos_02_spark.txt
+  spark_negative_plan: runs/port_0002/plans/spark/rewrite_neg_02_spark.txt
+  spark_positive_result: runs/port_0002/spark/rewrite_pos_02_spark.tsv
+  spark_negative_result: runs/port_0002/spark/rewrite_neg_02_spark.tsv
 
 notes:
-  - PORT_0002 has been promoted from external draft handling into common-core candidate review status.
-  - The positive rewrite candidate has been validated on MySQL.
-  - The negative rewrite uses an inclusive year-end range boundary and changes the result on the witness dataset.
-  - Spark validation has not yet been completed.
+  - PORT_0002 is now admitted as the second external common-core case in the repository.
+  - PostgreSQL source.sql returns 1.5 on the witness dataset.
+  - MySQL positive rewrite returns 1.5 and MySQL negative rewrite returns 1.
+  - Spark positive rewrite returns 1.5 and Spark negative rewrite returns 1.0.

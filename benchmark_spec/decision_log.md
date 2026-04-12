@@ -132,3 +132,22 @@ be reflected in case-local metadata rather than only in cross-case documents.
 
 ### Next step
 Keep `PORT_0002` under `common-core_candidate` review, while `LONGTAIL_0002` and `CONS_0002` remain staged draft cases.
+
+## DL-012
+### Decision
+`PORT_0002` is admitted as the second external common-core case in the repository.
+
+### Rationale
+`PORT_0002` now satisfies the strengthened portability admission basis:
+- PostgreSQL source validation is present
+- MySQL positive rewrite preserves the source result
+- MySQL negative rewrite changes the source result
+- Spark positive rewrite preserves the source result
+- Spark negative rewrite changes the source result
+- plan artifacts are collected for the validated source/rewrite sides
+
+This gives the case a sufficiently strong portability closure story for external common-core admission.
+
+### Next step
+Keep `LONGTAIL_0002` and `CONS_0002` staged.  
+Do not broaden source acquisition until the current phase closeout is finished.
