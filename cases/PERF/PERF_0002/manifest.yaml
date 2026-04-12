@@ -74,7 +74,7 @@ artifacts:
   spark_negative_result: runs/perf_0002/spark/rewrite_neg_01.tsv
 
 notes:
-  - PERF_0002 is currently the strongest external performance draft case in the repository.
+  - PERF_0002 has been promoted from external draft handling into common-core candidate review status.
   - Source execution has been validated on PostgreSQL, MySQL, and Spark.
   - Positive rewrite has been validated as result-preserving on PostgreSQL, MySQL, and Spark.
   - Negative rewrite has been validated as result-changing on PostgreSQL, MySQL, and Spark.

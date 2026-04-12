@@ -10,8 +10,8 @@ context:
     first external performance-oriented seed-to-case pipeline.
   note: >
     PERF_0002 is now validated across PostgreSQL, MySQL, and Spark for
-    source, positive rewrite, and negative rewrite. Taxonomy entries below
-    should still be treated as provisional until release-level admission.
+    source, positive rewrite, and negative rewrite. It is currently under
+    common-core candidate review rather than ordinary external staging.
 
 sql_feature_tags:
   - window_function

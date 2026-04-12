@@ -99,3 +99,20 @@ For v0 source inventory, the consistency-oriented equivalence benchmark source i
 ### Rationale
 A single equivalence benchmark source is sufficient for early pilot inventory design.
 Additional equivalence sources may be added later if needed.
+
+## 2026-04-12 external promotion review applied
+
+Applied the first external-case promotion review to case-local metadata.
+
+Decisions reflected in manifests and taxonomy trial files:
+
+- `PERF_0002` is now treated as a `common-core_candidate`
+  because it has tri-engine source validation and tri-engine positive/negative rewrite validation.
+- `PORT_0002` is now treated as a `common-core_candidate`
+  because it has PostgreSQL source validation plus MySQL positive/negative portability validation.
+- `LONGTAIL_0002` remains `not_yet_admitted`.
+- `CONS_0002` remains `not_yet_admitted`.
+
+Rationale:
+the project has now reached the point where promotion review outcomes should
+be reflected in case-local metadata rather than only in cross-case documents.

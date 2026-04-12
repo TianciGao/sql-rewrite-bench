@@ -1,6 +1,6 @@
 case_id: PORT_0002
 pool: portability
-dataset_line_candidate: not_yet_admitted
+dataset_line_candidate: common-core_candidate
 
 provenance:
   source_id: SRC_009
@@ -53,7 +53,7 @@ artifacts:
   mysql_negative_result: runs/port_0002/mysql/rewrite_neg_01.tsv
 
 notes:
-  - PORT_0002 is currently a draft portability case derived from PARROT BIRD pg_res.json entry 0.
-  - The positive rewrite candidate is available from the same PARROT entry and has been validated on MySQL.
+  - PORT_0002 has been promoted from external draft handling into common-core candidate review status.
+  - The positive rewrite candidate has been validated on MySQL.
   - The negative rewrite uses an inclusive year-end range boundary and changes the result on the witness dataset.
-  - This case should not yet be treated as common-core.
+  - Spark validation has not yet been completed.

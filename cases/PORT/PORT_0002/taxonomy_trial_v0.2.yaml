@@ -2,7 +2,7 @@ case_id: PORT_0002
 trial_version: "0.2"
 status: provisional_trial_labeled
 candidate_primary_pool: portability
-dataset_line_candidate: not_yet_admitted
+dataset_line_candidate: common-core_candidate
 
 context:
   purpose: >
@@ -10,9 +10,8 @@ context:
     validate the external portability seed-to-case pipeline.
   note: >
     PORT_0002 currently has PostgreSQL source execution and MySQL positive
-    and negative rewrite validation on the witness dataset. Taxonomy entries
-    below should still be treated as provisional until broader engine
-    validation is completed.
+    and negative rewrite validation on the witness dataset. It is currently
+    under common-core candidate review rather than ordinary external staging.
 
 sql_feature_tags:
   - date_time_function
@@ -56,3 +55,7 @@ evidence:
   negative_candidate: cases/PORT/PORT_0002/rewrite_neg_01.sql
   data_profile: cases/PORT/PORT_0002/data_profile.json
   pg_source_plan: runs/port_0002/plans/pg/source.json
+  mysql_positive_plan: runs/port_0002/plans/mysql/rewrite_pos_01.json
+  mysql_negative_plan: runs/port_0002/plans/mysql/rewrite_neg_01.json
+  mysql_positive_result: runs/port_0002/mysql/rewrite_pos_01.tsv
+  mysql_negative_result: runs/port_0002/mysql/rewrite_neg_01.tsv
