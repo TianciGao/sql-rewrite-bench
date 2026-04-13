@@ -1,0 +1,66 @@
+case_id: CONS_0003
+trial_version: "0.2"
+status: provisional_trial_labeled
+candidate_primary_pool: consistency
+dataset_line_candidate: not_yet_admitted
+
+context:
+  purpose: >
+    This case is derived from a VeriEQL consistency benchmark pair and is used
+    to seed the next consistency archetype after CONS_0002.
+  note: >
+    CONS_0003 now has PostgreSQL witness validation for source, positive
+    rewrite, and negative rewrite. It remains staged because broader engine
+    validation has not yet been completed.
+
+sql_feature_tags:
+  - left_join
+  - group_by
+  - count
+  - distinct
+
+rewrite_opportunity_tags:
+  - join_removal
+  - aggregation_semantics
+
+plan_operator_tags:
+  status: provisional_pg_only
+  observed_in_postgres:
+    - scan
+    - join
+    - aggregate
+
+workload_realism_tags: []
+
+portability_tags: []
+
+review_notes:
+  - CONS_0003 is sourced from VeriEQL Calcite-397 / 159.
+  - The source query uses COUNT(DISTINCT SLACKER) under a LEFT JOIN to DEPT.
+  - The positive rewrite removes the removable LEFT JOIN while preserving semantics.
+  - The negative rewrite drops DISTINCT and changes aggregation semantics.
+  - PostgreSQL witness validation shows source == positive and source != negative.
+
+expected_outputs:
+  source_and_positive:
+    - "10\t2"
+    - "20\t1"
+  negative:
+    - "10\t3"
+    - "20\t2"
+
+evidence:
+  raw_record: cases/CONS/CONS_0003/provenance/verieql_calcite_397_159_raw.json
+  raw_q1: cases/CONS/CONS_0003/provenance/pair_q1_raw.sql
+  raw_q2: cases/CONS/CONS_0003/provenance/pair_q2_raw.sql
+  frozen_source: cases/CONS/CONS_0003/source.sql
+  positive_candidate: cases/CONS/CONS_0003/rewrite_pos_01.sql
+  negative_candidate: cases/CONS/CONS_0003/rewrite_neg_01.sql
+  provenance_notes: cases/CONS/CONS_0003/provenance/verieql_calcite_397_159_notes.txt
+  data_profile: cases/CONS/CONS_0003/data_profile.json
+  pg_source_plan: runs/cons_0003/plans/pg/source.json
+  pg_positive_plan: runs/cons_0003/plans/pg/rewrite_pos_01.json
+  pg_negative_plan: runs/cons_0003/plans/pg/rewrite_neg_01.json
+  pg_source_result: runs/cons_0003/pg/source.tsv
+  pg_positive_result: runs/cons_0003/pg/rewrite_pos_01.tsv
+  pg_negative_result: runs/cons_0003/pg/rewrite_neg_01.tsv

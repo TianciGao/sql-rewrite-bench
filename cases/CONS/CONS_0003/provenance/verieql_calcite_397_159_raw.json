@@ -1,0 +1,257 @@
+{
+  "benchmark": "Calcite-397",
+  "index": 159,
+  "schema": {
+    "EMP": {
+      "EMPNO": "INT",
+      "DEPTNO": "INT",
+      "ENAME": "VARCHAR",
+      "JOB": "VARCHAR",
+      "MGR": "INT",
+      "HIREDATE": "DATE",
+      "SAL": "INT",
+      "COMM": "INT",
+      "SLACKER": "BOOLEAN"
+    },
+    "DEPT": {
+      "DEPTNO": "INT",
+      "NAME": "VARCHAR"
+    },
+    "BONUS": {
+      "ENAME": "VARCHAR",
+      "JOB": "VARCHAR",
+      "SAL": "INT",
+      "COMM": "INT"
+    },
+    "EMPNULLABLES": {
+      "EMPNO": "INT",
+      "DEPTNO": "INT",
+      "ENAME": "VARCHAR",
+      "JOB": "VARCHAR",
+      "MGR": "INT",
+      "HIREDATE": "DATE",
+      "SAL": "INT",
+      "COMM": "INT",
+      "SLACKER": "BOOLEAN"
+    },
+    "EMPNULLABLES_20": {
+      "EMPNO": "INT",
+      "DEPTNO": "INT",
+      "ENAME": "VARCHAR",
+      "JOB": "VARCHAR",
+      "MGR": "INT",
+      "HIREDATE": "DATE",
+      "SAL": "INT",
+      "COMM": "INT",
+      "SLACKER": "BOOLEAN"
+    },
+    "EMP_B": {
+      "EMPNO": "INT",
+      "DEPTNO": "INT",
+      "ENAME": "VARCHAR",
+      "JOB": "VARCHAR",
+      "MGR": "INT",
+      "HIREDATE": "DATE",
+      "SAL": "INT",
+      "COMM": "INT",
+      "SLACKER": "BOOLEAN",
+      "BIRTHDATE": "DATE"
+    }
+  },
+  "constraint": [
+    {
+      "not_null": {
+        "value": "EMP__EMPNO"
+      }
+    },
+    {
+      "not_null": {
+        "value": "EMP__ENAME"
+      }
+    },
+    {
+      "not_null": {
+        "value": "EMP__JOB"
+      }
+    },
+    {
+      "not_null": {
+        "value": "EMP__HIREDATE"
+      }
+    },
+    {
+      "not_null": {
+        "value": "EMP__SAL"
+      }
+    },
+    {
+      "not_null": {
+        "value": "EMP__COMM"
+      }
+    },
+    {
+      "not_null": {
+        "value": "EMP__DEPTNO"
+      }
+    },
+    {
+      "not_null": {
+        "value": "EMP__SLACKER"
+      }
+    },
+    {
+      "not_null": {
+        "value": "DEPT__DEPTNO"
+      }
+    },
+    {
+      "not_null": {
+        "value": "DEPT__NAME"
+      }
+    },
+    {
+      "not_null": {
+        "value": "BONUS__ENAME"
+      }
+    },
+    {
+      "not_null": {
+        "value": "BONUS__JOB"
+      }
+    },
+    {
+      "not_null": {
+        "value": "BONUS__SAL"
+      }
+    },
+    {
+      "not_null": {
+        "value": "BONUS__COMM"
+      }
+    },
+    {
+      "not_null": {
+        "value": "EMP_B__EMPNO"
+      }
+    },
+    {
+      "not_null": {
+        "value": "EMP_B__ENAME"
+      }
+    },
+    {
+      "not_null": {
+        "value": "EMP_B__JOB"
+      }
+    },
+    {
+      "not_null": {
+        "value": "EMP_B__HIREDATE"
+      }
+    },
+    {
+      "not_null": {
+        "value": "EMP_B__SAL"
+      }
+    },
+    {
+      "not_null": {
+        "value": "EMP_B__COMM"
+      }
+    },
+    {
+      "not_null": {
+        "value": "EMP_B__DEPTNO"
+      }
+    },
+    {
+      "not_null": {
+        "value": "EMP_B__SLACKER"
+      }
+    },
+    {
+      "not_null": {
+        "value": "EMP_B__BIRTHDATE"
+      }
+    },
+    {
+      "primary": [
+        {
+          "value": "EMP__EMPNO"
+        }
+      ]
+    },
+    {
+      "foreign": [
+        {
+          "value": "EMP__DEPTNO"
+        },
+        {
+          "value": "DEPT__DEPTNO"
+        }
+      ]
+    },
+    {
+      "primary": [
+        {
+          "value": "DEPT__DEPTNO"
+        }
+      ]
+    },
+    {
+      "primary": [
+        {
+          "value": "EMPNULLABLES__EMPNO"
+        }
+      ]
+    },
+    {
+      "foreign": [
+        {
+          "value": "EMPNULLABLES__DEPTNO"
+        },
+        {
+          "value": "DEPT__DEPTNO"
+        }
+      ]
+    },
+    {
+      "primary": [
+        {
+          "value": "EMPNULLABLES_20__EMPNO"
+        }
+      ]
+    },
+    {
+      "foreign": [
+        {
+          "value": "EMPNULLABLES_20__DEPTNO"
+        },
+        {
+          "value": "DEPT__DEPTNO"
+        }
+      ]
+    },
+    {
+      "primary": [
+        {
+          "value": "EMP_B__EMPNO"
+        }
+      ]
+    },
+    {
+      "foreign": [
+        {
+          "value": "EMP_B__DEPTNO"
+        },
+        {
+          "value": "DEPT__DEPTNO"
+        }
+      ]
+    }
+  ],
+  "pair": [
+    "SELECT EMP.DEPTNO, COUNT(DISTINCT EMP.SLACKER) FROM EMP LEFT JOIN DEPT ON EMP.DEPTNO = DEPT.DEPTNO GROUP BY EMP.DEPTNO",
+    "SELECT DEPTNO, COUNT(DISTINCT SLACKER) FROM EMP GROUP BY DEPTNO"
+  ]
+}

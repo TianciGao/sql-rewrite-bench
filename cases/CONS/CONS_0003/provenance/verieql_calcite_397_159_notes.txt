@@ -1,0 +1,21 @@
+source_id: SRC_011
+seed_id: SEED_005
+source_name: VeriEQL
+source_subset: calcite
+source_entry: Calcite-397 / 159
+
+localization_evidence:
+- datasets/raw/verieql/staged/VeriEQL/benchmarks/calcite/calcite2.jsonlines
+- benchmark = Calcite-397
+- index = 159
+
+selection_reason:
+- this pair is compact and interpretable
+- it exercises COUNT(DISTINCT ...) under a removable LEFT JOIN
+- it looks suitable for a consistency-pool case with witness data
+- it complements CONS_0002 rather than duplicating its correlated-EXISTS structure
+
+current_interpretation:
+- q1 is treated as provisional source candidate
+- q2 is treated as provisional positive rewrite candidate
+- witness data and negative rewrite are still pending
