@@ -43,13 +43,19 @@ status:
   seed_localized: true
   source_frozen: true
   rewrite_variants_ready: false
-  exec_checked_pg: false
+  exec_checked_pg: true
   exec_checked_mysql: false
   exec_checked_spark: false
-  plan_checked: false
+  plan_checked: true
   taxonomy_trial_ready: true
 
+artifacts:
+  data_profile: cases/PERF/PERF_0003/data_profile.json
+  pg_source_plan: runs/perf_0003/plans/pg/source.json
+  pg_source_result: runs/perf_0003/pg/source.tsv
+
 notes:
-  - PERF_0003 is currently a seed-extracted performance draft case derived from JOB query 27a.
-  - The raw JOB query is frozen as provisional source.sql.
-  - Rewrite variants, data loading, and engine validation are still pending.
+  - PERF_0003 is currently a PG source-validated performance draft case derived from JOB query 27a.
+  - The source query was executed successfully on a required-table-only PostgreSQL JOB/IMDB subset.
+  - Rewrite variants are still pending.
+  - This case should remain not_yet_admitted for now.
