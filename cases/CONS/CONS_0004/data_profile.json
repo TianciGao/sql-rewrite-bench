@@ -1,0 +1,20 @@
+{
+  "case_id": "CONS_0004",
+  "dataset_id": "cons_0004_pg_witness_v1",
+  "engine_validated": [
+    "postgres"
+  ],
+  "required_tables": [
+    "EMP"
+  ],
+  "row_counts": {
+    "EMP": 6
+  },
+  "notes": [
+    "Minimal witness dataset manually constructed for PostgreSQL validation",
+    "PostgreSQL source.sql returned Clerk",
+    "PostgreSQL rewrite_pos_01.sql returned the same row as source.sql",
+    "PostgreSQL rewrite_neg_01.sql returned an empty result",
+    "The negative rewrite tightens the HAVING threshold from > 3 to > 4"
+  ]
+}

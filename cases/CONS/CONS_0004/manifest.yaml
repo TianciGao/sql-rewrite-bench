@@ -1,0 +1,63 @@
+case_id: CONS_0004
+pool: consistency
+dataset_line_candidate: not_yet_admitted
+
+provenance:
+  source_id: SRC_011
+  seed_id: SEED_006
+  source_name: VeriEQL
+  source_subset: calcite
+  source_entry: Calcite-397 / 362
+  raw_record_file: cases/CONS/CONS_0004/provenance/verieql_calcite_397_362_raw.json
+  raw_q1_file: cases/CONS/CONS_0004/provenance/pair_q1_raw.sql
+  raw_q2_file: cases/CONS/CONS_0004/provenance/pair_q2_raw.sql
+  provenance_notes: cases/CONS/CONS_0004/provenance/verieql_calcite_397_362_notes.txt
+
+source:
+  dialect: calcite_like_candidate
+  file: source.sql
+
+variants:
+  positives:
+    - rewrite_pos_01.sql
+  negatives:
+    - rewrite_neg_01.sql
+
+targets:
+  engines:
+    - postgres
+    - mysql
+    - spark
+
+required_tables:
+  - EMP
+
+features:
+  - group_by
+  - having
+  - count
+
+status:
+  seed_localized: true
+  source_frozen: true
+  rewrite_variants_ready: true
+  exec_checked_pg: true
+  exec_checked_mysql: false
+  exec_checked_spark: false
+  plan_checked: true
+  taxonomy_trial_ready: true
+
+artifacts:
+  data_profile: cases/CONS/CONS_0004/data_profile.json
+  pg_source_plan: runs/cons_0004/plans/pg/source.json
+  pg_positive_plan: runs/cons_0004/plans/pg/rewrite_pos_01.json
+  pg_negative_plan: runs/cons_0004/plans/pg/rewrite_neg_01.json
+  pg_source_result: runs/cons_0004/pg/source.tsv
+  pg_positive_result: runs/cons_0004/pg/rewrite_pos_01.tsv
+  pg_negative_result: runs/cons_0004/pg/rewrite_neg_01.tsv
+
+notes:
+  - CONS_0004 is currently a PG witness-validated draft consistency case derived from VeriEQL Calcite-397 / 362.
+  - The source and positive rewrite are equivalent on the PostgreSQL witness dataset.
+  - The negative rewrite tightens the HAVING threshold and changes the result on the PostgreSQL witness dataset.
+  - This case should remain not_yet_admitted for now.
