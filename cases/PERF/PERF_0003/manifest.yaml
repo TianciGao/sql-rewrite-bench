@@ -1,0 +1,55 @@
+case_id: PERF_0003
+pool: performance
+dataset_line_candidate: not_yet_admitted
+
+provenance:
+  source_id: SRC_012
+  seed_id: SEED_009
+  source_name: JOB
+  source_file: datasets/raw/job/staged/job/27a.sql
+  raw_sql_file: cases/PERF/PERF_0003/provenance/job_27a_raw.sql
+  provenance_notes: cases/PERF/PERF_0003/provenance/job_27a_notes.txt
+
+source:
+  dialect: postgres_like_candidate
+  file: source.sql
+
+targets:
+  engines:
+    - postgres
+    - mysql
+    - spark
+
+required_tables:
+  - complete_cast
+  - comp_cast_type
+  - company_name
+  - company_type
+  - keyword
+  - link_type
+  - movie_companies
+  - movie_info
+  - movie_keyword
+  - movie_link
+  - title
+
+features:
+  - multi_join
+  - aggregate
+  - like_predicate
+  - between_predicate
+
+status:
+  seed_localized: true
+  source_frozen: true
+  rewrite_variants_ready: false
+  exec_checked_pg: false
+  exec_checked_mysql: false
+  exec_checked_spark: false
+  plan_checked: false
+  taxonomy_trial_ready: true
+
+notes:
+  - PERF_0003 is currently a seed-extracted performance draft case derived from JOB query 27a.
+  - The raw JOB query is frozen as provisional source.sql.
+  - Rewrite variants, data loading, and engine validation are still pending.

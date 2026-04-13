@@ -1,0 +1,42 @@
+case_id: PERF_0003
+trial_version: "0.2"
+status: provisional_trial_labeled
+candidate_primary_pool: performance
+dataset_line_candidate: not_yet_admitted
+
+context:
+  purpose: >
+    This case is derived from a JOB performance/realism seed and is used to
+    begin the next Batch-2 performance archetype line after PERF_0002.
+  note: >
+    PERF_0003 is currently only seed-extracted. It has a frozen source query
+    but no rewrites, no data profile, and no engine validation yet.
+
+sql_feature_tags:
+  - multi_join
+  - aggregate
+  - like_predicate
+  - between_predicate
+
+rewrite_opportunity_tags: []
+
+plan_operator_tags:
+  status: unresolved_until_first_execution
+  observed_in_postgres: []
+
+workload_realism_tags:
+  - realistic_query_style
+  - high_join_count
+
+portability_tags: []
+
+review_notes:
+  - PERF_0003 is sourced from JOB query 27a.
+  - The current source is a join-heavy realism-oriented movie query.
+  - This is intended as the first Batch-2 performance / realism extraction from JOB.
+  - Rewrite variants, data loading, and engine validation are still pending.
+
+evidence:
+  raw_sql: cases/PERF/PERF_0003/provenance/job_27a_raw.sql
+  frozen_source: cases/PERF/PERF_0003/source.sql
+  provenance_notes: cases/PERF/PERF_0003/provenance/job_27a_notes.txt

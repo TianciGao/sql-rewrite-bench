@@ -1,0 +1,20 @@
+source_id: SRC_012
+seed_id: SEED_009
+source_name: JOB
+source_file: datasets/raw/job/staged/job/27a.sql
+
+localization_evidence:
+- datasets/raw/job/staged/job/27a.sql
+- selected in datasets/raw/job/notes/seed_decision_v1.txt
+- first selected Batch-2 performance / realism seed from JOB
+
+selection_reason:
+- this query is clearly join-heavy and realism-oriented
+- it is complex enough to represent JOB-style performance structure
+- it is lighter than the deferred 29-family queries
+- it is a suitable first extraction target for PERF_0003
+
+current_interpretation:
+- the raw JOB query is frozen as provisional source.sql
+- no rewrite variants are defined yet
+- no IMDB loading or engine execution has been performed yet
