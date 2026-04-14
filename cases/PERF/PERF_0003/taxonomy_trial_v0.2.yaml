@@ -9,8 +9,8 @@ context:
     This case is derived from a JOB performance/realism seed and is used to
     begin the next Batch-2 performance archetype line after PERF_0002.
   note: >
-    PERF_0003 now has PostgreSQL source validation on a required-table-only
-    JOB/IMDB subset. It still has no rewrites and no broader engine closure.
+    PERF_0003 now has PostgreSQL validation for source, positive rewrite,
+    and negative rewrite on a required-table-only JOB/IMDB subset.
 
 sql_feature_tags:
   - multi_join
@@ -18,7 +18,10 @@ sql_feature_tags:
   - like_predicate
   - between_predicate
 
-rewrite_opportunity_tags: []
+rewrite_opportunity_tags:
+  - join_normalization
+  - redundant_predicate_cleanup
+  - filter_sensitivity
 
 plan_operator_tags:
   status: provisional_pg_only
@@ -37,14 +40,20 @@ portability_tags: []
 
 review_notes:
   - PERF_0003 is sourced from JOB query 27a.
-  - The current source is a join-heavy realism-oriented movie query.
-  - PostgreSQL source execution succeeded on a required-table-only JOB/IMDB subset.
-  - Rewrite variants are still pending.
+  - The positive rewrite rewrites comma joins into explicit joins and removes transitive redundant equality conditions.
+  - The negative rewrite tightens the complete_cast status filter from complete to complete+verified.
+  - PostgreSQL validation shows source == positive and source != negative.
 
 evidence:
   raw_sql: cases/PERF/PERF_0003/provenance/job_27a_raw.sql
   frozen_source: cases/PERF/PERF_0003/source.sql
+  positive_candidate: cases/PERF/PERF_0003/rewrite_pos_01.sql
+  negative_candidate: cases/PERF/PERF_0003/rewrite_neg_01.sql
   provenance_notes: cases/PERF/PERF_0003/provenance/job_27a_notes.txt
   data_profile: cases/PERF/PERF_0003/data_profile.json
   pg_source_plan: runs/perf_0003/plans/pg/source.json
+  pg_positive_plan: runs/perf_0003/plans/pg/rewrite_pos_01.json
+  pg_negative_plan: runs/perf_0003/plans/pg/rewrite_neg_01.json
   pg_source_result: runs/perf_0003/pg/source.tsv
+  pg_positive_result: runs/perf_0003/pg/rewrite_pos_01.tsv
+  pg_negative_result: runs/perf_0003/pg/rewrite_neg_01.tsv
