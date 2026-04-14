@@ -9,9 +9,9 @@ context:
     This case is derived from a VeriEQL consistency benchmark pair and is used
     to extend the next consistency archetype line after CONS_0003.
   note: >
-    CONS_0004 now has PostgreSQL witness validation for source, positive
-    rewrite, and negative rewrite. It remains staged because broader engine
-    validation has not yet been completed.
+    CONS_0004 now has PostgreSQL and MySQL witness validation for source,
+    positive rewrite, and negative rewrite. It remains staged because broader
+    engine validation has not yet been completed.
 
 sql_feature_tags:
   - group_by
@@ -23,8 +23,12 @@ rewrite_opportunity_tags:
   - threshold_sensitivity
 
 plan_operator_tags:
-  status: provisional_pg_only
+  status: provisional_pg_mysql_split
   observed_in_postgres:
+    - scan
+    - aggregate
+    - filter
+  observed_in_mysql:
     - scan
     - aggregate
     - filter
@@ -38,7 +42,7 @@ review_notes:
   - The source query uses GROUP BY + HAVING COUNT(*) > 3.
   - The positive rewrite materializes the aggregate first and then filters on the derived count.
   - The negative rewrite tightens the threshold from > 3 to > 4.
-  - PostgreSQL witness validation shows source == positive and source != negative.
+  - PostgreSQL and MySQL witness validation both show source == positive and source != negative.
 
 expected_outputs:
   source_and_positive:
@@ -60,3 +64,9 @@ evidence:
   pg_source_result: runs/cons_0004/pg/source.tsv
   pg_positive_result: runs/cons_0004/pg/rewrite_pos_01.tsv
   pg_negative_result: runs/cons_0004/pg/rewrite_neg_01.tsv
+  mysql_source_plan: runs/cons_0004/plans/mysql/source.json
+  mysql_positive_plan: runs/cons_0004/plans/mysql/rewrite_pos_01.json
+  mysql_negative_plan: runs/cons_0004/plans/mysql/rewrite_neg_01.json
+  mysql_source_result: runs/cons_0004/mysql/source.tsv
+  mysql_positive_result: runs/cons_0004/mysql/rewrite_pos_01.tsv
+  mysql_negative_result: runs/cons_0004/mysql/rewrite_neg_01.tsv

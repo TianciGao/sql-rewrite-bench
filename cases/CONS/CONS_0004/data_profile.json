@@ -1,8 +1,9 @@
 {
   "case_id": "CONS_0004",
-  "dataset_id": "cons_0004_pg_witness_v1",
+  "dataset_id": "cons_0004_pg_mysql_witness_v1",
   "engine_validated": [
-    "postgres"
+    "postgres",
+    "mysql"
   ],
   "required_tables": [
     "EMP"
@@ -11,10 +12,13 @@
     "EMP": 6
   },
   "notes": [
-    "Minimal witness dataset manually constructed for PostgreSQL validation",
+    "Minimal witness dataset manually constructed for PostgreSQL and MySQL validation",
     "PostgreSQL source.sql returned Clerk",
     "PostgreSQL rewrite_pos_01.sql returned the same row as source.sql",
     "PostgreSQL rewrite_neg_01.sql returned an empty result",
+    "MySQL source.sql returned Clerk",
+    "MySQL rewrite_pos_01.sql returned the same row as source.sql",
+    "MySQL rewrite_neg_01.sql returned an empty result",
     "The negative rewrite tightens the HAVING threshold from > 3 to > 4"
   ]
 }
