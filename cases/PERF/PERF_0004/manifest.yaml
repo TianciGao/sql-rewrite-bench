@@ -1,0 +1,59 @@
+case_id: PERF_0004
+pool: performance
+dataset_line_candidate: not_yet_admitted
+
+provenance:
+  source_id: SRC_012
+  seed_id: SEED_010
+  source_name: JOB
+  source_file: datasets/raw/job/staged/job/30b.sql
+  raw_sql_file: cases/PERF/PERF_0004/provenance/job_30b_raw.sql
+  provenance_notes: cases/PERF/PERF_0004/provenance/job_30b_notes.txt
+
+source:
+  dialect: postgres_like_candidate
+  file: source.sql
+
+targets:
+  engines:
+    - postgres
+    - mysql
+    - spark
+
+required_tables:
+  - complete_cast
+  - comp_cast_type
+  - cast_info
+  - info_type
+  - keyword
+  - movie_info
+  - movie_info_idx
+  - movie_keyword
+  - name
+  - title
+
+features:
+  - multi_join
+  - aggregate
+  - like_predicate
+
+status:
+  seed_localized: true
+  source_frozen: true
+  rewrite_variants_ready: false
+  exec_checked_pg: true
+  exec_checked_mysql: false
+  exec_checked_spark: false
+  plan_checked: true
+  taxonomy_trial_ready: true
+
+artifacts:
+  data_profile: cases/PERF/PERF_0004/data_profile.json
+  pg_source_plan: runs/perf_0004/plans/pg/source.json
+  pg_source_result: runs/perf_0004/pg/source.tsv
+
+notes:
+  - PERF_0004 is currently a PG source-validated performance draft case derived from JOB query 30b.
+  - The source query was executed successfully on a required-table-only PostgreSQL JOB/IMDB subset.
+  - Rewrite variants are still pending.
+  - This case should remain not_yet_admitted for now.

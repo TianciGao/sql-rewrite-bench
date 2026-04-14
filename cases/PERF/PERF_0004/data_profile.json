@@ -1,0 +1,25 @@
+{
+  "case_id": "PERF_0004",
+  "dataset_id": "job_30b_pg_required_tables_v1",
+  "engine_validated": [
+    "postgres"
+  ],
+  "required_tables": [
+    "complete_cast",
+    "comp_cast_type",
+    "cast_info",
+    "info_type",
+    "keyword",
+    "movie_info",
+    "movie_info_idx",
+    "movie_keyword",
+    "name",
+    "title"
+  ],
+  "notes": [
+    "Required-table-only JOB/IMDB subset loaded for PostgreSQL source validation",
+    "This is not a full all-table IMDB loading",
+    "PostgreSQL source.sql executed successfully and produced one row",
+    "This is the first execution-stage validation for PERF_0004"
+  ]
+}

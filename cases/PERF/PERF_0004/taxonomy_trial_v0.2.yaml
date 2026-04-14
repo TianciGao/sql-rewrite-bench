@@ -1,0 +1,48 @@
+case_id: PERF_0004
+trial_version: "0.2"
+status: provisional_trial_labeled
+candidate_primary_pool: performance
+dataset_line_candidate: not_yet_admitted
+
+context:
+  purpose: >
+    This case is derived from a JOB performance/realism seed and is used to
+    extend the next Batch-2 performance archetype line after PERF_0003.
+  note: >
+    PERF_0004 now has PostgreSQL source validation on a required-table-only
+    JOB/IMDB subset. It still has no rewrites and no broader engine closure.
+
+sql_feature_tags:
+  - multi_join
+  - aggregate
+  - like_predicate
+
+rewrite_opportunity_tags: []
+
+plan_operator_tags:
+  status: provisional_pg_only
+  observed_in_postgres:
+    - scan
+    - join
+    - aggregate
+    - filter
+
+workload_realism_tags:
+  - realistic_query_style
+  - high_join_count
+
+portability_tags: []
+
+review_notes:
+  - PERF_0004 is sourced from JOB query 30b.
+  - The current source is a join-heavy realism-oriented movie query.
+  - PostgreSQL source execution succeeded on a required-table-only JOB/IMDB subset.
+  - Rewrite variants are still pending.
+
+evidence:
+  raw_sql: cases/PERF/PERF_0004/provenance/job_30b_raw.sql
+  frozen_source: cases/PERF/PERF_0004/source.sql
+  provenance_notes: cases/PERF/PERF_0004/provenance/job_30b_notes.txt
+  data_profile: cases/PERF/PERF_0004/data_profile.json
+  pg_source_plan: runs/perf_0004/plans/pg/source.json
+  pg_source_result: runs/perf_0004/pg/source.tsv
