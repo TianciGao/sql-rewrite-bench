@@ -9,15 +9,18 @@ context:
     This case is derived from a JOB performance/realism seed and is used to
     extend the next Batch-2 performance archetype line after PERF_0003.
   note: >
-    PERF_0004 now has PostgreSQL source validation on a required-table-only
-    JOB/IMDB subset. It still has no rewrites and no broader engine closure.
+    PERF_0004 now has PostgreSQL validation for source, positive rewrite,
+    and negative rewrite on a required-table-only JOB/IMDB subset.
 
 sql_feature_tags:
   - multi_join
   - aggregate
   - like_predicate
 
-rewrite_opportunity_tags: []
+rewrite_opportunity_tags:
+  - join_normalization
+  - redundant_predicate_cleanup
+  - filter_sensitivity
 
 plan_operator_tags:
   status: provisional_pg_only
@@ -35,14 +38,20 @@ portability_tags: []
 
 review_notes:
   - PERF_0004 is sourced from JOB query 30b.
-  - The current source is a join-heavy realism-oriented movie query.
-  - PostgreSQL source execution succeeded on a required-table-only JOB/IMDB subset.
-  - Rewrite variants are still pending.
+  - The positive rewrite rewrites comma joins into explicit joins and removes transitive redundant equality conditions.
+  - The negative rewrite loosens the complete_cast status filter from complete+verified to complete.
+  - PostgreSQL validation shows source == positive and source != negative.
 
 evidence:
   raw_sql: cases/PERF/PERF_0004/provenance/job_30b_raw.sql
   frozen_source: cases/PERF/PERF_0004/source.sql
+  positive_candidate: cases/PERF/PERF_0004/rewrite_pos_01.sql
+  negative_candidate: cases/PERF/PERF_0004/rewrite_neg_01.sql
   provenance_notes: cases/PERF/PERF_0004/provenance/job_30b_notes.txt
   data_profile: cases/PERF/PERF_0004/data_profile.json
   pg_source_plan: runs/perf_0004/plans/pg/source.json
+  pg_positive_plan: runs/perf_0004/plans/pg/rewrite_pos_01.json
+  pg_negative_plan: runs/perf_0004/plans/pg/rewrite_neg_01.json
   pg_source_result: runs/perf_0004/pg/source.tsv
+  pg_positive_result: runs/perf_0004/pg/rewrite_pos_01.tsv
+  pg_negative_result: runs/perf_0004/pg/rewrite_neg_01.tsv

@@ -17,9 +17,10 @@
     "title"
   ],
   "notes": [
-    "Required-table-only JOB/IMDB subset loaded for PostgreSQL source validation",
-    "This is not a full all-table IMDB loading",
-    "PostgreSQL source.sql executed successfully and produced one row",
-    "This is the first execution-stage validation for PERF_0004"
+    "Required-table-only JOB/IMDB subset loaded for PostgreSQL validation",
+    "PostgreSQL source.sql produced one row",
+    "PostgreSQL rewrite_pos_01.sql produced the same row as source.sql",
+    "PostgreSQL rewrite_neg_01.sql changed the result row by loosening the complete_cast status filter from complete+verified to complete",
+    "This is not a full all-table IMDB loading"
   ]
 }

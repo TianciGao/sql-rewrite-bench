@@ -14,6 +14,12 @@ source:
   dialect: postgres_like_candidate
   file: source.sql
 
+variants:
+  positives:
+    - rewrite_pos_01.sql
+  negatives:
+    - rewrite_neg_01.sql
+
 targets:
   engines:
     - postgres
@@ -40,7 +46,7 @@ features:
 status:
   seed_localized: true
   source_frozen: true
-  rewrite_variants_ready: false
+  rewrite_variants_ready: true
   exec_checked_pg: true
   exec_checked_mysql: false
   exec_checked_spark: false
@@ -50,10 +56,14 @@ status:
 artifacts:
   data_profile: cases/PERF/PERF_0004/data_profile.json
   pg_source_plan: runs/perf_0004/plans/pg/source.json
+  pg_positive_plan: runs/perf_0004/plans/pg/rewrite_pos_01.json
+  pg_negative_plan: runs/perf_0004/plans/pg/rewrite_neg_01.json
   pg_source_result: runs/perf_0004/pg/source.tsv
+  pg_positive_result: runs/perf_0004/pg/rewrite_pos_01.tsv
+  pg_negative_result: runs/perf_0004/pg/rewrite_neg_01.tsv
 
 notes:
-  - PERF_0004 is currently a PG source-validated performance draft case derived from JOB query 30b.
-  - The source query was executed successfully on a required-table-only PostgreSQL JOB/IMDB subset.
-  - Rewrite variants are still pending.
+  - PERF_0004 is currently a PG validated performance draft case derived from JOB query 30b.
+  - The source and positive rewrite are equivalent on the PostgreSQL required-table-only JOB/IMDB subset.
+  - The negative rewrite changes the result on the PostgreSQL required-table-only JOB/IMDB subset.
   - This case should remain not_yet_admitted for now.
