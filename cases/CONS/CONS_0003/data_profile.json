@@ -1,8 +1,9 @@
 {
   "case_id": "CONS_0003",
-  "dataset_id": "cons_0003_pg_witness_v1",
+  "dataset_id": "cons_0003_pg_mysql_witness_v1",
   "engine_validated": [
-    "postgres"
+    "postgres",
+    "mysql"
   ],
   "required_tables": [
     "EMP",
@@ -13,10 +14,13 @@
     "DEPT": 2
   },
   "notes": [
-    "Minimal witness dataset manually constructed for PostgreSQL validation",
+    "Minimal witness dataset manually constructed for PostgreSQL and MySQL validation",
     "PostgreSQL source.sql returned 10\\t2 and 20\\t1",
     "PostgreSQL rewrite_pos_01.sql returned the same rows as source.sql",
     "PostgreSQL rewrite_neg_01.sql returned 10\\t3 and 20\\t2",
+    "MySQL source.sql returned 10\\t2 and 20\\t1",
+    "MySQL rewrite_pos_01.sql returned the same rows as source.sql",
+    "MySQL rewrite_neg_01.sql returned 10\\t3 and 20\\t2",
     "The negative rewrite drops DISTINCT and therefore changes aggregation semantics"
   ]
 }
