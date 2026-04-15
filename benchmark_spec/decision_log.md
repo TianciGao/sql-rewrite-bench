@@ -8,14 +8,18 @@ Primary benchmark engines / dialects for v1 are fixed to:
 - MySQL
 
 ### Rationale
-This constrains complexity and matches the current project freeze.
+This constrains scope and matches the current project freeze.
+
+---
 
 ## DL-002
 ### Decision
 The minimum benchmark unit is a case package, not a single SQL query.
 
 ### Rationale
-Consistency, plan observability, provenance, and portability all require richer packaging.
+Consistency, provenance, plan observability, and portability all require richer packaging.
+
+---
 
 ## DL-003
 ### Decision
@@ -26,128 +30,117 @@ v1 does not include:
 ### Rationale
 These settings were considered in early design discussions but are deferred to future versions.
 
+---
+
 ## DL-004
 ### Decision
-PostgreSQL remains on the Windows host and is accessed from WSL over NAT.
+Four formal pools only:
+- performance
+- longtail
+- consistency
+- portability
+
+`Manual Seed Cases` is treated as `manual_seed` source family / curation channel, not as a fifth pool.
 
 ### Rationale
-This is already validated on the current machine and should not be destabilized during bootstrap.
+Pools are for final case-package归档; manual seeds belong to source-layer / construction-layer.
+
+---
 
 ## DL-005
 ### Decision
-MySQL may run inside WSL during Week 1 / early bootstrap.
+Source and case must be tracked separately.
 
 ### Rationale
-This is the fastest path to complete tri-engine smoke closure on the current machine.
+- source = 原料
+- case package = benchmark 单位
+- source_family = 来源分类
+- pool = case 归档
+
+This separation is now treated as a required repository convention.
+
+---
 
 ## DL-006
 ### Decision
-Codex is allowed to work only on engineering scaffolding in the current phase.
+PostgreSQL remains on the Windows host and is accessed from WSL over NAT in the validated local development path.
 
-### Allowed examples
-- CLI scaffolding
-- environment checks
-- artifact-preflight
-- JSON report generation
-- helper scripts
+### Rationale
+This path is already validated and should not be destabilized during bootstrap / early pilot.
 
-### Disallowed examples
-- workload curation
-- benchmark expansion
-- protocol modifications
-- taxonomy redesign
-- case generation
+---
 
 ## DL-007
 ### Decision
-All important runs must produce machine-readable artifacts.
+MySQL may run inside WSL during Week-1 / early bootstrap for local tri-engine smoke closure.
 
 ### Rationale
-This is required for reproducibility, preflight checks, and later EA&B writing.
+This is an operational unblocking decision, not a semantic benchmark decision.
+
+---
 
 ## DL-008
 ### Decision
-Current repository state after Week 1 is treated as a valid closeout checkpoint.
+`PERF_0002` is admitted as the first external common-core case.
 
-### Evidence
-- PostgreSQL smoke passed
-- MySQL smoke passed
-- Spark smoke passed
-- PERF_0001 tri-engine consistency closure passed
-- first plans collected
-- first commit completed
+### Rationale
+The case satisfies the current common-core admission basis with tri-engine closure.
+
+---
 
 ## DL-009
 ### Decision
-Week 1 bootstrap closeout and minimal CLI scaffolding are considered complete.
+`PORT_0002` is admitted as the second external common-core case.
 
 ### Rationale
-The repository now has:
-- tri-engine smoke closure
-- first case-package closure
-- first plan artifacts
-- minimal CLI commands
-- artifact-preflight reports
+`PORT_0002` now has sufficiently strong portability closure and should no longer be described as merely a candidate.
 
-### Next step
-Proceed to source inventory design and pool mapping preparation, while still not entering workload curation.
+---
 
 ## DL-010
 ### Decision
-For v0 source inventory, the consistency-oriented equivalence benchmark source is initialized with SQLEquiQuest rather than VeriEQL.
+VeriEQL is accepted as the current Batch-2 consistency supplement source.
 
 ### Rationale
-A single equivalence benchmark source is sufficient for early pilot inventory design.
-Additional equivalence sources may be added later if needed.
+The line has already materialized into `CONS_0003` and `CONS_0004`, proving it usable for controlled consistency-pool seed extraction.
 
-### 2026-04-12 external promotion review applied
+### Consequence
+In current-state documents, “SQLEquiQuest / VeriEQL 待二选一” must no longer be treated as still pending.
 
-Applied the first external-case promotion review to case-local metadata.
-
-Decisions reflected in manifests and taxonomy trial files:
-
-- `PERF_0002` is now treated as a `common-core_candidate`
-  because it has tri-engine source validation and tri-engine positive/negative rewrite validation.
-- `PORT_0002` is now treated as a `common-core_candidate`
-  because it has PostgreSQL source validation plus MySQL positive/negative portability validation.
-- `LONGTAIL_0002` remains `not_yet_admitted`.
-- `CONS_0002` remains `not_yet_admitted`.
-
-Rationale:
-the project has now reached the point where promotion review outcomes should
-be reflected in case-local metadata rather than only in cross-case documents.
+---
 
 ## DL-011
 ### Decision
-`PERF_0002` is admitted as the first external common-core case in the repository.
+`CONS_0004` should remain a staged, not_yet_admitted PG+MySQL validated draft for now.
 
 ### Rationale
-`PERF_0002` now satisfies the current common-core admission check:
-- provenance is complete
-- source, positive, and negative rewrites are all present
-- PostgreSQL, MySQL, and Spark all validate source behavior
-- PostgreSQL, MySQL, and Spark all validate source/positive equivalence
-- PostgreSQL, MySQL, and Spark all validate source/negative divergence
-- plan artifacts are collected across the validated engines
+The case is useful and valid, and it now has controlled PostgreSQL + MySQL witness validation.
+However, immediate broader deepening is still not required in the current phase.
 
-### Next step
-Keep `PORT_0002` under `common-core_candidate` review, while `LONGTAIL_0002` and `CONS_0002` remain staged draft cases.
+### Consequence
+The real next technical gap for `CONS_0004` is Spark closure, not immediate admission.
+
+---
 
 ## DL-012
 ### Decision
-`PORT_0002` is admitted as the second external common-core case in the repository.
+Current active phase is document / source-state / case-state alignment and M1-closeout preparation.
 
 ### Rationale
-`PORT_0002` now satisfies the strengthened portability admission basis:
-- PostgreSQL source validation is present
-- MySQL positive rewrite preserves the source result
-- MySQL negative rewrite changes the source result
-- Spark positive rewrite preserves the source result
-- Spark negative rewrite changes the source result
-- plan artifacts are collected for the validated source/rewrite sides
+Before broader workload curation or benchmark expansion, the repository must synchronize:
+- phase docs
+- source registry
+- external draft status
+- coverage-map / gap-report expectations
 
-This gives the case a sufficiently strong portability closure story for external common-core admission.
+### Consequence
+Do not broaden source acquisition or large-scale workload curation until the current sync layer is finished.
 
-### Next step
-Keep `LONGTAIL_0002` and `CONS_0002` staged.  
-Do not broaden source acquisition until the current phase closeout is finished.
+---
+
+## DL-013
+### Decision
+All important checks and runs must produce machine-readable artifacts.
+
+### Rationale
+This is required for reproducibility, preflight checks, and later EA&B writing.
