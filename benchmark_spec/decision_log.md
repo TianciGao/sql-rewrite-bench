@@ -151,6 +151,21 @@ This is required for reproducibility, preflight checks, and later EA&B writing.
 ### Decision
 M1 source-layer closeout artifacts are now complete.
 
+### Basis
+The repository now has:
+- synchronized external draft status
+- synchronized current phase closeout checklist
+- synchronized DOC_MAP
+- aligned target-source snapshot
+- first formal M1 coverage map
+- formal M1 gap report
+
+### Consequence
+Broad workload curation must still not begin immediately.
+The next action is an explicit human decision on unresolved target-source branches:
+- JOB: deepen or freeze as partial realized supplement
+- DSB: start acquisition or remain target-only
+
 ---
 
 ## DL-015
@@ -171,20 +186,3 @@ It does not currently provide a ready direct SQL query corpus comparable to acti
 - Treat Stack as realism substrate only in the current phase
 - The next unresolved source decisions are now JOB and DSB
 
----
-
-### Basis
-The repository now has:
-- synchronized external draft status
-- synchronized current phase closeout checklist
-- synchronized DOC_MAP
-- aligned target-source snapshot
-- first formal M1 coverage map
-- formal M1 gap report
-
-### Consequence
-Broad workload curation must still not begin immediately.
-The next action is an explicit human decision on unresolved target-source branches:
-- Stack: direct SQL query corpus or realism substrate only
-- JOB: deepen or freeze as partial realized supplement
-- DSB: start acquisition or remain target-only

@@ -50,7 +50,7 @@ State alignment / M1 closeout preparation
 - [x] 识别并冻结下一轮优先补齐的 feature buckets
 
 ### C. Batch-2 未闭合 source 事项
-- [ ] 明确 Stack 是否具备 direct SQL query corpus
+- [x] 明确 Stack 不具备 direct SQL query corpus，当前冻结为 realism substrate only
 - [ ] 明确 JOB 线是继续扩 probe 还是暂时冻结为 partial
 - [ ] 明确 DSB 是继续保留为 target source 还是启动 acquisition
 
