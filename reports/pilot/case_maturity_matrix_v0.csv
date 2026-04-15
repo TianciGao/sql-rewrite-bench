@@ -1,0 +1,13 @@
+case_id,pool,source_family,data_origin,current_maturity,validated_engines,admitted_or_staged,include_in_first_slice,notes
+PERF_0001,performance,manual_seed,manual_smoke_anchor,stable_pilot_anchor,postgres;mysql;spark,anchor,yes,smoke/pipeline anchor
+PERF_0002,performance,TPC-DS,query53_tpl_materialized,admitted_external_common_core,postgres;mysql;spark,admitted,yes,current strongest external performance case
+PERF_0003,performance,JOB,job_27a,pg_only_staged_performance_draft,postgres,staged,no,JOB line currently frozen as partial realized supplement
+PERF_0004,performance,JOB,job_30b,pg_validated_staged_performance_draft,postgres,staged,no,JOB line currently frozen as partial realized supplement
+LONGTAIL_0001,longtail,manual_seed,manual_longtail_anchor,stable_pilot_anchor,postgres;mysql;spark,anchor,yes,structure-rich longtail anchor
+LONGTAIL_0002,longtail,SQLStorm,source_12033,pg_validated_staged_longtail_draft,postgres,staged,no,engine closure still missing
+CONS_0001,consistency,manual_seed,manual_consistency_anchor,stable_pilot_anchor,postgres;mysql;spark,anchor,yes,correctness anchor
+CONS_0002,consistency,Calcite,new-decorr_iq_seed,pg_validated_staged_consistency_draft,postgres,staged,no,broader engine validation still missing
+CONS_0003,consistency,VeriEQL,calcite_397_159,tri_engine_validated_staged_consistency_draft,postgres;mysql;spark,staged,yes,tri-engine validated but still not_yet_admitted
+CONS_0004,consistency,VeriEQL,calcite_397_362,tri_engine_validated_staged_consistency_draft,postgres;mysql;spark,staged,yes,tri-engine validated but still not_yet_admitted
+PORT_0001,portability,manual_seed,portability_anchor_package,stable_pilot_anchor,postgres;mysql;spark,anchor,yes,clean portability anchor
+PORT_0002,portability,PARROT,bird_pg_res_json_0,admitted_external_common_core,postgres;mysql;spark,admitted,yes,current strongest external portability case

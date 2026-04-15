@@ -1,0 +1,7 @@
+summary_group,count,case_ids,include_in_first_slice,notes
+stable_pilot_anchor,4,PERF_0001;LONGTAIL_0001;CONS_0001;PORT_0001,yes,four stable anchors across all four pools
+admitted_external_common_core,2,PERF_0002;PORT_0002,yes,current admitted external common-core cases
+staged_tri_engine_validated_draft,2,CONS_0003;CONS_0004,yes,tri-engine validated but still not_yet_admitted
+staged_partial_engine_closure_draft,4,PERF_0003;PERF_0004;LONGTAIL_0002;CONS_0002,no,engine closure still incomplete or line intentionally kept partial
+total_repository_cases,12,PERF_0001;PERF_0002;PERF_0003;PERF_0004;LONGTAIL_0001;LONGTAIL_0002;CONS_0001;CONS_0002;CONS_0003;CONS_0004;PORT_0001;PORT_0002,n/a,current tracked case universe
+first_slice_total,8,PERF_0001;LONGTAIL_0001;CONS_0001;PORT_0001;PERF_0002;PORT_0002;CONS_0003;CONS_0004,yes,current pre-pilot evaluation slice

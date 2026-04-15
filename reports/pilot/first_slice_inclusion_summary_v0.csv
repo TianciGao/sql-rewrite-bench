@@ -1,0 +1,13 @@
+case_id,pool,source_family,included_in_first_slice,reason_for_inclusion_or_exclusion,current_gap_if_excluded,notes
+PERF_0001,performance,manual_seed,yes,stable_anchor,n/a,smoke/pipeline anchor
+LONGTAIL_0001,longtail,manual_seed,yes,stable_anchor,n/a,structure-rich longtail anchor
+CONS_0001,consistency,manual_seed,yes,stable_anchor,n/a,correctness anchor
+PORT_0001,portability,manual_seed,yes,stable_anchor,n/a,clean portability anchor
+PERF_0002,performance,TPC-DS,yes,admitted_external_case,n/a,current strongest external performance case
+PORT_0002,portability,PARROT,yes,admitted_external_case,n/a,current strongest external portability case
+CONS_0003,consistency,VeriEQL,yes,tri_engine_consistency_draft,n/a,tri-engine validated but still staged
+CONS_0004,consistency,VeriEQL,yes,tri_engine_consistency_draft,n/a,tri-engine validated but still staged
+LONGTAIL_0002,longtail,SQLStorm,no,engine_closure_missing,MySQL_and_Spark_closure_missing,valuable longtail case but not yet stable enough for first slice
+CONS_0002,consistency,Calcite,no,engine_closure_missing,broader_engine_validation_missing,still PG-only staged consistency draft
+PERF_0003,performance,JOB,no,partial_realized_supplement,MySQL_and_Spark_closure_missing,JOB line intentionally frozen as partial realized supplement
+PERF_0004,performance,JOB,no,partial_realized_supplement,MySQL_and_Spark_closure_missing,JOB line intentionally frozen as partial realized supplement

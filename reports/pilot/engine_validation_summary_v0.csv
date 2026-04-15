@@ -1,0 +1,9 @@
+case_id,pool,current_maturity,postgres_validated,mysql_validated,spark_validated,result_artifacts_present,plan_artifacts_present,current_status,notes
+PERF_0001,performance,stable_pilot_anchor,yes,yes,yes,yes,yes,anchor,smoke/pipeline anchor
+PERF_0002,performance,admitted_external_common_core,yes,yes,yes,yes,yes,admitted,current strongest external performance case
+LONGTAIL_0001,longtail,stable_pilot_anchor,yes,yes,yes,yes,yes,anchor,structure-rich longtail anchor
+CONS_0001,consistency,stable_pilot_anchor,yes,yes,yes,yes,yes,anchor,correctness anchor
+CONS_0003,consistency,tri_engine_validated_staged_consistency_draft,yes,yes,yes,yes,yes,staged,tri-engine validated but still not_yet_admitted
+CONS_0004,consistency,tri_engine_validated_staged_consistency_draft,yes,yes,yes,yes,yes,staged,tri-engine validated but still not_yet_admitted
+PORT_0001,portability,stable_pilot_anchor,yes,yes,yes,yes,yes,anchor,clean portability anchor
+PORT_0002,portability,admitted_external_common_core,yes,yes,yes,yes,yes,admitted,current strongest external portability case

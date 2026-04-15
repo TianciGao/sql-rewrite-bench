@@ -1,0 +1,12 @@
+source_family,source_role,current_source_status,materialized_cases,active_pool_alignment,current_line_interpretation,first_slice_usage,notes
+manual_seed,internal_seed_family,active,PERF_0001;LONGTAIL_0001;CONS_0001;PORT_0001,performance;longtail;consistency;portability,internal anchor source family,yes,not a formal fifth pool
+TPC-H,performance_base,staged_partial_inspection,none,performance,target source without realized current case,no,resource present but not yet materialized into active case line
+TPC-DS,performance_base,staged_and_inspected,PERF_0002,performance,strongest current external performance line,yes,admitted external common-core case exists
+SQLStorm,longtail_base,staged_and_inspected,LONGTAIL_0002,longtail,primary longtail source but case line still staged,no,current first-slice exclusion due to engine closure gap
+Stack,longtail_realism_substrate,dumps_only_realism_substrate,none,longtail,realism substrate only,no,not a direct SQL query corpus in current version
+Calcite,consistency_base,staged_and_inspected,CONS_0002,consistency,base consistency seed line,no,current case still PG-only staged draft
+VeriEQL,consistency_supplement,accepted_and_materialized,CONS_0003;CONS_0004,consistency,strongest current consistency supplement line,yes,both staged drafts now have tri-engine closure
+PARROT,portability_base,staged_and_inspected,PORT_0002,portability,strongest current external portability line,yes,admitted external common-core case exists
+JOB,performance_supplement,partial_realized_frozen,PERF_0003;PERF_0004,performance,partial realized supplement only,no,do not deepen further in current phase
+DSB,performance_realism_candidate,unresolved_not_started,none,performance,still unresolved at source-decision layer,no,no acquisition or inspection started
+SQLEquiQuest,alternative_consistency_candidate,not_selected,none,consistency,not active in current branch,no,VeriEQL is the selected supplement source
