@@ -5,7 +5,7 @@ SQLStorm,longtail_base,staged_and_inspected,"LONGTAIL_0002",longtail,high,medium
 Calcite,consistency_base,staged_and_inspected,"CONS_0002",consistency,medium,low,low,low,broader engine closure still missing at case layer,keep active as consistency base source
 PARROT,portability_base,staged_and_inspected,"PORT_0002",portability,medium,low,medium,high,portability line exists but source universe still narrow,keep active as strongest portability source
 VeriEQL,consistency_supplement,selected_and_materialized,"CONS_0003;CONS_0004",consistency,medium,low,low,low,Spark closure still missing at case layer,keep active but do not deepen immediately
-JOB,performance_supplement,probe_started,"PERF_0003;PERF_0004",performance,join_heavy_realism,medium,medium,low,source line only partially realized,make an explicit deepen-or-freeze decision
+JOB,performance_supplement,partial_realized_frozen,"PERF_0003;PERF_0004",performance,join_heavy_realism,medium,medium,low,source line intentionally kept partial in current phase,freeze as partial realized performance supplement for current phase
 Stack,longtail_realism_candidate,dumps_only_not_direct_query_corpus,none,longtail,unknown,unknown,medium,unknown,direct SQL query corpus unresolved,decide whether to secure true query-text source
 DSB,performance_realism_candidate,planned_not_started,none,performance,unknown,unknown,high,low,no acquisition or inspection yet,decide whether to start acquisition or keep as target-only
 Manual Seed Cases,manual_seed_internal_source_family,"PERF_0001;LONGTAIL_0001;CONS_0001;PORT_0001",not_a_formal_pool,variable,variable,low_to_medium,medium,can be confused with pool logic if undocumented,keep explicitly separate from four-pool source accounting

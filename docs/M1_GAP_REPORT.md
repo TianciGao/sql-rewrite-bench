@@ -39,7 +39,7 @@
 
 但当前真实完成度并不一致：
 - VeriEQL 已被选中并投入使用
-- JOB 只部分 probe / partial realized
+- JOB 当前已明确冻结为 partial realized performance supplement
 - Stack 仍未明确 direct SQL query corpus
 - DSB 仍是 target source，未启动 acquisition / inspection
 - SQLEquiQuest 当前不是 active branch
@@ -49,7 +49,7 @@
 - `PERF_0002` / `PORT_0002` 已 admitted external common-core
 - `LONGTAIL_0002` / `CONS_0002` 仍是 staged drafts
 - `CONS_0003` / `CONS_0004` 已到 PG+MySQL validated staged drafts
-- JOB line only partially realized through `PERF_0003` / `PERF_0004`
+- JOB line is currently frozen as a partial realized performance supplement through `PERF_0003` / `PERF_0004`
 
 ### Gap C: Spark closure remains the main consistency-side technical gap
 - `CONS_0003` 缺 Spark closure
@@ -71,10 +71,9 @@ Stack decision has now been resolved:
 the current Stack line does not provide a direct SQL query corpus and should be kept as realism substrate only.
 
 ### Priority 2
-对 JOB 做一次明确的人类决策：
-- continue deepen
-or
-- freeze as partial realized performance supplement
+JOB decision has now been resolved:
+the current JOB line is frozen as a partial realized performance supplement in the current phase.
+Current recommendation is not to deepen the line further before the next deliberate source-expansion pass.
 
 ### Priority 3
 对 DSB 做一次明确的人类决策：

@@ -173,6 +173,23 @@ The next action is an explicit human decision on unresolved target-source branch
 The current Stack line does not provide a direct SQL query corpus.
 It is therefore frozen as a realism substrate / dumps-based source, not as an active direct-query source.
 
+---
+
+## DL-016
+### Decision
+The current JOB line is frozen as a partial realized performance supplement for now.
+
+### Rationale
+The JOB line has already materialized into `PERF_0003` and `PERF_0004`, proving it usable as a controlled supplement source.
+However, the current phase is still source-layer closeout / pre-curation preparation, not broader workload expansion.
+
+### Consequence
+- Do not describe JOB as a fully closed source line
+- Do not deepen the JOB line further in the current phase
+- The next remaining unresolved source decision is now DSB
+
+---
+
 ### Rationale
 Current repository inspection shows that `datasets/raw/stack_queries/` contains:
 - archive files
