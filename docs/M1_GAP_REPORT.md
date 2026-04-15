@@ -56,9 +56,10 @@
 - `CONS_0004` 缺 Spark closure
 - current recommendation is not immediate deepening, but explicit freezing as staged until the next deliberate consistency pass
 
-### Gap D: long-tail realism source still has a structural unresolved point
+### Gap D: Stack line has now been classified as realism substrate only
 Stack 当前拿到的是 dumps / substrate，而不是 direct SQL query corpus。
-因此 long-tail realism source 线并未真正闭合。
+因此，当前已经明确将 Stack 冻结为 realism substrate only，而不是 active direct-query source。
+如果未来要把 Stack 作为 active long-tail query source，必须单独补一个真实 query-text corpus。
 
 ### Gap E: DSB remains a declared target source but not an active source
 DSB 仍在目标源全集里，但目前没有 acquisition、inspection 或 seed extraction 实体进展。
@@ -66,8 +67,8 @@ DSB 仍在目标源全集里，但目前没有 acquisition、inspection 或 seed
 ## 3. 下一轮优先补齐项（冻结排序）
 
 ### Priority 1
-明确 Stack 是否能形成 direct SQL query corpus。
-如果不能，就必须显式保留为 realism substrate，而不能再被口头当成“已具备 query source”。
+Stack decision has now been resolved:
+the current Stack line does not provide a direct SQL query corpus and should be kept as realism substrate only.
 
 ### Priority 2
 对 JOB 做一次明确的人类决策：

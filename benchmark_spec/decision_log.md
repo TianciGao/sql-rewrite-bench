@@ -151,6 +151,28 @@ This is required for reproducibility, preflight checks, and later EA&B writing.
 ### Decision
 M1 source-layer closeout artifacts are now complete.
 
+---
+
+## DL-015
+### Decision
+The current Stack line does not provide a direct SQL query corpus.
+It is therefore frozen as a realism substrate / dumps-based source, not as an active direct-query source.
+
+### Rationale
+Current repository inspection shows that `datasets/raw/stack_queries/` contains:
+- archive files
+- XML dumps
+- notes / interpretation files
+
+It does not currently provide a ready direct SQL query corpus comparable to active case-seed sources.
+
+### Consequence
+- Do not describe Stack as an already available direct SQL query source
+- Treat Stack as realism substrate only in the current phase
+- The next unresolved source decisions are now JOB and DSB
+
+---
+
 ### Basis
 The repository now has:
 - synchronized external draft status
