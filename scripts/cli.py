@@ -95,8 +95,8 @@ def cmd_spark_check(_: argparse.Namespace) -> int:
 
 def cmd_artifact_preflight(_: argparse.Namespace) -> int:
     required_paths = [
-        "benchmark_spec/benchmark_spec_v0.md",
-        "benchmark_spec/case_schema_v0.1.yaml",
+        "docs/PROJECT_PLAN.md",
+        "benchmark_spec/decision_log.md",
         "taxonomy/coverage_taxonomy_v0.1.yaml",
         "cases/PERF/PERF_0001/manifest.yaml",
         "runs/smoke_case/",
