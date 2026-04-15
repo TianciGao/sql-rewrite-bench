@@ -1,0 +1,12 @@
+source_id,source_name,source_family,primary_pool,target_universe,selection_branch,actual_status,current_layer,decision_needed,storage_path,notes
+SRC_001,TPC-H,benchmark,performance,yes,n/a,batch1_staged_partial_inspection,source_layer,no,datasets/raw/tpch/,Batch-1 source present but not the most mature current seed line
+SRC_002,TPC-DS,benchmark,performance,yes,n/a,batch1_mature_and_materialized,source_and_case,no,datasets/raw/tpcds/,Materialized into PERF_0002
+SRC_003,DSB,benchmark,performance,yes,n/a,planned_only,target_source,yes,datasets/raw/dsb/,Keep in target universe but do not misstate as completed
+SRC_004,JOB,benchmark,performance,yes,n/a,batch2_probe_partial,source_and_case,yes,datasets/raw/job/,Partial line already materialized into PERF_0003/0004 but source-universe closure not complete
+SRC_005,SQLStorm,benchmark,longtail,yes,n/a,batch1_mature,source_layer,no,datasets/raw/sqlstorm/,Current most mature long-tail external source
+SRC_006,Stack Queries,workload,longtail,yes,n/a,dumps_only_not_direct_query_corpus,source_layer,yes,datasets/raw/stack/,Do not mark complete until direct SQL query corpus is clarified
+SRC_007,Calcite Seeds,rule_suite,consistency,yes,n/a,batch1_mature,source_and_case,no,datasets/raw/calcite/,Current main consistency seed line with CONS_0002 lineage
+SRC_008,SQLEquiQuest,equivalence_benchmark,consistency,yes,not_chosen,optional_not_active,target_source,yes,datasets/raw/sqlequ iquest/,Keep as future alternative branch only
+SRC_009,PARROT,translation_seed,portability,yes,n/a,batch1_mature_and_materialized,source_and_case,no,datasets/raw/parrot/,Materialized into PORT_0002
+SRC_010,Manual Seed Cases,manual_seed,none_yet,yes,n/a,active_internal_source,construction_channel,no,datasets/raw/manual_seeds/,Internal coverage-hole filler not a fifth pool
+SRC_011,VeriEQL,equivalence_benchmark,consistency,yes,chosen,batch2_accepted_and_materialized,source_and_case,no,datasets/raw/verieql/,Current chosen consistency supplement source via CONS_0003 and CONS_0004
