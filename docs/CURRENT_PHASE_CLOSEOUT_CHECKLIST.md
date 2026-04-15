@@ -39,15 +39,15 @@ State alignment / M1 closeout preparation
 
 ## 当前未闭合事项
 ### A. 文档同步
-- [ ] 更新 `docs/EXTERNAL_DRAFT_CASE_STATUS.md`
-- [ ] 更新 `benchmark_spec/decision_log.md`
-- [ ] 更新 `docs/DOC_MAP.md`
-- [ ] 更新 `inventory/source_registry.csv` 或生成 aligned snapshot
+- [x] 更新 `docs/EXTERNAL_DRAFT_CASE_STATUS.md`
+- [x] 更新 `benchmark_spec/decision_log.md`
+- [x] 更新 `docs/DOC_MAP.md`
+- [x] 更新 `inventory/source_registry.csv` 或生成 aligned snapshot
 
 ### B. M1 正式收口所需
-- [ ] 输出 formal coverage map
-- [ ] 输出 formal gap report
-- [ ] 识别并冻结下一轮优先补齐的 feature buckets
+- [x] 输出 formal coverage map
+- [x] 输出 formal gap report
+- [x] 识别并冻结下一轮优先补齐的 feature buckets
 
 ### C. Batch-2 未闭合 source 事项
 - [ ] 明确 Stack 是否具备 direct SQL query corpus
