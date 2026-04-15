@@ -2,8 +2,9 @@
   "case_id": "CONS_0004",
   "dataset_id": "cons_0004_pg_mysql_witness_v1",
   "engine_validated": [
-    "postgres",
-    "mysql"
+  "postgres",
+  "mysql",
+  "spark"
   ],
   "required_tables": [
     "EMP"
@@ -20,5 +21,8 @@
     "MySQL rewrite_pos_01.sql returned the same row as source.sql",
     "MySQL rewrite_neg_01.sql returned an empty result",
     "The negative rewrite tightens the HAVING threshold from > 3 to > 4"
+    "Spark source.sql returned Clerk",
+    "Spark rewrite_pos_01.sql returned the same row as source.sql",
+    "Spark rewrite_neg_01.sql returned an empty result"
   ]
 }

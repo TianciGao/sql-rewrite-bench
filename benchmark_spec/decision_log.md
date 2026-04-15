@@ -111,14 +111,14 @@ In current-state documents, “SQLEquiQuest / VeriEQL 待二选一” must no lo
 
 ## DL-011
 ### Decision
-`CONS_0004` should remain a staged, not_yet_admitted PG+MySQL validated draft for now.
+`CONS_0004` should remain a staged, not_yet_admitted tri-engine validated draft for now.
 
 ### Rationale
-The case is useful and valid, and it now has controlled PostgreSQL + MySQL witness validation.
+The case is useful and valid, and it now has controlled PostgreSQL + MySQL + Spark witness validation.
 However, immediate broader deepening is still not required in the current phase.
 
 ### Consequence
-The real next technical gap for `CONS_0004` is Spark closure, not immediate admission.
+The real next issue for `CONS_0004` is no longer Spark closure, but whether to keep it staged or deliberately deepen the consistency line in a later pass.
 
 ---
 
@@ -173,6 +173,19 @@ The next action is an explicit human decision on unresolved target-source branch
 The current Stack line does not provide a direct SQL query corpus.
 It is therefore frozen as a realism substrate / dumps-based source, not as an active direct-query source.
 
+### Rationale
+Current repository inspection shows that `datasets/raw/stack_queries/` contains:
+- archive files
+- XML dumps
+- notes / interpretation files
+
+It does not currently provide a ready direct SQL query corpus comparable to active case-seed sources.
+
+### Consequence
+- Do not describe Stack as an already available direct SQL query source
+- Treat Stack as realism substrate only in the current phase
+- The next unresolved source decisions are now JOB and DSB
+
 ---
 
 ## DL-016
@@ -190,16 +203,14 @@ However, the current phase is still source-layer closeout / pre-curation prepara
 
 ---
 
-### Rationale
-Current repository inspection shows that `datasets/raw/stack_queries/` contains:
-- archive files
-- XML dumps
-- notes / interpretation files
+## DL-017
+### Decision
+`CONS_0003` and `CONS_0004` now both have tri-engine closure on PostgreSQL, MySQL, and Spark.
 
-It does not currently provide a ready direct SQL query corpus comparable to active case-seed sources.
+### Rationale
+The previously identified Spark-side consistency gap for the VeriEQL-derived staged drafts has now been closed by direct execution and plan collection.
 
 ### Consequence
-- Do not describe Stack as an already available direct SQL query source
-- Treat Stack as realism substrate only in the current phase
-- The next unresolved source decisions are now JOB and DSB
-
+- Both cases remain staged / not_yet_admitted
+- Immediate next work should shift from engine-closure repair to small pilot evaluation and selective next-step planning
+- DSB remains unresolved and should not be silently frozen without an explicit human decision

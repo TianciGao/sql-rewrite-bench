@@ -51,10 +51,9 @@
 - `CONS_0003` / `CONS_0004` 已到 PG+MySQL validated staged drafts
 - JOB line is currently frozen as a partial realized performance supplement through `PERF_0003` / `PERF_0004`
 
-### Gap C: Spark closure remains the main consistency-side technical gap
-- `CONS_0003` 缺 Spark closure
-- `CONS_0004` 缺 Spark closure
-- current recommendation is not immediate deepening, but explicit freezing as staged until the next deliberate consistency pass
+### Gap C: consistency-side engine closure gap has been reduced
+`CONS_0003` and `CONS_0004` now both have PostgreSQL / MySQL / Spark closure.
+The remaining issue on this line is no longer Spark execution, but staged / not_yet_admitted status and whether broader consistency expansion is needed in a later deliberate pass.
 
 ### Gap D: Stack line has now been classified as realism substrate only
 Stack 当前拿到的是 dumps / substrate，而不是 direct SQL query corpus。

@@ -2,8 +2,9 @@
   "case_id": "CONS_0003",
   "dataset_id": "cons_0003_pg_mysql_witness_v1",
   "engine_validated": [
-    "postgres",
-    "mysql"
+  "postgres",
+  "mysql",
+  "spark"
   ],
   "required_tables": [
     "EMP",
@@ -21,6 +22,9 @@
     "MySQL source.sql returned 10\\t2 and 20\\t1",
     "MySQL rewrite_pos_01.sql returned the same rows as source.sql",
     "MySQL rewrite_neg_01.sql returned 10\\t3 and 20\\t2",
-    "The negative rewrite drops DISTINCT and therefore changes aggregation semantics"
+    "The negative rewrite drops DISTINCT and therefore changes aggregation semantics",
+    "Spark source.sql returned 10\\t2 and 20\\t1",
+    "Spark rewrite_pos_01.sql returned the same rows as source.sql",
+    "Spark rewrite_neg_01.sql returned 10\\t3 and 20\\t2"
   ]
 }

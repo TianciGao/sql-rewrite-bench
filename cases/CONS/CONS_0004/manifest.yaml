@@ -43,7 +43,7 @@ status:
   rewrite_variants_ready: true
   exec_checked_pg: true
   exec_checked_mysql: true
-  exec_checked_spark: false
+  exec_checked_spark: true
   plan_checked: true
   taxonomy_trial_ready: true
 
@@ -61,6 +61,12 @@ artifacts:
   mysql_source_result: runs/cons_0004/mysql/source.tsv
   mysql_positive_result: runs/cons_0004/mysql/rewrite_pos_01.tsv
   mysql_negative_result: runs/cons_0004/mysql/rewrite_neg_01.tsv
+  spark_source_plan: runs/cons_0004/plans/spark/source.txt
+  spark_positive_plan: runs/cons_0004/plans/spark/rewrite_pos_01.txt
+  spark_negative_plan: runs/cons_0004/plans/spark/rewrite_neg_01.txt
+  spark_source_result: runs/cons_0004/spark/source.tsv
+  spark_positive_result: runs/cons_0004/spark/rewrite_pos_01.tsv
+  spark_negative_result: runs/cons_0004/spark/rewrite_neg_01.tsv
 
 notes:
   - CONS_0004 is currently a PG+MySQL validated draft consistency case derived from VeriEQL Calcite-397 / 362.

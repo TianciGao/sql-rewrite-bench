@@ -17,8 +17,8 @@
 | CONS_0002 | consistency | Calcite `new-decorr.iq` seed | staged, not_yet_admitted | PG validated draft | 保持 staged；等待是否继续 broader engine validation |
 | PERF_0003 | performance | JOB 27a | staged performance draft | PG-only validation | 保持 partial，不误写为 source-universe fully complete |
 | PERF_0004 | performance | JOB 30b | staged performance draft | PG validated with positive / negative pair | 保持 staged |
-| CONS_0003 | consistency | VeriEQL Calcite-397/159 | staged consistency draft | PG + MySQL validated | 保持 staged；可作为后续 consistency 深化候选 |
-| CONS_0004 | consistency | VeriEQL Calcite-397/362 | staged consistency draft | PG + MySQL validated | 保持 staged；等待 Spark closure，不立即深挖 |
+| CONS_0003 | consistency | VeriEQL Calcite-397/159 | staged consistency draft | PostgreSQL / MySQL / Spark validated | 保持 staged；当前不立即推进 admission |
+| CONS_0004 | consistency | VeriEQL Calcite-397/362 | staged consistency draft | PostgreSQL / MySQL / Spark validated | 保持 staged；当前不立即推进 admission |
 
 ## 3. 明确写死的状态修正
 ### 3.1 PORT_0002
