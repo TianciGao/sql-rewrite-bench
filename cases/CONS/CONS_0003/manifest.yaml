@@ -1,7 +1,6 @@
 case_id: CONS_0003
 pool: consistency
 dataset_line_candidate: not_yet_admitted
-
 provenance:
   source_id: SRC_011
   seed_id: SEED_005
@@ -12,33 +11,27 @@ provenance:
   raw_q1_file: cases/CONS/CONS_0003/provenance/pair_q1_raw.sql
   raw_q2_file: cases/CONS/CONS_0003/provenance/pair_q2_raw.sql
   provenance_notes: cases/CONS/CONS_0003/provenance/verieql_calcite_397_159_notes.txt
-
 source:
   dialect: calcite_like_candidate
   file: source.sql
-
 variants:
   positives:
-    - rewrite_pos_01.sql
+  - rewrite_pos_01.sql
   negatives:
-    - rewrite_neg_01.sql
-
+  - rewrite_neg_01.sql
 targets:
   engines:
-    - postgres
-    - mysql
-    - spark
-
+  - postgres
+  - mysql
+  - spark
 required_tables:
-  - EMP
-  - DEPT
-
+- EMP
+- DEPT
 features:
-  - left_join
-  - group_by
-  - count
-  - distinct
-
+- left_join
+- group_by
+- count
+- distinct
 status:
   seed_localized: true
   source_frozen: true
@@ -48,7 +41,10 @@ status:
   exec_checked_spark: true
   plan_checked: true
   taxonomy_trial_ready: true
-
+  parse_checked: true
+  schema_ready: true
+  validation_ready: true
+  release_grade: false
 artifacts:
   data_profile: cases/CONS/CONS_0003/data_profile.json
   pg_source_plan: runs/cons_0003/plans/pg/source.json
@@ -69,9 +65,24 @@ artifacts:
   spark_source_result: runs/cons_0003/spark/source.tsv
   spark_positive_result: runs/cons_0003/spark/rewrite_pos_01.tsv
   spark_negative_result: runs/cons_0003/spark/rewrite_neg_01.tsv
-
 notes:
-  - CONS_0003 is currently a tri-engine validated staged consistency case derived from VeriEQL Calcite-397 / 159.
-  - The source and positive rewrite are equivalent on both PostgreSQL and MySQL witness datasets.
-  - The negative rewrite drops DISTINCT and changes the result on both PostgreSQL and MySQL witness datasets.
-  - This case should remain not_yet_admitted for now.
+- CONS_0003 is currently a tri-engine validated staged consistency case derived from
+  VeriEQL Calcite-397 / 159.
+- The source and positive rewrite are equivalent on PostgreSQL, MySQL, and Spark witness
+  datasets.
+- The negative rewrite changes the result on PostgreSQL, MySQL, and Spark witness
+  datasets.
+- This case should remain not_yet_admitted for now.
+- Schema, validation, and engine metadata scaffolding were added to align CONS_0003
+  with the formal case-package template.
+schema:
+  pg_ddl: schema/ddl_pg.sql
+  mysql_ddl: schema/ddl_mysql.sql
+  spark_ddl: schema/ddl_spark.sql
+data_profile:
+  file: data_profile.json
+metadata:
+  engine_metadata: metadata/engine_metadata.yaml
+validation:
+  checker: validation/checker.yaml
+  witness_dataset: validation/witness_dataset.yaml

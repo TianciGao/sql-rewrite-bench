@@ -1,0 +1,15 @@
+source_dialect: calcite_like_candidate
+
+target_engines:
+  - postgres
+  - mysql
+  - spark
+
+validated_engines:
+  - postgres
+  - mysql
+  - spark
+
+notes:
+  - pilot consistency case
+  - tri-engine validated staged draft

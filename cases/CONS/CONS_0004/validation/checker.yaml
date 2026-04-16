@@ -1,0 +1,19 @@
+type: result_equivalence_checker
+
+normalization:
+  sort_rows: true
+  trim_whitespace: true
+  normalize_tabs: true
+
+expectations:
+  equal:
+    - source.sql
+    - rewrite_pos_01.sql
+  not_equal:
+    - source.sql
+    - rewrite_neg_01.sql
+
+expected_results:
+  source: "Clerk"
+  rewrite_pos_01: "Clerk"
+  rewrite_neg_01: ""

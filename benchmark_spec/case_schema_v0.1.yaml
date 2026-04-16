@@ -1,0 +1,88 @@
+schema_version: case_schema_v0.1
+case_package_required:
+  files:
+  - manifest.yaml
+  - source.sql
+  - at_least_one_positive_rewrite
+  - at_least_one_negative_rewrite
+  - data_profile.json
+  directories:
+  - schema/
+  - metadata/
+  - validation/
+required_manifest_sections:
+- provenance
+- source
+- targets
+- variants
+- features
+- validation
+- artifacts
+- status
+manifest_template:
+  identity:
+    case_id: ''
+    pool: ''
+    maturity: ''
+  provenance:
+    source_family: ''
+    source_name: ''
+    source_file: ''
+    raw_reference: ''
+    notes: ''
+  source:
+    dialect: ''
+    file: source.sql
+  targets:
+    engines: []
+  variants:
+    positives: []
+    negatives: []
+  features:
+    sql_features: []
+    rewrite_opportunities: []
+    portability_notes: []
+  schema:
+    pg_ddl: schema/ddl_pg.sql
+    mysql_ddl: schema/ddl_mysql.sql
+    spark_ddl: schema/ddl_spark.sql
+  data_profile:
+    file: data_profile.json
+  metadata:
+    engine_metadata: metadata/engine_metadata.yaml
+  validation:
+    checker: validation/checker.yaml
+    witness_dataset: validation/witness_dataset.yaml
+  artifacts:
+    results: {}
+    plans: {}
+  status:
+    parse_checked: false
+    exec_checked_pg: false
+    exec_checked_mysql: false
+    exec_checked_spark: false
+    plan_checked: false
+    schema_ready: false
+    validation_ready: false
+    release_grade: false
+release_grade_requirements:
+  required_files:
+  - schema/ddl_pg.sql
+  - schema/ddl_mysql.sql
+  - schema/ddl_spark.sql
+  - metadata/engine_metadata.yaml
+  - validation/checker.yaml
+  required_status_flags:
+  - parse_checked
+  - exec_checked_pg
+  - exec_checked_mysql
+  - exec_checked_spark
+  - plan_checked
+  - schema_ready
+  - validation_ready
+compatibility_notes:
+  current_repo_manifest_style: case_id and pool remain top-level keys in current pilot
+    manifests
+  identity_section_deferred: true
+  note: validator should accept current pilot manifest structure during schema/toolchain
+    repair

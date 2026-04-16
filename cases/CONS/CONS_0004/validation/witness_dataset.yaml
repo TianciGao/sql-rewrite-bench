@@ -1,0 +1,8 @@
+dataset_id: cons_0004_pg_mysql_spark_witness_v1
+
+tables:
+  - EMP
+
+notes:
+  - minimal manually constructed witness dataset
+  - used for PostgreSQL / MySQL / Spark consistency validation
