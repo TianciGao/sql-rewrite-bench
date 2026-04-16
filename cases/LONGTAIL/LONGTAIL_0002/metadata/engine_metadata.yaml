@@ -1,0 +1,17 @@
+source_dialect: postgres_like_candidate
+
+target_engines:
+  - postgres
+  - mysql
+  - spark
+
+validated_engines:
+  - postgres
+
+admission_state: not_yet_admitted
+
+notes:
+  - longtail pool sample
+  - SQLStorm-derived staged draft
+  - currently validated on PostgreSQL only
+  - MySQL and Spark closure are intentionally not claimed yet

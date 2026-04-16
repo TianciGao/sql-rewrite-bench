@@ -1,0 +1,19 @@
+source_dialect: postgres_like_candidate
+
+target_engines:
+  - postgres
+  - mysql
+  - spark
+
+validated_engines:
+  - postgres
+  - mysql
+  - spark
+
+admission_state: admitted_external_common_core
+
+notes:
+  - portability pool sample
+  - second admitted external common-core case
+  - source is validated on PostgreSQL
+  - positive and negative rewrites are validated on MySQL and Spark

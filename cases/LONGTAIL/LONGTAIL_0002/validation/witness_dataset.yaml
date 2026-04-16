@@ -1,0 +1,11 @@
+dataset_id: longtail_0002_pg_witness_v2
+
+tables:
+  - users
+  - posts
+  - badges
+
+notes:
+  - minimal manually constructed witness dataset
+  - Dave has posts but no badges, making LEFT JOIN versus INNER JOIN behavior observable
+  - current validation scope is PostgreSQL only

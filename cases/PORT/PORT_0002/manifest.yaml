@@ -1,7 +1,6 @@
 case_id: PORT_0002
 pool: portability
 dataset_line_candidate: common-core
-
 provenance:
   source_id: SRC_009
   seed_id: SEED_004
@@ -10,40 +9,34 @@ provenance:
   source_entry: benchmark/BIRD/pg_res.json[0]
   raw_record_file: cases/PORT/PORT_0002/provenance/parrot_bird_pg_res_entry0.json
   provenance_notes: cases/PORT/PORT_0002/provenance/parrot_bird_pg_res_entry0_notes.txt
-
 admission:
   review_file: benchmark_spec/PORT_0002_ADMISSION_REVIEW_v1.md
   outcome: admitted_external_common_core
-  decision_date: "2026-04-12"
-  rationale: >
-    PORT_0002 now has PostgreSQL source validation, MySQL positive/negative
-    validation, and Spark positive/negative validation, with explicit
-    preservation and divergence on the witness dataset.
+  decision_date: '2026-04-12'
+  rationale: 'PORT_0002 now has PostgreSQL source validation, MySQL positive/negative
+    validation, and Spark positive/negative validation, with explicit preservation
+    and divergence on the witness dataset.
 
+    '
 source:
   dialect: postgres_like_candidate
   file: source.sql
-
 variants:
   positives:
-    - rewrite_pos_01.sql
-    - rewrite_pos_02_spark.sql
+  - rewrite_pos_01.sql
+  - rewrite_pos_02_spark.sql
   negatives:
-    - rewrite_neg_01.sql
-    - rewrite_neg_02_spark.sql
-
+  - rewrite_neg_01.sql
+  - rewrite_neg_02_spark.sql
 targets:
   engines:
-    - postgres
-    - mysql
-    - spark
-
+  - postgres
+  - mysql
+  - spark
 required_tables:
-  - votes
-
+- votes
 features:
-  - date_time_function
-
+- date_time_function
 status:
   seed_localized: true
   source_frozen: true
@@ -54,7 +47,10 @@ status:
   plan_checked: true
   taxonomy_trial_ready: true
   admitted_common_core: true
-
+  parse_checked: true
+  schema_ready: true
+  validation_ready: true
+  release_grade: false
 artifacts:
   data_profile: cases/PORT/PORT_0002/data_profile.json
   pg_source_plan: runs/port_0002/plans/pg/source.json
@@ -67,9 +63,21 @@ artifacts:
   spark_negative_plan: runs/port_0002/plans/spark/rewrite_neg_02_spark.txt
   spark_positive_result: runs/port_0002/spark/rewrite_pos_02_spark.tsv
   spark_negative_result: runs/port_0002/spark/rewrite_neg_02_spark.tsv
-
 notes:
-  - PORT_0002 is now admitted as the second external common-core case in the repository.
-  - PostgreSQL source.sql returns 1.5 on the witness dataset.
-  - MySQL positive rewrite returns 1.5 and MySQL negative rewrite returns 1.
-  - Spark positive rewrite returns 1.5 and Spark negative rewrite returns 1.0.
+- PORT_0002 is now admitted as the second external common-core case in the repository.
+- PostgreSQL source.sql returns 1.5 on the witness dataset.
+- MySQL positive rewrite returns 1.5 and MySQL negative rewrite returns 1.
+- Spark positive rewrite returns 1.5 and Spark negative rewrite returns 1.0.
+- Schema, validation, and engine metadata scaffolding were added to align PORT_0002
+  with the formal case-package template.
+schema:
+  pg_ddl: schema/ddl_pg.sql
+  mysql_ddl: schema/ddl_mysql.sql
+  spark_ddl: schema/ddl_spark.sql
+data_profile:
+  file: data_profile.json
+metadata:
+  engine_metadata: metadata/engine_metadata.yaml
+validation:
+  checker: validation/checker.yaml
+  witness_dataset: validation/witness_dataset.yaml

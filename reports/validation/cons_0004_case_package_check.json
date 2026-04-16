@@ -1,0 +1,258 @@
+{
+  "case_id": "CONS_0004",
+  "pool": "consistency",
+  "case_dir": "cases/CONS/CONS_0004",
+  "ok": true,
+  "checks": [
+    {
+      "name": "manifest_exists",
+      "ok": true,
+      "detail": "cases/CONS/CONS_0004/manifest.yaml"
+    },
+    {
+      "name": "source_sql_exists",
+      "ok": true,
+      "detail": "source.sql"
+    },
+    {
+      "name": "data_profile_exists",
+      "ok": true,
+      "detail": "data_profile.json"
+    },
+    {
+      "name": "has_positive_variant",
+      "ok": true,
+      "detail": "positives=['rewrite_pos_01.sql']"
+    },
+    {
+      "name": "has_negative_variant",
+      "ok": true,
+      "detail": "negatives=['rewrite_neg_01.sql']"
+    },
+    {
+      "name": "positive_file::rewrite_pos_01.sql",
+      "ok": true,
+      "detail": "rewrite_pos_01.sql"
+    },
+    {
+      "name": "negative_file::rewrite_neg_01.sql",
+      "ok": true,
+      "detail": "rewrite_neg_01.sql"
+    },
+    {
+      "name": "manifest_section::provenance",
+      "ok": true,
+      "detail": "provenance"
+    },
+    {
+      "name": "manifest_section::source",
+      "ok": true,
+      "detail": "source"
+    },
+    {
+      "name": "manifest_section::targets",
+      "ok": true,
+      "detail": "targets"
+    },
+    {
+      "name": "manifest_section::variants",
+      "ok": true,
+      "detail": "variants"
+    },
+    {
+      "name": "manifest_section::features",
+      "ok": true,
+      "detail": "features"
+    },
+    {
+      "name": "manifest_section::validation",
+      "ok": true,
+      "detail": "validation"
+    },
+    {
+      "name": "manifest_section::artifacts",
+      "ok": true,
+      "detail": "artifacts"
+    },
+    {
+      "name": "manifest_section::status",
+      "ok": true,
+      "detail": "status"
+    },
+    {
+      "name": "top_level_case_id",
+      "ok": true,
+      "detail": "case_id"
+    },
+    {
+      "name": "top_level_pool",
+      "ok": true,
+      "detail": "pool"
+    },
+    {
+      "name": "schema::pg_ddl",
+      "ok": true,
+      "detail": "schema/ddl_pg.sql"
+    },
+    {
+      "name": "schema::mysql_ddl",
+      "ok": true,
+      "detail": "schema/ddl_mysql.sql"
+    },
+    {
+      "name": "schema::spark_ddl",
+      "ok": true,
+      "detail": "schema/ddl_spark.sql"
+    },
+    {
+      "name": "metadata::engine_metadata",
+      "ok": true,
+      "detail": "metadata/engine_metadata.yaml"
+    },
+    {
+      "name": "validation::checker",
+      "ok": true,
+      "detail": "validation/checker.yaml"
+    },
+    {
+      "name": "validation::witness_dataset",
+      "ok": true,
+      "detail": "validation/witness_dataset.yaml"
+    },
+    {
+      "name": "status::parse_checked",
+      "ok": true,
+      "detail": "parse_checked=True"
+    },
+    {
+      "name": "status::exec_checked_pg",
+      "ok": true,
+      "detail": "exec_checked_pg=True"
+    },
+    {
+      "name": "status::exec_checked_mysql",
+      "ok": true,
+      "detail": "exec_checked_mysql=True"
+    },
+    {
+      "name": "status::exec_checked_spark",
+      "ok": true,
+      "detail": "exec_checked_spark=True"
+    },
+    {
+      "name": "status::plan_checked",
+      "ok": true,
+      "detail": "plan_checked=True"
+    },
+    {
+      "name": "status::schema_ready",
+      "ok": true,
+      "detail": "schema_ready=True"
+    },
+    {
+      "name": "status::validation_ready",
+      "ok": true,
+      "detail": "validation_ready=True"
+    },
+    {
+      "name": "status::release_grade",
+      "ok": true,
+      "detail": "release_grade=False"
+    },
+    {
+      "name": "artifact::data_profile",
+      "ok": true,
+      "detail": "cases/CONS/CONS_0004/data_profile.json"
+    },
+    {
+      "name": "artifact::pg_source_plan",
+      "ok": true,
+      "detail": "runs/cons_0004/plans/pg/source.json"
+    },
+    {
+      "name": "artifact::pg_positive_plan",
+      "ok": true,
+      "detail": "runs/cons_0004/plans/pg/rewrite_pos_01.json"
+    },
+    {
+      "name": "artifact::pg_negative_plan",
+      "ok": true,
+      "detail": "runs/cons_0004/plans/pg/rewrite_neg_01.json"
+    },
+    {
+      "name": "artifact::pg_source_result",
+      "ok": true,
+      "detail": "runs/cons_0004/pg/source.tsv"
+    },
+    {
+      "name": "artifact::pg_positive_result",
+      "ok": true,
+      "detail": "runs/cons_0004/pg/rewrite_pos_01.tsv"
+    },
+    {
+      "name": "artifact::pg_negative_result",
+      "ok": true,
+      "detail": "runs/cons_0004/pg/rewrite_neg_01.tsv"
+    },
+    {
+      "name": "artifact::mysql_source_plan",
+      "ok": true,
+      "detail": "runs/cons_0004/plans/mysql/source.json"
+    },
+    {
+      "name": "artifact::mysql_positive_plan",
+      "ok": true,
+      "detail": "runs/cons_0004/plans/mysql/rewrite_pos_01.json"
+    },
+    {
+      "name": "artifact::mysql_negative_plan",
+      "ok": true,
+      "detail": "runs/cons_0004/plans/mysql/rewrite_neg_01.json"
+    },
+    {
+      "name": "artifact::mysql_source_result",
+      "ok": true,
+      "detail": "runs/cons_0004/mysql/source.tsv"
+    },
+    {
+      "name": "artifact::mysql_positive_result",
+      "ok": true,
+      "detail": "runs/cons_0004/mysql/rewrite_pos_01.tsv"
+    },
+    {
+      "name": "artifact::mysql_negative_result",
+      "ok": true,
+      "detail": "runs/cons_0004/mysql/rewrite_neg_01.tsv"
+    },
+    {
+      "name": "artifact::spark_source_plan",
+      "ok": true,
+      "detail": "runs/cons_0004/plans/spark/source.txt"
+    },
+    {
+      "name": "artifact::spark_positive_plan",
+      "ok": true,
+      "detail": "runs/cons_0004/plans/spark/rewrite_pos_01.txt"
+    },
+    {
+      "name": "artifact::spark_negative_plan",
+      "ok": true,
+      "detail": "runs/cons_0004/plans/spark/rewrite_neg_01.txt"
+    },
+    {
+      "name": "artifact::spark_source_result",
+      "ok": true,
+      "detail": "runs/cons_0004/spark/source.tsv"
+    },
+    {
+      "name": "artifact::spark_positive_result",
+      "ok": true,
+      "detail": "runs/cons_0004/spark/rewrite_pos_01.tsv"
+    },
+    {
+      "name": "artifact::spark_negative_result",
+      "ok": true,
+      "detail": "runs/cons_0004/spark/rewrite_neg_01.tsv"
+    }
+  ]
+}

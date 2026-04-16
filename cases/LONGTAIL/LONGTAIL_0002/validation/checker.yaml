@@ -1,0 +1,22 @@
+type: result_equivalence_checker
+
+normalization:
+  sort_rows: true
+  trim_whitespace: true
+  normalize_tabs: true
+  normalize_null: true
+  normalize_numeric_format: true
+
+reference_engine: postgres
+reference_result_file: runs/longtail_0002/pg/source.tsv
+
+expectations:
+  equal_to_reference:
+    - rewrite_pos_01.sql
+  not_equal_to_reference:
+    - rewrite_neg_01.sql
+
+notes:
+  - PostgreSQL source result is treated as the current witness reference
+  - the positive rewrite should preserve the PostgreSQL source result
+  - the negative rewrite should differ because it strengthens LEFT JOIN behavior
