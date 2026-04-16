@@ -1,0 +1,20 @@
+type: value_normalized_result_equivalence_checker
+
+normalization:
+  sort_rows: true
+  trim_whitespace: true
+  normalize_tabs: true
+  normalize_numeric_format: true
+  normalize_null: true
+
+expectations:
+  equal:
+    - source.sql
+    - rewrite_pos_01.sql
+  not_equal:
+    - source.sql
+    - rewrite_neg_01.sql
+
+notes:
+  - use value-normalized comparison instead of raw string comparison
+  - numeric formatting may differ slightly across engines

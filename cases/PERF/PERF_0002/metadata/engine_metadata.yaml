@@ -1,0 +1,18 @@
+source_dialect: common_core
+
+target_engines:
+  - postgres
+  - mysql
+  - spark
+
+validated_engines:
+  - postgres
+  - mysql
+  - spark
+
+admission_state: admitted_external_common_core
+
+notes:
+  - performance pool sample
+  - first admitted external common-core case
+  - source, positive rewrite, and negative rewrite are validated across PostgreSQL, MySQL, and Spark
