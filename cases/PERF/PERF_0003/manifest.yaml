@@ -1,7 +1,6 @@
 case_id: PERF_0003
 pool: performance
 dataset_line_candidate: not_yet_admitted
-
 provenance:
   source_id: SRC_012
   seed_id: SEED_009
@@ -9,52 +8,45 @@ provenance:
   source_file: datasets/raw/job/staged/job/27a.sql
   raw_sql_file: cases/PERF/PERF_0003/provenance/job_27a_raw.sql
   provenance_notes: cases/PERF/PERF_0003/provenance/job_27a_notes.txt
-
 source:
   dialect: postgres_like_candidate
   file: source.sql
-
 variants:
   positives:
-    - rewrite_pos_01.sql
+  - rewrite_pos_01.sql
   negatives:
-    - rewrite_neg_01.sql
-
+  - rewrite_neg_01.sql
 targets:
   engines:
-    - postgres
-    - mysql
-    - spark
-
+  - postgres
+  - mysql
+  - spark
 required_tables:
-  - complete_cast
-  - comp_cast_type
-  - company_name
-  - company_type
-  - keyword
-  - link_type
-  - movie_companies
-  - movie_info
-  - movie_keyword
-  - movie_link
-  - title
-
+- complete_cast
+- comp_cast_type
+- company_name
+- company_type
+- keyword
+- link_type
+- movie_companies
+- movie_info
+- movie_keyword
+- movie_link
+- title
 features:
-  - multi_join
-  - aggregate
-  - like_predicate
-  - between_predicate
-
+- multi_join
+- aggregate
+- like_predicate
+- between_predicate
 status:
   seed_localized: true
   source_frozen: true
   rewrite_variants_ready: true
   exec_checked_pg: true
-  exec_checked_mysql: false
+  exec_checked_mysql: true
   exec_checked_spark: false
   plan_checked: true
   taxonomy_trial_ready: true
-
 artifacts:
   data_profile: cases/PERF/PERF_0003/data_profile.json
   pg_source_plan: runs/perf_0003/plans/pg/source.json
@@ -63,9 +55,17 @@ artifacts:
   pg_source_result: runs/perf_0003/pg/source.tsv
   pg_positive_result: runs/perf_0003/pg/rewrite_pos_01.tsv
   pg_negative_result: runs/perf_0003/pg/rewrite_neg_01.tsv
-
+  mysql_source_plan: runs/perf_0003/plans/mysql/source.json
+  mysql_positive_plan: runs/perf_0003/plans/mysql/rewrite_pos_01.json
+  mysql_negative_plan: runs/perf_0003/plans/mysql/rewrite_neg_01.json
+  mysql_source_result: runs/perf_0003/mysql/source.tsv
+  mysql_positive_result: runs/perf_0003/mysql/rewrite_pos_01.tsv
+  mysql_negative_result: runs/perf_0003/mysql/rewrite_neg_01.tsv
 notes:
-  - PERF_0003 is currently a PG validated performance draft case derived from JOB query 27a.
-  - The source and positive rewrite are equivalent on the PostgreSQL required-table-only JOB/IMDB subset.
-  - The negative rewrite changes the result on the PostgreSQL required-table-only JOB/IMDB subset.
-  - This case should remain not_yet_admitted for now.
+- PERF_0003 is currently a PostgreSQL + MySQL validated staged performance case derived
+  from JOB query 27a.
+- The source and positive rewrite are equivalent on the required-table-only JOB/IMDB
+  subset in PostgreSQL and MySQL.
+- The negative rewrite changes the result on the required-table-only JOB/IMDB subset
+  in PostgreSQL and MySQL.
+- This case should remain not_yet_admitted for now.

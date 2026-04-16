@@ -2,7 +2,8 @@
   "case_id": "PERF_0003",
   "dataset_id": "job_27a_pg_required_tables_v1",
   "engine_validated": [
-    "postgres"
+    "postgres",
+    "mysql"
   ],
   "required_tables": [
     "complete_cast",
@@ -31,10 +32,13 @@
     "title": 2528312
   },
   "notes": [
-    "Required-table-only JOB/IMDB subset loaded for PostgreSQL validation",
+    "Required-table-only JOB/IMDB subset loaded for PostgreSQL and MySQL validation",
     "PostgreSQL source.sql produced one row",
     "PostgreSQL rewrite_pos_01.sql produced the same row as source.sql",
     "PostgreSQL rewrite_neg_01.sql changed the result row by tightening the complete_cast status filter",
+    "MySQL source.sql produced one row",
+    "MySQL rewrite_pos_01.sql produced the same row as source.sql",
+    "MySQL rewrite_neg_01.sql changed the result row by tightening the complete_cast status filter",
     "This is not a full all-table IMDB loading"
   ]
 }

@@ -1,49 +1,51 @@
 case_id: PERF_0003
-trial_version: "0.2"
+trial_version: '0.2'
 status: provisional_trial_labeled
 candidate_primary_pool: performance
 dataset_line_candidate: not_yet_admitted
-
 context:
-  purpose: >
-    This case is derived from a JOB performance/realism seed and is used to
+  purpose: 'This case is derived from a JOB performance/realism seed and is used to
     begin the next Batch-2 performance archetype line after PERF_0002.
-  note: >
-    PERF_0003 now has PostgreSQL validation for source, positive rewrite,
-    and negative rewrite on a required-table-only JOB/IMDB subset.
 
+    '
+  note: PERF_0003 now has PostgreSQL and MySQL witness execution with positive and
+    negative rewrites, but it should still be treated as a staged not_yet_admitted
+    performance case rather than as common-core.
 sql_feature_tags:
-  - multi_join
-  - aggregate
-  - like_predicate
-  - between_predicate
-
+- multi_join
+- aggregate
+- like_predicate
+- between_predicate
 rewrite_opportunity_tags:
-  - join_normalization
-  - redundant_predicate_cleanup
-  - filter_sensitivity
-
+- join_normalization
+- redundant_predicate_cleanup
+- filter_sensitivity
 plan_operator_tags:
-  status: provisional_pg_only
+  status: provisional_pg_mysql
   observed_in_postgres:
-    - scan
-    - join
-    - aggregate
-    - filter
-    - gather
-
+  - scan
+  - join
+  - aggregate
+  - filter
+  - gather
+  observed_in_mysql:
+  - scan
+  - join
+  - aggregate
+  - sort
 workload_realism_tags:
-  - realistic_query_style
-  - high_join_count
-
+- realistic_query_style
+- high_join_count
 portability_tags: []
-
 review_notes:
-  - PERF_0003 is sourced from JOB query 27a.
-  - The positive rewrite rewrites comma joins into explicit joins and removes transitive redundant equality conditions.
-  - The negative rewrite tightens the complete_cast status filter from complete to complete+verified.
-  - PostgreSQL validation shows source == positive and source != negative.
-
+- PERF_0003 is sourced from JOB query 27a.
+- The positive rewrite rewrites comma joins into explicit joins and removes transitive
+  redundant equality conditions.
+- The negative rewrite tightens the complete_cast status filter from complete to complete+verified.
+- PostgreSQL validation shows source == positive and source != negative.
+- MySQL source-versus-positive equivalence and source-versus-negative non-equivalence
+  are now observed on the required-table-only JOB/IMDB subset.
+- This case is now stronger than a PG-only draft, but still lacks Spark closure.
 evidence:
   raw_sql: cases/PERF/PERF_0003/provenance/job_27a_raw.sql
   frozen_source: cases/PERF/PERF_0003/source.sql
@@ -57,3 +59,9 @@ evidence:
   pg_source_result: runs/perf_0003/pg/source.tsv
   pg_positive_result: runs/perf_0003/pg/rewrite_pos_01.tsv
   pg_negative_result: runs/perf_0003/pg/rewrite_neg_01.tsv
+  mysql_source_plan: runs/perf_0003/plans/mysql/source.json
+  mysql_positive_plan: runs/perf_0003/plans/mysql/rewrite_pos_01.json
+  mysql_negative_plan: runs/perf_0003/plans/mysql/rewrite_neg_01.json
+  mysql_source_result: runs/perf_0003/mysql/source.tsv
+  mysql_positive_result: runs/perf_0003/mysql/rewrite_pos_01.tsv
+  mysql_negative_result: runs/perf_0003/mysql/rewrite_neg_01.tsv
