@@ -1,168 +1,174 @@
-# Common-Core and Extended Rules v0
+# Common-Core 与 Extended 规则 v0
 
-## 1. Role of this document
+## 1. 本文档的作用
 
-This file defines how the benchmark separates cases into:
+本文件定义了基准如何将 case 划分为：
 
-- common-core
-- extended
+- `common-core`
+- `extended`
 
-Its purpose is to prevent unfair comparisons and to keep broad coverage without collapsing everything into one mixed leaderboard.
+其目的，是避免不公平比较，同时在不把所有内容都混进同一个排行榜的前提下，保留更广泛的覆盖范围。
 
-For pool rules, see `docs/POOL_MAPPING_RULES.md`.
-For current benchmark boundary, see `benchmark_spec/benchmark_spec_v0.md`.
-
----
-
-## 2. Why this split exists
-
-A SQL rewrite benchmark serves two goals that are often in tension:
-
-1. fair cross-engine comparison
-2. broad real-world coverage
-
-If the benchmark keeps only the smallest shared subset, it becomes too conservative.
-If the benchmark mixes all cases together, comparisons become noisy and unfair.
-
-The common-core / extended split exists to preserve both:
-- common-core = comparable core
-- extended = richer but less uniformly comparable coverage
+关于 pool 的规则，参见 `docs/POOL_MAPPING_RULES.md`。  
+关于当前 benchmark 的边界，参见 `benchmark_spec/benchmark_spec_v0.md`。
 
 ---
 
-## 3. Definitions
+## 2. 为什么需要这种划分
+
+一个 SQL 重写 benchmark 通常同时服务于两个目标，而这两个目标往往存在张力：
+
+1. 跨引擎的公平比较  
+2. 广泛的真实世界覆盖
+
+如果 benchmark 只保留最小的共享子集，它就会过于保守。  
+如果 benchmark 把所有 case 混在一起比较，结果就会变得嘈杂且不公平。
+
+`common-core` / `extended` 这一区分，正是为了同时保留这两点：
+
+- `common-core` = 可比较的核心集合
+- `extended` = 更丰富、但可比较性不那么统一的覆盖集合
+
+---
+
+## 3. 定义
 
 ## 3.1 Common-Core
-A case belongs to **common-core** if it satisfies all of the following:
+一个 case 只有在满足以下全部条件时，才属于 **common-core**：
 
-1. it is executable in all intended current engines for the relevant task
-2. result comparison is available across those engines
-3. the case semantics are stable enough for direct cross-engine reporting
-4. the case does not rely on unsupported or highly engine-specific constructs for its core meaning
+1. 对于相关任务下当前预期纳入范围的所有引擎，它都可以执行  
+2. 可以在这些引擎之间进行结果比较  
+3. 该 case 的语义足够稳定，能够直接用于跨引擎报告  
+4. 该 case 的核心含义不依赖于不受支持或高度引擎特定的构造
 
-Current intended engines:
+当前预期纳入的引擎为：
+
 - Spark SQL
 - PostgreSQL
 - MySQL
 
-Common-core is the primary set for fair horizontal comparison.
+`common-core` 是用于公平横向比较的主要集合。
 
 ---
 
 ## 3.2 Extended
-A case belongs to **extended** if it is benchmark-relevant but does not satisfy full common-core requirements.
+一个 case 如果与 benchmark 相关，但不满足完整的 common-core 要求，则属于 **extended**。
 
-Typical reasons:
-- only a subset of current engines can execute it
-- a dialect-specific construct is important to keep
-- it is highly valuable for coverage, but not fully fair for cross-engine comparison
-- it is still useful as a benchmark case, but should not be mixed into the common-core scoreboard
+典型原因包括：
 
-Extended is not a discard bucket.
-It is a controlled expansion set.
+- 只有当前引擎中的一部分能够执行它  
+- 某种方言特定构造具有保留价值  
+- 它对于覆盖面非常有价值，但并不完全适合做跨引擎公平比较  
+- 它仍然是有用的 benchmark case，但不应混入 `common-core` 的记分板
 
----
-
-## 4. Decision rules
-
-## 4.1 Common-Core admission rule
-A case may be labeled `common-core` only if:
-
-- all intended engines in scope can execute it
-- result consistency can be checked across those engines
-- the comparison is considered fair enough for primary reporting
-- no major engine-specific semantics dominate the meaning of the case
-
-## 4.2 Extended admission rule
-A case may be labeled `extended` if:
-
-- it is relevant to at least one formal pool
-- it adds meaningful benchmark value
-- it preserves provenance and case metadata
-- it fails one or more common-core requirements, but is still useful
+`extended` 不是一个“丢弃桶”。  
+它是一个受控的扩展集合。
 
 ---
 
-## 5. Relationship with formal pools
+## 4. 判定规则
 
-Common-core / extended is **not** a replacement for primary pool.
+## 4.1 Common-Core 准入规则
+一个 case 只有在满足以下条件时，才能被标记为 `common-core`：
 
-Each admitted case should still have:
-- one `candidate_primary_pool` or final `primary_pool`
-- one dataset line:
+- 当前纳入范围的所有目标引擎都可以执行它  
+- 可以在这些引擎之间检查结果一致性  
+- 这种比较被认为足够公平，可用于主要报告  
+- 该 case 的含义不会被重大的引擎特定语义所主导
+
+## 4.2 Extended 准入规则
+一个 case 在满足以下条件时，可以被标记为 `extended`：
+
+- 它至少与一个正式 pool 相关  
+- 它能为 benchmark 增加有意义的价值  
+- 它保留了 provenance 和 case 元数据  
+- 它未满足一项或多项 common-core 要求，但仍然有用
+
+---
+
+## 5. 与 formal pools 的关系
+
+`common-core` / `extended` **并不**替代 primary pool。
+
+每个被接纳的 case 仍然应该具有：
+
+- 一个 `candidate_primary_pool` 或最终的 `primary_pool`
+- 一条 dataset line：
   - `common-core`
-  - or `extended`
+  - 或 `extended`
 
-Example:
-- a case may be `primary_pool = longtail` and `dataset_line = common-core`
-- another case may be `primary_pool = portability` and `dataset_line = extended`
+例如：
 
-Pool answers: **what kind of benchmark question this case serves**  
-Dataset line answers: **how this case should be reported and compared**
+- 一个 case 可以是 `primary_pool = longtail` 且 `dataset_line = common-core`
+- 另一个 case 可以是 `primary_pool = portability` 且 `dataset_line = extended`
 
----
-
-## 6. Current v0 rule
-
-In the current early pilot stage:
-
-- cases should default to `common-core` only when tri-engine execution and result comparison have already been demonstrated
-- cases that are still missing execution or comparison evidence should not be assumed to be common-core
-- cases with unresolved engine-specific semantics should remain in `extended` or `not_yet_admitted`
+Pool 回答的是：**这个 case 服务于哪一类 benchmark 问题**  
+Dataset line 回答的是：**这个 case 应该如何被报告和比较**
 
 ---
 
-## 7. Current not-yet-admitted rule
+## 6. 当前 v0 规则
 
-A case should remain outside both common-core and extended if any of the following is still unresolved:
+在当前的早期 pilot 阶段：
 
-- provenance is incomplete
-- primary pool is unclear
-- result checker is incomplete
-- tri-engine (or intended-engine) execution has not been demonstrated
-- semantics are still under review
+- 只有当三引擎执行和结果比较已经被证明成立时，case 才应默认归入 `common-core`
+- 仍然缺少执行或比较证据的 case，不应被默认视为 `common-core`
+- 存在未解决的引擎特定语义问题的 case，应继续保留在 `extended` 或 `not_yet_admitted`
 
-Such a case should be marked as:
+---
+
+## 7. 当前 not-yet-admitted 规则
+
+如果一个 case 仍存在以下任一未解决问题，则应暂时不归入 `common-core` 或 `extended`：
+
+- provenance 不完整  
+- primary pool 尚不明确  
+- result checker 不完整  
+- 尚未证明三引擎（或目标引擎）可执行  
+- 语义仍在审查中
+
+此类 case 应标记为：
+
 - `staging`
-- or `not_yet_admitted`
+- 或 `not_yet_admitted`
 
 ---
 
-## 8. Reporting rule
+## 8. 报告规则
 
-For the current benchmark version:
+对于当前版本的 benchmark：
 
-1. common-core results should be reported first
-2. extended results should be reported separately
-3. common-core and extended should not be merged into one undifferentiated score
-4. if a metric is reported on extended only, that must be stated explicitly
-
----
-
-## 9. Upgrade / downgrade rule
-
-A case may be upgraded:
-- from `not_yet_admitted` → `extended`
-- from `extended` → `common-core`
-
-only when the required evidence becomes available.
-
-A case may also be downgraded:
-- from `common-core` → `extended`
-
-if later evidence shows that cross-engine comparison is not actually fair or stable.
-
-Such changes should be documented in project notes and, when policy changes are involved, in `benchmark_spec/decision_log.md`.
+1. 应首先报告 `common-core` 的结果  
+2. `extended` 的结果应单独报告  
+3. 不应将 `common-core` 和 `extended` 合并成一个不加区分的总分  
+4. 如果某个指标只在 `extended` 上报告，必须明确说明
 
 ---
 
-## 10. Current practical guidance
+## 9. 升级 / 降级规则
 
-For the current repository stage, use the following decision order:
+一个 case 可以在所需证据具备之后被升级：
 
-1. decide whether the case is admitted at all
-2. assign candidate / primary pool
-3. decide whether it belongs to common-core or extended
-4. only then include it in summaries or benchmark tables
+- 从 `not_yet_admitted` → `extended`
+- 从 `extended` → `common-core`
 
-This order prevents source-level assumptions from being confused with final case-level reporting.
+一个 case 也可以被降级：
+
+- 从 `common-core` → `extended`
+
+如果后续证据表明，跨引擎比较实际上并不公平或不稳定，就应进行降级。
+
+此类变更应记录在项目备注中；如果涉及策略变更，还应记录在 `benchmark_spec/decision_log.md` 中。
+
+---
+
+## 10. 当前实践指引
+
+在当前仓库阶段，建议按如下顺序进行判定：
+
+1. 先判断这个 case 是否应被接纳  
+2. 分配 candidate / primary pool  
+3. 再决定它属于 `common-core` 还是 `extended`  
+4. 只有在此之后，才把它纳入总结或 benchmark 表格
+
+这一顺序可以避免把 source 层面的假设与最终 case 层面的报告混淆起来。

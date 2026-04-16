@@ -1,84 +1,84 @@
-# PORT_0002 Admission Review v1
+# PORT_0002 准入评审 v1
 
-## 1. Document Role
+## 1. 文档作用
 
-This document records the second explicit admission review for `PORT_0002`.
+本文件记录了对 `PORT_0002` 的第二次明确准入评审。
 
-Its purpose is to answer the updated review question:
+其目的，是回答更新后的评审问题：
 
-> Given the current evidence, should `PORT_0002` remain a `common-core_candidate`, or is it now strong enough to be admitted as an external common-core case?
+> 基于当前证据，`PORT_0002` 是否应继续保持为 `common-core_candidate`，还是已经足够强，可以被正式接纳为一个 external common-core case？
 
-This file supersedes the judgment context of:
+本文件取代了以下文档中的旧评审语境：
 
 - `benchmark_spec/PORT_0002_ADMISSION_REVIEW_v0.md`
 
-but does not erase the historical value of that earlier review.
+但这并不抹去此前评审的历史价值。
 
 ---
 
-## 2. Case Under Review
+## 2. 被评审的 Case
 
 **Case ID**: `PORT_0002`  
 **Primary pool**: portability  
-**Previous dataset-line status**: `common-core_candidate`
+**先前的 dataset-line 状态**: `common-core_candidate`
 
-**Source provenance**
+**来源溯源信息（source provenance）**
 
 - Source family: PARROT
 - Source subset: BIRD
 - Source entry: `benchmark/BIRD/pg_res.json[0]`
 
-**Current case structure**
+**当前 case 结构**
 
-- PostgreSQL-style source query
-- MySQL-style positive rewrite
-- MySQL-style negative rewrite
-- Spark-style positive rewrite
-- Spark-style negative rewrite
-- witness dataset over `votes`
+- PostgreSQL 风格的 source query
+- MySQL 风格的正例 rewrite
+- MySQL 风格的负例 rewrite
+- Spark 风格的正例 rewrite
+- Spark 风格的负例 rewrite
+- 基于 `votes` 的 witness dataset
 
 ---
 
-## 3. Evidence Summary
+## 3. 证据摘要
 
-`PORT_0002` now has the following evidence:
+`PORT_0002` 目前具备以下证据：
 
 ### 3.1 Provenance
-The source record, provenance note, and frozen case files are all present.
+source 记录、provenance note 以及冻结后的 case 文件均已具备。
 
-### 3.2 Source evidence
-The PostgreSQL source query executes successfully.
+### 3.2 Source 证据
+PostgreSQL 的 source query 可以成功执行。
 
-Observed result:
+观测结果：
 
 - PostgreSQL `source.sql` → `1.5`
 
-### 3.3 MySQL rewrite evidence
-The MySQL target-side rewrites execute successfully.
+### 3.3 MySQL rewrite 证据
+MySQL 目标侧 rewrites 可以成功执行。
 
-Observed results:
+观测结果：
 
 - MySQL `rewrite_pos_01.sql` → `1.5`
 - MySQL `rewrite_neg_01.sql` → `1`
 
-### 3.4 Spark rewrite evidence
-The Spark target-side rewrites also execute successfully.
+### 3.4 Spark rewrite 证据
+Spark 目标侧 rewrites 也可以成功执行。
 
-Observed results:
+观测结果：
 
 - Spark `rewrite_pos_02_spark.sql` → `1.5`
 - Spark `rewrite_neg_02_spark.sql` → `1.0`
 
-### 3.5 Preservation / divergence behavior
-The case now demonstrates:
+### 3.5 保持 / 分歧行为
+该 case 现在已经证明：
 
 - source == positive
 - source != negative
 
-for both MySQL and Spark target-side rewrites.
+这一性质对 MySQL 和 Spark 的目标侧 rewrite 都成立。
 
-### 3.6 Plan evidence
-Plan artifacts are now available for:
+### 3.6 Plan 证据
+目前已经具备以下 plan artifacts：
 
 - PostgreSQL source
 - MySQL positive rewrite
@@ -88,73 +88,73 @@ Plan artifacts are now available for:
 
 ---
 
-## 4. Review Question
+## 4. 评审问题
 
-Should `PORT_0002` now be admitted as an external common-core case?
+`PORT_0002` 现在是否应被正式接纳为一个 external common-core case？
 
 ---
 
-## 5. Review Judgment
+## 5. 评审结论
 
 ### Promotion review
 **PASS**
 
-`PORT_0002` remains clearly strong enough for `common-core` review.
+`PORT_0002` 显然仍然足够强，能够进入 `common-core` 评审。
 
 ### Admission review
 **PASS**
 
-`PORT_0002` is now strong enough to be admitted as an external common-core case.
+`PORT_0002` 现在已经足够强，可以被正式接纳为一个 external common-core case。
 
 ---
 
-## 6. Rationale
+## 6. 判定理由
 
-In `v0`, admission was deferred because the portability closure was still too narrow:
+在 `v0` 中，之所以暂缓接纳，是因为其 portability 闭环仍然过窄：
 
-- source-side evidence was mainly in PostgreSQL
-- rewrite-side evidence was mainly in MySQL
-- Spark was missing
+- source-side 证据主要只在 PostgreSQL 上
+- rewrite-side 证据主要只在 MySQL 上
+- Spark 证据缺失
 
-That gap has now been reduced substantially.
+而现在，这一缺口已经被大幅缩小。
 
-The case now demonstrates a reusable portability pattern:
+该 case 现在已经展示出一个可复用的 portability 模式：
 
-1. a source-side PostgreSQL expression
-2. a target-side MySQL positive rewrite preserving semantics
-3. a target-side MySQL negative rewrite changing semantics
-4. a target-side Spark positive rewrite preserving semantics
-5. a target-side Spark negative rewrite changing semantics
+1. 一个 source-side 的 PostgreSQL 表达
+2. 一个保持语义的 target-side MySQL 正例 rewrite
+3. 一个改变语义的 target-side MySQL 负例 rewrite
+4. 一个保持语义的 target-side Spark 正例 rewrite
+5. 一个改变语义的 target-side Spark 负例 rewrite
 
-This is now strong enough to treat `PORT_0002` not merely as a portability candidate, but as an admitted external benchmark unit.
-
----
-
-## 7. Current Decision
-
-The current decision is:
-
-> Admit `PORT_0002` as an external common-core case.
+这已经足以将 `PORT_0002` 视为不只是一个 portability candidate，而是一个已被接纳的 external benchmark unit。
 
 ---
 
-## 8. Implementation Consequence
+## 7. 当前决定
 
-This review implies:
+当前决定如下：
 
-- `cases/PORT/PORT_0002/manifest.yaml` should move from `common-core_candidate` to `common-core`
-- `cases/PORT/PORT_0002/taxonomy_trial_v0.2.yaml` should reflect admitted-common-core status
-- case-local metadata should record this as an explicit admission outcome
-- `docs/EXTERNAL_DRAFT_CASE_STATUS.md` should no longer describe `PORT_0002` as merely a candidate
+> 将 `PORT_0002` 接纳为一个 external common-core case。
 
 ---
 
-## 9. Bottom Line
+## 8. 实施后果
 
-`PORT_0002` has now crossed the threshold from:
+本次评审意味着：
 
-> strong portability candidate
+- `cases/PORT/PORT_0002/manifest.yaml` 应从 `common-core_candidate` 改为 `common-core`
+- `cases/PORT/PORT_0002/taxonomy_trial_v0.2.yaml` 应体现其已被接纳的 common-core 状态
+- case 本地元数据应将本次结果记录为一次明确的 admission outcome
+- `docs/EXTERNAL_DRAFT_CASE_STATUS.md` 不应再将 `PORT_0002` 仅描述为 candidate
 
-to:
+---
 
-> admitted external common-core portability case
+## 9. 最终结论
+
+`PORT_0002` 现在已经跨过了这条门槛：
+
+> 从：强的 portability candidate
+
+到：
+
+> 已正式接纳的 external common-core portability case

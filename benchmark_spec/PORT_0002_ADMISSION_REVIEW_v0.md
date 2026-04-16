@@ -1,185 +1,185 @@
-# PORT_0002 Admission Review v0
+# PORT_0002 准入评审 v0
 
-## 1. Document Role
+## 1. 文档作用
 
-This document records the first explicit admission review for `PORT_0002`.
+本文件记录了对 `PORT_0002` 的第一次明确准入评审。
 
-Its purpose is to answer a narrower question than the broader external-draft status summary:
+其目的，是回答一个比更广义的 external-draft 状态总结更窄的问题：
 
-> Given the current evidence, should `PORT_0002` remain a `common-core_candidate`, or should it now be admitted as an external common-core case?
+> 基于当前证据，`PORT_0002` 是否应继续保持为 `common-core_candidate`，还是现在就应被正式接纳为一个 external common-core case？
 
-This document does not replace:
+本文件**不替代**以下文档：
 
 - `docs/EXTERNAL_DRAFT_CASE_STATUS.md`
 - `benchmark_spec/COMMON_CORE_ADMISSION_CHECK_v0.md`
-- case-local manifests and taxonomy files
+- case 本地的 manifest 和 taxonomy 文件
 
-Instead, it serves as the project-level review note for this specific portability case.
+相反，它作为该 portability case 的项目级评审记录而存在。
 
 ---
 
-## 2. Case Under Review
+## 2. 被评审的 Case
 
 **Case ID**: `PORT_0002`  
 **Primary pool**: portability  
-**Current dataset-line status**: `common-core_candidate`
+**当前 dataset-line 状态**: `common-core_candidate`
 
-**Source provenance**
+**来源溯源信息（source provenance）**
 
 - Source family: PARROT
 - Source subset: BIRD
 - Source entry: `benchmark/BIRD/pg_res.json[0]`
 
-**Current case structure**
+**当前 case 结构**
 
-- PostgreSQL-style source query
-- MySQL-style positive rewrite
-- MySQL-style negative rewrite
-- witness dataset over `votes`
+- PostgreSQL 风格的 source query
+- MySQL 风格的正例 rewrite
+- MySQL 风格的负例 rewrite
+- 基于 `votes` 的 witness dataset
 
 ---
 
-## 3. Current Evidence Summary
+## 3. 当前证据摘要
 
-`PORT_0002` currently has the following evidence:
+`PORT_0002` 当前具备以下证据：
 
 ### 3.1 Provenance
-The source record, provenance note, and frozen case files are all present.
+source 记录、provenance note 以及冻结后的 case 文件均已具备。
 
-### 3.2 Source evidence
-The PostgreSQL source query has been executed successfully on the witness dataset.
+### 3.2 Source 证据
+PostgreSQL 的 source query 已在 witness dataset 上成功执行。
 
-Observed source result:
+观测到的 source 结果：
 
 - PostgreSQL `source.sql` → `1.5`
 
-### 3.3 Positive rewrite evidence
-The MySQL positive rewrite has been executed successfully on the witness dataset.
+### 3.3 正例 rewrite 证据
+MySQL 的正例 rewrite 已在 witness dataset 上成功执行。
 
-Observed positive result:
+观测到的正例结果：
 
 - MySQL `rewrite_pos_01.sql` → `1.5`
 
-This preserves the source result.
+该结果保持了 source 的结果。
 
-### 3.4 Negative rewrite evidence
-The MySQL negative rewrite has also been executed successfully.
+### 3.4 负例 rewrite 证据
+MySQL 的负例 rewrite 也已成功执行。
 
-Observed negative result:
+观测到的负例结果：
 
 - MySQL `rewrite_neg_01.sql` → `1`
 
-This diverges from the source result.
+该结果与 source 的结果发生了分歧。
 
-### 3.5 Plan evidence
-Plan artifacts have been collected for:
+### 3.5 Plan 证据
+目前已经收集到以下 plan artifacts：
 
 - PostgreSQL source
 - MySQL positive rewrite
 - MySQL negative rewrite
 
-### 3.6 Current portability value
-The case already demonstrates a clear portability story:
+### 3.6 当前 portability 价值
+该 case 已经展示出一个清晰的 portability 故事：
 
-- PostgreSQL-style year extraction in the source
-- MySQL-style year extraction in the positive rewrite
-- a negative range-boundary rewrite that appears plausible but changes the result
+- source 中使用 PostgreSQL 风格的年份提取表达式
+- 正例 rewrite 中使用 MySQL 风格的年份提取表达式
+- 一个看起来合理、但会改变结果的负例区间边界 rewrite
 
-This is already strong portability evidence.
-
----
-
-## 4. Review Question
-
-Should `PORT_0002` now be admitted as an external common-core case?
+这已经构成了较强的 portability 证据。
 
 ---
 
-## 5. Review Judgment
+## 4. 评审问题
+
+`PORT_0002` 现在是否应被正式接纳为一个 external common-core case？
+
+---
+
+## 5. 评审结论
 
 ### Promotion review
 **PASS**
 
-`PORT_0002` is strong enough to remain under explicit `common-core_candidate` review.
+`PORT_0002` 足够强，应继续作为一个明确的 `common-core_candidate` 进入评审。
 
 ### Admission review
 **NOT YET**
 
-`PORT_0002` should **not yet** be admitted as an external common-core case.
+`PORT_0002` **暂时还不应**被正式接纳为一个 external common-core case。
 
 ---
 
-## 6. Rationale
+## 6. 判定理由
 
-`PORT_0002` is already a strong portability draft case, but the current evidence is still narrower than the evidence used to admit `PERF_0002`.
+`PORT_0002` 已经是一个很强的 portability draft case，但当前证据的广度仍然窄于当初接纳 `PERF_0002` 时所使用的证据。
 
-The main reasons for not admitting it yet are:
+目前暂不接纳它的主要原因如下：
 
-1. **Cross-engine closure is still incomplete**
-   - PostgreSQL source is validated
-   - MySQL positive and negative are validated
-   - Spark is not yet part of this case's closure story
+1. **跨引擎闭环仍不完整**
+   - PostgreSQL source 已验证
+   - MySQL 的正例和负例已验证
+   - Spark 还没有进入该 case 的闭环证据链
 
-2. **The current validation is asymmetric**
-   - source-side evidence is strongest in PostgreSQL
-   - rewrite-side evidence is strongest in MySQL
-   - this is meaningful for portability, but still weaker than a broader admitted common-core case
+2. **当前验证仍然是不对称的**
+   - source-side 证据在 PostgreSQL 上最强
+   - rewrite-side 证据在 MySQL 上最强
+   - 这对 portability 来说是有意义的，但仍弱于一个更完整、已接纳的 common-core case
 
-3. **The case is already useful without admission**
-   - it already functions well as a `common-core_candidate`
-   - immediate admission is not required for it to contribute benchmark value
+3. **即使不接纳，该 case 也已经有用**
+   - 它已经能够很好地作为一个 `common-core_candidate` 发挥作用
+   - 它要为 benchmark 提供价值，并不要求立刻被正式接纳
 
-In other words:
+换句话说：
 
-> `PORT_0002` is already strong enough for promotion review, but not yet strong enough for final admission.
-
----
-
-## 7. Current Decision
-
-The current decision is:
-
-- keep `PORT_0002` as **`common-core_candidate`**
-- do **not** admit it yet
-- revisit admission after broader validation evidence is available
+> `PORT_0002` 已经足够强，可以通过 promotion review；但还不够强，无法通过最终 admission。
 
 ---
 
-## 8. Implementation Consequence
+## 7. 当前决定
 
-This review implies:
+当前决定如下：
 
-- `cases/PORT/PORT_0002/manifest.yaml` should continue to use `dataset_line_candidate: common-core_candidate`
-- `cases/PORT/PORT_0002/taxonomy_trial_v0.2.yaml` should remain aligned with candidate status
-- no admitted-common-core flag should be added yet
-- `docs/EXTERNAL_DRAFT_CASE_STATUS.md` should continue to describe `PORT_0002` as the strongest remaining candidate after `PERF_0002`
-
----
-
-## 9. Suggested Next Step
-
-The next most useful step for `PORT_0002` is **not** immediate admission.
-
-The next step should instead be one of the following:
-
-1. broaden validation evidence
-2. improve closure story around source/rewrite symmetry
-3. revisit admission after that additional evidence is collected
-
-Until then, `PORT_0002` should remain the strongest portability candidate rather than an admitted case.
+- 保持 `PORT_0002` 为 **`common-core_candidate`**
+- **暂不**正式接纳
+- 在获得更广泛的验证证据后，再重新审视其准入问题
 
 ---
 
-## 10. Bottom Line
+## 8. 实施后果
 
-`PORT_0002` has already passed the threshold for:
+本次评审意味着：
 
-> **serious common-core candidate review**
+- `cases/PORT/PORT_0002/manifest.yaml` 应继续使用 `dataset_line_candidate: common-core_candidate`
+- `cases/PORT/PORT_0002/taxonomy_trial_v0.2.yaml` 应继续与 candidate 状态保持一致
+- 暂时不应添加 admitted-common-core 标记
+- `docs/EXTERNAL_DRAFT_CASE_STATUS.md` 仍应将 `PORT_0002` 描述为在 `PERF_0002` 之后最强的剩余 candidate
 
-But it has **not yet** passed the threshold for:
+---
 
-> **admitted external common-core case**
+## 9. 建议的下一步
 
-Therefore, the correct current status is:
+对 `PORT_0002` 来说，下一步最有价值的动作**不是**立即接纳。
 
-> **keep as `common-core_candidate`**
+下一步应当优先做以下事情之一：
+
+1. 扩展验证证据
+2. 完善 source / rewrite 对称性的闭环叙事
+3. 在收集到额外证据后重新进行准入评审
+
+在此之前，`PORT_0002` 应继续保持为最强的 portability candidate，而不是一个已接纳的 case。
+
+---
+
+## 10. 最终结论
+
+`PORT_0002` 已经跨过了以下门槛：
+
+> **严肃的 common-core candidate 评审**
+
+但它**尚未**跨过以下门槛：
+
+> **已正式接纳的 external common-core case**
+
+因此，当前正确的状态应当是：
+
+> **继续保持为 `common-core_candidate`**
