@@ -2,7 +2,9 @@
   "case_id": "LONGTAIL_0002",
   "dataset_id": "longtail_0002_pg_witness_v2",
   "engine_validated": [
-    "postgres"
+    "postgres",
+    "mysql",
+    "spark"
   ],
   "required_tables": [
     "users",
@@ -15,8 +17,10 @@
     "badges": 4
   },
   "notes": [
-    "Minimal witness dataset manually constructed for PostgreSQL validation",
+    "Minimal witness dataset manually constructed for PostgreSQL, MySQL, and Spark validation",
     "Dave has posts but no badges, making LEFT JOIN versus INNER JOIN behavior observable",
-    "This is not yet a tri-engine validated common-core case"
+    "Source and positive rewrite are equivalent under value-normalized comparison on PostgreSQL, MySQL, and Spark",
+    "Negative rewrite changes the result on PostgreSQL, MySQL, and Spark",
+    "This remains a tri-engine validated staged longtail draft, not an admitted common-core case"
   ]
 }

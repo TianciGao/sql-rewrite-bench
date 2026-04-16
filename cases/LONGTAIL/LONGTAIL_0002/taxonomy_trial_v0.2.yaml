@@ -1,56 +1,55 @@
 case_id: LONGTAIL_0002
-trial_version: "0.2"
+trial_version: '0.2'
 status: provisional_trial_labeled
 candidate_primary_pool: longtail
 dataset_line_candidate: not_yet_admitted
-
 context:
-  purpose: >
-    This case is derived from a SQLStorm StackOverflow seed and is used to
+  purpose: 'This case is derived from a SQLStorm StackOverflow seed and is used to
     validate the external longtail seed-to-case pipeline.
-  note: >
-    LONGTAIL_0002 currently has PostgreSQL witness execution and provisional
-    positive/negative rewrites. Taxonomy entries below should still be treated
-    as provisional until broader engine validation is completed.
 
+    '
+  note: LONGTAIL_0002 now has PostgreSQL, MySQL, and Spark witness execution with
+    positive and negative rewrites, but it should still be treated as a staged not_yet_admitted
+    longtail case rather than as common-core.
 sql_feature_tags:
-  - cte
-  - outer_join
-
+- cte
+- outer_join
 rewrite_opportunity_tags:
-  - cte_strategy
-
+- cte_strategy
 plan_operator_tags:
   status: provisional_pg_only
   observed_in_postgres:
-    - scan
-    - join
-    - aggregate
-    - sort
-
+  - scan
+  - join
+  - aggregate
+  - sort
 workload_realism_tags:
-  - realistic_query_style
-  - long_tail_structure
-
+- realistic_query_style
+- long_tail_structure
 portability_tags: []
-
 review_notes:
-  - LONGTAIL_0002 is sourced from SQLStorm StackOverflow query 12033.
-  - The positive rewrite removes the CTE wrapper and rewrites the same logic using inline derived tables.
-  - The negative rewrite strengthens the badge-side LEFT JOIN into an INNER JOIN.
-  - The witness dataset includes Dave, who has posts but no badges, making the negative rewrite observably non-equivalent.
-
+- LONGTAIL_0002 is sourced from SQLStorm StackOverflow query 12033.
+- The positive rewrite removes the CTE wrapper and rewrites the same logic using inline
+  derived tables.
+- The negative rewrite strengthens the badge-side LEFT JOIN into an INNER JOIN.
+- The witness dataset includes Dave, who has posts but no badges, making the negative
+  rewrite observably non-equivalent.
+- MySQL source-versus-positive equivalence and source-versus-negative non-equivalence
+  are now observed on the witness dataset.
+- Spark source-versus-positive equivalence and source-versus-negative non-equivalence
+  are now observed on the witness dataset.
+- Cross-engine comparison should be treated as value-normalized rather than raw-string-based
+  because NULL and numeric formatting differ slightly across engines.
 expected_outputs:
   source_and_positive:
-    - "Alice\t3\t1\t2\t22\t90.0000000000000000\t2\t1\t1\t0"
-    - "Bob\t2\t2\t0\t15\t60.0000000000000000\t1\t0\t0\t1"
-    - "Carol\t1\t0\t1\t8\t40.0000000000000000\t1\t0\t1\t0"
-    - "Dave\t2\t1\t1\t5\t20.0000000000000000"
+  - "Alice\t3\t1\t2\t22\t90.0000000000000000\t2\t1\t1\t0"
+  - "Bob\t2\t2\t0\t15\t60.0000000000000000\t1\t0\t0\t1"
+  - "Carol\t1\t0\t1\t8\t40.0000000000000000\t1\t0\t1\t0"
+  - "Dave\t2\t1\t1\t5\t20.0000000000000000"
   negative:
-    - "Alice\t3\t1\t2\t22\t90.0000000000000000\t2\t1\t1\t0"
-    - "Bob\t2\t2\t0\t15\t60.0000000000000000\t1\t0\t0\t1"
-    - "Carol\t1\t0\t1\t8\t40.0000000000000000\t1\t0\t1\t0"
-
+  - "Alice\t3\t1\t2\t22\t90.0000000000000000\t2\t1\t1\t0"
+  - "Bob\t2\t2\t0\t15\t60.0000000000000000\t1\t0\t0\t1"
+  - "Carol\t1\t0\t1\t8\t40.0000000000000000\t1\t0\t1\t0"
 evidence:
   raw_sql: cases/LONGTAIL/LONGTAIL_0002/provenance/source_12033_raw.sql
   frozen_source: cases/LONGTAIL/LONGTAIL_0002/source.sql
@@ -59,3 +58,15 @@ evidence:
   provenance_notes: cases/LONGTAIL/LONGTAIL_0002/provenance/sqlstorm_seed_notes.txt
   data_profile: cases/LONGTAIL/LONGTAIL_0002/data_profile.json
   pg_source_plan: runs/longtail_0002/plans/pg/source.json
+  mysql_source_plan: runs/longtail_0002/plans/mysql/source.json
+  mysql_positive_plan: runs/longtail_0002/plans/mysql/rewrite_pos_01.json
+  mysql_negative_plan: runs/longtail_0002/plans/mysql/rewrite_neg_01.json
+  mysql_source_result: runs/longtail_0002/mysql/source.tsv
+  mysql_positive_result: runs/longtail_0002/mysql/rewrite_pos_01.tsv
+  mysql_negative_result: runs/longtail_0002/mysql/rewrite_neg_01.tsv
+  spark_source_plan: runs/longtail_0002/plans/spark/source.txt
+  spark_positive_plan: runs/longtail_0002/plans/spark/rewrite_pos_01.txt
+  spark_negative_plan: runs/longtail_0002/plans/spark/rewrite_neg_01.txt
+  spark_source_result: runs/longtail_0002/spark/source.tsv
+  spark_positive_result: runs/longtail_0002/spark/rewrite_pos_01.tsv
+  spark_negative_result: runs/longtail_0002/spark/rewrite_neg_01.tsv

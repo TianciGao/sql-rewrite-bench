@@ -132,12 +132,12 @@
     {
       "name": "status::exec_checked_mysql",
       "ok": true,
-      "detail": "exec_checked_mysql=False"
+      "detail": "exec_checked_mysql=True"
     },
     {
       "name": "status::exec_checked_spark",
       "ok": true,
-      "detail": "exec_checked_spark=False"
+      "detail": "exec_checked_spark=True"
     },
     {
       "name": "status::plan_checked",
@@ -193,6 +193,66 @@
       "name": "artifact::pg_negative_result",
       "ok": true,
       "detail": "runs/longtail_0002/pg/rewrite_neg_01.tsv"
+    },
+    {
+      "name": "artifact::mysql_source_plan",
+      "ok": true,
+      "detail": "runs/longtail_0002/plans/mysql/source.json"
+    },
+    {
+      "name": "artifact::mysql_positive_plan",
+      "ok": true,
+      "detail": "runs/longtail_0002/plans/mysql/rewrite_pos_01.json"
+    },
+    {
+      "name": "artifact::mysql_negative_plan",
+      "ok": true,
+      "detail": "runs/longtail_0002/plans/mysql/rewrite_neg_01.json"
+    },
+    {
+      "name": "artifact::mysql_source_result",
+      "ok": true,
+      "detail": "runs/longtail_0002/mysql/source.tsv"
+    },
+    {
+      "name": "artifact::mysql_positive_result",
+      "ok": true,
+      "detail": "runs/longtail_0002/mysql/rewrite_pos_01.tsv"
+    },
+    {
+      "name": "artifact::mysql_negative_result",
+      "ok": true,
+      "detail": "runs/longtail_0002/mysql/rewrite_neg_01.tsv"
+    },
+    {
+      "name": "artifact::spark_source_plan",
+      "ok": true,
+      "detail": "runs/longtail_0002/plans/spark/source.txt"
+    },
+    {
+      "name": "artifact::spark_positive_plan",
+      "ok": true,
+      "detail": "runs/longtail_0002/plans/spark/rewrite_pos_01.txt"
+    },
+    {
+      "name": "artifact::spark_negative_plan",
+      "ok": true,
+      "detail": "runs/longtail_0002/plans/spark/rewrite_neg_01.txt"
+    },
+    {
+      "name": "artifact::spark_source_result",
+      "ok": true,
+      "detail": "runs/longtail_0002/spark/source.tsv"
+    },
+    {
+      "name": "artifact::spark_positive_result",
+      "ok": true,
+      "detail": "runs/longtail_0002/spark/rewrite_pos_01.tsv"
+    },
+    {
+      "name": "artifact::spark_negative_result",
+      "ok": true,
+      "detail": "runs/longtail_0002/spark/rewrite_neg_01.tsv"
     }
   ]
 }

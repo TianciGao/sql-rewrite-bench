@@ -7,11 +7,13 @@ target_engines:
 
 validated_engines:
   - postgres
+  - mysql
+  - spark
 
 admission_state: not_yet_admitted
 
 notes:
   - longtail pool sample
   - SQLStorm-derived staged draft
-  - currently validated on PostgreSQL only
-  - MySQL and Spark closure are intentionally not claimed yet
+  - tri-engine validated on the current witness dataset
+  - remains staged and should not yet be treated as common-core
