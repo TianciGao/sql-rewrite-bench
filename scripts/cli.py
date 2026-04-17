@@ -79,32 +79,42 @@ def cmd_env_check(_: argparse.Namespace) -> int:
 
 
 def cmd_pg_check(_: argparse.Namespace) -> int:
-    payload, exit_code = run_subprocess("pg-check", ["bash", "scripts/check_postgres.sh"])
+    payload, exit_code = run_subprocess(
+        "pg-check",
+        ["bash", "scripts/check_postgres.sh"],
+    )
     return print_and_exit(payload, exit_code)
 
 
 def cmd_mysql_check(_: argparse.Namespace) -> int:
-    payload, exit_code = run_subprocess("mysql-check", ["bash", "scripts/check_mysql.sh"])
+    payload, exit_code = run_subprocess(
+        "mysql-check",
+        ["bash", "scripts/check_mysql.sh"],
+    )
     return print_and_exit(payload, exit_code)
 
 
 def cmd_spark_check(_: argparse.Namespace) -> int:
-    payload, exit_code = run_subprocess("spark-check", [sys.executable, "scripts/smoke_spark.py"])
+    payload, exit_code = run_subprocess(
+        "spark-check",
+        [sys.executable, "scripts/smoke_spark.py"],
+    )
     return print_and_exit(payload, exit_code)
 
 
 def cmd_artifact_preflight(_: argparse.Namespace) -> int:
     required_paths = [
-        "docs/PROJECT_PLAN.md",
-        "benchmark_spec/decision_log.md",
+        "benchmark_spec/benchmark_spec_v0.md",
+        "benchmark_spec/case_schema_v0.1.yaml",
         "taxonomy/coverage_taxonomy_v0.1.yaml",
         "cases/PERF/PERF_0001/manifest.yaml",
         "runs/smoke_case/",
         "runs/plans/",
     ]
 
-    checks = []
+    checks: list[dict[str, Any]] = []
     ok = True
+
     for rel_path in required_paths:
         normalized = rel_path.rstrip("/")
         path = ROOT / normalized
@@ -120,11 +130,11 @@ def cmd_artifact_preflight(_: argparse.Namespace) -> int:
         )
 
     payload: dict[str, Any] = {
-        "checks": checks,
         "command": "artifact-preflight",
         "cwd": str(ROOT),
         "ok": ok,
         "ran_at_utc": utc_now(),
+        "checks": checks,
     }
     report_path = write_report("artifact-preflight", payload)
     payload["report_path"] = str(report_path.relative_to(ROOT))
