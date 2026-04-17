@@ -22,6 +22,7 @@
 - `docs/EXECUTION_STATUS.md` 负责回答：**现在做到哪里、当前 focus 是什么、下一步做什么**
 - `benchmark_spec/decision_log.md` 负责回答：**哪些决策已经冻结**
 - `benchmark_spec/*rules*.md` 负责回答：**什么算 archetype-complete、什么能 admission、什么进入 common-core / extended**
+- `benchmark_spec/reviews/*.md` 负责回答：**某一批 case 在某次 promotion / admission 审查中是如何被判断的**
 - `inventory/source_registry.csv` 负责回答：**source 级真实纳入状态是什么**
 - `inventory/case_registry.csv` 负责回答：**case 级实时事实是什么**
 - `docs/DOC_MAP.md` 负责回答：**各文件应该写什么、更新顺序是什么、哪些文件应归档**
@@ -30,6 +31,7 @@
 
 - case 级实时状态以 `inventory/case_registry.csv` 为准
 - source 级真实纳入状态以 `inventory/source_registry.csv` 为准
+- review-history 以 `benchmark_spec/reviews/*.md` 为准
 - `docs/EXECUTION_STATUS.md` 只保留代表性快照与当前解释，不承担完整 source-of-truth
 
 ---
@@ -548,7 +550,7 @@ case 的**实时实现状态**也不在本文件中逐条维护。
 - 为什么 admission、promotion、common-core / extended 分线是 benchmark 可信度的一部分
 - 为什么治理规则必须与长期项目计划分层维护
 
-### 11.2 规则文件负责回答
+### 11.2 规则文件与 review-history 文件分别负责回答
 
 具体规则文件负责回答：
 
@@ -558,6 +560,17 @@ case 的**实时实现状态**也不在本文件中逐条维护。
 - 哪些 case 可以从 staged 升级
 - review 时应检查哪些 artifacts
 - 哪些条件下 case 只能留在 extended 或 staging
+
+review-history 文件负责回答：
+
+- 某一批 case 在某一轮 promotion / admission 审查中，实际作出了什么判断
+- 当时的判断依据是什么
+- 当时预期会带来哪些 metadata consequences
+
+也就是说：
+
+- `benchmark_spec/*rules*.md` 负责长期规则
+- `benchmark_spec/reviews/*.md` 负责批次级审查记录
 
 ### 11.3 治理目标
 
@@ -584,11 +597,18 @@ case 的**实时实现状态**也不在本文件中逐条维护。
 在实际执行中，治理信息按以下层级维护：
 
 - case 级实时状态，以 `inventory/case_registry.csv` 为准
+- source 级实时状态，以 `inventory/source_registry.csv` 为准
 - 当前阶段判断、当前 focus 与代表性快照，以 `docs/EXECUTION_STATUS.md` 为准
 - completion / admission / common-core / extended 的具体判定，以 `benchmark_spec/*rules*.md` 为准
+- 某一批 case 的 promotion / admission 审查记录，以 `benchmark_spec/reviews/*.md` 为准
 - 本文件只保留长期治理框架，不重复承载实时状态
 
-若本文件中的示例性描述与实时状态发生冲突，应优先以 `inventory/case_registry.csv` 与 `docs/EXECUTION_STATUS.md` 为准。
+若不同层之间出现冲突，应优先按以下原则处理：
+
+- source / case 的实时事实，以 registry 为准
+- 当前阶段解释，以 `docs/EXECUTION_STATUS.md` 为准
+- 批次级审查记录，以 `benchmark_spec/reviews/*.md` 为准
+- 长期规则，以 `benchmark_spec/*rules*.md` 与 `benchmark_spec/decision_log.md` 为准
 
 ---
 
@@ -991,15 +1011,18 @@ M2 的建议目标为：
 - 当前 active focus → `docs/EXECUTION_STATUS.md`
 - source 级真实纳入状态 → `inventory/source_registry.csv`
 - case 级实时事实 → `inventory/case_registry.csv`
-- promotion / admission 的实时变化 → `inventory/case_registry.csv` 与对应 rules / decision log
+- promotion / admission 的批次级审查记录 → `benchmark_spec/reviews/*.md`
+- promotion / admission 的实时状态变化 → `inventory/case_registry.csv` 与对应 rules / decision log
 - 每周任务推进记录 → 独立状态文件或归档文件
 - 单 case 的 completion / admission 细则 → `benchmark_spec/*rules*.md`
 - 文件入口、更新顺序与归档规则 → `docs/DOC_MAP.md`
 
-若本文件中的框架性描述与实时状态文件冲突：
+若本文件中的框架性描述与其他层冲突：
 
 - source 级事实以 `inventory/source_registry.csv` 为准
 - case 级事实以 `inventory/case_registry.csv` 为准
 - 当前阶段判断与当前 focus 以 `docs/EXECUTION_STATUS.md` 为准
+- 批次级审查记录以 `benchmark_spec/reviews/*.md` 为准
+- 长期规则与冻结决策以 `benchmark_spec/*rules*.md` 和 `benchmark_spec/decision_log.md` 为准
 
 本文件不重复承担上述内容的实时更新职责。

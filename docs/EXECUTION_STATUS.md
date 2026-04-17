@@ -26,11 +26,13 @@
 - 承载一次性 scratch 分析
 - 记录所有历史聊天或所有执行细节
 - 作为 case / source 级完整 source-of-truth
+- 替代 review-history 文件
 
 换句话说：
 
 - `PROJECT_PLAN.md` 讲长期稳定框架
 - `benchmark_spec/*.md` 讲规则与冻结边界
+- `benchmark_spec/reviews/*.md` 讲批次级 review-history
 - `inventory/source_registry.csv` 讲 source 级实时事实
 - `inventory/case_registry.csv` 讲 case 级实时事实
 - `EXECUTION_STATUS.md` 只讲：**现在做到哪里、这些事实当前应如何被解释**
@@ -39,6 +41,7 @@
 
 - case 级实时事实以 `inventory/case_registry.csv` 为准
 - source 级真实纳入状态以 `inventory/source_registry.csv` 为准
+- review-history 以 `benchmark_spec/reviews/*.md` 为准
 - 本文件只保留代表性快照与当前解释，不承担完整 source-of-truth
 
 ---
@@ -61,12 +64,14 @@
 
 1. 先更新规则文件（如适用）
 2. 再更新 registry / case files（如适用）
-3. 最后更新本文件做摘要性回写
+3. 再更新 review-history 文件（如适用）
+4. 最后更新本文件做摘要性回写
 
 更具体地说：
 
 - 若 source / case 的实时事实发生变化，必须先改对应 registry
 - 若规则发生变化，必须先改对应 rules / decision log
+- 若批次审查结论发生变化，应先改对应 `benchmark_spec/reviews/*.md`
 - 本文件只负责在此基础上做当前解释和快照更新
 
 ### 2.3 不应在此文件中完成的动作
@@ -74,6 +79,7 @@
 
 - 冻结决策变化 → `benchmark_spec/decision_log.md`
 - 规则变化 → 对应 `benchmark_spec/*rules*.md`
+- review 结论变化 → 对应 `benchmark_spec/reviews/*.md`
 - source 结构化状态变化 → `inventory/source_registry.csv`
 - case 结构化状态变化 → `inventory/case_registry.csv`
 - taxonomy 定义变化 → 对应 `taxonomy/*.yaml`
@@ -82,6 +88,7 @@
 以下做法视为不合格更新：
 
 - 只改本文件，不改 registry，却声称 source / case 状态已变化
+- 只改本文件，不改 review 文件，却声称 promotion / admission 结论已变化
 - 在本文件中手工维护完整 case 世界观，而不回写 `case_registry.csv`
 - 在本文件中重新定义规则口径，而不更新 rules / decision log
 
@@ -96,6 +103,7 @@
 - **Snapshot Basis：**
   - source facts → `inventory/source_registry.csv`
   - case facts → `inventory/case_registry.csv`
+  - batch review history → `benchmark_spec/reviews/BATCH1_EXTERNAL_CASE_REVIEW_v1.md`
 
 ---
 
@@ -113,6 +121,7 @@
 - 深化外部 archetype case
 - 把 promotion / admission / common-core / extended 规则进一步收口
 - 把 package engineering 与 characterization 准备做扎实
+- 让 registry、review-history、当前状态解释三层彼此对齐
 
 ### 4.2 source 层判断
 
@@ -133,7 +142,8 @@
 
 - anchor layer 已稳定
 - external archetype layer 已形成
-- selective promotion 已开始发生
+- selective promotion 已发生
+- first external admissions 已发生
 - staged / candidate / admitted 分层开始真正发挥作用
 
 简言之：
@@ -216,7 +226,7 @@
 | 5 | First anchor cases | completed | 四个 anchor case 已建立 |
 | 6 | First external draft cases | completed | 第一批 external draft 已形成 |
 | 7 | Archetype completion | completed | `002` archetypes 已形成当前 archetype-complete 参考层 |
-| 8 | Promotion review and first admission | completed for first review cycle | 第一轮 promotion / admission 已完成 |
+| 8 | Promotion review and first admission | completed for first review cycle | 第一轮 promotion / admission 已完成，并已收口为 consolidated Batch-1 review |
 | 9 | Selective deepening, not broad expansion | active | 当前主阶段 |
 | 10 | Reusable case construction workflow | in progress | 当前持续推进 |
 | 11 | Pilot benchmark characterization | next | 进入准备期，尚未正式收口 |
@@ -228,7 +238,8 @@
 
 > 本节记录当前最能代表仓库能力和成熟度结构的 case 快照。  
 > **case 级完整实时事实以 `inventory/case_registry.csv` 为准。**  
-> 若本节与 `inventory/case_registry.csv` 冲突，应优先以 `case_registry.csv` 为准。
+> 若本节与 `inventory/case_registry.csv` 冲突，应优先以 `case_registry.csv` 为准。  
+> 对于 Batch-1 external cases 的批次级审查解释，可参见：`benchmark_spec/reviews/BATCH1_EXTERNAL_CASE_REVIEW_v1.md`。
 
 ### 7.1 Performance cases
 
@@ -267,6 +278,7 @@
 - 本节不负责维护完整 case 宇宙
 - 新的 case 状态变化，必须先更新 `inventory/case_registry.csv`
 - 只有当这些变化影响“当前阶段判断”或“代表性快照”时，才回写本节
+- 若涉及批次级 promotion / admission 结论，也应同步检查 `benchmark_spec/reviews/*.md` 是否需要更新
 
 ---
 
@@ -319,6 +331,7 @@
 
 - selective deepening
 - external case promotion / admission governance
+- review-history consolidation and registry alignment
 - package engineering 深化
 - documentation and workflow consolidation
 - preparation for later scalable case construction
@@ -351,6 +364,7 @@
 
 - source 事实先改 `source_registry.csv`
 - case 事实先改 `case_registry.csv`
+- review-history 先改 `benchmark_spec/reviews/*.md`
 - 本文件只做快照与解释层回写
 
 ### 10.3 package engineering 与 benchmark maturity 仍未完全解耦
@@ -367,6 +381,13 @@
 - 把 partial realized supplement 误读为 fully closed source line
 - 把 realism substrate 误读为 direct query corpus
 
+### 10.6 review-history 与 live status 仍需持续对齐
+当前已经建立 consolidated Batch-1 review-history 层，但后续若 case 状态继续演化，仍需防止：
+
+- review 文件停留在旧批次判断
+- registry 已更新但 review-history 未同步
+- status dashboard 与 review-history 口径重新漂移
+
 ---
 
 ## 11. 近期下一步动作
@@ -376,6 +397,7 @@
 - 固定本文件为唯一动态状态入口
 - 固定 `decision_log.md` 为冻结决策入口
 - 固定 rules 文件为 completion / admission / common-core 细则入口
+- 固定 `benchmark_spec/reviews/` 为批次级 review-history 层
 - 强制执行 registry-first 更新顺序
 - 持续维护 `source_registry.csv` 与 `case_registry.csv`
 
@@ -384,6 +406,7 @@
 - 将 selective promotion / admission 的流程进一步规则化
 - 明确 common-core / extended 的实际应用边界
 - 补 formal skeleton → release-grade 的中间工艺缺口
+- 在 review-history、registry 与 case-local artifacts 三层之间保持同步
 
 ### 11.3 benchmark characterization 准备层
 - 在不 broad expansion 的前提下，稳定现有 strongest cases
@@ -409,6 +432,10 @@
 - `benchmark_spec/CASE_ADMISSION_RULES_v0.md`
 - `docs/POOL_MAPPING_RULES.md`
 
+若任务涉及批次审查依据，再额外读取：
+
+- `benchmark_spec/reviews/BATCH1_EXTERNAL_CASE_REVIEW_v1.md`
+
 若任务涉及 source / case 对象状态，再额外读取：
 
 - `inventory/source_registry.csv`
@@ -418,6 +445,7 @@
 
 - 若任务目标是**判断当前阶段与当前 focus**，优先读本文件
 - 若任务目标是**确认 source / case 的实时事实**，优先读 registry
+- 若任务目标是**理解 Batch-1 promotion / admission 的历史判断依据**，优先读 review-history 文件
 - 若本文件与 registry 冲突，应优先以 registry 为准
 
 ---
@@ -430,7 +458,7 @@
 - 冻结规则细则全文
 - taxonomy 正式定义
 - source / case 的完整实时事实表
-- 单个 case 的完整 review 记录
+- 单个 batch 的完整 review-history 正文
 - 一次性 scratch 分析
 - 某轮临时实验长报告
 
@@ -438,6 +466,7 @@
 
 - `PROJECT_PLAN.md`
 - `benchmark_spec/*rules*.md`
+- `benchmark_spec/reviews/*.md`
 - `taxonomy/*.yaml`
 - `inventory/*.csv`
 - `docs/_scratch/`
@@ -453,6 +482,7 @@
 - 多个 case 专用状态块
 - 多个 source 专用状态块
 - 多个阶段性 checklist
+- 多个 review-history 摘抄块
 - 多个临时 closeout 记录
 
 那么说明动态状态再次发生扩散，  
@@ -460,18 +490,21 @@
 
 1. 先看该信息是否本质上属于事实层
 2. 若属于事实层，先吸收到 registry
-3. 若属于解释层，合并回本文件
-4. 若仅有短期价值，降级归档到 `docs/archive/` / `docs/_scratch/`
+3. 若属于批次级审查解释，先吸收到 `benchmark_spec/reviews/`
+4. 若属于解释层，合并回本文件
+5. 若仅有短期价值，降级归档到 `docs/archive/` / `docs/_scratch/`
 
-若本文件与 registry 发生冲突，处理顺序应为：
+若本文件与其他层发生冲突，处理顺序应为：
 
 - case 级事实冲突 → 以 `inventory/case_registry.csv` 为准
 - source 级事实冲突 → 以 `inventory/source_registry.csv` 为准
+- Batch-level review-history 冲突 → 以 `benchmark_spec/reviews/*.md` 为准
 - 当前阶段判断 / 当前 focus 冲突 → 以本文件最新版本为准
 - 长期方向冲突 → 回到 `PROJECT_PLAN.md` 与 `decision_log.md`
 
 本文件的目标不是变成“另一个总计划”，  
 也不是变成“另一个完整 registry”，  
+也不是变成“另一个 review 文档”，  
 而是始终保持为：
 
 > **唯一动态状态入口 + 当前状态仪表盘 + 解释层**
