@@ -1,0 +1,573 @@
+{
+  "artifact_type": "logical_operator_to_physical_plan_node_mapping",
+  "case_id": "PERF_0002",
+  "scope": "third_deepening_step",
+  "status": "initial_logical_to_physical_mapping",
+  "inputs": {
+    "logical_ir": "cases/PERF/PERF_0002/analysis/logical_ir.json",
+    "sql_span_logical_map": "cases/PERF/PERF_0002/analysis/sql_span_logical_map.json",
+    "plan_artifacts": {
+      "postgres": {
+        "source.sql": "runs/perf_0002/plans/pg/source.json",
+        "rewrite_pos_01.sql": "runs/perf_0002/plans/pg/rewrite_pos_01.json",
+        "rewrite_neg_01.sql": "runs/perf_0002/plans/pg/rewrite_neg_01.json"
+      },
+      "mysql": {
+        "source.sql": "runs/perf_0002/plans/mysql/source.json",
+        "rewrite_pos_01.sql": "runs/perf_0002/plans/mysql/rewrite_pos_01.json",
+        "rewrite_neg_01.sql": "runs/perf_0002/plans/mysql/rewrite_neg_01.json"
+      },
+      "spark": {
+        "source.sql": "runs/perf_0002/plans/spark/source.txt",
+        "rewrite_pos_01.sql": "runs/perf_0002/plans/spark/rewrite_pos_01.txt",
+        "rewrite_neg_01.sql": "runs/perf_0002/plans/spark/rewrite_neg_01.txt"
+      }
+    }
+  },
+  "notes": [
+    "This artifact maps logical operators to existing physical plan evidence only.",
+    "Mappings marked ambiguous_or_implicit or unsupported are intentionally not guessed.",
+    "MySQL JSON EXPLAIN represents joins mainly through nested_loop table order, not explicit join nodes.",
+    "MySQL JSON EXPLAIN does not expose a separate physical LIMIT node for these plans."
+  ],
+  "query_groups": {
+    "all_queries": [
+      "source.sql",
+      "rewrite_pos_01.sql",
+      "rewrite_neg_01.sql"
+    ],
+    "source_only": [
+      "source.sql"
+    ],
+    "positive_only": [
+      "rewrite_pos_01.sql"
+    ],
+    "negative_only": [
+      "rewrite_neg_01.sql"
+    ]
+  },
+  "shared_pipeline_mappings": [
+    {
+      "logical_operator_id": "scan_item",
+      "logical_op": "scan",
+      "query_group": "all_queries",
+      "physical_nodes": [
+        {
+          "engine": "postgres",
+          "status": "mapped",
+          "node_selector": "Seq Scan where Relation Name = item",
+          "evidence": "Node Type=Seq Scan; Relation Name=item"
+        },
+        {
+          "engine": "mysql",
+          "status": "mapped",
+          "node_selector": "query_block.ordering_operation.table.materialized_from_subquery.query_block.windowing.grouping_operation.nested_loop[].table where table_name = item",
+          "evidence": "table_name=item; access_type=ALL"
+        },
+        {
+          "engine": "spark",
+          "status": "mapped",
+          "node_selector": "node (1)",
+          "evidence": "Scan csv with item.dat"
+        }
+      ]
+    },
+    {
+      "logical_operator_id": "scan_store_sales",
+      "logical_op": "scan",
+      "query_group": "all_queries",
+      "physical_nodes": [
+        {
+          "engine": "postgres",
+          "status": "mapped",
+          "node_selector": "Bitmap Heap Scan where Relation Name = store_sales plus child Bitmap Index Scan",
+          "evidence": "Relation Name=store_sales; Index Name=store_sales_pkey"
+        },
+        {
+          "engine": "mysql",
+          "status": "mapped",
+          "node_selector": "nested_loop[].table where table_name = store_sales",
+          "evidence": "table_name=store_sales; access_type=ref; key=PRIMARY"
+        },
+        {
+          "engine": "spark",
+          "status": "mapped",
+          "node_selector": "node (5)",
+          "evidence": "Scan csv with store_sales.dat"
+        }
+      ]
+    },
+    {
+      "logical_operator_id": "scan_date_dim",
+      "logical_op": "scan",
+      "query_group": "all_queries",
+      "physical_nodes": [
+        {
+          "engine": "postgres",
+          "status": "mapped",
+          "node_selector": "Index Scan where Relation Name = date_dim",
+          "evidence": "Relation Name=date_dim; Index Name=date_dim_pkey"
+        },
+        {
+          "engine": "mysql",
+          "status": "mapped",
+          "node_selector": "nested_loop[].table where table_name = date_dim",
+          "evidence": "table_name=date_dim; access_type=eq_ref; key=PRIMARY"
+        },
+        {
+          "engine": "spark",
+          "status": "mapped",
+          "node_selector": "node (9)",
+          "evidence": "Scan csv with date_dim.dat"
+        }
+      ]
+    },
+    {
+      "logical_operator_id": "scan_store",
+      "logical_op": "scan",
+      "query_group": "all_queries",
+      "physical_nodes": [
+        {
+          "engine": "postgres",
+          "status": "mapped",
+          "node_selector": "Index Only Scan where Relation Name = store",
+          "evidence": "Relation Name=store; Index Name=store_pkey"
+        },
+        {
+          "engine": "mysql",
+          "status": "mapped",
+          "node_selector": "nested_loop[].table where table_name = store",
+          "evidence": "table_name=store; access_type=index; key=PRIMARY"
+        },
+        {
+          "engine": "spark",
+          "status": "mapped",
+          "node_selector": "node (15)",
+          "evidence": "Scan csv with store.dat"
+        }
+      ]
+    },
+    {
+      "logical_operator_id": "join_item_store_sales",
+      "logical_op": "inner_join",
+      "query_group": "all_queries",
+      "physical_nodes": [
+        {
+          "engine": "postgres",
+          "status": "mapped",
+          "node_selector": "Nested Loop combining item Seq Scan and store_sales Bitmap Heap Scan",
+          "evidence": "Nested Loop with Join Type=Inner and condition represented by store_sales Recheck/Index Cond"
+        },
+        {
+          "engine": "mysql",
+          "status": "ambiguous_or_implicit",
+          "node_selector": "nested_loop table sequence item -> store_sales",
+          "evidence": "store_sales table has ref=bench.item.i_item_sk; no explicit join node"
+        },
+        {
+          "engine": "spark",
+          "status": "mapped",
+          "node_selector": "node (7)",
+          "evidence": "BroadcastHashJoin; Left keys=[i_item_sk]; Right keys=[ss_item_sk]; Join type=Inner"
+        }
+      ]
+    },
+    {
+      "logical_operator_id": "join_date_dim",
+      "logical_op": "inner_join",
+      "query_group": "all_queries",
+      "physical_nodes": [
+        {
+          "engine": "postgres",
+          "status": "mapped",
+          "node_selector": "Nested Loop with inner Memoize over date_dim Index Scan",
+          "evidence": "Index Cond=(d_date_sk = store_sales.ss_sold_date_sk)"
+        },
+        {
+          "engine": "mysql",
+          "status": "ambiguous_or_implicit",
+          "node_selector": "nested_loop table sequence store_sales -> date_dim",
+          "evidence": "date_dim table has ref=bench.store_sales.ss_sold_date_sk; no explicit join node"
+        },
+        {
+          "engine": "spark",
+          "status": "mapped",
+          "node_selector": "node (13)",
+          "evidence": "BroadcastHashJoin; Left keys=[ss_sold_date_sk]; Right keys=[d_date_sk]; Join type=Inner"
+        }
+      ]
+    },
+    {
+      "logical_operator_id": "join_store",
+      "logical_op": "inner_join",
+      "query_group": "all_queries",
+      "physical_nodes": [
+        {
+          "engine": "postgres",
+          "status": "mapped",
+          "node_selector": "Nested Loop with inner Memoize over store Index Only Scan",
+          "evidence": "Index Cond=(s_store_sk = store_sales.ss_store_sk)"
+        },
+        {
+          "engine": "mysql",
+          "status": "ambiguous_or_implicit",
+          "node_selector": "nested_loop table sequence includes store and store_sales condition",
+          "evidence": "store_sales attached_condition contains ss_store_sk = s_store_sk; no explicit join node"
+        },
+        {
+          "engine": "spark",
+          "status": "mapped",
+          "node_selector": "node (18)",
+          "evidence": "BroadcastHashJoin; Left keys=[ss_store_sk]; Right keys=[s_store_sk]; Join type=Inner"
+        }
+      ]
+    },
+    {
+      "logical_operator_id": "filter_seed_slice",
+      "logical_op": "filter",
+      "query_group": "all_queries",
+      "physical_nodes": [
+        {
+          "engine": "postgres",
+          "status": "mapped_split",
+          "node_selector": "item Seq Scan Filter plus date_dim Index Scan Filter",
+          "evidence": "item category/class/brand filter and date_dim d_month_seq filter are pushed into scans"
+        },
+        {
+          "engine": "mysql",
+          "status": "mapped_split",
+          "node_selector": "item attached_condition plus date_dim attached_condition",
+          "evidence": "item category/class/brand condition and date_dim d_month_seq condition are attached to table access nodes"
+        },
+        {
+          "engine": "spark",
+          "status": "mapped_split",
+          "node_selector": "nodes (2) and (10)",
+          "evidence": "Filter on item category/class/brand and Filter on date_dim d_month_seq"
+        }
+      ]
+    },
+    {
+      "logical_operator_id": "aggregate_quarter_sales",
+      "logical_op": "aggregate",
+      "query_group": "all_queries",
+      "physical_nodes": [
+        {
+          "engine": "postgres",
+          "status": "mapped_split",
+          "node_selector": "Partial Aggregate and Finalize Aggregate",
+          "evidence": "Node Type=Aggregate; Group Key=[item.i_manufact_id, date_dim.d_qoy]"
+        },
+        {
+          "engine": "mysql",
+          "status": "mapped",
+          "node_selector": "grouping_operation",
+          "evidence": "using_temporary_table=true; grouping operation wraps nested_loop input"
+        },
+        {
+          "engine": "spark",
+          "status": "mapped_split",
+          "node_selector": "nodes (20) and (22)",
+          "evidence": "partial HashAggregate and final HashAggregate keyed by i_manufact_id,d_qoy"
+        }
+      ]
+    },
+    {
+      "logical_operator_id": "window_avg_quarterly_sales",
+      "logical_op": "window",
+      "query_group": "all_queries",
+      "physical_nodes": [
+        {
+          "engine": "postgres",
+          "status": "mapped",
+          "node_selector": "WindowAgg",
+          "evidence": "Node Type=WindowAgg"
+        },
+        {
+          "engine": "mysql",
+          "status": "mapped",
+          "node_selector": "windowing.windows[] where functions contains avg",
+          "evidence": "windowing function avg; filesort_key=i_manufact_id"
+        },
+        {
+          "engine": "spark",
+          "status": "mapped",
+          "node_selector": "node (25)",
+          "evidence": "Window avg over partition i_manufact_id"
+        }
+      ]
+    }
+  ],
+  "variant_mappings": {
+    "source.sql": [
+      {
+        "logical_operator_id": "source_filter_deviation_ratio",
+        "logical_op": "filter",
+        "physical_nodes": [
+          {
+            "engine": "postgres",
+            "status": "mapped",
+            "node_selector": "Subquery Scan Filter",
+            "evidence": "CASE WHEN avg_quarterly_sales > 0 ... / avg_quarterly_sales ... > 0.1"
+          },
+          {
+            "engine": "mysql",
+            "status": "mapped",
+            "node_selector": "outer materialized table attached_condition",
+            "evidence": "case when tmp1.avg_quarterly_sales > 0 ... > 0.1"
+          },
+          {
+            "engine": "spark",
+            "status": "mapped",
+            "node_selector": "node (26)",
+            "evidence": "Filter CASE WHEN avg_quarterly_sales > 0 ... > 0.1000000000000000"
+          }
+        ]
+      },
+      {
+        "logical_operator_id": "source_sort",
+        "logical_op": "sort",
+        "physical_nodes": [
+          {
+            "engine": "postgres",
+            "status": "mapped",
+            "node_selector": "Sort under Limit",
+            "evidence": "Sort Key=[avg_quarterly_sales,sum_sales,i_manufact_id]"
+          },
+          {
+            "engine": "mysql",
+            "status": "mapped",
+            "node_selector": "ordering_operation",
+            "evidence": "using_filesort=true"
+          },
+          {
+            "engine": "spark",
+            "status": "mapped_combined",
+            "node_selector": "node (28)",
+            "evidence": "TakeOrderedAndProject includes order keys and limit"
+          }
+        ]
+      },
+      {
+        "logical_operator_id": "source_limit",
+        "logical_op": "limit",
+        "physical_nodes": [
+          {
+            "engine": "postgres",
+            "status": "mapped",
+            "node_selector": "top Limit node",
+            "evidence": "Node Type=Limit"
+          },
+          {
+            "engine": "mysql",
+            "status": "unsupported_in_plan_artifact",
+            "node_selector": null,
+            "evidence": "No separate LIMIT node is exposed in the available MySQL JSON EXPLAIN artifact"
+          },
+          {
+            "engine": "spark",
+            "status": "mapped_combined",
+            "node_selector": "node (28)",
+            "evidence": "TakeOrderedAndProject Arguments starts with 100"
+          }
+        ]
+      }
+    ],
+    "rewrite_pos_01.sql": [
+      {
+        "logical_operator_id": "positive_filter_positive_denominator",
+        "logical_op": "filter",
+        "physical_nodes": [
+          {
+            "engine": "postgres",
+            "status": "mapped_combined",
+            "node_selector": "Subquery Scan Filter",
+            "evidence": "Filter combines avg_quarterly_sales > 0 with deviation product predicate"
+          },
+          {
+            "engine": "mysql",
+            "status": "mapped_combined",
+            "node_selector": "outer materialized table attached_condition",
+            "evidence": "attached_condition combines avg_quarterly_sales > 0 with deviation product predicate"
+          },
+          {
+            "engine": "spark",
+            "status": "mapped_combined",
+            "node_selector": "node (26)",
+            "evidence": "Filter combines avg_quarterly_sales > 0 with deviation product predicate"
+          }
+        ]
+      },
+      {
+        "logical_operator_id": "positive_filter_deviation_product",
+        "logical_op": "filter",
+        "physical_nodes": [
+          {
+            "engine": "postgres",
+            "status": "mapped_combined",
+            "node_selector": "Subquery Scan Filter",
+            "evidence": "abs(sum_sales - avg_quarterly_sales) > avg_quarterly_sales * 0.1"
+          },
+          {
+            "engine": "mysql",
+            "status": "mapped_combined",
+            "node_selector": "outer materialized table attached_condition",
+            "evidence": "abs(tmp1.sum_sales - tmp1.avg_quarterly_sales) > tmp1.avg_quarterly_sales * 0.1"
+          },
+          {
+            "engine": "spark",
+            "status": "mapped_combined",
+            "node_selector": "node (26)",
+            "evidence": "abs(sum_sales - avg_quarterly_sales) > avg_quarterly_sales * 0.1"
+          }
+        ]
+      },
+      {
+        "logical_operator_id": "positive_sort",
+        "logical_op": "sort",
+        "physical_nodes": [
+          {
+            "engine": "postgres",
+            "status": "mapped",
+            "node_selector": "Sort under Limit",
+            "evidence": "Sort Key=[avg_quarterly_sales,sum_sales,i_manufact_id]"
+          },
+          {
+            "engine": "mysql",
+            "status": "mapped",
+            "node_selector": "ordering_operation",
+            "evidence": "using_filesort=true"
+          },
+          {
+            "engine": "spark",
+            "status": "mapped_combined",
+            "node_selector": "node (28)",
+            "evidence": "TakeOrderedAndProject includes order keys and limit"
+          }
+        ]
+      },
+      {
+        "logical_operator_id": "positive_limit",
+        "logical_op": "limit",
+        "physical_nodes": [
+          {
+            "engine": "postgres",
+            "status": "mapped",
+            "node_selector": "top Limit node",
+            "evidence": "Node Type=Limit"
+          },
+          {
+            "engine": "mysql",
+            "status": "unsupported_in_plan_artifact",
+            "node_selector": null,
+            "evidence": "No separate LIMIT node is exposed in the available MySQL JSON EXPLAIN artifact"
+          },
+          {
+            "engine": "spark",
+            "status": "mapped_combined",
+            "node_selector": "node (28)",
+            "evidence": "TakeOrderedAndProject Arguments starts with 100"
+          }
+        ]
+      }
+    ],
+    "rewrite_neg_01.sql": [
+      {
+        "logical_operator_id": "negative_filter_positive_denominator",
+        "logical_op": "filter",
+        "physical_nodes": [
+          {
+            "engine": "postgres",
+            "status": "mapped_combined",
+            "node_selector": "Subquery Scan Filter",
+            "evidence": "Filter combines avg_quarterly_sales > 0 with deviation product predicate"
+          },
+          {
+            "engine": "mysql",
+            "status": "mapped_combined",
+            "node_selector": "outer materialized table attached_condition",
+            "evidence": "attached_condition combines avg_quarterly_sales > 0 with deviation product predicate"
+          },
+          {
+            "engine": "spark",
+            "status": "mapped_combined",
+            "node_selector": "node (26)",
+            "evidence": "Filter combines avg_quarterly_sales > 0 with deviation product predicate"
+          }
+        ]
+      },
+      {
+        "logical_operator_id": "negative_filter_deviation_product",
+        "logical_op": "filter",
+        "physical_nodes": [
+          {
+            "engine": "postgres",
+            "status": "mapped_combined",
+            "node_selector": "Subquery Scan Filter",
+            "evidence": "abs(sum_sales - avg_quarterly_sales) > avg_quarterly_sales * 0.5"
+          },
+          {
+            "engine": "mysql",
+            "status": "mapped_combined",
+            "node_selector": "outer materialized table attached_condition",
+            "evidence": "abs(tmp1.sum_sales - tmp1.avg_quarterly_sales) > tmp1.avg_quarterly_sales * 0.5"
+          },
+          {
+            "engine": "spark",
+            "status": "mapped_combined",
+            "node_selector": "node (26)",
+            "evidence": "abs(sum_sales - avg_quarterly_sales) > avg_quarterly_sales * 0.5"
+          }
+        ]
+      },
+      {
+        "logical_operator_id": "negative_sort",
+        "logical_op": "sort",
+        "physical_nodes": [
+          {
+            "engine": "postgres",
+            "status": "mapped",
+            "node_selector": "Sort under Limit",
+            "evidence": "Sort Key=[avg_quarterly_sales,sum_sales,i_manufact_id]"
+          },
+          {
+            "engine": "mysql",
+            "status": "mapped",
+            "node_selector": "ordering_operation",
+            "evidence": "using_filesort=true"
+          },
+          {
+            "engine": "spark",
+            "status": "mapped_combined",
+            "node_selector": "node (28)",
+            "evidence": "TakeOrderedAndProject includes order keys and limit"
+          }
+        ]
+      },
+      {
+        "logical_operator_id": "negative_limit",
+        "logical_op": "limit",
+        "physical_nodes": [
+          {
+            "engine": "postgres",
+            "status": "mapped",
+            "node_selector": "top Limit node",
+            "evidence": "Node Type=Limit"
+          },
+          {
+            "engine": "mysql",
+            "status": "unsupported_in_plan_artifact",
+            "node_selector": null,
+            "evidence": "No separate LIMIT node is exposed in the available MySQL JSON EXPLAIN artifact"
+          },
+          {
+            "engine": "spark",
+            "status": "mapped_combined",
+            "node_selector": "node (28)",
+            "evidence": "TakeOrderedAndProject Arguments starts with 100"
+          }
+        ]
+      }
+    ]
+  }
+}
