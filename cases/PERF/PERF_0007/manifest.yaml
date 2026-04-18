@@ -1,13 +1,14 @@
 case_id: PERF_0007
 pool: performance
 provenance:
-  source_id: TODO
-  seed_id: TODO
-  source_name: TODO
-  source_entry: TODO
+  source_id: SRC_001
+  seed_id: TPC-H-Q6
+  source_name: TPC-H
+  source_entry: datasets/raw/tpch/TPC-H V3.0.1/dbgen/queries/6.sql
   raw_record_file: provenance/raw_record.json
   provenance_notes: provenance/provenance_notes.txt
 source:
+  dialect: tpc_h_qgen_template_unmaterialized
   file: source.sql
 variants:
   positives:
@@ -42,4 +43,6 @@ validation:
   checker: validation/checker.yaml
   witness_dataset: validation/witness_dataset.yaml
 notes:
-  - TODO: Human must fill source lineage, SQL text, rewrites, data, validation, artifacts, and review status.
+  - Source/provenance layer populated from TPC-H Query 6 raw qgen template.
+  - TODO: Human must materialize an executable source instance before validation.
+  - TODO: Human must fill rewrites, data, validation, artifacts, and review status.
