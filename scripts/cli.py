@@ -12,6 +12,7 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parent.parent
 REPORT_DIR = ROOT / "reports" / "cli"
+ENV_VARS = ["PGHOST", "MYSQL_HOST", "SPARK_LOCAL_IP"]
 
 
 def utc_now() -> str:
@@ -25,6 +26,7 @@ def ensure_report_dir() -> None:
 def write_report(command: str, payload: dict[str, Any]) -> Path:
     ensure_report_dir()
     report_path = REPORT_DIR / f"{command}.json"
+    payload["report_path"] = str(report_path.relative_to(ROOT))
     report_path.write_text(
         json.dumps(payload, indent=2, sort_keys=True) + "\n",
         encoding="utf-8",
@@ -35,6 +37,10 @@ def write_report(command: str, payload: dict[str, Any]) -> Path:
 def print_and_exit(payload: dict[str, Any], exit_code: int) -> int:
     print(json.dumps(payload, indent=2, sort_keys=True))
     return exit_code
+
+
+def env_visibility() -> dict[str, bool]:
+    return {name: bool(os.environ.get(name)) for name in ENV_VARS}
 
 
 def run_subprocess(command: str, argv: list[str]) -> tuple[dict[str, Any], int]:
@@ -53,18 +59,14 @@ def run_subprocess(command: str, argv: list[str]) -> tuple[dict[str, Any], int]:
         "stderr": completed.stderr,
         "stdout": completed.stdout,
         "subprocess_argv": argv,
+        "visible": env_visibility(),
     }
-    report_path = write_report(command, payload)
-    payload["report_path"] = str(report_path.relative_to(ROOT))
+    write_report(command, payload)
     return payload, completed.returncode
 
 
 def cmd_env_check(_: argparse.Namespace) -> int:
-    checks = {
-        "PGHOST": bool(os.environ.get("PGHOST")),
-        "MYSQL_HOST": bool(os.environ.get("MYSQL_HOST")),
-        "SPARK_LOCAL_IP": bool(os.environ.get("SPARK_LOCAL_IP")),
-    }
+    checks = env_visibility()
     ok = all(checks.values())
     payload: dict[str, Any] = {
         "command": "env-check",
@@ -73,8 +75,7 @@ def cmd_env_check(_: argparse.Namespace) -> int:
         "ran_at_utc": utc_now(),
         "visible": checks,
     }
-    report_path = write_report("env-check", payload)
-    payload["report_path"] = str(report_path.relative_to(ROOT))
+    write_report("env-check", payload)
     return print_and_exit(payload, 0 if ok else 1)
 
 
@@ -136,8 +137,7 @@ def cmd_artifact_preflight(_: argparse.Namespace) -> int:
         "ran_at_utc": utc_now(),
         "checks": checks,
     }
-    report_path = write_report("artifact-preflight", payload)
-    payload["report_path"] = str(report_path.relative_to(ROOT))
+    write_report("artifact-preflight", payload)
     return print_and_exit(payload, 0 if ok else 1)
 
 
