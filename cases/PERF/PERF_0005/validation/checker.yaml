@@ -1,5 +1,5 @@
 type: value_normalized_result_equivalence_checker
-status: unvalidated_schema_and_rewrite_layer
+status: postgres_witness_validated
 normalization:
   sort_rows: true
   trim_whitespace: true
@@ -17,10 +17,22 @@ expectations:
   not_equal:
     - source.sql
     - rewrite_neg_01.sql
-expected_results: TODO
-validation_evidence: []
+expected_results:
+  postgres_witness:
+    source:
+      - "2001\t100\tbrand_manager_1\t150.00"
+    positive_rewrite:
+      - "2001\t100\tbrand_manager_1\t150.00"
+    negative_rewrite:
+      - "2001\t200\tbrand_manager_2\t80.00"
+postgres_results:
+  source: runs/pg/source.tsv
+  positive_rewrite: runs/pg/rewrite_pos_01.tsv
+  negative_rewrite: runs/pg/rewrite_neg_01.tsv
+validation_evidence:
+  - runs/pg/result_check.json
 notes:
-  - Rewrite comparison roles are candidate expectations only.
-  - Equivalence and divergence have not been execution-validated.
-  - Minimal DDL exists for referenced columns only; data loading and result production remain TODO.
-  - TODO: Human must fill expected results after validation evidence exists.
+  - PostgreSQL witness validation shows source and positive result captures match.
+  - PostgreSQL witness validation shows source and negative result captures differ.
+  - MySQL and Spark remain unvalidated.
+  - No plans were collected.

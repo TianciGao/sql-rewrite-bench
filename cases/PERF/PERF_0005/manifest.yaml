@@ -34,8 +34,8 @@ features:
   - order_by
   - limit
 status:
-  parse_checked: false
-  exec_checked_pg: false
+  parse_checked: true
+  exec_checked_pg: true
   exec_checked_mysql: false
   exec_checked_spark: false
   plan_checked: false
@@ -53,8 +53,15 @@ metadata:
 validation:
   checker: validation/checker.yaml
   witness_dataset: validation/witness_dataset.yaml
+  pg_witness_data: validation/pg_witness_data.sql
+artifacts:
+  pg_source_result: runs/pg/source.tsv
+  pg_positive_result: runs/pg/rewrite_pos_01.tsv
+  pg_negative_result: runs/pg/rewrite_neg_01.tsv
+  pg_result_check: runs/pg/result_check.json
 notes:
   - Source/provenance layer populated from TPC-DS query52.tpl with explicit source-layer substitutions.
-  - Positive and negative rewrite candidates are populated but not execution-validated.
+  - Positive and negative rewrite candidates are populated and PostgreSQL witness-validated.
   - Minimal DDL, schema profile, and checker shape are populated for referenced tables and columns only.
-  - TODO: Human must fill data rows/load path, expected results, execution evidence, plan artifacts, taxonomy, and review status.
+  - PostgreSQL-only witness validation passed for source/positive equality and source/negative divergence.
+  - TODO: Human must fill MySQL/Spark validation, plan artifacts, taxonomy, and review status.
