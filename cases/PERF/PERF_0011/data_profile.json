@@ -1,4 +1,40 @@
 {
-  "status": "TODO",
-  "notes": "Human must fill data profile facts."
+  "case_id": "PERF_0011",
+  "status": "schema_profile_only_unvalidated",
+  "dataset_id": "TODO",
+  "data_rows_added": false,
+  "data_loaded": false,
+  "engine_validated": [],
+  "required_tables": [
+    "lineitem",
+    "part"
+  ],
+  "required_columns": {
+    "lineitem": [
+      "l_partkey",
+      "l_extendedprice",
+      "l_discount",
+      "l_shipdate"
+    ],
+    "part": [
+      "p_partkey",
+      "p_type"
+    ]
+  },
+  "row_counts": {
+    "lineitem": "TODO",
+    "part": "TODO"
+  },
+  "data_source": {
+    "source_id": "SRC_001",
+    "source_name": "TPC-H",
+    "seed_id": "TPC-H-Q14",
+    "generation_or_load_path": "TODO"
+  },
+  "notes": [
+    "Minimal schema profile only; no data rows are included in this step.",
+    "DDL covers only tables and columns referenced by source.sql and rewrite candidates.",
+    "Execution validation, expected results, and plan evidence remain TODO.",
+    "No equivalence or divergence fact is claimed."
+  ]
 }

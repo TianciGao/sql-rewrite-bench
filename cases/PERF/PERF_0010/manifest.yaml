@@ -20,7 +20,9 @@ targets:
     - postgres
     - mysql
     - spark
-required_tables: []
+required_tables:
+  - orders
+  - lineitem
 features: []
 status:
   parse_checked: false
@@ -45,5 +47,6 @@ validation:
 notes:
   - Source frozen manually from SRC_001 / TPC-H Query 12 using checked TPC-H reference substitution file.
   - First positive/negative rewrite candidates are present but unvalidated.
+  - Minimal DDL/data_profile/checker layer is populated for referenced tables and columns only.
   - No execution validation, rewrite correctness claim, plan evidence, registry writeback, admission claim, or promotion claim is made.
-  - TODO: Human must fill DDL/data profile, checker expected results, execution evidence, plan evidence, taxonomy tags, registry row, and review status.
+  - TODO: Human must fill checker expected results, witness data, execution evidence, plan evidence, taxonomy tags, registry row, and review status.
