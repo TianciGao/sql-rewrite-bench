@@ -9,7 +9,7 @@ provenance:
   provenance_notes: provenance/provenance_notes.txt
 source:
   file: source.sql
-  dialect: tpc_h_qgen_template_unmaterialized
+  dialect: tpc_h_manual_frozen_sql_instance
 variants:
   positives:
     - rewrite_pos_01.sql
@@ -43,6 +43,6 @@ validation:
   checker: validation/checker.yaml
   witness_dataset: validation/witness_dataset.yaml
 notes:
-  - Source/provenance layer populated from SRC_001 / TPC-H Query 14 raw qgen template only.
-  - TODO: Human must materialize/freeze an executable source instance before validation.
+  - Source frozen manually from SRC_001 / TPC-H Query 14 using checked TPC-H reference substitution file.
+  - No execution validation, rewrite claim, plan evidence, registry writeback, admission claim, or promotion claim is made.
   - TODO: Human must fill rewrites, DDL/data profile, checker facts, execution evidence, plan evidence, taxonomy tags, registry row, and review status.

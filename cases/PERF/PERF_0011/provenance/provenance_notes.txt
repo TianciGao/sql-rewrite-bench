@@ -5,14 +5,23 @@ Source line: TPC-H performance source line
 Selected seed: TPC-H Query 14, Promotion Effect Query
 Raw source path: datasets/raw/tpch/TPC-H V3.0.1/dbgen/queries/14.sql
 
-The raw source file was located in the existing repository TPC-H source tree and copied into source.sql with a case-local provenance header. The copied SQL remains an unmaterialized TPC-H qgen template.
+Case-local source handling:
+- The expected local qgen executable was checked at datasets/raw/tpch/TPC-H V3.0.1/dbgen/qgen and was not present.
+- The source was therefore manually frozen from the checked TPC-H reference substitution file:
+  datasets/raw/tpch/TPC-H V3.0.1/ref_data/1/subparam_14
+- Reference substitutions used for Query 14:
+  - :1 = 1997-03-01
+  - :n -1 = no row limit
+- cases/PERF/PERF_0011/source.sql now removes qgen directives and contains one frozen executable SQL source instance.
 
 Qgen directives preserved:
 - :x
 - :o
 - :n -1
 
-Template placeholders preserved:
-- :1
-
-No executable parameter instance was selected in this step. No source freezing, rewrite construction, DDL/data-profile refinement, checker truth, execution validation, plan collection, registry writeback, admission claim, promotion claim, or archetype-completion claim is made here.
+Explicit non-claims:
+- No qgen-generated SQL artifact was produced.
+- No rewrite has been created or validated.
+- No checker truth, DDL semantics, data profile facts, execution evidence, or plan evidence is claimed.
+- No registry writeback is performed in this step.
+- No admission, promotion, or archetype-completion claim is made.
