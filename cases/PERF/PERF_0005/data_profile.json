@@ -1,4 +1,47 @@
 {
-  "status": "TODO",
-  "notes": "Human must fill data profile facts."
+  "case_id": "PERF_0005",
+  "status": "schema_profile_only_unvalidated",
+  "dataset_id": "TODO",
+  "data_rows_added": false,
+  "data_loaded": false,
+  "engine_validated": [],
+  "required_tables": [
+    "date_dim",
+    "item",
+    "store_sales"
+  ],
+  "required_columns": {
+    "date_dim": [
+      "d_date_sk",
+      "d_moy",
+      "d_year"
+    ],
+    "item": [
+      "i_item_sk",
+      "i_manager_id",
+      "i_brand_id",
+      "i_brand"
+    ],
+    "store_sales": [
+      "ss_sold_date_sk",
+      "ss_item_sk",
+      "ss_ext_sales_price"
+    ]
+  },
+  "row_counts": {
+    "date_dim": "TODO",
+    "item": "TODO",
+    "store_sales": "TODO"
+  },
+  "data_source": {
+    "source_id": "SRC_002",
+    "source_name": "TPC-DS",
+    "seed_id": "TPCDS_QUERY52_MANUAL_FREEZE_V0",
+    "generation_or_load_path": "TODO"
+  },
+  "notes": [
+    "Minimal schema profile only; no real data rows were added in this step.",
+    "Row counts, data generation path, load path, and engine validation remain TODO.",
+    "No equivalence, divergence, execution, or plan facts are claimed."
+  ]
 }

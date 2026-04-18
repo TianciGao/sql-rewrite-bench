@@ -1,5 +1,15 @@
 type: value_normalized_result_equivalence_checker
-status: unvalidated_rewrite_layer
+status: unvalidated_schema_and_rewrite_layer
+normalization:
+  sort_rows: true
+  trim_whitespace: true
+  normalize_tabs: true
+  normalize_numeric_format: true
+  normalize_null: true
+inputs:
+  source: source.sql
+  positive_rewrite: rewrite_pos_01.sql
+  negative_rewrite: rewrite_neg_01.sql
 expectations:
   equal:
     - source.sql
@@ -8,7 +18,9 @@ expectations:
     - source.sql
     - rewrite_neg_01.sql
 expected_results: TODO
+validation_evidence: []
 notes:
   - Rewrite comparison roles are candidate expectations only.
   - Equivalence and divergence have not been execution-validated.
+  - Minimal DDL exists for referenced columns only; data loading and result production remain TODO.
   - TODO: Human must fill expected results after validation evidence exists.
