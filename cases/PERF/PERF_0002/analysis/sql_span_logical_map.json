@@ -1,0 +1,221 @@
+{
+  "artifact_type": "sql_span_to_logical_operator_mapping",
+  "case_id": "PERF_0002",
+  "scope": "second_deepening_step",
+  "status": "initial_sql_to_logical_mapping",
+  "inputs": {
+    "canonical_ast": "cases/PERF/PERF_0002/analysis/canonical_ast.json",
+    "logical_ir": "cases/PERF/PERF_0002/analysis/logical_ir.json",
+    "sql_files": [
+      "cases/PERF/PERF_0002/source.sql",
+      "cases/PERF/PERF_0002/rewrite_pos_01.sql",
+      "cases/PERF/PERF_0002/rewrite_neg_01.sql"
+    ]
+  },
+  "notes": [
+    "This artifact maps stable SQL text spans to logical operator IDs only.",
+    "It does not map logical operators to physical plan nodes."
+  ],
+  "shared_spans": [
+    {
+      "span_id": "shared_scan_item",
+      "sql_files": [
+        "source.sql",
+        "rewrite_pos_01.sql",
+        "rewrite_neg_01.sql"
+      ],
+      "span_text": "FROM item",
+      "logical_operator_ids": [
+        "scan_item"
+      ]
+    },
+    {
+      "span_id": "shared_join_store_sales",
+      "sql_files": [
+        "source.sql",
+        "rewrite_pos_01.sql",
+        "rewrite_neg_01.sql"
+      ],
+      "span_text": "JOIN store_sales\n    ON ss_item_sk = i_item_sk",
+      "logical_operator_ids": [
+        "scan_store_sales",
+        "join_item_store_sales"
+      ]
+    },
+    {
+      "span_id": "shared_join_date_dim",
+      "sql_files": [
+        "source.sql",
+        "rewrite_pos_01.sql",
+        "rewrite_neg_01.sql"
+      ],
+      "span_text": "JOIN date_dim\n    ON ss_sold_date_sk = d_date_sk",
+      "logical_operator_ids": [
+        "scan_date_dim",
+        "join_date_dim"
+      ]
+    },
+    {
+      "span_id": "shared_join_store",
+      "sql_files": [
+        "source.sql",
+        "rewrite_pos_01.sql",
+        "rewrite_neg_01.sql"
+      ],
+      "span_text": "JOIN store\n    ON ss_store_sk = s_store_sk",
+      "logical_operator_ids": [
+        "scan_store",
+        "join_store"
+      ]
+    },
+    {
+      "span_id": "shared_seed_slice_filter",
+      "sql_files": [
+        "source.sql",
+        "rewrite_pos_01.sql",
+        "rewrite_neg_01.sql"
+      ],
+      "span_text": "WHERE d_month_seq IN (1212,1213,1214,1215,1216,1217,1218,1219,1220,1221,1222,1223)\n    AND (\n      (\n        i_category IN ('Books','Children','Electronics')\n        AND i_class IN ('personal','portable','reference','self-help')\n        AND i_brand IN (\n          'scholaramalgamalg #14',\n          'scholaramalgamalg #7',\n          'exportiunivamalg #9',\n          'scholaramalgamalg #9'\n        )\n      )\n      OR\n      (\n        i_category IN ('Women','Music','Men')\n        AND i_class IN ('accessories','classical','fragrances','pants')\n        AND i_brand IN (\n          'amalgimporto #1',\n          'edu packscholar #1',\n          'exportiimporto #1',\n          'importoamalg #1'\n        )\n      )\n    )",
+      "logical_operator_ids": [
+        "filter_seed_slice"
+      ]
+    },
+    {
+      "span_id": "shared_sales_aggregate",
+      "sql_files": [
+        "source.sql",
+        "rewrite_pos_01.sql",
+        "rewrite_neg_01.sql"
+      ],
+      "span_text": "i_manufact_id,\n    SUM(ss_sales_price) AS sum_sales",
+      "logical_operator_ids": [
+        "aggregate_quarter_sales"
+      ]
+    },
+    {
+      "span_id": "shared_group_by",
+      "sql_files": [
+        "source.sql",
+        "rewrite_pos_01.sql",
+        "rewrite_neg_01.sql"
+      ],
+      "span_text": "GROUP BY i_manufact_id, d_qoy",
+      "logical_operator_ids": [
+        "aggregate_quarter_sales"
+      ]
+    },
+    {
+      "span_id": "shared_window_average",
+      "sql_files": [
+        "source.sql",
+        "rewrite_pos_01.sql",
+        "rewrite_neg_01.sql"
+      ],
+      "span_text": "AVG(SUM(ss_sales_price)) OVER (PARTITION BY i_manufact_id) AS avg_quarterly_sales",
+      "logical_operator_ids": [
+        "window_avg_quarterly_sales"
+      ]
+    }
+  ],
+  "query_spans": {
+    "source.sql": [
+      {
+        "span_id": "source_outer_filter_ratio_guard",
+        "span_text": "WHERE CASE\n        WHEN avg_quarterly_sales > 0\n          THEN ABS(sum_sales - avg_quarterly_sales) / avg_quarterly_sales\n        ELSE NULL\n      END > 0.1",
+        "logical_operator_ids": [
+          "source_filter_deviation_ratio"
+        ],
+        "semantic_role": "guarded_deviation_threshold_filter"
+      },
+      {
+        "span_id": "source_order_by",
+        "span_text": "ORDER BY avg_quarterly_sales,\n         sum_sales,\n         i_manufact_id",
+        "logical_operator_ids": [
+          "source_sort"
+        ],
+        "semantic_role": "stable_result_ordering"
+      },
+      {
+        "span_id": "source_limit",
+        "span_text": "LIMIT 100",
+        "logical_operator_ids": [
+          "source_limit"
+        ],
+        "semantic_role": "top_n_limit"
+      }
+    ],
+    "rewrite_pos_01.sql": [
+      {
+        "span_id": "positive_outer_filter_denominator_guard",
+        "span_text": "WHERE avg_quarterly_sales > 0",
+        "logical_operator_ids": [
+          "positive_filter_positive_denominator"
+        ],
+        "semantic_role": "positive_denominator_guard"
+      },
+      {
+        "span_id": "positive_outer_filter_threshold",
+        "span_text": "AND ABS(sum_sales - avg_quarterly_sales) > avg_quarterly_sales * 0.1",
+        "logical_operator_ids": [
+          "positive_filter_deviation_product"
+        ],
+        "semantic_role": "result_preserving_product_form_threshold"
+      },
+      {
+        "span_id": "positive_order_by",
+        "span_text": "ORDER BY avg_quarterly_sales,\n         sum_sales,\n         i_manufact_id",
+        "logical_operator_ids": [
+          "positive_sort"
+        ],
+        "semantic_role": "stable_result_ordering"
+      },
+      {
+        "span_id": "positive_limit",
+        "span_text": "LIMIT 100",
+        "logical_operator_ids": [
+          "positive_limit"
+        ],
+        "semantic_role": "top_n_limit"
+      }
+    ],
+    "rewrite_neg_01.sql": [
+      {
+        "span_id": "negative_outer_filter_denominator_guard",
+        "span_text": "WHERE avg_quarterly_sales > 0",
+        "logical_operator_ids": [
+          "negative_filter_positive_denominator"
+        ],
+        "semantic_role": "positive_denominator_guard"
+      },
+      {
+        "span_id": "negative_outer_filter_threshold",
+        "span_text": "AND ABS(sum_sales - avg_quarterly_sales) > avg_quarterly_sales * 0.5",
+        "logical_operator_ids": [
+          "negative_filter_deviation_product"
+        ],
+        "semantic_role": "result_changing_threshold_mutation"
+      },
+      {
+        "span_id": "negative_order_by",
+        "span_text": "ORDER BY avg_quarterly_sales,\n         sum_sales,\n         i_manufact_id",
+        "logical_operator_ids": [
+          "negative_sort"
+        ],
+        "semantic_role": "stable_result_ordering"
+      },
+      {
+        "span_id": "negative_limit",
+        "span_text": "LIMIT 100",
+        "logical_operator_ids": [
+          "negative_limit"
+        ],
+        "semantic_role": "top_n_limit"
+      }
+    ]
+  },
+  "out_of_scope": [
+    "logical_to_physical_plan_mapping",
+    "engine_specific_plan_node_alignment",
+    "PORT_0002_mapping"
+  ]
+}
