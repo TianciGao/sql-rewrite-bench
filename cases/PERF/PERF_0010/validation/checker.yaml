@@ -1,4 +1,9 @@
 type: value_normalized_result_equivalence_checker
+status: unvalidated_rewrite_candidates
+inputs:
+  source: source.sql
+  positive_rewrite: rewrite_pos_01.sql
+  negative_rewrite: rewrite_neg_01.sql
 expectations:
   equal:
     - source.sql
@@ -8,4 +13,6 @@ expectations:
     - rewrite_neg_01.sql
 expected_results: TODO
 notes:
-  - TODO: Human must fill checker semantics and expected results.
+  - Positive and negative rewrite candidates are present but unvalidated.
+  - Expected result captures remain TODO.
+  - No execution validation or divergence proof is claimed.
