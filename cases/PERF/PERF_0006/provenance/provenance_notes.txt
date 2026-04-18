@@ -13,12 +13,15 @@ Selected seed:
 - Raw source path: datasets/raw/tpch/TPC-H V3.0.1/dbgen/queries/1.sql
 
 Case-local source handling:
-- cases/PERF/PERF_0006/source.sql preserves the raw qgen template structure.
-- qgen directives (:x, :o, :n) are still present.
-- substitution marker :1 is intentionally not materialized in this step.
+- The expected local qgen executable was checked at datasets/raw/tpch/TPC-H V3.0.1/dbgen/qgen and was not present.
+- The source was therefore manually frozen from the checked TPC-H reference substitution file:
+  datasets/raw/tpch/TPC-H V3.0.1/ref_data/1/subparam_1
+- Reference substitution used for Query 1: :1 = 96 days.
+- The frozen cutoff date is DATE '1998-08-27', computed as DATE '1998-12-01' - 96 days.
+- cases/PERF/PERF_0006/source.sql now removes qgen directives and contains one frozen executable SQL source instance.
 
 Explicit non-claims:
-- No concrete executable query instance has been selected.
+- No qgen-generated SQL artifact was produced.
 - No rewrite has been created or validated.
 - No checker truth, DDL semantics, data profile facts, execution evidence, or plan evidence is claimed.
 - No registry writeback is performed in this step.
