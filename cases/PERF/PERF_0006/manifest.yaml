@@ -1,0 +1,45 @@
+case_id: PERF_0006
+pool: performance
+provenance:
+  source_id: TODO
+  seed_id: TODO
+  source_name: TODO
+  source_entry: TODO
+  raw_record_file: provenance/raw_record.json
+  provenance_notes: provenance/provenance_notes.txt
+source:
+  file: source.sql
+variants:
+  positives:
+    - rewrite_pos_01.sql
+  negatives:
+    - rewrite_neg_01.sql
+targets:
+  engines:
+    - postgres
+    - mysql
+    - spark
+required_tables: []
+features: []
+status:
+  parse_checked: false
+  exec_checked_pg: false
+  exec_checked_mysql: false
+  exec_checked_spark: false
+  plan_checked: false
+  schema_ready: false
+  validation_ready: false
+  release_grade: false
+schema:
+  pg_ddl: schema/ddl_pg.sql
+  mysql_ddl: schema/ddl_mysql.sql
+  spark_ddl: schema/ddl_spark.sql
+data_profile:
+  file: data_profile.json
+metadata:
+  engine_metadata: metadata/engine_metadata.yaml
+validation:
+  checker: validation/checker.yaml
+  witness_dataset: validation/witness_dataset.yaml
+notes:
+  - TODO: Human must fill source lineage, SQL text, rewrites, data, validation, artifacts, and review status.
