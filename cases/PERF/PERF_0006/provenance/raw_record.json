@@ -1,4 +1,25 @@
 {
-  "status": "TODO",
-  "notes": "Human must fill or attach raw source record. Do not copy template provenance automatically."
+  "case_id": "PERF_0006",
+  "source_registry_id": "SRC_001",
+  "source_name": "TPC-H",
+  "source_family": "benchmark",
+  "source_registry_storage_path": "datasets/raw/tpch/",
+  "seed_id": "TPC-H-Q1",
+  "seed_query_name": "TPC-H Query 1",
+  "seed_query_title": "Pricing Summary Report Query",
+  "raw_source_path": "datasets/raw/tpch/TPC-H V3.0.1/dbgen/queries/1.sql",
+  "raw_source_file_found": true,
+  "raw_source_format": "TPC-H qgen template with qgen directives and substitution marker",
+  "materialization_status": "not_materialized_in_this_step",
+  "parameter_substitution_status": "not_filled",
+  "case_source_file": "cases/PERF/PERF_0006/source.sql",
+  "copied_to_case_source": true,
+  "non_claims": [
+    "no executable parameter instance selected",
+    "no rewrite equivalence claim",
+    "no DDL or data profile claim",
+    "no execution validation",
+    "no plan evidence",
+    "no registry writeback"
+  ]
 }

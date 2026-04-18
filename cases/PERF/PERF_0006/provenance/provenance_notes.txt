@@ -1,1 +1,24 @@
-TODO: Human must fill source lineage, source registry pointer, materialization, and freezing notes.
+PERF_0006 source/provenance note
+
+Source registry line:
+- source_id: SRC_001
+- source_name: TPC-H
+- source_family: benchmark
+- primary_pool: performance
+- storage_path: datasets/raw/tpch/
+
+Selected seed:
+- TPC-H Query 1
+- Title in raw file: TPC-H/TPC-R Pricing Summary Report Query (Q1)
+- Raw source path: datasets/raw/tpch/TPC-H V3.0.1/dbgen/queries/1.sql
+
+Case-local source handling:
+- cases/PERF/PERF_0006/source.sql preserves the raw qgen template structure.
+- qgen directives (:x, :o, :n) are still present.
+- substitution marker :1 is intentionally not materialized in this step.
+
+Explicit non-claims:
+- No concrete executable query instance has been selected.
+- No rewrite has been created or validated.
+- No checker truth, DDL semantics, data profile facts, execution evidence, or plan evidence is claimed.
+- No registry writeback is performed in this step.
