@@ -4,6 +4,7 @@ import argparse
 import csv
 import json
 import os
+import re
 import subprocess
 import sys
 from collections import Counter
@@ -19,6 +20,10 @@ SOURCE_REGISTRY = ROOT / "inventory" / "source_registry.csv"
 CASE_REGISTRY = ROOT / "inventory" / "case_registry.csv"
 ENGINE_ORDER = ("pg", "mysql", "spark")
 ENGINE_IDS = set(ENGINE_ORDER)
+PERF_CASE_ID_RE = re.compile(r"^PERF_\d{4}$")
+PERF_TEMPLATE_CASE_ID = "PERF_0002"
+PERF_TEMPLATE_DIR = ROOT / "cases" / "PERF" / PERF_TEMPLATE_CASE_ID
+PERF_CASE_ROOT = ROOT / "cases" / "PERF"
 
 SOURCE_REQUIRED_FIELDS = [
     "source_id",
@@ -234,6 +239,17 @@ def validate_engine_values(rows: list[dict[str, str]], errors: list[dict[str, An
                 "rows": invalid_rows,
             }
         )
+
+
+def relative_to_root(path: Path) -> str:
+    return str(path.relative_to(ROOT))
+
+
+def resolve_repo_path(value: str) -> Path:
+    path = Path(value)
+    if not path.is_absolute():
+        path = ROOT / path
+    return path.resolve()
 
 
 def env_visibility() -> dict[str, bool]:
@@ -514,6 +530,167 @@ def cmd_current_snapshot(_: argparse.Namespace) -> int:
     return print_and_exit(payload, 0)
 
 
+def cmd_scaffold_perf_case(args: argparse.Namespace) -> int:
+    output_path = resolve_repo_path(args.out)
+    errors: list[dict[str, Any]] = []
+
+    if not PERF_CASE_ID_RE.fullmatch(args.case_id):
+        errors.append(
+            {
+                "type": "invalid_case_id",
+                "message": "case_id must match PERF_####",
+                "value": args.case_id,
+            }
+        )
+
+    try:
+        output_path.relative_to(PERF_CASE_ROOT.resolve())
+    except ValueError:
+        errors.append(
+            {
+                "type": "invalid_output_path",
+                "message": "output path must stay under cases/PERF/",
+                "value": args.out,
+            }
+        )
+
+    if output_path.exists():
+        errors.append(
+            {
+                "type": "output_exists",
+                "message": "existing directories or files must not be overwritten",
+                "value": str(output_path),
+            }
+        )
+
+    planned_directories = [
+        "provenance",
+        "schema",
+        "metadata",
+        "validation",
+        "analysis",
+    ]
+    planned_files = [
+        "manifest.yaml",
+        "source.sql",
+        "rewrite_pos_01.sql",
+        "rewrite_neg_01.sql",
+        "taxonomy_trial_v0.2.yaml",
+        "data_profile.json",
+        "schema/ddl_pg.sql",
+        "schema/ddl_mysql.sql",
+        "schema/ddl_spark.sql",
+        "metadata/engine_metadata.yaml",
+        "validation/checker.yaml",
+        "validation/witness_dataset.yaml",
+        "analysis/canonical_ast.json",
+        "analysis/logical_ir.json",
+        "analysis/sql_span_logical_map.json",
+        "analysis/logical_physical_map.json",
+    ]
+    auto_fillable_fields = {
+        "manifest": {
+            "case_id": args.case_id,
+            "pool": "performance",
+            "source": {"file": "source.sql"},
+            "variants": {
+                "positives": ["rewrite_pos_01.sql"],
+                "negatives": ["rewrite_neg_01.sql"],
+            },
+            "targets": {"engines": ["postgres", "mysql", "spark"]},
+            "schema": {
+                "pg_ddl": "schema/ddl_pg.sql",
+                "mysql_ddl": "schema/ddl_mysql.sql",
+                "spark_ddl": "schema/ddl_spark.sql",
+            },
+            "metadata": {"engine_metadata": "metadata/engine_metadata.yaml"},
+            "validation": {
+                "checker": "validation/checker.yaml",
+                "witness_dataset": "validation/witness_dataset.yaml",
+            },
+            "status_defaults": {
+                "parse_checked": False,
+                "exec_checked_pg": False,
+                "exec_checked_mysql": False,
+                "exec_checked_spark": False,
+                "plan_checked": False,
+                "schema_ready": False,
+                "validation_ready": False,
+                "release_grade": False,
+            },
+        },
+        "metadata": {
+            "source_dialect": "TODO",
+            "target_engines": ["postgres", "mysql", "spark"],
+            "validated_engines": [],
+        },
+        "checker": {
+            "type": "value_normalized_result_equivalence_checker",
+            "expectations": {
+                "equal": ["source.sql", "rewrite_pos_01.sql"],
+                "not_equal": ["source.sql", "rewrite_neg_01.sql"],
+            },
+        },
+    }
+    human_required_fields = [
+        "source SQL text",
+        "positive rewrite SQL text",
+        "negative rewrite SQL text",
+        "source_id and seed lineage",
+        "source template and materialization command",
+        "required tables",
+        "SQL feature tags",
+        "rewrite opportunity tags",
+        "pool-specific taxonomy tags",
+        "PostgreSQL/MySQL/Spark DDL content",
+        "data profile facts",
+        "witness dataset details",
+        "checker semantics beyond generic source/positive/negative shape",
+        "execution result artifact paths",
+        "plan artifact paths",
+        "analysis artifacts",
+        "all validation status flags",
+    ]
+    forbidden_automatic_decisions = [
+        "admission status",
+        "promotion status",
+        "common-core or extended dataset line",
+        "registry truth",
+        "ground-truth equivalence",
+        "positive rewrite validity",
+        "negative rewrite invalidity",
+        "execution success",
+        "plan sufficiency",
+        "archetype completion",
+        "source acquisition or workload curation",
+    ]
+
+    payload: dict[str, Any] = {
+        "command": "scaffold-perf-case",
+        "cwd": str(ROOT),
+        "ok": not errors,
+        "ran_at_utc": utc_now(),
+        "mode": "dry-run",
+        "case_id": args.case_id,
+        "output_path": relative_to_root(output_path) if output_path.is_relative_to(ROOT) else str(output_path),
+        "template_basis": {
+            "case_id": PERF_TEMPLATE_CASE_ID,
+            "path": relative_to_root(PERF_TEMPLATE_DIR),
+        },
+        "planned_directories": planned_directories,
+        "planned_files": planned_files,
+        "auto_fillable_fields": auto_fillable_fields,
+        "human_required_fields": human_required_fields,
+        "forbidden_automatic_decisions": forbidden_automatic_decisions,
+        "created_files": [],
+        "updated_registries": [],
+        "admission_or_review_claims": [],
+        "errors": errors,
+    }
+    write_report("scaffold-perf-case", payload)
+    return print_and_exit(payload, 0 if payload["ok"] else 1)
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="python -m scripts.cli")
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -538,6 +715,12 @@ def build_parser() -> argparse.ArgumentParser:
 
     snapshot_parser = subparsers.add_parser("current-snapshot")
     snapshot_parser.set_defaults(func=cmd_current_snapshot)
+
+    scaffold_parser = subparsers.add_parser("scaffold-perf-case")
+    scaffold_parser.add_argument("--case-id", required=True)
+    scaffold_parser.add_argument("--out", required=True)
+    scaffold_parser.add_argument("--dry-run", action="store_true", default=True)
+    scaffold_parser.set_defaults(func=cmd_scaffold_perf_case)
 
     return parser
 
