@@ -1,4 +1,36 @@
 {
-  "status": "TODO",
-  "notes": "Human must fill or attach raw source record. Do not copy template provenance automatically."
+  "case_id": "PERF_0005",
+  "source_id": "SRC_002",
+  "source_name": "TPC-DS",
+  "source_family": "benchmark",
+  "source_registry_path": "inventory/source_registry.csv",
+  "source_storage_path": "datasets/raw/tpcds/",
+  "source_tool_version": "DSGen-software-code-4.0.0",
+  "template_name": "query52.tpl",
+  "template_path": "datasets/raw/tpcds/DSGen-software-code-4.0.0/query_templates/query52.tpl",
+  "seed_id": "TPCDS_QUERY52_MANUAL_FREEZE_V0",
+  "materialized_source_path": "cases/PERF/PERF_0005/source.sql",
+  "materialization_method": "Manual source-layer freeze from the local TPC-DS query52.tpl template with explicit parameter substitutions. This records source/provenance only and does not create rewrite, validation, result, plan, or admission facts.",
+  "substitutions": {
+    "MONTH": 11,
+    "YEAR": 2001,
+    "_LIMIT": 100,
+    "_LIMITA": "",
+    "_LIMITB": "",
+    "_LIMITC": "limit 100"
+  },
+  "dsqgen_attempt": {
+    "attempted": true,
+    "command": "datasets/raw/tpcds/DSGen-software-code-4.0.0/tools/dsqgen -DIRECTORY datasets/raw/tpcds/DSGen-software-code-4.0.0/query_templates -TEMPLATE query52.tpl -COUNT 1 -QUALIFY Y -SCALE 1 -DIALECT ansi -OUTPUT_DIR /tmp/tpcds_perf_0005_q52 -VERBOSE Y",
+    "result": "failed_before_repo_edit",
+    "returncode": 230,
+    "stderr_or_output": "ERROR: Substitution'_END' is used before being initialized at line 60 in datasets/raw/tpcds/DSGen-software-code-4.0.0/query_templates/query52.tpl"
+  },
+  "license_or_terms": "TPC terms",
+  "provenance_risk_from_registry": "low",
+  "notes": [
+    "Chosen from the existing approved performance source line SRC_002.",
+    "The frozen source SQL is normalized to a common LIMIT form for later tri-engine feasibility review.",
+    "No positive rewrite, negative rewrite, checker truth, execution result, plan evidence, or registry update is claimed by this record."
+  ]
 }

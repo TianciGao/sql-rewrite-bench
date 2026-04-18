@@ -1,13 +1,16 @@
 case_id: PERF_0005
 pool: performance
 provenance:
-  source_id: TODO
-  seed_id: TODO
-  source_name: TODO
-  source_entry: TODO
+  source_id: SRC_002
+  seed_id: TPCDS_QUERY52_MANUAL_FREEZE_V0
+  source_name: TPC-DS
+  source_template: query52.tpl
+  source_entry: datasets/raw/tpcds/DSGen-software-code-4.0.0/query_templates/query52.tpl
+  materialized_instance: source.sql
   raw_record_file: provenance/raw_record.json
   provenance_notes: provenance/provenance_notes.txt
 source:
+  dialect: common_core_sql_normalized_from_tpcds_template
   file: source.sql
 variants:
   positives:
@@ -42,4 +45,5 @@ validation:
   checker: validation/checker.yaml
   witness_dataset: validation/witness_dataset.yaml
 notes:
-  - TODO: Human must fill source lineage, SQL text, rewrites, data, validation, artifacts, and review status.
+  - Source/provenance layer populated from TPC-DS query52.tpl with explicit source-layer substitutions.
+  - TODO: Human must fill rewrites, DDL semantics, data, validation, artifacts, taxonomy, and review status.
