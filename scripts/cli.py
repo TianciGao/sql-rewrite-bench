@@ -144,6 +144,13 @@ def count_values(rows: list[dict[str, str]], field: str) -> dict[str, int]:
     return dict(sorted(Counter(row.get(field, "") for row in rows).items()))
 
 
+def check_status(errors: list[dict[str, Any]], registry_name: str, *error_types: str) -> str:
+    return "fail" if any(
+        error.get("registry") == registry_name and error.get("type") in error_types
+        for error in errors
+    ) else "pass"
+
+
 def parse_engine_set(value: str) -> list[str]:
     engines = {engine for engine in value.split("|") if engine}
     return [engine for engine in ENGINE_ORDER if engine in engines]
@@ -353,23 +360,99 @@ def cmd_registry_check(_: argparse.Namespace) -> int:
         errors,
     )
     validate_engine_values(case_rows, errors)
+    ok = not errors
+
+    checks = [
+        {
+            "check": "headers",
+            "registry": "source_registry",
+            "status": check_status(
+                errors,
+                "source_registry",
+                "missing_fields",
+                "unexpected_fields",
+                "field_order_mismatch",
+            ),
+            "details": {
+                "expected_field_count": len(SOURCE_REQUIRED_FIELDS),
+                "actual_field_count": len(source_headers),
+            },
+        },
+        {
+            "check": "headers",
+            "registry": "case_registry",
+            "status": check_status(
+                errors,
+                "case_registry",
+                "missing_fields",
+                "unexpected_fields",
+                "field_order_mismatch",
+            ),
+            "details": {
+                "expected_field_count": len(CASE_REQUIRED_FIELDS),
+                "actual_field_count": len(case_headers),
+            },
+        },
+        {
+            "check": "unique_ids",
+            "registry": "source_registry",
+            "status": check_status(errors, "source_registry", "blank_ids", "duplicate_ids"),
+            "details": {"id_field": "source_id"},
+        },
+        {
+            "check": "unique_ids",
+            "registry": "case_registry",
+            "status": check_status(errors, "case_registry", "blank_ids", "duplicate_ids"),
+            "details": {"id_field": "case_id"},
+        },
+        {
+            "check": "controlled_fields",
+            "registry": "source_registry",
+            "status": check_status(errors, "source_registry", "invalid_controlled_values"),
+            "details": {"fields": sorted(CONTROLLED_FIELDS["source_registry"])},
+        },
+        {
+            "check": "controlled_fields",
+            "registry": "case_registry",
+            "status": check_status(errors, "case_registry", "invalid_controlled_values"),
+            "details": {"fields": sorted(CONTROLLED_FIELDS["case_registry"])},
+        },
+        {
+            "check": "validated_engines",
+            "registry": "case_registry",
+            "status": check_status(errors, "case_registry", "invalid_validated_engines"),
+            "details": {"allowed_values": list(ENGINE_ORDER)},
+        },
+    ]
 
     payload: dict[str, Any] = {
         "command": "registry-check",
         "cwd": str(ROOT),
-        "ok": not errors,
+        "ok": ok,
         "ran_at_utc": utc_now(),
+        "error_count": len(errors),
+        "checks": checks,
         "registries": {
             "source_registry": {
                 "path": str(SOURCE_REGISTRY.relative_to(ROOT)),
                 "row_count": len(source_rows),
                 "field_count": len(source_headers),
+                "schema": {
+                    "expected_fields": SOURCE_REQUIRED_FIELDS,
+                    "actual_fields": source_headers,
+                    "field_order_ok": source_headers == SOURCE_REQUIRED_FIELDS,
+                },
                 "controlled_field_counts": source_controlled_counts,
             },
             "case_registry": {
                 "path": str(CASE_REGISTRY.relative_to(ROOT)),
                 "row_count": len(case_rows),
                 "field_count": len(case_headers),
+                "schema": {
+                    "expected_fields": CASE_REQUIRED_FIELDS,
+                    "actual_fields": case_headers,
+                    "field_order_ok": case_headers == CASE_REQUIRED_FIELDS,
+                },
                 "controlled_field_counts": case_controlled_counts,
                 "validated_engine_counts": count_values(case_rows, "validated_engines"),
             },
@@ -377,7 +460,7 @@ def cmd_registry_check(_: argparse.Namespace) -> int:
         "errors": errors,
     }
     write_report("registry-check", payload)
-    return print_and_exit(payload, 0 if not errors else 1)
+    return print_and_exit(payload, 0 if ok else 1)
 
 
 def cmd_current_snapshot(_: argparse.Namespace) -> int:
@@ -401,21 +484,27 @@ def cmd_current_snapshot(_: argparse.Namespace) -> int:
         "cwd": str(ROOT),
         "ok": True,
         "ran_at_utc": utc_now(),
-        "source_basis": str(SOURCE_REGISTRY.relative_to(ROOT)),
-        "case_basis": str(CASE_REGISTRY.relative_to(ROOT)),
+        "basis": {
+            "sources": str(SOURCE_REGISTRY.relative_to(ROOT)),
+            "cases": str(CASE_REGISTRY.relative_to(ROOT)),
+        },
         "sources": {
             "total": len(source_rows),
-            "by_status": count_values(source_rows, "acquisition_status"),
-            "by_current_real_status": count_values(source_rows, "current_real_status"),
+            "counts": {
+                "by_acquisition_status": count_values(source_rows, "acquisition_status"),
+                "by_current_real_status": count_values(source_rows, "current_real_status"),
+            },
         },
         "cases": {
             "total": len(case_rows),
-            "by_pool": count_values(case_rows, "primary_pool"),
-            "by_admission_status": count_values(case_rows, "admission_status"),
-            "by_promotion_status": count_values(case_rows, "promotion_status"),
-            "by_dataset_line": count_values(case_rows, "dataset_line"),
-            "by_validated_engine_set": dict(sorted(engine_sets.items())),
-            "validated_engine_coverage": {
+            "counts": {
+                "by_pool": count_values(case_rows, "primary_pool"),
+                "by_admission_status": count_values(case_rows, "admission_status"),
+                "by_promotion_status": count_values(case_rows, "promotion_status"),
+                "by_dataset_line": count_values(case_rows, "dataset_line"),
+                "by_validated_engine_set": dict(sorted(engine_sets.items())),
+            },
+            "engine_coverage": {
                 "case_count_by_engine": engine_case_counts,
                 "tri_engine_validated_case_count": tri_engine_validated,
             },
