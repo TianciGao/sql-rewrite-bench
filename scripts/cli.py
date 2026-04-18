@@ -256,6 +256,90 @@ def resolve_repo_path(value: str) -> Path:
     return path.resolve()
 
 
+def validate_scaffold_request(
+    case_id: str,
+    out: str,
+    case_id_re: re.Pattern[str],
+    case_id_message: str,
+    case_root: Path,
+    case_root_message: str,
+) -> tuple[Path, list[dict[str, Any]]]:
+    output_path = resolve_repo_path(out)
+    errors: list[dict[str, Any]] = []
+
+    if not case_id_re.fullmatch(case_id):
+        errors.append(
+            {
+                "type": "invalid_case_id",
+                "message": case_id_message,
+                "value": case_id,
+            }
+        )
+
+    try:
+        output_path.relative_to(case_root.resolve())
+    except ValueError:
+        errors.append(
+            {
+                "type": "invalid_output_path",
+                "message": case_root_message,
+                "value": out,
+            }
+        )
+
+    if output_path.exists():
+        errors.append(
+            {
+                "type": "output_exists",
+                "message": "existing directories or files must not be overwritten",
+                "value": str(output_path),
+            }
+        )
+
+    return output_path, errors
+
+
+def build_scaffold_payload(
+    command: str,
+    case_id: str,
+    output_path: Path,
+    template_case_id: str,
+    template_dir: Path,
+    planned_directories: list[str],
+    planned_files: list[str],
+    auto_fillable_fields: dict[str, Any],
+    human_required_fields: list[str],
+    forbidden_automatic_decisions: list[str],
+    errors: list[dict[str, Any]],
+    extra_sections: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    payload: dict[str, Any] = {
+        "command": command,
+        "cwd": str(ROOT),
+        "ok": not errors,
+        "ran_at_utc": utc_now(),
+        "mode": "dry-run",
+        "case_id": case_id,
+        "output_path": relative_to_root(output_path) if output_path.is_relative_to(ROOT) else str(output_path),
+        "template_basis": {
+            "case_id": template_case_id,
+            "path": relative_to_root(template_dir),
+        },
+        "planned_directories": planned_directories,
+        "planned_files": planned_files,
+        "auto_fillable_fields": auto_fillable_fields,
+        "human_required_fields": human_required_fields,
+        "forbidden_automatic_decisions": forbidden_automatic_decisions,
+        "created_files": [],
+        "updated_registries": [],
+        "admission_or_review_claims": [],
+        "errors": errors,
+    }
+    if extra_sections:
+        payload.update(extra_sections)
+    return payload
+
+
 def env_visibility() -> dict[str, bool]:
     return {name: bool(os.environ.get(name)) for name in ENV_VARS}
 
@@ -535,37 +619,14 @@ def cmd_current_snapshot(_: argparse.Namespace) -> int:
 
 
 def cmd_scaffold_perf_case(args: argparse.Namespace) -> int:
-    output_path = resolve_repo_path(args.out)
-    errors: list[dict[str, Any]] = []
-
-    if not PERF_CASE_ID_RE.fullmatch(args.case_id):
-        errors.append(
-            {
-                "type": "invalid_case_id",
-                "message": "case_id must match PERF_####",
-                "value": args.case_id,
-            }
-        )
-
-    try:
-        output_path.relative_to(PERF_CASE_ROOT.resolve())
-    except ValueError:
-        errors.append(
-            {
-                "type": "invalid_output_path",
-                "message": "output path must stay under cases/PERF/",
-                "value": args.out,
-            }
-        )
-
-    if output_path.exists():
-        errors.append(
-            {
-                "type": "output_exists",
-                "message": "existing directories or files must not be overwritten",
-                "value": str(output_path),
-            }
-        )
+    output_path, errors = validate_scaffold_request(
+        args.case_id,
+        args.out,
+        PERF_CASE_ID_RE,
+        "case_id must match PERF_####",
+        PERF_CASE_ROOT,
+        "output path must stay under cases/PERF/",
+    )
 
     planned_directories = [
         "provenance",
@@ -669,64 +730,32 @@ def cmd_scaffold_perf_case(args: argparse.Namespace) -> int:
         "source acquisition or workload curation",
     ]
 
-    payload: dict[str, Any] = {
-        "command": "scaffold-perf-case",
-        "cwd": str(ROOT),
-        "ok": not errors,
-        "ran_at_utc": utc_now(),
-        "mode": "dry-run",
-        "case_id": args.case_id,
-        "output_path": relative_to_root(output_path) if output_path.is_relative_to(ROOT) else str(output_path),
-        "template_basis": {
-            "case_id": PERF_TEMPLATE_CASE_ID,
-            "path": relative_to_root(PERF_TEMPLATE_DIR),
-        },
-        "planned_directories": planned_directories,
-        "planned_files": planned_files,
-        "auto_fillable_fields": auto_fillable_fields,
-        "human_required_fields": human_required_fields,
-        "forbidden_automatic_decisions": forbidden_automatic_decisions,
-        "created_files": [],
-        "updated_registries": [],
-        "admission_or_review_claims": [],
-        "errors": errors,
-    }
+    payload = build_scaffold_payload(
+        "scaffold-perf-case",
+        args.case_id,
+        output_path,
+        PERF_TEMPLATE_CASE_ID,
+        PERF_TEMPLATE_DIR,
+        planned_directories,
+        planned_files,
+        auto_fillable_fields,
+        human_required_fields,
+        forbidden_automatic_decisions,
+        errors,
+    )
     write_report("scaffold-perf-case", payload)
     return print_and_exit(payload, 0 if payload["ok"] else 1)
 
 
 def cmd_scaffold_port_case(args: argparse.Namespace) -> int:
-    output_path = resolve_repo_path(args.out)
-    errors: list[dict[str, Any]] = []
-
-    if not PORT_CASE_ID_RE.fullmatch(args.case_id):
-        errors.append(
-            {
-                "type": "invalid_case_id",
-                "message": "case_id must match PORT_####",
-                "value": args.case_id,
-            }
-        )
-
-    try:
-        output_path.relative_to(PORT_CASE_ROOT.resolve())
-    except ValueError:
-        errors.append(
-            {
-                "type": "invalid_output_path",
-                "message": "output path must stay under cases/PORT/",
-                "value": args.out,
-            }
-        )
-
-    if output_path.exists():
-        errors.append(
-            {
-                "type": "output_exists",
-                "message": "existing directories or files must not be overwritten",
-                "value": str(output_path),
-            }
-        )
+    output_path, errors = validate_scaffold_request(
+        args.case_id,
+        args.out,
+        PORT_CASE_ID_RE,
+        "case_id must match PORT_####",
+        PORT_CASE_ROOT,
+        "output path must stay under cases/PORT/",
+    )
 
     planned_directories = [
         "provenance",
@@ -860,29 +889,20 @@ def cmd_scaffold_port_case(args: argparse.Namespace) -> int:
         "source acquisition or workload curation",
     ]
 
-    payload: dict[str, Any] = {
-        "command": "scaffold-port-case",
-        "cwd": str(ROOT),
-        "ok": not errors,
-        "ran_at_utc": utc_now(),
-        "mode": "dry-run",
-        "case_id": args.case_id,
-        "output_path": relative_to_root(output_path) if output_path.is_relative_to(ROOT) else str(output_path),
-        "template_basis": {
-            "case_id": PORT_TEMPLATE_CASE_ID,
-            "path": relative_to_root(PORT_TEMPLATE_DIR),
-        },
-        "planned_directories": planned_directories,
-        "planned_files": planned_files,
-        "auto_fillable_fields": auto_fillable_fields,
-        "human_required_fields": human_required_fields,
-        "portability_specific_requirements": portability_specific_requirements,
-        "forbidden_automatic_decisions": forbidden_automatic_decisions,
-        "created_files": [],
-        "updated_registries": [],
-        "admission_or_review_claims": [],
-        "errors": errors,
-    }
+    payload = build_scaffold_payload(
+        "scaffold-port-case",
+        args.case_id,
+        output_path,
+        PORT_TEMPLATE_CASE_ID,
+        PORT_TEMPLATE_DIR,
+        planned_directories,
+        planned_files,
+        auto_fillable_fields,
+        human_required_fields,
+        forbidden_automatic_decisions,
+        errors,
+        {"portability_specific_requirements": portability_specific_requirements},
+    )
     write_report("scaffold-port-case", payload)
     return print_and_exit(payload, 0 if payload["ok"] else 1)
 
