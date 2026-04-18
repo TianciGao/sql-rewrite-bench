@@ -1,4 +1,5 @@
 type: value_normalized_result_equivalence_checker
+status: unvalidated_rewrite_layer
 expectations:
   equal:
     - source.sql
@@ -8,4 +9,6 @@ expectations:
     - rewrite_neg_01.sql
 expected_results: TODO
 notes:
-  - TODO: Human must fill checker semantics and expected results.
+  - Rewrite comparison roles are candidate expectations only.
+  - Equivalence and divergence have not been execution-validated.
+  - TODO: Human must fill expected results after validation evidence exists.

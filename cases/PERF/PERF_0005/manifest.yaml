@@ -46,4 +46,5 @@ validation:
   witness_dataset: validation/witness_dataset.yaml
 notes:
   - Source/provenance layer populated from TPC-DS query52.tpl with explicit source-layer substitutions.
-  - TODO: Human must fill rewrites, DDL semantics, data, validation, artifacts, taxonomy, and review status.
+  - Positive and negative rewrite candidates are populated but not execution-validated.
+  - TODO: Human must fill DDL semantics, data, validation, artifacts, taxonomy, and review status.
