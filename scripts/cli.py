@@ -312,6 +312,8 @@ def build_scaffold_payload(
     source_lineage_and_provenance: dict[str, list[str]],
     forbidden_automatic_decisions: list[str],
     errors: list[dict[str, Any]],
+    mode: str = "dry-run",
+    created_files: list[str] | None = None,
     extra_sections: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     payload: dict[str, Any] = {
@@ -319,7 +321,7 @@ def build_scaffold_payload(
         "cwd": str(ROOT),
         "ok": not errors,
         "ran_at_utc": utc_now(),
-        "mode": "dry-run",
+        "mode": mode,
         "case_id": case_id,
         "output_path": relative_to_root(output_path) if output_path.is_relative_to(ROOT) else str(output_path),
         "template_basis": {
@@ -332,7 +334,7 @@ def build_scaffold_payload(
         "human_required_fields": human_required_fields,
         "source_lineage_and_provenance": source_lineage_and_provenance,
         "forbidden_automatic_decisions": forbidden_automatic_decisions,
-        "created_files": [],
+        "created_files": created_files or [],
         "updated_registries": [],
         "admission_or_review_claims": [],
         "errors": errors,
@@ -340,6 +342,36 @@ def build_scaffold_payload(
     if extra_sections:
         payload.update(extra_sections)
     return payload
+
+
+def validate_case_id_not_in_registry(case_id: str, errors: list[dict[str, Any]]) -> None:
+    _, rows = read_registry(CASE_REGISTRY)
+    if any(row.get("case_id") == case_id for row in rows):
+        errors.append(
+            {
+                "type": "case_id_exists",
+                "message": "case_id already exists in inventory/case_registry.csv",
+                "value": case_id,
+            }
+        )
+
+
+def write_placeholder_case(output_path: Path, placeholder_files: dict[str, str]) -> list[str]:
+    output_root = output_path.resolve()
+    for rel_path in placeholder_files:
+        target = (output_path / rel_path).resolve()
+        target.relative_to(output_root)
+        if target.exists():
+            raise FileExistsError(str(target))
+
+    created_files: list[str] = []
+    output_path.mkdir()
+    for rel_path, content in placeholder_files.items():
+        target = output_path / rel_path
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(content, encoding="utf-8")
+        created_files.append(relative_to_root(target))
+    return created_files
 
 
 def env_visibility() -> dict[str, bool]:
@@ -650,6 +682,8 @@ def cmd_scaffold_perf_case(args: argparse.Namespace) -> int:
         "metadata/engine_metadata.yaml",
         "validation/checker.yaml",
         "validation/witness_dataset.yaml",
+        "provenance/raw_record.json",
+        "provenance/provenance_notes.txt",
         "analysis/canonical_ast.json",
         "analysis/logical_ir.json",
         "analysis/sql_span_logical_map.json",
@@ -770,6 +804,89 @@ def cmd_scaffold_perf_case(args: argparse.Namespace) -> int:
         "archetype completion",
         "source acquisition or workload curation",
     ]
+    mode = "write" if args.write else "dry-run"
+    created_files: list[str] = []
+
+    if args.write:
+        validate_case_id_not_in_registry(args.case_id, errors)
+
+    placeholder_files = {
+        "manifest.yaml": f"""case_id: {args.case_id}
+pool: performance
+provenance:
+  source_id: TODO
+  seed_id: TODO
+  source_name: TODO
+  source_entry: TODO
+  raw_record_file: provenance/raw_record.json
+  provenance_notes: provenance/provenance_notes.txt
+source:
+  file: source.sql
+variants:
+  positives:
+    - rewrite_pos_01.sql
+  negatives:
+    - rewrite_neg_01.sql
+targets:
+  engines:
+    - postgres
+    - mysql
+    - spark
+required_tables: []
+features: []
+status:
+  parse_checked: false
+  exec_checked_pg: false
+  exec_checked_mysql: false
+  exec_checked_spark: false
+  plan_checked: false
+  schema_ready: false
+  validation_ready: false
+  release_grade: false
+schema:
+  pg_ddl: schema/ddl_pg.sql
+  mysql_ddl: schema/ddl_mysql.sql
+  spark_ddl: schema/ddl_spark.sql
+data_profile:
+  file: data_profile.json
+metadata:
+  engine_metadata: metadata/engine_metadata.yaml
+validation:
+  checker: validation/checker.yaml
+  witness_dataset: validation/witness_dataset.yaml
+notes:
+  - TODO: Human must fill source lineage, SQL text, rewrites, data, validation, artifacts, and review status.
+""",
+        "source.sql": "-- TODO: Human must fill source SQL. Do not infer source facts automatically.\n",
+        "rewrite_pos_01.sql": "-- TODO: Human must fill positive rewrite SQL and validate equivalence.\n",
+        "rewrite_neg_01.sql": "-- TODO: Human must fill negative rewrite SQL and validate divergence.\n",
+        "taxonomy_trial_v0.2.yaml": "case_id: TODO\npool: performance\nlabels: []\nnotes:\n  - TODO: Human must fill taxonomy tags.\n",
+        "data_profile.json": '{\n  "status": "TODO",\n  "notes": "Human must fill data profile facts."\n}\n',
+        "schema/ddl_pg.sql": "-- TODO: Human must fill PostgreSQL DDL.\n",
+        "schema/ddl_mysql.sql": "-- TODO: Human must fill MySQL DDL.\n",
+        "schema/ddl_spark.sql": "-- TODO: Human must fill Spark DDL.\n",
+        "metadata/engine_metadata.yaml": "source_dialect: TODO\ntarget_engines:\n  - postgres\n  - mysql\n  - spark\nvalidated_engines: []\nnotes:\n  - TODO: Human must fill engine metadata and validation evidence.\n",
+        "validation/checker.yaml": "type: value_normalized_result_equivalence_checker\nexpectations:\n  equal:\n    - source.sql\n    - rewrite_pos_01.sql\n  not_equal:\n    - source.sql\n    - rewrite_neg_01.sql\nexpected_results: TODO\nnotes:\n  - TODO: Human must fill checker semantics and expected results.\n",
+        "validation/witness_dataset.yaml": "status: TODO\nnotes:\n  - TODO: Human must fill witness or data subset details.\n",
+        "provenance/raw_record.json": '{\n  "status": "TODO",\n  "notes": "Human must fill or attach raw source record. Do not copy template provenance automatically."\n}\n',
+        "provenance/provenance_notes.txt": "TODO: Human must fill source lineage, source registry pointer, materialization, and freezing notes.\n",
+        "analysis/canonical_ast.json": '{\n  "status": "TODO",\n  "notes": "Human must fill canonical AST artifact."\n}\n',
+        "analysis/logical_ir.json": '{\n  "status": "TODO",\n  "notes": "Human must fill logical IR artifact."\n}\n',
+        "analysis/sql_span_logical_map.json": '{\n  "status": "TODO",\n  "notes": "Human must fill SQL span to logical mapping artifact."\n}\n',
+        "analysis/logical_physical_map.json": '{\n  "status": "TODO",\n  "notes": "Human must fill logical to physical mapping artifact."\n}\n',
+    }
+
+    if args.write and not errors:
+        try:
+            created_files = write_placeholder_case(output_path, placeholder_files)
+        except OSError as exc:
+            errors.append(
+                {
+                    "type": "write_failed",
+                    "message": "failed to create placeholder performance scaffold",
+                    "value": str(exc),
+                }
+            )
 
     payload = build_scaffold_payload(
         "scaffold-perf-case",
@@ -784,6 +901,8 @@ def cmd_scaffold_perf_case(args: argparse.Namespace) -> int:
         source_lineage_and_provenance,
         forbidden_automatic_decisions,
         errors,
+        mode,
+        created_files,
     )
     write_report("scaffold-perf-case", payload)
     return print_and_exit(payload, 0 if payload["ok"] else 1)
@@ -990,7 +1109,7 @@ def cmd_scaffold_port_case(args: argparse.Namespace) -> int:
         source_lineage_and_provenance,
         forbidden_automatic_decisions,
         errors,
-        {"portability_specific_requirements": portability_specific_requirements},
+        extra_sections={"portability_specific_requirements": portability_specific_requirements},
     )
     write_report("scaffold-port-case", payload)
     return print_and_exit(payload, 0 if payload["ok"] else 1)
@@ -1025,6 +1144,7 @@ def build_parser() -> argparse.ArgumentParser:
     scaffold_parser.add_argument("--case-id", required=True)
     scaffold_parser.add_argument("--out", required=True)
     scaffold_parser.add_argument("--dry-run", action="store_true", default=True)
+    scaffold_parser.add_argument("--write", action="store_true", default=False)
     scaffold_parser.set_defaults(func=cmd_scaffold_perf_case)
 
     port_scaffold_parser = subparsers.add_parser("scaffold-port-case")
