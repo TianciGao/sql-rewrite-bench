@@ -356,6 +356,68 @@ def validate_case_id_not_in_registry(case_id: str, errors: list[dict[str, Any]])
         )
 
 
+def build_perf_registry_row_candidate(
+    case_id: str,
+    output_path: Path,
+    mode: str,
+) -> dict[str, Any]:
+    manifest_path = output_path / "manifest.yaml"
+    row = {field: "" for field in CASE_REQUIRED_FIELDS}
+    row.update(
+        {
+            "case_id": case_id,
+            "primary_pool": "performance",
+            "current_maturity": f"draft scaffold candidate ({mode}); human review required",
+            "benchmark_line": "staged",
+            "package_engineering_status": "scaffold report candidate only; no registry writeback",
+            "tri_engine_closure": "no",
+            "formal_skeleton_status": "pre_skeleton",
+            "release_grade_status": "incomplete",
+            "admission_status": "staged_not_yet_admitted",
+            "next_gap": "human must fill source/provenance, rewrites, schema/data/checker, execution, and plan evidence",
+            "current_role": "draft_perf_scaffold_candidate",
+            "archetype_status": "draft_constructed",
+            "dataset_line": "not_yet_admitted",
+            "promotion_status": "not_under_review",
+            "admission_blockers": "missing_source_provenance_rewrites_validation_and_review",
+            "last_review_doc": "NA_not_reviewed",
+            "notes_link": (
+                relative_to_root(manifest_path)
+                if manifest_path.is_relative_to(ROOT)
+                else str(manifest_path)
+            ),
+        }
+    )
+    return {
+        "registry_row_candidate": {
+            "columns": CASE_REQUIRED_FIELDS,
+            "values": [row[field] for field in CASE_REQUIRED_FIELDS],
+            "row": row,
+        },
+        "registry_row_human_required_fields": [
+            "source_family",
+            "source_detail",
+            "origin_kind",
+            "validated_engines",
+            "last_updated",
+            "human review of all conservative draft/status defaults before registry writeback",
+        ],
+        "registry_row_noninferable_fields": [
+            "source_family",
+            "source_detail",
+            "origin_kind",
+            "source registry truth",
+            "source lineage and provenance facts",
+            "validated engine evidence",
+            "equivalence or divergence evidence",
+            "plan evidence",
+            "admission or promotion beyond conservative draft defaults",
+            "archetype completion",
+            "review-history basis",
+        ],
+    }
+
+
 def write_placeholder_case(output_path: Path, placeholder_files: dict[str, str]) -> list[str]:
     output_root = output_path.resolve()
     for rel_path in placeholder_files:
@@ -888,6 +950,11 @@ notes:
                 }
             )
 
+    extra_sections = (
+        build_perf_registry_row_candidate(args.case_id, output_path, mode)
+        if not errors
+        else None
+    )
     payload = build_scaffold_payload(
         "scaffold-perf-case",
         args.case_id,
@@ -903,6 +970,7 @@ notes:
         errors,
         mode,
         created_files,
+        extra_sections,
     )
     write_report("scaffold-perf-case", payload)
     return print_and_exit(payload, 0 if payload["ok"] else 1)

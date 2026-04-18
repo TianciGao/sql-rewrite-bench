@@ -4,6 +4,8 @@ import json
 import subprocess
 import sys
 
+import scripts.cli as cli
+
 
 def test_scaffold_perf_case_dry_run_shape() -> None:
     completed = subprocess.run(
@@ -35,6 +37,15 @@ def test_scaffold_perf_case_dry_run_shape() -> None:
     assert "manifest.yaml" in payload["planned_files"]
     assert "source SQL text" in payload["human_required_fields"]
     assert "admission status" in payload["forbidden_automatic_decisions"]
+    candidate = payload["registry_row_candidate"]
+    assert candidate["columns"] == cli.CASE_REQUIRED_FIELDS
+    assert len(candidate["values"]) == len(cli.CASE_REQUIRED_FIELDS)
+    assert candidate["row"]["case_id"] == "PERF_9999"
+    assert candidate["row"]["primary_pool"] == "performance"
+    assert candidate["row"]["source_family"] == ""
+    assert candidate["row"]["admission_status"] == "staged_not_yet_admitted"
+    assert "source_family" in payload["registry_row_human_required_fields"]
+    assert "source registry truth" in payload["registry_row_noninferable_fields"]
 
 
 def test_scaffold_perf_case_write_creates_placeholder_skeleton(
@@ -42,8 +53,6 @@ def test_scaffold_perf_case_write_creates_placeholder_skeleton(
     monkeypatch,
     capsys,
 ) -> None:
-    import scripts.cli as cli
-
     root = tmp_path / "repo"
     case_root = root / "cases" / "PERF"
     registry_dir = root / "inventory"
@@ -77,6 +86,11 @@ def test_scaffold_perf_case_write_creates_placeholder_skeleton(
     assert payload["ok"] is True
     assert payload["updated_registries"] == []
     assert payload["admission_or_review_claims"] == []
+    candidate = payload["registry_row_candidate"]
+    assert candidate["columns"] == cli.CASE_REQUIRED_FIELDS
+    assert len(candidate["values"]) == len(cli.CASE_REQUIRED_FIELDS)
+    assert candidate["row"]["case_id"] == "PERF_9099"
+    assert candidate["row"]["notes_link"] == "cases/PERF/PERF_9099/manifest.yaml"
     assert "cases/PERF/PERF_9099/manifest.yaml" in payload["created_files"]
     assert "cases/PERF/PERF_9099/provenance/raw_record.json" in payload["created_files"]
     assert set(payload["source_lineage_and_provenance"]) == {
