@@ -1,0 +1,34 @@
+{
+  "case_id": "PERF_0011",
+  "source_registry_id": "SRC_001",
+  "source_name": "TPC-H",
+  "source_family": "benchmark",
+  "source_registry_storage_path": "datasets/raw/tpch/",
+  "seed_id": "TPC-H-Q14",
+  "seed_query_name": "TPC-H Query 14",
+  "seed_query_title": "Promotion Effect Query",
+  "raw_source_path": "datasets/raw/tpch/TPC-H V3.0.1/dbgen/queries/14.sql",
+  "raw_source_file_found": true,
+  "raw_source_format": "TPC-H qgen template with qgen directives and substitution markers",
+  "materialization_status": "not_materialized_in_this_step",
+  "parameter_substitution_status": "not_filled",
+  "template_placeholders": [
+    ":1"
+  ],
+  "qgen_directives_present": [
+    ":x",
+    ":o",
+    ":n -1"
+  ],
+  "case_source_file": "cases/PERF/PERF_0011/source.sql",
+  "copied_to_case_source": true,
+  "non_claims": [
+    "no executable parameter instance selected",
+    "no rewrite equivalence claim",
+    "no DDL or data profile claim",
+    "no execution validation",
+    "no plan evidence",
+    "no registry writeback",
+    "no admission or promotion claim"
+  ]
+}

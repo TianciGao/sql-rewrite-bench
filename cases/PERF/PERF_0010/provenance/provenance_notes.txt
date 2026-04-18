@@ -1,0 +1,20 @@
+PERF_0010 source/provenance notes
+
+Source registry row: SRC_001
+Source line: TPC-H performance source line
+Selected seed: TPC-H Query 12, Shipping Modes and Order Priority Query
+Raw source path: datasets/raw/tpch/TPC-H V3.0.1/dbgen/queries/12.sql
+
+The raw source file was located in the existing repository TPC-H source tree and copied into source.sql with a case-local provenance header. The copied SQL remains an unmaterialized TPC-H qgen template.
+
+Qgen directives preserved:
+- :x
+- :o
+- :n -1
+
+Template placeholders preserved:
+- :1
+- :2
+- :3
+
+No executable parameter instance was selected in this step. No source freezing, rewrite construction, DDL/data-profile refinement, checker truth, execution validation, plan collection, registry writeback, admission claim, promotion claim, or archetype-completion claim is made here.
