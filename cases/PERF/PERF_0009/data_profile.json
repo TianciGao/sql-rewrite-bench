@@ -1,10 +1,12 @@
 {
   "case_id": "PERF_0009",
-  "status": "schema_profile_only_unvalidated",
-  "dataset_id": "TODO",
-  "data_rows_added": false,
-  "data_loaded": false,
-  "engine_validated": [],
+  "status": "pg_witness_validated",
+  "dataset_id": "pg_minimal_witness_v1",
+  "data_rows_added": true,
+  "data_loaded": true,
+  "engine_validated": [
+    "postgres"
+  ],
   "required_tables": [
     "orders",
     "lineitem"
@@ -22,19 +24,19 @@
     ]
   },
   "row_counts": {
-    "orders": "TODO",
-    "lineitem": "TODO"
+    "orders": 3,
+    "lineitem": 3
   },
   "data_source": {
     "source_id": "SRC_001",
     "source_name": "TPC-H",
     "seed_id": "TPC-H-Q4",
-    "generation_or_load_path": "TODO"
+    "generation_or_load_path": "validation/pg_witness_data.sql"
   },
   "notes": [
-    "Minimal schema profile only; no data rows are included in this step.",
+    "Minimal PostgreSQL witness data is case-local and deliberately tiny.",
     "DDL covers only tables and columns referenced by source.sql and rewrite candidates.",
-    "Execution validation, expected results, and plan evidence remain TODO.",
-    "No equivalence or divergence fact is claimed."
+    "PostgreSQL result check is captured in runs/pg/result_check.json.",
+    "No MySQL or Spark validation, plan evidence, admission claim, or promotion claim is implied."
   ]
 }
