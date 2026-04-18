@@ -24,6 +24,10 @@ PERF_CASE_ID_RE = re.compile(r"^PERF_\d{4}$")
 PERF_TEMPLATE_CASE_ID = "PERF_0002"
 PERF_TEMPLATE_DIR = ROOT / "cases" / "PERF" / PERF_TEMPLATE_CASE_ID
 PERF_CASE_ROOT = ROOT / "cases" / "PERF"
+PORT_CASE_ID_RE = re.compile(r"^PORT_\d{4}$")
+PORT_TEMPLATE_CASE_ID = "PORT_0002"
+PORT_TEMPLATE_DIR = ROOT / "cases" / "PORT" / PORT_TEMPLATE_CASE_ID
+PORT_CASE_ROOT = ROOT / "cases" / "PORT"
 
 SOURCE_REQUIRED_FIELDS = [
     "source_id",
@@ -691,6 +695,198 @@ def cmd_scaffold_perf_case(args: argparse.Namespace) -> int:
     return print_and_exit(payload, 0 if payload["ok"] else 1)
 
 
+def cmd_scaffold_port_case(args: argparse.Namespace) -> int:
+    output_path = resolve_repo_path(args.out)
+    errors: list[dict[str, Any]] = []
+
+    if not PORT_CASE_ID_RE.fullmatch(args.case_id):
+        errors.append(
+            {
+                "type": "invalid_case_id",
+                "message": "case_id must match PORT_####",
+                "value": args.case_id,
+            }
+        )
+
+    try:
+        output_path.relative_to(PORT_CASE_ROOT.resolve())
+    except ValueError:
+        errors.append(
+            {
+                "type": "invalid_output_path",
+                "message": "output path must stay under cases/PORT/",
+                "value": args.out,
+            }
+        )
+
+    if output_path.exists():
+        errors.append(
+            {
+                "type": "output_exists",
+                "message": "existing directories or files must not be overwritten",
+                "value": str(output_path),
+            }
+        )
+
+    planned_directories = [
+        "provenance",
+        "schema",
+        "metadata",
+        "validation",
+    ]
+    planned_files = [
+        "manifest.yaml",
+        "source.sql",
+        "rewrite_pos_01.sql",
+        "rewrite_neg_01.sql",
+        "rewrite_pos_02_spark.sql",
+        "rewrite_neg_02_spark.sql",
+        "taxonomy_trial_v0.2.yaml",
+        "data_profile.json",
+        "schema/ddl_pg.sql",
+        "schema/ddl_mysql.sql",
+        "schema/ddl_spark.sql",
+        "metadata/engine_metadata.yaml",
+        "validation/checker.yaml",
+        "validation/witness_dataset.yaml",
+        "provenance/raw_record.json",
+        "provenance/provenance_notes.txt",
+    ]
+    auto_fillable_fields = {
+        "manifest": {
+            "case_id": args.case_id,
+            "pool": "portability",
+            "source": {"dialect": "TODO", "file": "source.sql"},
+            "variants": {
+                "positives": ["rewrite_pos_01.sql", "rewrite_pos_02_spark.sql"],
+                "negatives": ["rewrite_neg_01.sql", "rewrite_neg_02_spark.sql"],
+            },
+            "targets": {"engines": ["postgres", "mysql", "spark"]},
+            "schema": {
+                "pg_ddl": "schema/ddl_pg.sql",
+                "mysql_ddl": "schema/ddl_mysql.sql",
+                "spark_ddl": "schema/ddl_spark.sql",
+            },
+            "metadata": {"engine_metadata": "metadata/engine_metadata.yaml"},
+            "validation": {
+                "checker": "validation/checker.yaml",
+                "witness_dataset": "validation/witness_dataset.yaml",
+            },
+            "status_defaults": {
+                "seed_localized": False,
+                "source_frozen": False,
+                "rewrite_variants_ready": False,
+                "parse_checked": False,
+                "exec_checked_pg": False,
+                "exec_checked_mysql": False,
+                "exec_checked_spark": False,
+                "plan_checked": False,
+                "taxonomy_trial_ready": False,
+                "schema_ready": False,
+                "validation_ready": False,
+                "release_grade": False,
+            },
+        },
+        "metadata": {
+            "source_dialect": "TODO",
+            "target_engines": ["postgres", "mysql", "spark"],
+            "validated_engines": [],
+        },
+        "checker": {
+            "type": "cross_engine_portability_checker",
+            "normalization": {
+                "sort_rows": True,
+                "trim_whitespace": True,
+                "normalize_tabs": True,
+                "normalize_numeric_format": True,
+                "normalize_null": True,
+            },
+            "reference": {"postgres_source": "source.sql"},
+            "comparisons": {
+                "mysql": {
+                    "equal_to_reference": ["rewrite_pos_01.sql"],
+                    "not_equal_to_reference": ["rewrite_neg_01.sql"],
+                },
+                "spark": {
+                    "equal_to_reference": ["rewrite_pos_02_spark.sql"],
+                    "not_equal_to_reference": ["rewrite_neg_02_spark.sql"],
+                },
+            },
+        },
+    }
+    human_required_fields = [
+        "source SQL text",
+        "source dialect classification",
+        "MySQL positive rewrite SQL text",
+        "MySQL negative rewrite SQL text",
+        "Spark positive rewrite SQL text",
+        "Spark negative rewrite SQL text",
+        "source_id and seed lineage",
+        "source family and source entry",
+        "raw source record and provenance notes",
+        "required tables",
+        "PostgreSQL/MySQL/Spark DDL content",
+        "witness dataset details",
+        "PostgreSQL source-side expected result",
+        "MySQL target-side positive and negative expected results",
+        "Spark target-side positive and negative expected results",
+        "portability taxonomy tags",
+        "dialect-specific semantic mapping notes",
+        "source-side plan and result artifact paths",
+        "target-side plan and result artifact paths",
+        "all validation status flags",
+    ]
+    portability_specific_requirements = [
+        "source dialect vs target dialect rewrites must be explicit",
+        "portability checker must compare target rewrites against a source-side reference",
+        "source-side and target-side plan evidence must be recorded separately",
+        "positive target rewrites must preserve the source-side result under documented normalization",
+        "negative target rewrites must demonstrate documented divergence",
+        "dialect-specific semantic mappings must be human reviewed",
+    ]
+    forbidden_automatic_decisions = [
+        "admission status",
+        "promotion status",
+        "common-core or extended dataset line",
+        "registry truth",
+        "source dialect truth",
+        "ground-truth equivalence",
+        "target rewrite semantic preservation",
+        "negative rewrite divergence",
+        "execution success",
+        "plan sufficiency",
+        "taxonomy finality",
+        "archetype completion",
+        "source acquisition or workload curation",
+    ]
+
+    payload: dict[str, Any] = {
+        "command": "scaffold-port-case",
+        "cwd": str(ROOT),
+        "ok": not errors,
+        "ran_at_utc": utc_now(),
+        "mode": "dry-run",
+        "case_id": args.case_id,
+        "output_path": relative_to_root(output_path) if output_path.is_relative_to(ROOT) else str(output_path),
+        "template_basis": {
+            "case_id": PORT_TEMPLATE_CASE_ID,
+            "path": relative_to_root(PORT_TEMPLATE_DIR),
+        },
+        "planned_directories": planned_directories,
+        "planned_files": planned_files,
+        "auto_fillable_fields": auto_fillable_fields,
+        "human_required_fields": human_required_fields,
+        "portability_specific_requirements": portability_specific_requirements,
+        "forbidden_automatic_decisions": forbidden_automatic_decisions,
+        "created_files": [],
+        "updated_registries": [],
+        "admission_or_review_claims": [],
+        "errors": errors,
+    }
+    write_report("scaffold-port-case", payload)
+    return print_and_exit(payload, 0 if payload["ok"] else 1)
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="python -m scripts.cli")
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -721,6 +917,12 @@ def build_parser() -> argparse.ArgumentParser:
     scaffold_parser.add_argument("--out", required=True)
     scaffold_parser.add_argument("--dry-run", action="store_true", default=True)
     scaffold_parser.set_defaults(func=cmd_scaffold_perf_case)
+
+    port_scaffold_parser = subparsers.add_parser("scaffold-port-case")
+    port_scaffold_parser.add_argument("--case-id", required=True)
+    port_scaffold_parser.add_argument("--out", required=True)
+    port_scaffold_parser.add_argument("--dry-run", action="store_true", default=True)
+    port_scaffold_parser.set_defaults(func=cmd_scaffold_port_case)
 
     return parser
 
