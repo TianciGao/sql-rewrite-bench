@@ -1,10 +1,12 @@
 {
   "case_id": "PERF_0016",
-  "status": "schema_profile_refined_unvalidated",
-  "dataset_id": "TODO_witness_dataset_not_created",
-  "data_rows_added": false,
-  "data_loaded": false,
-  "engine_validated": [],
+  "status": "pg_witness_validated",
+  "dataset_id": "pg_minimal_witness_v1",
+  "data_rows_added": true,
+  "data_loaded": true,
+  "engine_validated": [
+    "postgres"
+  ],
   "required_tables": [
     "part",
     "supplier",
@@ -45,22 +47,23 @@
     ]
   },
   "row_counts": {
-    "part": "TODO",
-    "supplier": "TODO",
-    "lineitem": "TODO",
-    "partsupp": "TODO",
-    "orders": "TODO",
-    "nation": "TODO"
+    "part": 2,
+    "supplier": 2,
+    "lineitem": 2,
+    "partsupp": 2,
+    "orders": 2,
+    "nation": 2
   },
   "data_source": {
     "source_id": "SRC_001",
     "source_name": "TPC-H",
     "seed_id": "TPC-H-Q9",
-    "generation_or_load_path": "TODO_witness_data_not_created"
+    "generation_or_load_path": "validation/pg_witness_data.sql"
   },
   "notes": [
+    "Minimal PostgreSQL witness data is case-local and deliberately tiny.",
     "DDL covers only tables and columns referenced by source.sql and rewrite candidates.",
-    "No data rows, load script, execution validation, plan evidence, admission claim, or promotion claim is implied.",
-    "Row counts remain TODO until a case-local witness dataset is created."
+    "PostgreSQL result check is captured in runs/pg/result_check.json.",
+    "No MySQL or Spark validation, plan evidence, admission claim, or promotion claim is implied."
   ]
 }

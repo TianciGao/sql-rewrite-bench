@@ -1,5 +1,5 @@
 type: value_normalized_result_equivalence_checker
-status: schema_profile_refined_unvalidated
+status: pg_witness_validated
 normalization:
   sort_rows: true
   trim_whitespace: true
@@ -21,10 +21,14 @@ expectations:
   not_equal:
     - source.sql
     - rewrite_neg_01.sql
-expected_results: TODO
-validation_evidence: []
+expected_results:
+  source: runs/pg/source.tsv
+  positive_rewrite: runs/pg/rewrite_pos_01.tsv
+  negative_rewrite: runs/pg/rewrite_neg_01.tsv
+validation_evidence:
+  - runs/pg/result_check.json
 notes:
-  - First rewrite layer and minimal DDL/data profile have been drafted only.
-  - Positive rewrite is a plausible result-preserving candidate, not a proven equivalence claim.
-  - Negative rewrite is a plausible semantic-divergence candidate, not a proven divergence claim.
-  - TODO: Human must fill witness data, expected results, execution evidence, and plan evidence.
+  - PostgreSQL-only witness validation passed for the case-local minimal dataset.
+  - Positive rewrite matched source output on PostgreSQL witness data.
+  - Negative rewrite differed from source output on PostgreSQL witness data.
+  - No MySQL or Spark validation, plan evidence, admission claim, or promotion claim is implied.
