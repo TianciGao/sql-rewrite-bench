@@ -1,5 +1,5 @@
 type: value_normalized_result_equivalence_checker
-status: schema_refined_unvalidated
+status: pg_witness_validated
 normalization:
   sort_rows: true
   trim_whitespace: true
@@ -21,8 +21,14 @@ expectations:
   not_equal:
     - source.sql
     - rewrite_neg_01.sql
-expected_results: {}
-validation_evidence: []
+expected_results:
+  source: runs/pg/source.tsv
+  positive_rewrite: runs/pg/rewrite_pos_01.tsv
+  negative_rewrite: runs/pg/rewrite_neg_01.tsv
+validation_evidence:
+  - runs/pg/result_check.json
 notes:
-  - Positive and negative rewrite expectations are draft checker intent only.
-  - No witness data, execution validation, plan evidence, admission claim, or promotion claim is implied.
+  - PostgreSQL-only witness validation passed for the case-local minimal dataset.
+  - Positive rewrite matched source output on PostgreSQL witness data.
+  - Negative rewrite differed from source output on PostgreSQL witness data.
+  - No MySQL or Spark validation, plan evidence, admission claim, or promotion claim is implied.

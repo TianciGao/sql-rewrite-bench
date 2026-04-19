@@ -26,13 +26,13 @@ required_tables:
   - nation
 features: []
 status:
-  parse_checked: false
-  exec_checked_pg: false
+  parse_checked: true
+  exec_checked_pg: true
   exec_checked_mysql: false
   exec_checked_spark: false
   plan_checked: false
   schema_ready: true
-  validation_ready: false
+  validation_ready: true
   release_grade: false
 schema:
   pg_ddl: schema/ddl_pg.sql
@@ -45,9 +45,11 @@ metadata:
 validation:
   checker: validation/checker.yaml
   witness_dataset: validation/witness_dataset.yaml
+  pg_witness_data: validation/pg_witness_data.sql
+  pg_result_check: runs/pg/result_check.json
 notes:
   - Source/provenance layer manually frozen from TPC-H Query 11 using checked reference substitutions.
-  - First positive/negative rewrite layer drafted but not validated.
+  - PostgreSQL-only witness validation passed for source, positive rewrite, and negative rewrite.
   - Minimal DDL/data_profile/checker layer is populated for referenced tables and columns only.
-  - No witness data, execution validation, plan collection, registry writeback, admission claim, or promotion claim is made.
-  - TODO: Human must fill witness data, validation artifacts, taxonomy tags, registry row, and review status.
+  - No MySQL/Spark validation, plan collection, registry writeback, admission claim, or promotion claim is made.
+  - TODO: Human must fill MySQL/Spark validation, plan artifacts, taxonomy tags, registry row, and review status.
