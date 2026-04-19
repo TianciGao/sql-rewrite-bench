@@ -1,0 +1,16 @@
+PERF_0024 source/provenance notes
+
+Source line:
+- Existing approved performance source line: TPC-H (SRC_001).
+- Raw template: datasets/raw/tpch/TPC-H V3.0.1/dbgen/queries/20.sql.
+- Reference substitution file: datasets/raw/tpch/TPC-H V3.0.1/dbgen/ref_data/1/subparam_20.
+
+Manual freeze:
+- :1 = pale
+- :2 = 1997-01-01
+- :3 = BRAZIL
+- :n = -1, so no row limit was added.
+
+Scope boundary:
+- This package currently contains source/provenance, one frozen source query, first rewrite candidates, minimal DDL, data_profile, and checker references.
+- No witness data, execution validation, plan artifacts, registry update, admission claim, or review claim is included.

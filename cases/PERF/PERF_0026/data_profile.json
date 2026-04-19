@@ -1,0 +1,19 @@
+{
+  "case_id": "PERF_0026",
+  "status": "schema_refined_no_data",
+  "dataset_line": "TPC-H",
+  "seed": "TPC-H-Q22",
+  "required_tables": {
+    "customer": ["c_custkey", "c_phone", "c_acctbal"],
+    "orders": ["o_custkey"]
+  },
+  "witness_data": {
+    "status": "not_created",
+    "notes": "No data rows are included in this step."
+  },
+  "validation": {
+    "postgresql": "not_run",
+    "mysql": "not_run",
+    "spark": "not_run"
+  }
+}

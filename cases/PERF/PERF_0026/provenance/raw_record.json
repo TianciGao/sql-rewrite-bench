@@ -1,0 +1,21 @@
+{
+  "case_id": "PERF_0026",
+  "source_id": "SRC_001",
+  "source_family": "TPC-H",
+  "query_id": "Q22",
+  "query_name": "Global Sales Opportunity Query",
+  "raw_template_path": "datasets/raw/tpch/TPC-H V3.0.1/dbgen/queries/22.sql",
+  "substitution_record_path": "datasets/raw/tpch/TPC-H V3.0.1/dbgen/ref_data/1/subparam_22",
+  "freeze_method": "manual_ref_data_substitution",
+  "substitutions": {
+    "country_codes": ["19", "29", "21", "25", "16", "10", "14"],
+    "row_limit": null
+  },
+  "noninferable_fields": [
+    "admission_status",
+    "promotion_status",
+    "validation_evidence",
+    "plan_evidence",
+    "registry_truth"
+  ]
+}

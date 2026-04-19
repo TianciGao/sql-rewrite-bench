@@ -1,0 +1,21 @@
+{
+  "case_id": "PERF_0025",
+  "status": "schema_refined_no_data",
+  "dataset_line": "TPC-H",
+  "seed": "TPC-H-Q21",
+  "required_tables": {
+    "supplier": ["s_suppkey", "s_name", "s_nationkey"],
+    "lineitem": ["l_orderkey", "l_suppkey", "l_receiptdate", "l_commitdate"],
+    "orders": ["o_orderkey", "o_orderstatus"],
+    "nation": ["n_nationkey", "n_name"]
+  },
+  "witness_data": {
+    "status": "not_created",
+    "notes": "No data rows are included in this step."
+  },
+  "validation": {
+    "postgresql": "not_run",
+    "mysql": "not_run",
+    "spark": "not_run"
+  }
+}

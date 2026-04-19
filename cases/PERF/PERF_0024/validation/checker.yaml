@@ -1,0 +1,22 @@
+case_id: PERF_0024
+status: schema_refined_unvalidated
+result_check:
+  source_vs_positive:
+    expected_relation: TODO
+    evidence_status: not_run
+  source_vs_negative:
+    expected_relation: TODO
+    evidence_status: not_run
+artifacts:
+  source: ../source.sql
+  positive_rewrites:
+    - ../rewrite_pos_01.sql
+  negative_rewrites:
+    - ../rewrite_neg_01.sql
+  ddl:
+    postgresql: ../schema/ddl_pg.sql
+    mysql: ../schema/ddl_mysql.sql
+    spark: ../schema/ddl_spark.sql
+notes:
+  - "Checker references the drafted rewrite and DDL artifacts only."
+  - "No equivalence, divergence, execution, or plan evidence has been produced."

@@ -1,0 +1,23 @@
+{
+  "case_id": "PERF_0024",
+  "source_id": "SRC_001",
+  "source_family": "TPC-H",
+  "query_id": "Q20",
+  "query_name": "Potential Part Promotion Query",
+  "raw_template_path": "datasets/raw/tpch/TPC-H V3.0.1/dbgen/queries/20.sql",
+  "substitution_record_path": "datasets/raw/tpch/TPC-H V3.0.1/dbgen/ref_data/1/subparam_20",
+  "freeze_method": "manual_ref_data_substitution",
+  "substitutions": {
+    "color_prefix": "pale",
+    "shipdate_start": "1997-01-01",
+    "nation_name": "BRAZIL",
+    "row_limit": null
+  },
+  "noninferable_fields": [
+    "admission_status",
+    "promotion_status",
+    "validation_evidence",
+    "plan_evidence",
+    "registry_truth"
+  ]
+}
