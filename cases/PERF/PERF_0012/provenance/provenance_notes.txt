@@ -1,0 +1,24 @@
+PERF_0012 source/provenance note
+
+Source registry line:
+- source_id: SRC_001
+- source_name: TPC-H
+- source_family: benchmark
+- primary_pool: performance
+- storage_path: datasets/raw/tpch/
+
+Selected seed:
+- TPC-H Query 2
+- Title in raw file: TPC-H/TPC-R Minimum Cost Supplier Query (Q2)
+- Raw source path: datasets/raw/tpch/TPC-H V3.0.1/dbgen/queries/2.sql
+
+Case-local source handling:
+- cases/PERF/PERF_0012/source.sql preserves the raw qgen template structure.
+- qgen directives (:x, :o, :n) are still present.
+- substitution markers :1, :2, and :3 are intentionally not materialized in this step.
+
+Explicit non-claims:
+- No concrete executable query instance has been selected.
+- No rewrite has been created or validated.
+- No checker truth, DDL semantics, data profile facts, execution evidence, or plan evidence is claimed.
+- No registry writeback is performed in this step.

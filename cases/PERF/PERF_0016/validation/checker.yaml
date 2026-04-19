@@ -1,0 +1,11 @@
+type: value_normalized_result_equivalence_checker
+expectations:
+  equal:
+    - source.sql
+    - rewrite_pos_01.sql
+  not_equal:
+    - source.sql
+    - rewrite_neg_01.sql
+expected_results: TODO
+notes:
+  - TODO: Human must fill checker semantics and expected results.
