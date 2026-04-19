@@ -44,4 +44,5 @@ validation:
   witness_dataset: validation/witness_dataset.yaml
 notes:
   - Source/provenance layer manually frozen from TPC-H Query 5 using checked reference substitutions.
-  - TODO: Human must fill rewrites, data, validation, artifacts, taxonomy tags, registry row, and review status.
+  - First positive/negative rewrite layer drafted but not validated.
+  - TODO: Human must fill data, validation, artifacts, taxonomy tags, registry row, and review status.

@@ -1,4 +1,14 @@
 type: value_normalized_result_equivalence_checker
+status: rewrite_layer_drafted_unvalidated
+normalization:
+  sort_rows: true
+  trim_whitespace: true
+  normalize_numeric_format: true
+  normalize_null: true
+inputs:
+  source: source.sql
+  positive_rewrite: rewrite_pos_01.sql
+  negative_rewrite: rewrite_neg_01.sql
 expectations:
   equal:
     - source.sql
@@ -8,4 +18,7 @@ expectations:
     - rewrite_neg_01.sql
 expected_results: TODO
 notes:
-  - TODO: Human must fill checker semantics and expected results.
+  - First rewrite layer has been drafted only.
+  - Positive rewrite is a plausible result-preserving candidate, not a proven equivalence claim.
+  - Negative rewrite is a plausible semantic-divergence candidate, not a proven divergence claim.
+  - TODO: Human must fill witness data, expected results, execution evidence, and plan evidence.
