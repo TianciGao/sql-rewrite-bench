@@ -28,6 +28,7 @@
     "Minimal PostgreSQL witness data is case-local and deliberately tiny.",
     "DDL covers only tables and columns referenced by source.sql and rewrite candidates.",
     "PostgreSQL result check is captured in runs/pg/result_check.json.",
-    "No MySQL or Spark validation, plan evidence, admission claim, or promotion claim is implied."
+    "PostgreSQL plan evidence is captured under runs/pg/plans/.",
+    "No MySQL or Spark validation, admission claim, or promotion claim is implied."
   ]
 }
