@@ -1,25 +1,32 @@
 {
   "case_id": "PERF_0022",
-  "status": "schema_refined_no_data",
-  "dataset_id": "TODO",
-  "data_rows_added": false,
-  "data_loaded": false,
-  "engine_validated": [],
+  "status": "pg_witness_validated",
+  "dataset_id": "pg_minimal_witness",
+  "data_rows_added": true,
+  "data_loaded": true,
+  "engine_validated": ["postgres"],
   "required_tables": ["customer", "orders", "lineitem"],
   "required_columns": {
     "customer": ["c_custkey", "c_name"],
     "orders": ["o_orderkey", "o_custkey", "o_orderdate", "o_totalprice"],
     "lineitem": ["l_orderkey", "l_quantity"]
   },
-  "row_counts": {},
+  "row_counts": {
+    "customer": 2,
+    "orders": 2,
+    "lineitem": 4
+  },
   "data_source": {
     "source_id": "SRC_001",
     "source_name": "TPC-H",
     "seed_id": "TPC-H-Q18",
-    "generation_or_load_path": "TODO"
+    "generation_or_load_path": "validation/pg_witness_data.sql"
+  },
+  "validation_artifacts": {
+    "postgresql": "runs/pg/result_check.json"
   },
   "notes": [
     "DDL covers only tables and columns referenced by source.sql and rewrite candidates.",
-    "No witness data, data load, execution validation, plan evidence, admission claim, or promotion claim is implied."
+    "PostgreSQL witness validation only; no MySQL/Spark validation, plan evidence, admission claim, or promotion claim is implied."
   ]
 }

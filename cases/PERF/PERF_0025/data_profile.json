@@ -1,6 +1,6 @@
 {
   "case_id": "PERF_0025",
-  "status": "schema_refined_no_data",
+  "status": "pg_witness_validated",
   "dataset_line": "TPC-H",
   "seed": "TPC-H-Q21",
   "required_tables": {
@@ -10,12 +10,22 @@
     "nation": ["n_nationkey", "n_name"]
   },
   "witness_data": {
-    "status": "not_created",
-    "notes": "No data rows are included in this step."
+    "status": "created",
+    "path": "validation/pg_witness_data.sql",
+    "row_counts": {
+      "supplier": 3,
+      "lineitem": 2,
+      "orders": 1,
+      "nation": 2
+    },
+    "notes": "Tiny PostgreSQL-only witness dataset for first validation."
   },
   "validation": {
-    "postgresql": "not_run",
+    "postgresql": "validated",
     "mysql": "not_run",
     "spark": "not_run"
+  },
+  "validation_artifacts": {
+    "postgresql": "runs/pg/result_check.json"
   }
 }

@@ -24,24 +24,23 @@ artifacts:
   data_profile: data_profile.json
   checker: validation/checker.yaml
 validation:
-  status: unvalidated
+  status: pg_witness_validated
   engines:
-    postgresql: not_run
+    postgresql: validated
     mysql: not_run
     spark: not_run
   notes:
     - "Source is frozen from the TPC-H Q22 template using the recorded ref_data substitution values."
-    - "Rewrite layer and minimal schema/checker metadata are drafted but not execution-validated."
-    - "No witness data, execution evidence, plan artifacts, registry row, admission claim, or review claim is included."
+    - "Rewrite layer has PostgreSQL witness validation only."
+    - "PostgreSQL witness validation result is stored under runs/pg/result_check.json."
+    - "No MySQL/Spark validation, plan artifacts, registry row, admission claim, or review claim is included."
 classification:
   dataset_line: TPC-H
   archetype: performance
-  completion_state: ddl_data_profile_checker_refined_unvalidated
+  completion_state: pg_witness_validated
   admission_state: draft
   promotion_state: none
 human_required:
-  - witness data and expected result construction
-  - PostgreSQL execution validation
   - MySQL and Spark validation
   - plan collection
   - registry row review and manual writeback
