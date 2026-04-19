@@ -1,0 +1,14 @@
+PERF_0018 source/provenance notes
+
+Source line: SRC_001 / TPC-H.
+Seed: TPC-H Query 11, Important Stock Identification Query.
+Raw source file: datasets/raw/tpch/TPC-H V3.0.1/dbgen/queries/11.sql.
+Reference substitution file: datasets/raw/tpch/TPC-H V3.0.1/ref_data/1/subparam_11.
+
+Manual freeze substitutions:
+- :1 = EGYPT
+- :2 = 0.0001000000
+- :n -1 = no row limit
+
+This case stops at source/provenance, executable source, first rewrite layer, and minimal DDL/data_profile/checker refinement.
+No witness data, execution validation, plan collection, registry writeback, admission claim, or promotion claim is made.

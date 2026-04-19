@@ -1,0 +1,26 @@
+{
+  "case_id": "PERF_0017",
+  "status": "schema_refined_no_data",
+  "dataset_id": "TODO",
+  "data_rows_added": false,
+  "data_loaded": false,
+  "engine_validated": [],
+  "required_tables": ["customer", "orders", "lineitem", "nation"],
+  "required_columns": {
+    "customer": ["c_custkey", "c_name", "c_address", "c_nationkey", "c_phone", "c_acctbal", "c_comment"],
+    "orders": ["o_orderkey", "o_custkey", "o_orderdate"],
+    "lineitem": ["l_orderkey", "l_extendedprice", "l_discount", "l_returnflag"],
+    "nation": ["n_nationkey", "n_name"]
+  },
+  "row_counts": {},
+  "data_source": {
+    "source_id": "SRC_001",
+    "source_name": "TPC-H",
+    "seed_id": "TPC-H-Q10",
+    "generation_or_load_path": "TODO"
+  },
+  "notes": [
+    "DDL covers only tables and columns referenced by source.sql and rewrite candidates.",
+    "No witness data, data load, execution validation, plan evidence, admission claim, or promotion claim is implied."
+  ]
+}

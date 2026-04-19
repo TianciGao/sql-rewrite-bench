@@ -1,0 +1,25 @@
+{
+  "case_id": "PERF_0020",
+  "status": "schema_refined_no_data",
+  "dataset_id": "TODO",
+  "data_rows_added": false,
+  "data_loaded": false,
+  "engine_validated": [],
+  "required_tables": ["partsupp", "part", "supplier"],
+  "required_columns": {
+    "partsupp": ["ps_partkey", "ps_suppkey"],
+    "part": ["p_partkey", "p_brand", "p_type", "p_size"],
+    "supplier": ["s_suppkey", "s_comment"]
+  },
+  "row_counts": {},
+  "data_source": {
+    "source_id": "SRC_001",
+    "source_name": "TPC-H",
+    "seed_id": "TPC-H-Q16",
+    "generation_or_load_path": "TODO"
+  },
+  "notes": [
+    "DDL covers only tables and columns referenced by source.sql and rewrite candidates.",
+    "No witness data, data load, execution validation, plan evidence, admission claim, or promotion claim is implied."
+  ]
+}

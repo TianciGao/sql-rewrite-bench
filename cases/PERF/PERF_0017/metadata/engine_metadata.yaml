@@ -1,0 +1,8 @@
+source_dialect: TODO
+target_engines:
+  - postgres
+  - mysql
+  - spark
+validated_engines: []
+notes:
+  - TODO: Human must fill engine metadata and validation evidence.

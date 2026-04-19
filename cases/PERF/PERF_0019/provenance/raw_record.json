@@ -1,0 +1,20 @@
+{
+  "case_id": "PERF_0019",
+  "source_id": "SRC_001",
+  "source_name": "TPC-H",
+  "seed_id": "TPC-H-Q13",
+  "query_name": "Customer Distribution Query",
+  "raw_source_file": "datasets/raw/tpch/TPC-H V3.0.1/dbgen/queries/13.sql",
+  "reference_substitution_file": "datasets/raw/tpch/TPC-H V3.0.1/ref_data/1/subparam_13",
+  "freeze_method": "manual_freeze_from_checked_reference_substitution",
+  "substitutions": {
+    ":1": "express",
+    ":2": "deposits",
+    ":n": "-1"
+  },
+  "row_limit": null,
+  "notes": [
+    "Source facts are limited to the existing SRC_001 TPC-H source line and local raw query template.",
+    "No registry writeback, execution validation, or equivalence claim is made."
+  ]
+}
