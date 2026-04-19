@@ -1,4 +1,65 @@
 {
-  "status": "TODO",
-  "notes": "Human must fill data profile facts."
+  "case_id": "PERF_0013",
+  "status": "schema_profile_refined_unvalidated",
+  "dataset_id": "TODO_witness_dataset_not_created",
+  "data_rows_added": false,
+  "data_loaded": false,
+  "engine_validated": [],
+  "required_tables": [
+    "customer",
+    "orders",
+    "lineitem",
+    "supplier",
+    "nation",
+    "region"
+  ],
+  "required_columns": {
+    "customer": [
+      "c_custkey",
+      "c_nationkey"
+    ],
+    "orders": [
+      "o_orderkey",
+      "o_custkey",
+      "o_orderdate"
+    ],
+    "lineitem": [
+      "l_orderkey",
+      "l_suppkey",
+      "l_extendedprice",
+      "l_discount"
+    ],
+    "supplier": [
+      "s_suppkey",
+      "s_nationkey"
+    ],
+    "nation": [
+      "n_nationkey",
+      "n_name",
+      "n_regionkey"
+    ],
+    "region": [
+      "r_regionkey",
+      "r_name"
+    ]
+  },
+  "row_counts": {
+    "customer": "TODO",
+    "orders": "TODO",
+    "lineitem": "TODO",
+    "supplier": "TODO",
+    "nation": "TODO",
+    "region": "TODO"
+  },
+  "data_source": {
+    "source_id": "SRC_001",
+    "source_name": "TPC-H",
+    "seed_id": "TPC-H-Q5",
+    "generation_or_load_path": "TODO_witness_data_not_created"
+  },
+  "notes": [
+    "DDL covers only tables and columns referenced by source.sql and rewrite candidates.",
+    "No data rows, load script, execution validation, plan evidence, admission claim, or promotion claim is implied.",
+    "Row counts remain TODO until a case-local witness dataset is created."
+  ]
 }

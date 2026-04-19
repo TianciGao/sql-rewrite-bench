@@ -1,5 +1,5 @@
 type: value_normalized_result_equivalence_checker
-status: rewrite_layer_drafted_unvalidated
+status: schema_profile_refined_unvalidated
 normalization:
   sort_rows: true
   trim_whitespace: true
@@ -9,6 +9,11 @@ inputs:
   source: source.sql
   positive_rewrite: rewrite_pos_01.sql
   negative_rewrite: rewrite_neg_01.sql
+schema_profile:
+  pg_ddl: schema/ddl_pg.sql
+  mysql_ddl: schema/ddl_mysql.sql
+  spark_ddl: schema/ddl_spark.sql
+  data_profile: data_profile.json
 expectations:
   equal:
     - source.sql
@@ -17,8 +22,9 @@ expectations:
     - source.sql
     - rewrite_neg_01.sql
 expected_results: TODO
+validation_evidence: []
 notes:
-  - First rewrite layer has been drafted only.
+  - First rewrite layer and minimal DDL/data profile have been drafted only.
   - Positive rewrite is a plausible result-preserving candidate, not a proven equivalence claim.
   - Negative rewrite is a plausible semantic-divergence candidate, not a proven divergence claim.
   - TODO: Human must fill witness data, expected results, execution evidence, and plan evidence.
