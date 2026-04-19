@@ -2,15 +2,12 @@
 -- Source registry row: SRC_001 (TPC-H)
 -- Raw source file: datasets/raw/tpch/TPC-H V3.0.1/dbgen/queries/9.sql
 -- Seed: TPC-H Query 9, Product Type Profit Measure Query
--- Status: unmaterialized qgen template; substitution marker :1 is intentionally preserved.
+-- Freeze method: manual freeze because local qgen executable was not present.
+-- Reference substitution file: datasets/raw/tpch/TPC-H V3.0.1/ref_data/1/subparam_9
+-- Substitutions: :1 = turquoise; :n -1 = no row limit.
 -- No execution, equivalence, rewrite, or validation claim is made by this file.
 
--- $ID$
 -- TPC-H/TPC-R Product Type Profit Measure Query (Q9)
--- Functional Query Definition
--- Approved February 1998
-:x
-:o
 select
 	nation,
 	o_year,
@@ -35,7 +32,7 @@ from
 			and p_partkey = l_partkey
 			and o_orderkey = l_orderkey
 			and s_nationkey = n_nationkey
-			and p_name like '%:1%'
+			and p_name like '%turquoise%'
 	) as profit
 group by
 	nation,
@@ -43,4 +40,3 @@ group by
 order by
 	nation,
 	o_year desc;
-:n -1

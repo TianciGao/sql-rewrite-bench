@@ -2,19 +2,16 @@
 -- Source registry row: SRC_001 (TPC-H)
 -- Raw source file: datasets/raw/tpch/TPC-H V3.0.1/dbgen/queries/8.sql
 -- Seed: TPC-H Query 8, National Market Share Query
--- Status: unmaterialized qgen template; substitution markers :1, :2, and :3 are intentionally preserved.
+-- Freeze method: manual freeze because local qgen executable was not present.
+-- Reference substitution file: datasets/raw/tpch/TPC-H V3.0.1/ref_data/1/subparam_8
+-- Substitutions: :1 = IRAN; :2 = MIDDLE EAST; :3 = MEDIUM POLISHED STEEL; :n -1 = no row limit.
 -- No execution, equivalence, rewrite, or validation claim is made by this file.
 
--- $ID$
 -- TPC-H/TPC-R National Market Share Query (Q8)
--- Functional Query Definition
--- Approved February 1998
-:x
-:o
 select
 	o_year,
 	sum(case
-		when nation = ':1' then volume
+		when nation = 'IRAN' then volume
 		else 0
 	end) / sum(volume) as mkt_share
 from
@@ -39,13 +36,12 @@ from
 			and o_custkey = c_custkey
 			and c_nationkey = n1.n_nationkey
 			and n1.n_regionkey = r_regionkey
-			and r_name = ':2'
+			and r_name = 'MIDDLE EAST'
 			and s_nationkey = n2.n_nationkey
 			and o_orderdate between date '1995-01-01' and date '1996-12-31'
-			and p_type = ':3'
+			and p_type = 'MEDIUM POLISHED STEEL'
 	) as all_nations
 group by
 	o_year
 order by
 	o_year;
-:n -1

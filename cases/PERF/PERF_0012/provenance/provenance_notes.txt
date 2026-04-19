@@ -13,12 +13,24 @@ Selected seed:
 - Raw source path: datasets/raw/tpch/TPC-H V3.0.1/dbgen/queries/2.sql
 
 Case-local source handling:
-- cases/PERF/PERF_0012/source.sql preserves the raw qgen template structure.
-- qgen directives (:x, :o, :n) are still present.
-- substitution markers :1, :2, and :3 are intentionally not materialized in this step.
+- The expected local qgen executable was checked at datasets/raw/tpch/TPC-H V3.0.1/dbgen/qgen and was not present.
+- The source was therefore manually frozen from the checked TPC-H reference substitution file:
+  datasets/raw/tpch/TPC-H V3.0.1/ref_data/1/subparam_2
+- Reference substitutions used for Query 2:
+  - :1 = 25
+  - :2 = TIN
+  - :3 = MIDDLE EAST
+  - :n 100 = LIMIT 100
+- cases/PERF/PERF_0012/source.sql now removes qgen directives and contains one frozen executable SQL source instance.
+
+Qgen directives preserved in raw source:
+- :x
+- :o
+- :n 100
 
 Explicit non-claims:
-- No concrete executable query instance has been selected.
+- No qgen-generated SQL artifact was produced.
 - No rewrite has been created or validated.
 - No checker truth, DDL semantics, data profile facts, execution evidence, or plan evidence is claimed.
 - No registry writeback is performed in this step.
+- No admission, promotion, or archetype-completion claim is made.

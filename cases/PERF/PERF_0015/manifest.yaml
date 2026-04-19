@@ -8,7 +8,7 @@ provenance:
   raw_record_file: provenance/raw_record.json
   provenance_notes: provenance/provenance_notes.txt
 source:
-  dialect: tpc_h_qgen_template_unmaterialized
+  dialect: tpc_h_manual_frozen_sql_instance
   file: source.sql
 variants:
   positives:
@@ -43,6 +43,5 @@ validation:
   checker: validation/checker.yaml
   witness_dataset: validation/witness_dataset.yaml
 notes:
-  - Source/provenance layer populated from TPC-H Query 8 raw qgen template.
-  - TODO: Human must materialize an executable source instance before validation.
+  - Source/provenance layer manually frozen from TPC-H Query 8 using checked reference substitutions.
   - TODO: Human must fill rewrites, data, validation, artifacts, taxonomy tags, registry row, and review status.

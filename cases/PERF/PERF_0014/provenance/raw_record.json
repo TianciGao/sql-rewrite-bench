@@ -10,20 +10,47 @@
   "raw_source_path": "datasets/raw/tpch/TPC-H V3.0.1/dbgen/queries/7.sql",
   "raw_source_file_found": true,
   "raw_source_format": "TPC-H qgen template with qgen directives and substitution markers",
-  "materialization_status": "not_materialized_in_this_step",
-  "parameter_substitution_status": "not_filled",
+  "qgen_checked_path": "datasets/raw/tpch/TPC-H V3.0.1/dbgen/qgen",
+  "qgen_available": false,
+  "materialization_method": "manual_freeze_from_tpc_h_reference_substitution",
+  "materialization_status": "manual_frozen_source_instance",
+  "reference_substitution_file": "datasets/raw/tpch/TPC-H V3.0.1/ref_data/1/subparam_7",
+  "parameter_substitution_status": "filled",
   "template_placeholders": [
     ":1",
     ":2"
   ],
+  "qgen_directives_present": [
+    ":x",
+    ":o",
+    ":n -1"
+  ],
+  "substitutions": [
+    {
+      "placeholder": ":1",
+      "value": "BRAZIL",
+      "source_meaning": "first nation"
+    },
+    {
+      "placeholder": ":2",
+      "value": "MOROCCO",
+      "source_meaning": "second nation"
+    },
+    {
+      "placeholder": ":n -1",
+      "value": "no row limit",
+      "source_meaning": "TPC-H output row limit directive"
+    }
+  ],
   "case_source_file": "cases/PERF/PERF_0014/source.sql",
   "copied_to_case_source": true,
   "non_claims": [
-    "no executable parameter instance selected",
+    "no qgen-generated SQL artifact was produced",
     "no rewrite equivalence claim",
     "no DDL or data profile claim",
     "no execution validation",
     "no plan evidence",
-    "no registry writeback"
+    "no registry writeback",
+    "no admission or promotion claim"
   ]
 }

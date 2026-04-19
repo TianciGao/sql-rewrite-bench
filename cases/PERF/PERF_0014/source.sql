@@ -2,15 +2,12 @@
 -- Source registry row: SRC_001 (TPC-H)
 -- Raw source file: datasets/raw/tpch/TPC-H V3.0.1/dbgen/queries/7.sql
 -- Seed: TPC-H Query 7, Volume Shipping Query
--- Status: unmaterialized qgen template; substitution markers :1 and :2 are intentionally preserved.
+-- Freeze method: manual freeze because local qgen executable was not present.
+-- Reference substitution file: datasets/raw/tpch/TPC-H V3.0.1/ref_data/1/subparam_7
+-- Substitutions: :1 = BRAZIL; :2 = MOROCCO; :n -1 = no row limit.
 -- No execution, equivalence, rewrite, or validation claim is made by this file.
 
--- $ID$
 -- TPC-H/TPC-R Volume Shipping Query (Q7)
--- Functional Query Definition
--- Approved February 1998
-:x
-:o
 select
 	supp_nation,
 	cust_nation,
@@ -37,8 +34,8 @@ from
 			and s_nationkey = n1.n_nationkey
 			and c_nationkey = n2.n_nationkey
 			and (
-				(n1.n_name = ':1' and n2.n_name = ':2')
-				or (n1.n_name = ':2' and n2.n_name = ':1')
+				(n1.n_name = 'BRAZIL' and n2.n_name = 'MOROCCO')
+				or (n1.n_name = 'MOROCCO' and n2.n_name = 'BRAZIL')
 			)
 			and l_shipdate between date '1995-01-01' and date '1996-12-31'
 	) as shipping
@@ -50,4 +47,3 @@ order by
 	supp_nation,
 	cust_nation,
 	l_year;
-:n -1
