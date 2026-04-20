@@ -1,0 +1,45 @@
+{
+  "case_id": "PERF_0040",
+  "source_id": "SRC_002",
+  "source_name": "TPC-DS",
+  "source_family": "benchmark",
+  "source_registry_path": "inventory/source_registry.csv",
+  "source_storage_path": "datasets/raw/tpcds/",
+  "source_tool_version": "DSGen-software-code-4.0.0",
+  "template_name": "query18a.tpl",
+  "template_path": "datasets/raw/tpcds/DSGen-software-code-4.0.0/query_variants/query18a.tpl",
+  "seed_id": "TPCDS_QUERY18A_DSQGEN_COUNT1_SCALE1_ANSI_V0",
+  "materialized_source_path": "cases/PERF/PERF_0040/provenance/query18a_instance_raw.sql",
+  "normalized_source_path": "cases/PERF/PERF_0040/source.sql",
+  "materialization_method": "Repaired repo-local dsqgen with COUNT=1, QUALIFY=Y, SCALE=1, DIALECT=ansi using a temporary /tmp directory containing query18a.tpl and ansi.tpl; source.sql applies only PostgreSQL witness-execution syntax normalization.",
+  "substitutions": {
+    "YEAR": 2001,
+    "GEN": "M",
+    "ES": "College",
+    "STATE": [
+      "ND",
+      "WI",
+      "AL",
+      "NC",
+      "OK",
+      "MS",
+      "TN"
+    ],
+    "MONTH": [
+      9,
+      5,
+      12,
+      4,
+      1,
+      10
+    ],
+    "_LIMIT": 100
+  },
+  "validation_evidence": {
+    "postgres_result_check": "cases/PERF/PERF_0040/runs/pg/result_check.json"
+  },
+  "notes": [
+    "The exact dsqgen output is preserved in provenance/query18a_instance_raw.sql.",
+    "No MySQL, Spark, plan, admission, promotion, common-core, or registry facts are claimed."
+  ]
+}

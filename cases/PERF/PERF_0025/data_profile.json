@@ -27,5 +27,13 @@
   },
   "validation_artifacts": {
     "postgresql": "runs/pg/result_check.json"
+  },
+  "plan_artifacts": {
+    "postgresql": {
+      "plan_check": "runs/pg/plans/plan_check.json",
+      "source_plan": "runs/pg/plans/source.json",
+      "positive_rewrite_plan": "runs/pg/plans/rewrite_pos_01.json",
+      "negative_rewrite_plan": "runs/pg/plans/rewrite_neg_01.json"
+    }
   }
 }

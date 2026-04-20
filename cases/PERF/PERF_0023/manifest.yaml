@@ -49,5 +49,6 @@ notes:
   - First positive/negative rewrite layer has PostgreSQL witness validation only.
   - Minimal DDL/data_profile/checker layer is populated for referenced tables and columns only.
   - PostgreSQL witness validation result is stored under runs/pg/result_check.json.
-  - No MySQL/Spark validation, plan collection, registry writeback, admission claim, or promotion claim is made.
-  - TODO: Human must fill taxonomy tags, registry row, review status, cross-engine validation, and plan artifacts.
+  - PostgreSQL plan collection result is stored under runs/pg/plans/plan_check.json.
+  - No MySQL/Spark validation, registry writeback, admission claim, or promotion claim is made.
+  - TODO: Human must fill taxonomy tags, registry row, review status, cross-engine validation, and release hardening.

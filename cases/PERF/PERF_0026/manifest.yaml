@@ -33,7 +33,8 @@ validation:
     - "Source is frozen from the TPC-H Q22 template using the recorded ref_data substitution values."
     - "Rewrite layer has PostgreSQL witness validation only."
     - "PostgreSQL witness validation result is stored under runs/pg/result_check.json."
-    - "No MySQL/Spark validation, plan artifacts, registry row, admission claim, or review claim is included."
+    - "PostgreSQL plan collection result is stored under runs/pg/plans/plan_check.json."
+    - "No MySQL/Spark validation, registry row, admission claim, or review claim is included."
 classification:
   dataset_line: TPC-H
   archetype: performance
@@ -42,6 +43,5 @@ classification:
   promotion_state: none
 human_required:
   - MySQL and Spark validation
-  - plan collection
   - registry row review and manual writeback
   - admission and promotion review

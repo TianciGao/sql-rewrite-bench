@@ -1,0 +1,26 @@
+PERF_0035 source/provenance notes
+
+Selected source line:
+- source_id: SRC_002
+- source_name: TPC-DS
+- template: query57.tpl
+
+Materialization:
+- tool path: datasets/raw/tpcds/DSGen-software-code-4.0.0/tools/dsqgen
+- command file: provenance/dsqgen_command.txt
+- raw generated SQL: provenance/query57_instance_raw.sql
+- generated parameters observed in raw SQL:
+  - YEAR=2000
+  - SELECTONE=v1.cc_name
+  - SELECTTWO=v1.d_year, v1.d_moy
+  - ORDERBY=nsum
+  - LIMIT=100
+
+Normalization:
+- source.sql is derived from the raw dsqgen output.
+- The normalization is limited to PostgreSQL witness-execution syntax, primarily TOP 100 to LIMIT 100 and explicit join formatting.
+
+Non-claims:
+- No MySQL or Spark validation is claimed.
+- No PostgreSQL plan collection is claimed.
+- No admission, promotion, common-core, extended, tri-engine closure, or registry writeback is claimed.

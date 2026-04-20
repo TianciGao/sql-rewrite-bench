@@ -22,8 +22,14 @@ expected_results:
   negative_rewrite: runs/pg/rewrite_neg_01.tsv
 validation_evidence:
   - runs/pg/result_check.json
+plan_evidence:
+  - runs/pg/plans/plan_check.json
+  - runs/pg/plans/source.json
+  - runs/pg/plans/rewrite_pos_01.json
+  - runs/pg/plans/rewrite_neg_01.json
 notes:
   - PostgreSQL-only witness validation passed for the case-local minimal dataset.
   - Positive rewrite matched source output on PostgreSQL witness data.
   - Negative rewrite differed from source output on PostgreSQL witness data.
-  - No MySQL or Spark validation, plan evidence, admission claim, or promotion claim is implied.
+  - PostgreSQL plan artifacts were collected with EXPLAIN FORMAT JSON.
+  - No MySQL or Spark validation, admission claim, or promotion claim is implied.
