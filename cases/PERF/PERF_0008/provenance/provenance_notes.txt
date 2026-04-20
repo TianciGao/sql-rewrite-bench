@@ -1,0 +1,28 @@
+PERF_0008 source/provenance notes
+
+Source registry row: SRC_001
+Source line: TPC-H performance source line
+Selected seed: TPC-H Query 3, Shipping Priority Query
+Raw source path: datasets/raw/tpch/TPC-H V3.0.1/dbgen/queries/3.sql
+
+Case-local source handling:
+- The expected local qgen executable was checked at datasets/raw/tpch/TPC-H V3.0.1/dbgen/qgen and was not present.
+- The source was therefore manually frozen from the checked TPC-H reference substitution file:
+  datasets/raw/tpch/TPC-H V3.0.1/ref_data/1/subparam_3
+- Reference substitutions used for Query 3:
+  - :1 = MACHINERY
+  - :2 = 1995-03-27
+  - :n 10 = LIMIT 10
+- cases/PERF/PERF_0008/source.sql now removes qgen directives and contains one frozen executable SQL source instance.
+
+Qgen directives preserved:
+- :x
+- :o
+- :n 10
+
+Explicit non-claims:
+- No qgen-generated SQL artifact was produced.
+- No rewrite has been created or validated.
+- No checker truth, DDL semantics, data profile facts, execution evidence, or plan evidence is claimed.
+- No registry writeback is performed in this step.
+- No admission, promotion, or archetype-completion claim is made.

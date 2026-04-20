@@ -1,0 +1,63 @@
+case_id: PERF_0020
+pool: performance
+provenance:
+  source_id: SRC_001
+  seed_id: TPC-H-Q16
+  source_name: TPC-H
+  source_entry: datasets/raw/tpch/TPC-H V3.0.1/dbgen/queries/16.sql
+  raw_record_file: provenance/raw_record.json
+  provenance_notes: provenance/provenance_notes.txt
+source:
+  dialect: tpc_h_manual_frozen_sql_instance
+  file: source.sql
+variants:
+  positives:
+    - rewrite_pos_01.sql
+  negatives:
+    - rewrite_neg_01.sql
+targets:
+  engines:
+    - postgres
+    - mysql
+    - spark
+required_tables:
+  - partsupp
+  - part
+  - supplier
+features: []
+status:
+  parse_checked: true
+  exec_checked_pg: true
+  exec_checked_mysql: false
+  exec_checked_spark: false
+  plan_checked: true
+  schema_ready: true
+  validation_ready: true
+  release_grade: false
+schema:
+  pg_ddl: schema/ddl_pg.sql
+  mysql_ddl: schema/ddl_mysql.sql
+  spark_ddl: schema/ddl_spark.sql
+data_profile:
+  file: data_profile.json
+metadata:
+  engine_metadata: metadata/engine_metadata.yaml
+validation:
+  checker: validation/checker.yaml
+  witness_dataset: validation/witness_dataset.yaml
+  pg_witness_data: validation/pg_witness_data.sql
+  pg_result_check: runs/pg/result_check.json
+plans:
+  pg:
+    collector: validation/run_pg_plan_collection.sh
+    source: runs/pg/plans/source.json
+    positive_rewrite: runs/pg/plans/rewrite_pos_01.json
+    negative_rewrite: runs/pg/plans/rewrite_neg_01.json
+    summary: runs/pg/plans/plan_check.json
+notes:
+  - Source/provenance layer manually frozen from TPC-H Query 16 using checked reference substitutions.
+  - PostgreSQL-only witness validation passed for source, positive rewrite, and negative rewrite.
+  - PostgreSQL-only EXPLAIN FORMAT JSON plan artifacts are collected for source, positive rewrite, and negative rewrite.
+  - Minimal DDL/data_profile/checker layer is populated for referenced tables and columns only.
+  - No MySQL/Spark validation, registry writeback, admission claim, or promotion claim is made.
+  - TODO: Human must fill MySQL/Spark validation, taxonomy tags, registry row, and review status.

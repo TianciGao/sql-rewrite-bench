@@ -1,0 +1,21 @@
+{
+  "case_id": "PERF_0025",
+  "source_id": "SRC_001",
+  "source_family": "TPC-H",
+  "query_id": "Q21",
+  "query_name": "Suppliers Who Kept Orders Waiting Query",
+  "raw_template_path": "datasets/raw/tpch/TPC-H V3.0.1/dbgen/queries/21.sql",
+  "substitution_record_path": "datasets/raw/tpch/TPC-H V3.0.1/dbgen/ref_data/1/subparam_21",
+  "freeze_method": "manual_ref_data_substitution",
+  "substitutions": {
+    "nation_name": "IRAQ",
+    "row_limit": 100
+  },
+  "noninferable_fields": [
+    "admission_status",
+    "promotion_status",
+    "validation_evidence",
+    "plan_evidence",
+    "registry_truth"
+  ]
+}

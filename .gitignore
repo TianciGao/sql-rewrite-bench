@@ -31,3 +31,6 @@ spark-warehouse/
 *.log
 
 *:Zone.Identifier
+
+*.rar
+*.bak

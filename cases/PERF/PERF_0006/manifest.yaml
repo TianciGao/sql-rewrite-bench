@@ -1,0 +1,58 @@
+case_id: PERF_0006
+pool: performance
+provenance:
+  source_id: SRC_001
+  seed_id: TPC-H-Q1
+  source_name: TPC-H
+  source_entry: datasets/raw/tpch/TPC-H V3.0.1/dbgen/queries/1.sql
+  materialization_method: manual_freeze_from_tpc_h_reference_substitution
+  qgen_checked_path: datasets/raw/tpch/TPC-H V3.0.1/dbgen/qgen
+  qgen_available: false
+  reference_substitution_file: datasets/raw/tpch/TPC-H V3.0.1/ref_data/1/subparam_1
+  substitutions:
+    - placeholder: ":1"
+      value: "96"
+      unit: days
+      frozen_cutoff_date: "1998-08-27"
+  raw_record_file: provenance/raw_record.json
+  provenance_notes: provenance/provenance_notes.txt
+source:
+  dialect: common_sql_frozen_candidate_unvalidated
+  file: source.sql
+  materialization_status: manual_frozen_source_instance
+variants:
+  positives:
+    - rewrite_pos_01.sql
+  negatives:
+    - rewrite_neg_01.sql
+targets:
+  engines:
+    - postgres
+    - mysql
+    - spark
+required_tables: []
+features: []
+status:
+  parse_checked: false
+  exec_checked_pg: false
+  exec_checked_mysql: false
+  exec_checked_spark: false
+  plan_checked: false
+  schema_ready: false
+  validation_ready: false
+  release_grade: false
+schema:
+  pg_ddl: schema/ddl_pg.sql
+  mysql_ddl: schema/ddl_mysql.sql
+  spark_ddl: schema/ddl_spark.sql
+data_profile:
+  file: data_profile.json
+metadata:
+  engine_metadata: metadata/engine_metadata.yaml
+validation:
+  checker: validation/checker.yaml
+  witness_dataset: validation/witness_dataset.yaml
+notes:
+  - Source/provenance layer populated from TPC-H Query 1 and manually frozen with :1 = 96 days.
+  - Local qgen executable was not available; freeze uses checked TPC-H SF1 reference substitution file.
+  - TODO: Human must fill rewrites, data, validation, artifacts, and review status.

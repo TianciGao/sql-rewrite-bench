@@ -1,0 +1,2 @@
+checkpoint_id,checkpoint_date,checkpoint_label,status,basis,scope_guardrails,artifact_refs,notes
+CP-0001,2026-04-18,week1_bootstrap_closeout,accepted,"PostgreSQL smoke passed; MySQL smoke passed; Spark smoke passed; PERF_0001 tri-engine consistency closure passed; first plan artifacts collected; minimal CLI scaffolding exists",Week-2 minimal hardening baseline only,reports/cli/env-check.json|reports/cli/pg-check.json|reports/cli/mysql-check.json|reports/cli/spark-check.json|reports/cli/artifact-preflight.json,No protocol decision; no workload or case expansion

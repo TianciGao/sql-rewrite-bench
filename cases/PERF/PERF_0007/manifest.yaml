@@ -1,0 +1,48 @@
+case_id: PERF_0007
+pool: performance
+provenance:
+  source_id: SRC_001
+  seed_id: TPC-H-Q6
+  source_name: TPC-H
+  source_entry: datasets/raw/tpch/TPC-H V3.0.1/dbgen/queries/6.sql
+  raw_record_file: provenance/raw_record.json
+  provenance_notes: provenance/provenance_notes.txt
+source:
+  dialect: tpc_h_qgen_template_unmaterialized
+  file: source.sql
+variants:
+  positives:
+    - rewrite_pos_01.sql
+  negatives:
+    - rewrite_neg_01.sql
+targets:
+  engines:
+    - postgres
+    - mysql
+    - spark
+required_tables: []
+features: []
+status:
+  parse_checked: false
+  exec_checked_pg: false
+  exec_checked_mysql: false
+  exec_checked_spark: false
+  plan_checked: false
+  schema_ready: false
+  validation_ready: false
+  release_grade: false
+schema:
+  pg_ddl: schema/ddl_pg.sql
+  mysql_ddl: schema/ddl_mysql.sql
+  spark_ddl: schema/ddl_spark.sql
+data_profile:
+  file: data_profile.json
+metadata:
+  engine_metadata: metadata/engine_metadata.yaml
+validation:
+  checker: validation/checker.yaml
+  witness_dataset: validation/witness_dataset.yaml
+notes:
+  - Source/provenance layer populated from TPC-H Query 6 raw qgen template.
+  - TODO: Human must materialize an executable source instance before validation.
+  - TODO: Human must fill rewrites, data, validation, artifacts, and review status.

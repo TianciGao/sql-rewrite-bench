@@ -1,0 +1,36 @@
+case_id: PERF_0024
+status: pg_witness_validated
+result_check:
+  source_vs_positive:
+    expected_relation: equal
+    evidence_status: validated_postgres
+  source_vs_negative:
+    expected_relation: not_equal
+    evidence_status: validated_postgres
+artifacts:
+  source: ../source.sql
+  positive_rewrites:
+    - ../rewrite_pos_01.sql
+  negative_rewrites:
+    - ../rewrite_neg_01.sql
+  ddl:
+    postgresql: ../schema/ddl_pg.sql
+    mysql: ../schema/ddl_mysql.sql
+    spark: ../schema/ddl_spark.sql
+validation_evidence:
+  - engine: postgres
+    result_check: runs/pg/result_check.json
+    source_result: runs/pg/source.tsv
+    positive_result: runs/pg/rewrite_pos_01.tsv
+    negative_result: runs/pg/rewrite_neg_01.tsv
+plan_evidence:
+  - engine: postgres
+    plan_check: runs/pg/plans/plan_check.json
+    source_plan: runs/pg/plans/source.json
+    positive_plan: runs/pg/plans/rewrite_pos_01.json
+    negative_plan: runs/pg/plans/rewrite_neg_01.json
+notes:
+  - "PostgreSQL witness validation shows source and positive outputs match."
+  - "PostgreSQL witness validation shows source and negative outputs differ."
+  - "PostgreSQL plans were collected for source, positive rewrite, and negative rewrite."
+  - "No MySQL/Spark validation, admission claim, or promotion claim is implied."

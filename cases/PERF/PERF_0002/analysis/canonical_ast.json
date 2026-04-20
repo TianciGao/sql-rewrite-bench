@@ -1,0 +1,344 @@
+{
+  "artifact_type": "canonical_ast",
+  "case_id": "PERF_0002",
+  "scope": "first_deepening_step",
+  "status": "initial_structural_artifact",
+  "notes": [
+    "Machine-readable structural representation for source and rewrite SQL.",
+    "This artifact does not attempt SQL span to logical to physical plan mapping."
+  ],
+  "queries": {
+    "source.sql": {
+      "statement_type": "select",
+      "select": [
+        {
+          "expression": "*"
+        }
+      ],
+      "from": {
+        "type": "derived_table",
+        "alias": "tmp1",
+        "query_ref": "inner_sales_by_manufacturer_quarter"
+      },
+      "where": {
+        "type": "comparison",
+        "operator": ">",
+        "left": {
+          "type": "case",
+          "when": [
+            {
+              "condition": {
+                "type": "comparison",
+                "operator": ">",
+                "left": "avg_quarterly_sales",
+                "right": 0
+              },
+              "then": {
+                "type": "arithmetic",
+                "operator": "/",
+                "left": {
+                  "type": "function",
+                  "name": "ABS",
+                  "arguments": [
+                    {
+                      "type": "arithmetic",
+                      "operator": "-",
+                      "left": "sum_sales",
+                      "right": "avg_quarterly_sales"
+                    }
+                  ]
+                },
+                "right": "avg_quarterly_sales"
+              }
+            }
+          ],
+          "else": null
+        },
+        "right": 0.1
+      },
+      "order_by": [
+        "avg_quarterly_sales",
+        "sum_sales",
+        "i_manufact_id"
+      ],
+      "limit": 100,
+      "common_subqueries": {
+        "inner_sales_by_manufacturer_quarter": {
+          "statement_type": "select",
+          "select": [
+            {
+              "expression": "i_manufact_id"
+            },
+            {
+              "expression": {
+                "type": "aggregate",
+                "function": "SUM",
+                "arguments": [
+                  "ss_sales_price"
+                ]
+              },
+              "alias": "sum_sales"
+            },
+            {
+              "expression": {
+                "type": "window",
+                "function": "AVG",
+                "arguments": [
+                  {
+                    "type": "aggregate",
+                    "function": "SUM",
+                    "arguments": [
+                      "ss_sales_price"
+                    ]
+                  }
+                ],
+                "partition_by": [
+                  "i_manufact_id"
+                ]
+              },
+              "alias": "avg_quarterly_sales"
+            }
+          ],
+          "from": {
+            "base_table": "item",
+            "joins": [
+              {
+                "join_type": "inner",
+                "table": "store_sales",
+                "on": {
+                  "left": "ss_item_sk",
+                  "operator": "=",
+                  "right": "i_item_sk"
+                }
+              },
+              {
+                "join_type": "inner",
+                "table": "date_dim",
+                "on": {
+                  "left": "ss_sold_date_sk",
+                  "operator": "=",
+                  "right": "d_date_sk"
+                }
+              },
+              {
+                "join_type": "inner",
+                "table": "store",
+                "on": {
+                  "left": "ss_store_sk",
+                  "operator": "=",
+                  "right": "s_store_sk"
+                }
+              }
+            ]
+          },
+          "where": {
+            "type": "and",
+            "children": [
+              {
+                "type": "in",
+                "expression": "d_month_seq",
+                "values": [
+                  1212,
+                  1213,
+                  1214,
+                  1215,
+                  1216,
+                  1217,
+                  1218,
+                  1219,
+                  1220,
+                  1221,
+                  1222,
+                  1223
+                ]
+              },
+              {
+                "type": "or",
+                "children": [
+                  {
+                    "type": "and",
+                    "children": [
+                      {
+                        "type": "in",
+                        "expression": "i_category",
+                        "values": [
+                          "Books",
+                          "Children",
+                          "Electronics"
+                        ]
+                      },
+                      {
+                        "type": "in",
+                        "expression": "i_class",
+                        "values": [
+                          "personal",
+                          "portable",
+                          "reference",
+                          "self-help"
+                        ]
+                      },
+                      {
+                        "type": "in",
+                        "expression": "i_brand",
+                        "values": [
+                          "scholaramalgamalg #14",
+                          "scholaramalgamalg #7",
+                          "exportiunivamalg #9",
+                          "scholaramalgamalg #9"
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "and",
+                    "children": [
+                      {
+                        "type": "in",
+                        "expression": "i_category",
+                        "values": [
+                          "Women",
+                          "Music",
+                          "Men"
+                        ]
+                      },
+                      {
+                        "type": "in",
+                        "expression": "i_class",
+                        "values": [
+                          "accessories",
+                          "classical",
+                          "fragrances",
+                          "pants"
+                        ]
+                      },
+                      {
+                        "type": "in",
+                        "expression": "i_brand",
+                        "values": [
+                          "amalgimporto #1",
+                          "edu packscholar #1",
+                          "exportiimporto #1",
+                          "importoamalg #1"
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          "group_by": [
+            "i_manufact_id",
+            "d_qoy"
+          ]
+        }
+      }
+    },
+    "rewrite_pos_01.sql": {
+      "statement_type": "select",
+      "inherits_common_subquery_from": "source.sql",
+      "select": [
+        {
+          "expression": "*"
+        }
+      ],
+      "from": {
+        "type": "derived_table",
+        "alias": "tmp1",
+        "query_ref": "inner_sales_by_manufacturer_quarter"
+      },
+      "where": {
+        "type": "and",
+        "children": [
+          {
+            "type": "comparison",
+            "operator": ">",
+            "left": "avg_quarterly_sales",
+            "right": 0
+          },
+          {
+            "type": "comparison",
+            "operator": ">",
+            "left": {
+              "type": "function",
+              "name": "ABS",
+              "arguments": [
+                {
+                  "type": "arithmetic",
+                  "operator": "-",
+                  "left": "sum_sales",
+                  "right": "avg_quarterly_sales"
+                }
+              ]
+            },
+            "right": {
+              "type": "arithmetic",
+              "operator": "*",
+              "left": "avg_quarterly_sales",
+              "right": 0.1
+            }
+          }
+        ]
+      },
+      "order_by": [
+        "avg_quarterly_sales",
+        "sum_sales",
+        "i_manufact_id"
+      ],
+      "limit": 100
+    },
+    "rewrite_neg_01.sql": {
+      "statement_type": "select",
+      "inherits_common_subquery_from": "source.sql",
+      "select": [
+        {
+          "expression": "*"
+        }
+      ],
+      "from": {
+        "type": "derived_table",
+        "alias": "tmp1",
+        "query_ref": "inner_sales_by_manufacturer_quarter"
+      },
+      "where": {
+        "type": "and",
+        "children": [
+          {
+            "type": "comparison",
+            "operator": ">",
+            "left": "avg_quarterly_sales",
+            "right": 0
+          },
+          {
+            "type": "comparison",
+            "operator": ">",
+            "left": {
+              "type": "function",
+              "name": "ABS",
+              "arguments": [
+                {
+                  "type": "arithmetic",
+                  "operator": "-",
+                  "left": "sum_sales",
+                  "right": "avg_quarterly_sales"
+                }
+              ]
+            },
+            "right": {
+              "type": "arithmetic",
+              "operator": "*",
+              "left": "avg_quarterly_sales",
+              "right": 0.5
+            }
+          }
+        ]
+      },
+      "order_by": [
+        "avg_quarterly_sales",
+        "sum_sales",
+        "i_manufact_id"
+      ],
+      "limit": 100
+    }
+  }
+}

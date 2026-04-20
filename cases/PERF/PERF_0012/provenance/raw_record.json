@@ -1,0 +1,62 @@
+{
+  "case_id": "PERF_0012",
+  "source_registry_id": "SRC_001",
+  "source_name": "TPC-H",
+  "source_family": "benchmark",
+  "source_registry_storage_path": "datasets/raw/tpch/",
+  "seed_id": "TPC-H-Q2",
+  "seed_query_name": "TPC-H Query 2",
+  "seed_query_title": "Minimum Cost Supplier Query",
+  "raw_source_path": "datasets/raw/tpch/TPC-H V3.0.1/dbgen/queries/2.sql",
+  "raw_source_file_found": true,
+  "raw_source_format": "TPC-H qgen template with qgen directives and substitution markers",
+  "qgen_checked_path": "datasets/raw/tpch/TPC-H V3.0.1/dbgen/qgen",
+  "qgen_available": false,
+  "materialization_method": "manual_freeze_from_tpc_h_reference_substitution",
+  "materialization_status": "manual_frozen_source_instance",
+  "reference_substitution_file": "datasets/raw/tpch/TPC-H V3.0.1/ref_data/1/subparam_2",
+  "parameter_substitution_status": "filled",
+  "template_placeholders": [
+    ":1",
+    ":2",
+    ":3"
+  ],
+  "qgen_directives_present": [
+    ":x",
+    ":o",
+    ":n 100"
+  ],
+  "substitutions": [
+    {
+      "placeholder": ":1",
+      "value": "25",
+      "source_meaning": "part size"
+    },
+    {
+      "placeholder": ":2",
+      "value": "TIN",
+      "source_meaning": "part type suffix"
+    },
+    {
+      "placeholder": ":3",
+      "value": "MIDDLE EAST",
+      "source_meaning": "region name"
+    },
+    {
+      "placeholder": ":n 100",
+      "value": "LIMIT 100",
+      "source_meaning": "TPC-H output row limit directive"
+    }
+  ],
+  "case_source_file": "cases/PERF/PERF_0012/source.sql",
+  "copied_to_case_source": true,
+  "non_claims": [
+    "no qgen-generated SQL artifact was produced",
+    "no rewrite equivalence claim",
+    "no DDL or data profile claim",
+    "no execution validation",
+    "no plan evidence",
+    "no registry writeback",
+    "no admission or promotion claim"
+  ]
+}

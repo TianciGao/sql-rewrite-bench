@@ -1,0 +1,208 @@
+{
+  "artifact_type": "logical_ir",
+  "case_id": "PERF_0002",
+  "scope": "first_deepening_step",
+  "status": "initial_structural_artifact",
+  "notes": [
+    "Machine-readable logical representation for source and rewrite SQL.",
+    "This artifact stops before SQL span to logical to physical plan mapping."
+  ],
+  "shared_pipeline": [
+    {
+      "id": "scan_item",
+      "op": "scan",
+      "table": "item"
+    },
+    {
+      "id": "scan_store_sales",
+      "op": "scan",
+      "table": "store_sales"
+    },
+    {
+      "id": "scan_date_dim",
+      "op": "scan",
+      "table": "date_dim"
+    },
+    {
+      "id": "scan_store",
+      "op": "scan",
+      "table": "store"
+    },
+    {
+      "id": "join_item_store_sales",
+      "op": "inner_join",
+      "inputs": [
+        "scan_item",
+        "scan_store_sales"
+      ],
+      "condition": "ss_item_sk = i_item_sk"
+    },
+    {
+      "id": "join_date_dim",
+      "op": "inner_join",
+      "inputs": [
+        "join_item_store_sales",
+        "scan_date_dim"
+      ],
+      "condition": "ss_sold_date_sk = d_date_sk"
+    },
+    {
+      "id": "join_store",
+      "op": "inner_join",
+      "inputs": [
+        "join_date_dim",
+        "scan_store"
+      ],
+      "condition": "ss_store_sk = s_store_sk"
+    },
+    {
+      "id": "filter_seed_slice",
+      "op": "filter",
+      "input": "join_store",
+      "predicates": [
+        "d_month_seq in 1212..1223 explicit set",
+        "(category,class,brand) matches group A or group B"
+      ]
+    },
+    {
+      "id": "aggregate_quarter_sales",
+      "op": "aggregate",
+      "input": "filter_seed_slice",
+      "group_by": [
+        "i_manufact_id",
+        "d_qoy"
+      ],
+      "outputs": [
+        {
+          "name": "i_manufact_id",
+          "expr": "i_manufact_id"
+        },
+        {
+          "name": "sum_sales",
+          "expr": "SUM(ss_sales_price)"
+        }
+      ]
+    },
+    {
+      "id": "window_avg_quarterly_sales",
+      "op": "window",
+      "input": "aggregate_quarter_sales",
+      "partition_by": [
+        "i_manufact_id"
+      ],
+      "outputs": [
+        {
+          "name": "avg_quarterly_sales",
+          "expr": "AVG(SUM(ss_sales_price)) OVER (PARTITION BY i_manufact_id)"
+        }
+      ]
+    }
+  ],
+  "queries": {
+    "source.sql": {
+      "input": "window_avg_quarterly_sales",
+      "variant_role": "source",
+      "variant_intent": "baseline threshold filter expressed as guarded ratio comparison",
+      "variant_ops": [
+        {
+          "id": "source_filter_deviation_ratio",
+          "op": "filter",
+          "predicate": "CASE WHEN avg_quarterly_sales > 0 THEN ABS(sum_sales - avg_quarterly_sales) / avg_quarterly_sales ELSE NULL END > 0.1"
+        },
+        {
+          "id": "source_sort",
+          "op": "sort",
+          "keys": [
+            "avg_quarterly_sales",
+            "sum_sales",
+            "i_manufact_id"
+          ]
+        },
+        {
+          "id": "source_limit",
+          "op": "limit",
+          "count": 100
+        }
+      ],
+      "semantic_parameters": {
+        "requires_positive_avg_quarterly_sales": true,
+        "deviation_threshold": 0.1,
+        "threshold_form": "ratio_gt_constant"
+      }
+    },
+    "rewrite_pos_01.sql": {
+      "input": "window_avg_quarterly_sales",
+      "variant_role": "positive_rewrite",
+      "variant_intent": "result-preserving algebraic rewrite of guarded ratio comparison",
+      "variant_ops": [
+        {
+          "id": "positive_filter_positive_denominator",
+          "op": "filter",
+          "predicate": "avg_quarterly_sales > 0"
+        },
+        {
+          "id": "positive_filter_deviation_product",
+          "op": "filter",
+          "predicate": "ABS(sum_sales - avg_quarterly_sales) > avg_quarterly_sales * 0.1"
+        },
+        {
+          "id": "positive_sort",
+          "op": "sort",
+          "keys": [
+            "avg_quarterly_sales",
+            "sum_sales",
+            "i_manufact_id"
+          ]
+        },
+        {
+          "id": "positive_limit",
+          "op": "limit",
+          "count": 100
+        }
+      ],
+      "semantic_parameters": {
+        "requires_positive_avg_quarterly_sales": true,
+        "deviation_threshold": 0.1,
+        "threshold_form": "product_gt_scaled_denominator"
+      },
+      "expected_relation_to_source": "result_equivalent"
+    },
+    "rewrite_neg_01.sql": {
+      "input": "window_avg_quarterly_sales",
+      "variant_role": "negative_rewrite",
+      "variant_intent": "threshold-mutated rewrite expected to change results",
+      "variant_ops": [
+        {
+          "id": "negative_filter_positive_denominator",
+          "op": "filter",
+          "predicate": "avg_quarterly_sales > 0"
+        },
+        {
+          "id": "negative_filter_deviation_product",
+          "op": "filter",
+          "predicate": "ABS(sum_sales - avg_quarterly_sales) > avg_quarterly_sales * 0.5"
+        },
+        {
+          "id": "negative_sort",
+          "op": "sort",
+          "keys": [
+            "avg_quarterly_sales",
+            "sum_sales",
+            "i_manufact_id"
+          ]
+        },
+        {
+          "id": "negative_limit",
+          "op": "limit",
+          "count": 100
+        }
+      ],
+      "semantic_parameters": {
+        "requires_positive_avg_quarterly_sales": true,
+        "deviation_threshold": 0.5,
+        "threshold_form": "product_gt_scaled_denominator"
+      },
+      "expected_relation_to_source": "result_divergent"
+    }
+  }
+}

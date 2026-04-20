@@ -1,0 +1,67 @@
+case_id: PERF_0005
+pool: performance
+provenance:
+  source_id: SRC_002
+  seed_id: TPCDS_QUERY52_MANUAL_FREEZE_V0
+  source_name: TPC-DS
+  source_template: query52.tpl
+  source_entry: datasets/raw/tpcds/DSGen-software-code-4.0.0/query_templates/query52.tpl
+  materialized_instance: source.sql
+  raw_record_file: provenance/raw_record.json
+  provenance_notes: provenance/provenance_notes.txt
+source:
+  dialect: common_core_sql_normalized_from_tpcds_template
+  file: source.sql
+variants:
+  positives:
+    - rewrite_pos_01.sql
+  negatives:
+    - rewrite_neg_01.sql
+targets:
+  engines:
+    - postgres
+    - mysql
+    - spark
+required_tables:
+  - date_dim
+  - item
+  - store_sales
+features:
+  - join
+  - filter
+  - aggregate
+  - group_by
+  - order_by
+  - limit
+status:
+  parse_checked: true
+  exec_checked_pg: true
+  exec_checked_mysql: false
+  exec_checked_spark: false
+  plan_checked: false
+  schema_ready: false
+  validation_ready: false
+  release_grade: false
+schema:
+  pg_ddl: schema/ddl_pg.sql
+  mysql_ddl: schema/ddl_mysql.sql
+  spark_ddl: schema/ddl_spark.sql
+data_profile:
+  file: data_profile.json
+metadata:
+  engine_metadata: metadata/engine_metadata.yaml
+validation:
+  checker: validation/checker.yaml
+  witness_dataset: validation/witness_dataset.yaml
+  pg_witness_data: validation/pg_witness_data.sql
+artifacts:
+  pg_source_result: runs/pg/source.tsv
+  pg_positive_result: runs/pg/rewrite_pos_01.tsv
+  pg_negative_result: runs/pg/rewrite_neg_01.tsv
+  pg_result_check: runs/pg/result_check.json
+notes:
+  - Source/provenance layer populated from TPC-DS query52.tpl with explicit source-layer substitutions.
+  - Positive and negative rewrite candidates are populated and PostgreSQL witness-validated.
+  - Minimal DDL, schema profile, and checker shape are populated for referenced tables and columns only.
+  - PostgreSQL-only witness validation passed for source/positive equality and source/negative divergence.
+  - TODO: Human must fill MySQL/Spark validation, plan artifacts, taxonomy, and review status.

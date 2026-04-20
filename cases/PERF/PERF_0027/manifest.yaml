@@ -1,0 +1,55 @@
+case_id: PERF_0027
+pool: performance
+provenance:
+  source_id: SRC_001
+  seed_id: TPC-H-Q8A
+  source_name: TPC-H
+  source_entry: datasets/raw/tpch/TPC-H V3.0.1/dbgen/variants/8a.sql
+source:
+  dialect: tpc_h_manual_frozen_sql_instance
+  file: source.sql
+variants:
+  positives:
+    - rewrite_pos_01.sql
+  negatives:
+    - rewrite_neg_01.sql
+targets:
+  engines:
+    - postgres
+required_tables:
+  - part
+  - supplier
+  - lineitem
+  - orders
+  - customer
+  - nation
+  - region
+features: []
+status:
+  parse_checked: true
+  exec_checked_pg: true
+  plan_checked: true
+  schema_ready: true
+  validation_ready: true
+  release_grade: false
+schema:
+  pg_ddl: schema/ddl_pg.sql
+data_profile:
+  file: data_profile.json
+validation:
+  checker: validation/checker.yaml
+  witness_dataset: validation/witness_dataset.yaml
+  pg_witness_data: validation/pg_witness_data.sql
+  pg_result_check: runs/pg/result_check.json
+plans:
+  pg:
+    collector: validation/run_pg_plan_collection.sh
+    source: runs/pg/plans/source.json
+    positive_rewrite: runs/pg/plans/rewrite_pos_01.json
+    negative_rewrite: runs/pg/plans/rewrite_neg_01.json
+    summary: runs/pg/plans/plan_check.json
+notes:
+  - Source layer manually frozen from TPC-H Query 8 Variant A using the existing Q8 parameter line.
+  - PostgreSQL-only witness validation passed for source, positive rewrite, and negative rewrite.
+  - PostgreSQL-only EXPLAIN FORMAT JSON plan artifacts are collected for source, positive rewrite, and negative rewrite.
+  - No MySQL/Spark validation, registry writeback, admission claim, or promotion claim is made.

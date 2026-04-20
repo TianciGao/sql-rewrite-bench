@@ -1,0 +1,36 @@
+PERF_0005 source/provenance population notes
+
+Selected source line:
+- source_id: SRC_002
+- source_name: TPC-DS
+- source_family: benchmark
+- source registry path: inventory/source_registry.csv
+- source storage path: datasets/raw/tpcds/
+- local source tool/version path: datasets/raw/tpcds/DSGen-software-code-4.0.0/
+
+Selected concrete seed:
+- template: query52.tpl
+- template path: datasets/raw/tpcds/DSGen-software-code-4.0.0/query_templates/query52.tpl
+- seed_id: TPCDS_QUERY52_MANUAL_FREEZE_V0
+
+Source freeze:
+- source file: cases/PERF/PERF_0005/source.sql
+- substitutions:
+  - MONTH=11
+  - YEAR=2001
+  - LIMIT=100
+- source.sql was frozen from the local TPC-DS template with explicit source-layer substitutions.
+- The frozen SQL uses a common LIMIT form for later PostgreSQL/MySQL/Spark feasibility review.
+
+Generation note:
+- A direct dsqgen attempt against query52.tpl failed before repository edits with:
+  ERROR: Substitution'_END' is used before being initialized at line 60 in datasets/raw/tpcds/DSGen-software-code-4.0.0/query_templates/query52.tpl
+- Because this step is limited to source/provenance population, no workaround output was treated as validation evidence.
+
+Non-claims:
+- No positive rewrite has been filled.
+- No negative rewrite has been filled.
+- No DDL semantics have been filled.
+- No checker truth or expected results have been filled.
+- No execution or plan evidence has been produced.
+- No admission, promotion, archetype-completion, common-core, or registry update is claimed.

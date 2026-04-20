@@ -1,0 +1,47 @@
+case_id: PERF_0024
+title: "TPC-H Q20 potential part promotion performance draft"
+primary_pool: performance
+status: draft
+source:
+  source_id: SRC_001
+  source_name: TPC-H
+  seed_id: TPC-H-Q20
+  raw_template_path: datasets/raw/tpch/TPC-H V3.0.1/dbgen/queries/20.sql
+  substitution_record_path: datasets/raw/tpch/TPC-H V3.0.1/dbgen/ref_data/1/subparam_20
+  frozen_source: source.sql
+  freeze_method: manual_ref_data_substitution
+  source_lineage_and_provenance: provenance/
+artifacts:
+  source_sql: source.sql
+  positive_rewrites:
+    - rewrite_pos_01.sql
+  negative_rewrites:
+    - rewrite_neg_01.sql
+  schema:
+    postgresql: schema/ddl_pg.sql
+    mysql: schema/ddl_mysql.sql
+    spark: schema/ddl_spark.sql
+  data_profile: data_profile.json
+  checker: validation/checker.yaml
+validation:
+  status: pg_witness_validated
+  engines:
+    postgresql: validated
+    mysql: not_run
+    spark: not_run
+  notes:
+    - "Source is frozen from the TPC-H Q20 template using the recorded ref_data substitution values."
+    - "Rewrite layer has PostgreSQL witness validation only."
+    - "PostgreSQL witness validation result is stored under runs/pg/result_check.json."
+    - "PostgreSQL plan collection result is stored under runs/pg/plans/plan_check.json."
+    - "No MySQL/Spark validation, registry row, admission claim, or review claim is included."
+classification:
+  dataset_line: TPC-H
+  archetype: performance
+  completion_state: pg_witness_validated
+  admission_state: draft
+  promotion_state: none
+human_required:
+  - MySQL and Spark validation
+  - registry row review and manual writeback
+  - admission and promotion review

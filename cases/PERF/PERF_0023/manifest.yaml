@@ -1,0 +1,54 @@
+case_id: PERF_0023
+pool: performance
+provenance:
+  source_id: SRC_001
+  seed_id: TPC-H-Q19
+  source_name: TPC-H
+  source_entry: datasets/raw/tpch/TPC-H V3.0.1/dbgen/queries/19.sql
+  raw_record_file: provenance/raw_record.json
+  provenance_notes: provenance/provenance_notes.txt
+source:
+  dialect: tpc_h_manual_frozen_sql_instance
+  file: source.sql
+variants:
+  positives:
+    - rewrite_pos_01.sql
+  negatives:
+    - rewrite_neg_01.sql
+targets:
+  engines:
+    - postgres
+    - mysql
+    - spark
+required_tables:
+  - lineitem
+  - part
+features: []
+status:
+  parse_checked: false
+  exec_checked_pg: true
+  exec_checked_mysql: false
+  exec_checked_spark: false
+  plan_checked: false
+  schema_ready: true
+  validation_ready: true
+  release_grade: false
+schema:
+  pg_ddl: schema/ddl_pg.sql
+  mysql_ddl: schema/ddl_mysql.sql
+  spark_ddl: schema/ddl_spark.sql
+data_profile:
+  file: data_profile.json
+metadata:
+  engine_metadata: metadata/engine_metadata.yaml
+validation:
+  checker: validation/checker.yaml
+  witness_dataset: validation/witness_dataset.yaml
+notes:
+  - Source/provenance layer manually frozen from TPC-H Query 19 using checked reference substitutions.
+  - First positive/negative rewrite layer has PostgreSQL witness validation only.
+  - Minimal DDL/data_profile/checker layer is populated for referenced tables and columns only.
+  - PostgreSQL witness validation result is stored under runs/pg/result_check.json.
+  - PostgreSQL plan collection result is stored under runs/pg/plans/plan_check.json.
+  - No MySQL/Spark validation, registry writeback, admission claim, or promotion claim is made.
+  - TODO: Human must fill taxonomy tags, registry row, review status, cross-engine validation, and release hardening.

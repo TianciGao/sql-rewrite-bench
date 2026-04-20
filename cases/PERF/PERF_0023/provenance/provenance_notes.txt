@@ -1,0 +1,18 @@
+PERF_0023 source/provenance notes
+
+Source line: SRC_001 / TPC-H.
+Seed: TPC-H Query 19, Discounted Revenue Query.
+Raw source file: datasets/raw/tpch/TPC-H V3.0.1/dbgen/queries/19.sql.
+Reference substitution file: datasets/raw/tpch/TPC-H V3.0.1/ref_data/1/subparam_19.
+
+Manual freeze substitutions:
+- :1 = Brand#14
+- :2 = Brand#13
+- :3 = Brand#22
+- :4 = 5
+- :5 = 17
+- :6 = 29
+- :n -1 = no row limit
+
+This case stops at source/provenance, executable source, first rewrite layer, and minimal DDL/data_profile/checker refinement.
+No witness data, execution validation, plan collection, registry writeback, admission claim, or promotion claim is made.

@@ -13,9 +13,9 @@ This document therefore answers a narrower methodological question:
 
 Related but different documents:
 
-- `benchmark_spec/COMMON_CORE_ADMISSION_CHECK_v0.md`
-- `benchmark_spec/EXTERNAL_CASE_PROMOTION_REVIEW_v0.md`
-- `docs/EXTERNAL_DRAFT_CASE_STATUS.md`
+- `benchmark_spec/reviews/BATCH1_EXTERNAL_CASE_REVIEW_v1.md`
+- `inventory/case_registry.csv`
+- `docs/EXECUTION_STATUS.md`
 
 ---
 
@@ -337,9 +337,9 @@ This file should be updated whenever:
 
 Related updates should also be reflected in:
 
-- `docs/EXTERNAL_DRAFT_CASE_STATUS.md`
-- `benchmark_spec/EXTERNAL_CASE_PROMOTION_REVIEW_v0.md`
-- `benchmark_spec/COMMON_CORE_ADMISSION_CHECK_v0.md`
+- `benchmark_spec/reviews/*.md`
+- `inventory/case_registry.csv`
+- `docs/EXECUTION_STATUS.md`
 - case-local manifests and taxonomy files
 
 ---

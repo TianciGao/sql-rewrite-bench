@@ -1,0 +1,62 @@
+{
+  "case_id": "PERF_0010",
+  "source_registry_id": "SRC_001",
+  "source_name": "TPC-H",
+  "source_family": "benchmark",
+  "source_registry_storage_path": "datasets/raw/tpch/",
+  "seed_id": "TPC-H-Q12",
+  "seed_query_name": "TPC-H Query 12",
+  "seed_query_title": "Shipping Modes and Order Priority Query",
+  "raw_source_path": "datasets/raw/tpch/TPC-H V3.0.1/dbgen/queries/12.sql",
+  "raw_source_file_found": true,
+  "raw_source_format": "TPC-H qgen template with qgen directives and substitution markers",
+  "qgen_checked_path": "datasets/raw/tpch/TPC-H V3.0.1/dbgen/qgen",
+  "qgen_available": false,
+  "materialization_method": "manual_freeze_from_tpc_h_reference_substitution",
+  "materialization_status": "manual_frozen_source_instance",
+  "reference_substitution_file": "datasets/raw/tpch/TPC-H V3.0.1/ref_data/1/subparam_12",
+  "parameter_substitution_status": "filled",
+  "template_placeholders": [
+    ":1",
+    ":2",
+    ":3"
+  ],
+  "qgen_directives_present": [
+    ":x",
+    ":o",
+    ":n -1"
+  ],
+  "substitutions": [
+    {
+      "placeholder": ":1",
+      "value": "REG AIR",
+      "source_meaning": "first ship mode"
+    },
+    {
+      "placeholder": ":2",
+      "value": "RAIL",
+      "source_meaning": "second ship mode"
+    },
+    {
+      "placeholder": ":3",
+      "value": "1993-01-01",
+      "source_meaning": "receipt date lower bound"
+    },
+    {
+      "placeholder": ":n -1",
+      "value": "no row limit",
+      "source_meaning": "TPC-H output row limit directive"
+    }
+  ],
+  "case_source_file": "cases/PERF/PERF_0010/source.sql",
+  "copied_to_case_source": true,
+  "non_claims": [
+    "no qgen-generated SQL artifact was produced",
+    "no rewrite equivalence claim",
+    "no DDL or data profile claim",
+    "no execution validation",
+    "no plan evidence",
+    "no registry writeback",
+    "no admission or promotion claim"
+  ]
+}

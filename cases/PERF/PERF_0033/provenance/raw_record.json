@@ -1,0 +1,28 @@
+{
+  "case_id": "PERF_0033",
+  "source_id": "SRC_002",
+  "source_name": "TPC-DS",
+  "source_family": "benchmark",
+  "source_registry_path": "inventory/source_registry.csv",
+  "source_storage_path": "datasets/raw/tpcds/",
+  "source_tool_version": "DSGen-software-code-4.0.0",
+  "template_name": "query55.tpl",
+  "template_path": "datasets/raw/tpcds/DSGen-software-code-4.0.0/query_templates/query55.tpl",
+  "seed_id": "TPCDS_QUERY55_DSQGEN_COUNT1_SCALE1_ANSI_V0",
+  "materialized_source_path": "cases/PERF/PERF_0033/provenance/query55_instance_raw.sql",
+  "normalized_source_path": "cases/PERF/PERF_0033/source.sql",
+  "materialization_method": "Repaired repo-local dsqgen with COUNT=1, QUALIFY=Y, SCALE=1, DIALECT=ansi; source.sql applies only PostgreSQL witness-execution syntax normalization.",
+  "substitutions": {
+    "YEAR": 2001,
+    "MONTH": 12,
+    "MANAGER": 36,
+    "_LIMIT": 100
+  },
+  "validation_evidence": {
+    "postgres_result_check": "cases/PERF/PERF_0033/runs/pg/result_check.json"
+  },
+  "notes": [
+    "The exact dsqgen output is preserved in provenance/query55_instance_raw.sql.",
+    "No MySQL, Spark, plan, admission, promotion, common-core, or registry facts are claimed."
+  ]
+}

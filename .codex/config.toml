@@ -1,8 +1,13 @@
 model = "gpt-5.4"
 
-[env_policy]
-inherit = false
-allow = [
+[shell_environment_policy]
+inherit = "core"
+include_only = [
+  "PATH",
+  "HOME",
+  "USER",
+  "SHELL",
+  "TERM",
   "PGHOST",
   "PGPORT",
   "PGDATABASE",
