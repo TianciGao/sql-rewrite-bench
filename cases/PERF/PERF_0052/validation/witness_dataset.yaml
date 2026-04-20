@@ -1,0 +1,16 @@
+case_id: PERF_0052
+dataset_id: perf_0052_pg_minimal_witness_v0
+engine: postgres
+ddl: schema/ddl_pg.sql
+data: validation/pg_witness_data.sql
+required_tables:
+  - store_returns
+  - date_dim
+  - store
+  - customer
+row_counts:
+  store_returns: 2
+  date_dim: 1
+  store: 1
+  customer: 2
+purpose: Expose source/positive equality and source/negative divergence on PostgreSQL.
