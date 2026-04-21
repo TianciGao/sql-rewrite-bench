@@ -106,6 +106,7 @@
 - `benchmark_spec/common_core_extended_rules_v0.md`
 - `benchmark_spec/CASE_ARCHETYPE_COMPLETION_RULES_v0.md`
 - `benchmark_spec/CASE_ADMISSION_RULES_v0.md`
+- `benchmark_spec/TAXONOMY_TAGGING_RULES_v0.md`
 - `docs/POOL_MAPPING_RULES.md`
 
 ### 4.2 规则文件的职责
@@ -165,7 +166,31 @@
 
 说明：
 - taxonomy 的正式定义以 yaml 为准
+- 当前正式采用的 taxonomy 主定义为：
+  - `taxonomy/sql_feature_taxonomy_v0.3.yaml`
+  - `taxonomy/plan_operator_taxonomy_v0.3.yaml`
+  - `taxonomy/workload_realism_taxonomy_v0.3.yaml`
+  - `taxonomy/portability_taxonomy_v0.3.yaml`
+  - `taxonomy/rewrite_opportunity_taxonomy_v0.3.yaml`
+- 若仓库中仍保留 `coverage_taxonomy_v0.1.yaml`，它不再作为并列主定义；最多只作为历史聚合视图 / crosswalk / 兼容参考
 - md 文件可以解释 taxonomy，但不应替代 yaml 作为主定义
+
+### 5.4 Taxonomy tagging rules
+- `benchmark_spec/TAXONOMY_TAGGING_RULES_v0.md`
+
+角色：
+- case-level taxonomy annotation contract
+- 定义 taxonomy 如何用于 case 审核与回填
+
+说明：
+- 它不定义标签词表本体；标签词表仍以 `taxonomy/*.yaml` 为准
+- 它回答：
+  - 哪些标签必打 / 条件打 / 暂不打
+  - primary / secondary 的使用规则
+  - 标签数量控制
+  - 证据来源
+  - source-level 与 case-level 的继承规则
+  - 人工审核与 ChatGPT / Codex 辅助边界
 
 ---
 
@@ -411,12 +436,22 @@
 - `benchmark_spec/common_core_extended_rules_v0.md`
 - `benchmark_spec/CASE_ARCHETYPE_COMPLETION_RULES_v0.md`
 - `benchmark_spec/CASE_ADMISSION_RULES_v0.md`
+- `benchmark_spec/TAXONOMY_TAGGING_RULES_v0.md`
 - `docs/POOL_MAPPING_RULES.md`
 
 若任务涉及对象清单，再额外读取相应 registry：
 
 - `inventory/source_registry.csv`
 - `inventory/case_registry.csv`
+
+若任务涉及 taxonomy 定义或 case-level 标签审核，再额外读取：
+
+- `taxonomy/sql_feature_taxonomy_v0.3.yaml`
+- `taxonomy/plan_operator_taxonomy_v0.3.yaml`
+- `taxonomy/workload_realism_taxonomy_v0.3.yaml`
+- `taxonomy/portability_taxonomy_v0.3.yaml`
+- `taxonomy/rewrite_opportunity_taxonomy_v0.3.yaml`
+- `benchmark_spec/TAXONOMY_TAGGING_RULES_v0.md`
 
 ---
 
@@ -435,6 +470,7 @@
 - `benchmark_spec/common_core_extended_rules_v0.md`
 - `benchmark_spec/CASE_ARCHETYPE_COMPLETION_RULES_v0.md`
 - `benchmark_spec/CASE_ADMISSION_RULES_v0.md`
+- `benchmark_spec/TAXONOMY_TAGGING_RULES_v0.md`
 - `docs/POOL_MAPPING_RULES.md`
 
 ### registry
@@ -524,6 +560,33 @@
 - 记录 case 实时状态
 - 替代规则文件或 registry
 
+### 16.4A `taxonomy/*.yaml`
+角色：taxonomy 定义层  
+职责：
+
+- 定义允许使用的标签
+- 定义标签含义、边界、例子、适用对象与辅助字段
+- 作为 taxonomy 的机器可读 source of truth
+
+约束：
+
+- 当前正式主定义以 v0.3 五张 taxonomy 表为准
+- 旧版聚合 taxonomy 文件若保留，只作为历史 crosswalk / 兼容参考
+
+### 16.4B `benchmark_spec/TAXONOMY_TAGGING_RULES_v0.md`
+角色：taxonomy 应用规则层  
+职责：
+
+- 定义 taxonomy 如何用于 case-level 审核与回填
+- 定义必打 / 条件打 / 暂不打
+- 定义 primary / secondary、数量控制、证据来源与继承规则
+
+约束：
+
+- 它不替代 taxonomy yaml 词表本体
+- 它也不替代 `inventory/case_registry.csv` 的 live facts 职责
+
+
 ### 16.5 更新顺序规则
 
 #### A. 当 case 状态发生变化时
@@ -547,13 +610,15 @@
 - completion rules 变化
 - admission rules 变化
 - common-core / extended 规则变化
+- taxonomy tagging contract 变化
 
 更新顺序必须是：
 
 1. 先更新对应 `benchmark_spec/*rules*.md`
-2. 再更新 `benchmark_spec/decision_log.md`
-3. 如有必要，在 `docs/EXECUTION_STATUS.md` 用一句话回写“当前规则已调整”
-4. 不直接改 `PROJECT_PLAN.md`，除非长期方向也变了
+2. 若同时涉及 taxonomy 词表定义，再更新 `taxonomy/*.yaml`
+3. 再更新 `benchmark_spec/decision_log.md`
+4. 如有必要，在 `docs/EXECUTION_STATUS.md` 用一句话回写“当前规则已调整”
+5. 不直接改 `PROJECT_PLAN.md`，除非长期方向也变了
 
 #### C. 当长期方向或范围发生变化时
 例如：

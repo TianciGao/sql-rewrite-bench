@@ -1,0 +1,10 @@
+# Provenance notes for PERF_0070
+
+- Frozen mapping: PERF_0070 -> query_templates/query24.tpl.
+- Raw SQL was produced by the repo-local TPC-DS dsqgen tool using COUNT=1, QUALIFY=Y, SCALE=1, DIALECT=ansi.
+- The exact raw dsqgen SQL is preserved at `provenance/query24_instance_raw.sql`.
+- `source.sql` is derived from that output with only PostgreSQL execution normalization needed for witness validation.
+- Positive and negative rewrites are case-local witness rewrites for PostgreSQL result comparison only.
+- PostgreSQL plan collection, MySQL, Spark, registry writeback, admission, promotion, common-core, and extended judgments are not part of this step.
+
+- query24 materialization records MARKET=7, AMOUNTONE=ss_sales_price, COLOR_1=orchid, and COLOR_2=chiffon. The dsqgen output does not provide a LIMIT parameter, and no placeholder LIMIT is recorded.

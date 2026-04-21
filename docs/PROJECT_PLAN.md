@@ -282,6 +282,22 @@ taxonomy 是 benchmark 的第一性约束。
 - **4 层 coverage taxonomy**
 - **1 个 rewrite-opportunity 横切层**
 
+### 7.7 当前正式 taxonomy 定义与标签应用分层
+当前正式的 taxonomy 机器可读主定义应收敛为以下五张表：
+
+- `taxonomy/sql_feature_taxonomy_v0.3.yaml`
+- `taxonomy/plan_operator_taxonomy_v0.3.yaml`
+- `taxonomy/workload_realism_taxonomy_v0.3.yaml`
+- `taxonomy/portability_taxonomy_v0.3.yaml`
+- `taxonomy/rewrite_opportunity_taxonomy_v0.3.yaml`
+
+若仓库中仍保留旧版聚合表（如 `taxonomy/coverage_taxonomy_v0.1.yaml`），它最多只作为历史 crosswalk / 聚合视图，不再作为并列主定义。
+
+同时，taxonomy 的**定义层**与**应用层**必须分离：
+
+- `taxonomy/*.yaml` 负责定义允许使用哪些标签以及这些标签是什么意思
+- `benchmark_spec/TAXONOMY_TAGGING_RULES_v0.md` 负责定义这些标签如何用于 case-level 审核、哪些必打 / 条件打、如何处理 primary / secondary、证据来源与继承规则
+
 ---
 
 ## 8. Case Package 定义
@@ -318,7 +334,17 @@ pilot 阶段每个 case 至少应包含：
 - 失败复验
 - provenance 追踪
 
+### 8.4 标签落点原则
+taxonomy 的正式词表定义以 `taxonomy/*.yaml` 为准，但 case 的**具体标签结果**不应写入 registry 主表，而应落在 case-local 文件中（建议为 `manifest.yaml` 的 tag block 或等价结构）。
+
+因此：
+
+- `taxonomy/*.yaml` 回答：允许有哪些标签
+- case-local tag block 回答：这个 case 实际被打了哪些标签
+- `inventory/case_registry.csv` 仍只维护 live facts，不承载完整 taxonomy 标签列表
+
 ---
+
 
 ## 9. 数据来源与四池策略
 
@@ -443,6 +469,11 @@ case 的**实时实现状态**也不在本文件中逐条维护。
 - 当前成熟度状态
 - promotion / admission 轨迹
 
+其中：
+- taxonomy 词表定义以 `taxonomy/*.yaml` 为准
+- case-level 标签应用规则以 `benchmark_spec/TAXONOMY_TAGGING_RULES_v0.md` 为准
+- case-level 实际标签结果应写入 case-local 文件，而不是直接堆入 registry
+
 ---
 
 ## 10. `common-core / extended` 两条统计线
@@ -539,6 +570,7 @@ case 的**实时实现状态**也不在本文件中逐条维护。
 - `benchmark_spec/case_archetype_completion_rules_v0.md`
 - `benchmark_spec/case_admission_rules_v0.md`
 - `benchmark_spec/common_core_extended_rules_v0.md`
+- `benchmark_spec/TAXONOMY_TAGGING_RULES_v0.md`
 - 其他与 promotion / review / release 相关的规则文件
 
 ### 11.1 本文件负责回答
@@ -560,6 +592,9 @@ case 的**实时实现状态**也不在本文件中逐条维护。
 - 哪些 case 可以从 staged 升级
 - review 时应检查哪些 artifacts
 - 哪些条件下 case 只能留在 extended 或 staging
+- taxonomy 标签如何用于 case-level 审核与回填
+- 哪些标签必打 / 条件打 / 暂不打
+- primary / secondary、证据来源与继承规则如何执行
 
 review-history 文件负责回答：
 
@@ -1015,6 +1050,7 @@ M2 的建议目标为：
 - promotion / admission 的实时状态变化 → `inventory/case_registry.csv` 与对应 rules / decision log
 - 每周任务推进记录 → 独立状态文件或归档文件
 - 单 case 的 completion / admission 细则 → `benchmark_spec/*rules*.md`
+- taxonomy 定义与 tagging contract → `taxonomy/*.yaml` + `benchmark_spec/TAXONOMY_TAGGING_RULES_v0.md`
 - 文件入口、更新顺序与归档规则 → `docs/DOC_MAP.md`
 
 若本文件中的框架性描述与其他层冲突：

@@ -53,6 +53,32 @@ artifacts:
   pg_positive_result: runs/pg/rewrite_pos_01.tsv
   pg_negative_result: runs/pg/rewrite_neg_01.tsv
   pg_result_check: runs/pg/result_check.json
+tags:
+  sql_feature:
+    primary:
+      - string_function
+    secondary: []
+  rewrite_opportunity:
+    primary:
+      - predicate_pushdown
+    secondary:
+      - function_normalization
+  plan_operator:
+    present:
+      - scan
+      - join
+      - aggregate
+      - sort
+      - limit
+    delta_relevant: []
+  workload_realism:
+    source_inherited:
+      - classic_analytical_baseline
+    case_specific: []
+  portability:
+    confirmed: []
+    suspected:
+      - string_function_gap
 notes:
   - Materialized from human-frozen TPC-DS standard query_templates source with repaired repo-local dsqgen.
   - source.sql is PostgreSQL-normalized from the exact generated SQL preserved in provenance.
