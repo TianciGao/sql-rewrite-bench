@@ -17,7 +17,7 @@ provenance:
   raw_record_file: provenance/raw_record.json
   provenance_notes: provenance/provenance_notes.txt
 source:
-  dialect: common_sql_frozen_candidate_unvalidated
+  dialect: tpc_h_manual_frozen_sql_instance
   file: source.sql
   materialization_status: manual_frozen_source_instance
 variants:
@@ -30,16 +30,17 @@ targets:
     - postgres
     - mysql
     - spark
-required_tables: []
+required_tables:
+  - lineitem
 features: []
 status:
-  parse_checked: false
-  exec_checked_pg: false
+  parse_checked: true
+  exec_checked_pg: true
   exec_checked_mysql: false
   exec_checked_spark: false
-  plan_checked: false
-  schema_ready: false
-  validation_ready: false
+  plan_checked: true
+  schema_ready: true
+  validation_ready: true
   release_grade: false
 schema:
   pg_ddl: schema/ddl_pg.sql
@@ -52,7 +53,19 @@ metadata:
 validation:
   checker: validation/checker.yaml
   witness_dataset: validation/witness_dataset.yaml
+  pg_witness_data: validation/pg_witness_data.sql
+  pg_result_check: runs/pg/result_check.json
+plans:
+  pg:
+    collector: validation/run_pg_plan_collection.sh
+    source: runs/pg/plans/source.json
+    positive_rewrite: runs/pg/plans/rewrite_pos_01.json
+    negative_rewrite: runs/pg/plans/rewrite_neg_01.json
+    summary: runs/pg/plans/plan_check.json
 notes:
   - Source/provenance layer populated from TPC-H Query 1 and manually frozen with :1 = 96 days.
   - Local qgen executable was not available; freeze uses checked TPC-H SF1 reference substitution file.
-  - TODO: Human must fill rewrites, data, validation, artifacts, and review status.
+  - PostgreSQL-only witness validation passed for source, positive rewrite, and negative rewrite.
+  - Minimal DDL/data_profile/checker layer is populated for referenced tables and columns only.
+  - PostgreSQL-only EXPLAIN FORMAT JSON plan artifacts are collected for source, positive rewrite, and negative rewrite.
+  - No MySQL/Spark validation, registry writeback, admission claim, or promotion claim is made.
