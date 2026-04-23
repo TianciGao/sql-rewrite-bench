@@ -214,3 +214,29 @@ The previously identified Spark-side consistency gap for the VeriEQL-derived sta
 - Both cases remain staged / not_yet_admitted
 - Immediate next work should shift from engine-closure repair to small pilot evaluation and selective next-step planning
 - DSB remains unresolved and should not be silently frozen without an explicit human decision
+
+---
+
+## DL-018
+### Decision
+The case-registry blocker label `missing_formal_review_only` is approved for use in `inventory/case_registry.csv` rows when all of the following are true:
+- PostgreSQL witness validation and PostgreSQL plan artifacts exist
+- MySQL witness validation and MySQL plan artifacts exist
+- Spark witness validation and Spark plan artifacts exist
+- formal review has not yet been performed
+
+### Rationale
+Some staged cases may have complete tri-engine execution and plan evidence while still lacking a formal review. In that situation, older blocker wording such as `missing_spark_closure_or_formal_review` is semantically stale because it still mentions missing Spark closure.
+
+### Consequence
+`missing_formal_review_only` may replace stale blocker wording such as `missing_spark_closure_or_formal_review` only when Spark closure is already evidenced.
+
+This label is neutral. By itself it does not imply:
+- admitted
+- promoted
+- common-core
+- extended
+- under review
+- any reporting-line movement
+
+No new tri-engine staged performance `current_role` vocabulary is frozen by this decision. Existing `current_role` labels remain unchanged until a later separate governance decision explicitly freezes such vocabulary.
