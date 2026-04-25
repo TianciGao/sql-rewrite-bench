@@ -1,0 +1,88 @@
+== Physical Plan ==
+AdaptiveSparkPlan (14)
++- Sort (13)
+   +- Exchange (12)
+      +- HashAggregate (11)
+         +- Exchange (10)
+            +- HashAggregate (9)
+               +- Project (8)
+                  +- BroadcastHashJoin Inner BuildLeft (7)
+                     :- BroadcastExchange (3)
+                     :  +- Filter (2)
+                     :     +- Scan parquet spark_catalog.default.orders (1)
+                     +- Project (6)
+                        +- Filter (5)
+                           +- Scan parquet spark_catalog.default.lineitem (4)
+
+
+(1) Scan parquet spark_catalog.default.orders
+Output [2]: [o_orderkey#37, o_orderpriority#38]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/perf_0028_spark_plan_e1ou0la3/orders]
+PushedFilters: [IsNotNull(o_orderkey)]
+ReadSchema: struct<o_orderkey:int,o_orderpriority:string>
+
+(2) Filter
+Input [2]: [o_orderkey#37, o_orderpriority#38]
+Condition : isnotnull(o_orderkey#37)
+
+(3) BroadcastExchange
+Input [2]: [o_orderkey#37, o_orderpriority#38]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, false] as bigint)),false), [plan_id=170]
+
+(4) Scan parquet spark_catalog.default.lineitem
+Output [5]: [l_orderkey#39, l_shipmode#40, l_commitdate#41, l_receiptdate#42, l_shipdate#43]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/perf_0028_spark_plan_e1ou0la3/lineitem]
+PushedFilters: [IsNotNull(l_commitdate), IsNotNull(l_receiptdate), IsNotNull(l_shipdate), In(l_shipmode, [RAIL,REG AIR]), GreaterThanOrEqual(l_receiptdate,1993-01-01), LessThan(l_receiptdate,1994-01-01), IsNotNull(l_orderkey)]
+ReadSchema: struct<l_orderkey:int,l_shipmode:string,l_commitdate:date,l_receiptdate:date,l_shipdate:date>
+
+(5) Filter
+Input [5]: [l_orderkey#39, l_shipmode#40, l_commitdate#41, l_receiptdate#42, l_shipdate#43]
+Condition : ((((((((isnotnull(l_commitdate#41) AND isnotnull(l_receiptdate#42)) AND isnotnull(l_shipdate#43)) AND l_shipmode#40 IN (REG AIR,RAIL)) AND (l_commitdate#41 < l_receiptdate#42)) AND (l_shipdate#43 < l_commitdate#41)) AND (l_receiptdate#42 >= 1993-01-01)) AND (l_receiptdate#42 < 1994-01-01)) AND isnotnull(l_orderkey#39))
+
+(6) Project
+Output [2]: [l_orderkey#39, l_shipmode#40]
+Input [5]: [l_orderkey#39, l_shipmode#40, l_commitdate#41, l_receiptdate#42, l_shipdate#43]
+
+(7) BroadcastHashJoin
+Left keys [1]: [o_orderkey#37]
+Right keys [1]: [l_orderkey#39]
+Join type: Inner
+Join condition: None
+
+(8) Project
+Output [2]: [o_orderpriority#38, l_shipmode#40]
+Input [4]: [o_orderkey#37, o_orderpriority#38, l_orderkey#39, l_shipmode#40]
+
+(9) HashAggregate
+Input [2]: [o_orderpriority#38, l_shipmode#40]
+Keys [1]: [l_shipmode#40]
+Functions [2]: [partial_sum(CASE WHEN (o_orderpriority#38 = 1-URGENT) THEN 1 ELSE 0 END), partial_sum(CASE WHEN NOT (o_orderpriority#38 = 1-URGENT) THEN 1 ELSE 0 END)]
+Aggregate Attributes [2]: [sum#64L, sum#65L]
+Results [3]: [l_shipmode#40, sum#66L, sum#67L]
+
+(10) Exchange
+Input [3]: [l_shipmode#40, sum#66L, sum#67L]
+Arguments: hashpartitioning(l_shipmode#40, 1), ENSURE_REQUIREMENTS, [plan_id=175]
+
+(11) HashAggregate
+Input [3]: [l_shipmode#40, sum#66L, sum#67L]
+Keys [1]: [l_shipmode#40]
+Functions [2]: [sum(CASE WHEN (o_orderpriority#38 = 1-URGENT) THEN 1 ELSE 0 END), sum(CASE WHEN NOT (o_orderpriority#38 = 1-URGENT) THEN 1 ELSE 0 END)]
+Aggregate Attributes [2]: [sum(CASE WHEN (o_orderpriority#38 = 1-URGENT) THEN 1 ELSE 0 END)#62L, sum(CASE WHEN NOT (o_orderpriority#38 = 1-URGENT) THEN 1 ELSE 0 END)#63L]
+Results [3]: [l_shipmode#40, sum(CASE WHEN (o_orderpriority#38 = 1-URGENT) THEN 1 ELSE 0 END)#62L AS high_line_count#60L, sum(CASE WHEN NOT (o_orderpriority#38 = 1-URGENT) THEN 1 ELSE 0 END)#63L AS low_line_count#61L]
+
+(12) Exchange
+Input [3]: [l_shipmode#40, high_line_count#60L, low_line_count#61L]
+Arguments: rangepartitioning(l_shipmode#40 ASC NULLS FIRST, 1), ENSURE_REQUIREMENTS, [plan_id=178]
+
+(13) Sort
+Input [3]: [l_shipmode#40, high_line_count#60L, low_line_count#61L]
+Arguments: [l_shipmode#40 ASC NULLS FIRST], true, 0
+
+(14) AdaptiveSparkPlan
+Output [3]: [l_shipmode#40, high_line_count#60L, low_line_count#61L]
+Arguments: isFinalPlan=false
+
+

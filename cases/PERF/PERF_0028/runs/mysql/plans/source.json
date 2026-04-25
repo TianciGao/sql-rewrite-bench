@@ -1,0 +1,73 @@
+{
+  "query_block": {
+    "select_id": 1,
+    "cost_info": {
+      "query_cost": "1.90"
+    },
+    "ordering_operation": {
+      "using_filesort": false,
+      "grouping_operation": {
+        "using_temporary_table": true,
+        "using_filesort": true,
+        "cost_info": {
+          "sort_cost": "1.00"
+        },
+        "nested_loop": [
+          {
+            "table": {
+              "table_name": "lineitem",
+              "access_type": "ALL",
+              "rows_examined_per_scan": 3,
+              "rows_produced_per_join": 1,
+              "filtered": "33.33",
+              "cost_info": {
+                "read_cost": "0.45",
+                "eval_cost": "0.10",
+                "prefix_cost": "0.55",
+                "data_read_per_join": "96"
+              },
+              "used_columns": [
+                "l_orderkey",
+                "l_shipmode",
+                "l_commitdate",
+                "l_receiptdate",
+                "l_shipdate"
+              ],
+              "attached_condition": "(((`bench`.`lineitem`.`l_shipmode` in ('REG AIR','RAIL')) and (`bench`.`lineitem`.`l_commitdate` < `bench`.`lineitem`.`l_receiptdate`) and (`bench`.`lineitem`.`l_shipdate` < `bench`.`lineitem`.`l_commitdate`) and (`bench`.`lineitem`.`l_receiptdate` >= DATE'1993-01-01') and (`bench`.`lineitem`.`l_receiptdate` < <cache>((DATE'1993-01-01' + interval '1' year)))) and (`bench`.`lineitem`.`l_orderkey` is not null))"
+            }
+          },
+          {
+            "table": {
+              "table_name": "orders",
+              "access_type": "eq_ref",
+              "possible_keys": [
+                "PRIMARY"
+              ],
+              "key": "PRIMARY",
+              "used_key_parts": [
+                "o_orderkey"
+              ],
+              "key_length": "4",
+              "ref": [
+                "bench.lineitem.l_orderkey"
+              ],
+              "rows_examined_per_scan": 1,
+              "rows_produced_per_join": 1,
+              "filtered": "100.00",
+              "cost_info": {
+                "read_cost": "0.25",
+                "eval_cost": "0.10",
+                "prefix_cost": "0.90",
+                "data_read_per_join": "88"
+              },
+              "used_columns": [
+                "o_orderkey",
+                "o_orderpriority"
+              ]
+            }
+          }
+        ]
+      }
+    }
+  }
+}

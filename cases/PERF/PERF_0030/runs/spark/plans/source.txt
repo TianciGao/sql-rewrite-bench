@@ -1,0 +1,78 @@
+== Physical Plan ==
+AdaptiveSparkPlan (12)
++- HashAggregate (11)
+   +- Exchange (10)
+      +- HashAggregate (9)
+         +- Project (8)
+            +- BroadcastHashJoin Inner BuildRight (7)
+               :- Project (3)
+               :  +- Filter (2)
+               :     +- Scan parquet spark_catalog.default.lineitem (1)
+               +- BroadcastExchange (6)
+                  +- Filter (5)
+                     +- Scan parquet spark_catalog.default.part (4)
+
+
+(1) Scan parquet spark_catalog.default.lineitem
+Output [4]: [l_partkey#31, l_extendedprice#32, l_discount#33, l_shipdate#34]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/perf_0030_spark_plan_spheq5as/lineitem]
+PushedFilters: [IsNotNull(l_shipdate), GreaterThanOrEqual(l_shipdate,1997-03-01), LessThan(l_shipdate,1997-04-01), IsNotNull(l_partkey)]
+ReadSchema: struct<l_partkey:int,l_extendedprice:decimal(12,2),l_discount:decimal(12,2),l_shipdate:date>
+
+(2) Filter
+Input [4]: [l_partkey#31, l_extendedprice#32, l_discount#33, l_shipdate#34]
+Condition : (((isnotnull(l_shipdate#34) AND (l_shipdate#34 >= 1997-03-01)) AND (l_shipdate#34 < 1997-04-01)) AND isnotnull(l_partkey#31))
+
+(3) Project
+Output [3]: [l_partkey#31, l_extendedprice#32, l_discount#33]
+Input [4]: [l_partkey#31, l_extendedprice#32, l_discount#33, l_shipdate#34]
+
+(4) Scan parquet spark_catalog.default.part
+Output [2]: [p_partkey#35, p_type#36]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/perf_0030_spark_plan_spheq5as/part]
+PushedFilters: [IsNotNull(p_partkey)]
+ReadSchema: struct<p_partkey:int,p_type:string>
+
+(5) Filter
+Input [2]: [p_partkey#35, p_type#36]
+Condition : isnotnull(p_partkey#35)
+
+(6) BroadcastExchange
+Input [2]: [p_partkey#35, p_type#36]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, false] as bigint)),false), [plan_id=65]
+
+(7) BroadcastHashJoin
+Left keys [1]: [l_partkey#31]
+Right keys [1]: [p_partkey#35]
+Join type: Inner
+Join condition: None
+
+(8) Project
+Output [3]: [l_extendedprice#32, l_discount#33, p_type#36]
+Input [5]: [l_partkey#31, l_extendedprice#32, l_discount#33, p_partkey#35, p_type#36]
+
+(9) HashAggregate
+Input [3]: [l_extendedprice#32, l_discount#33, p_type#36]
+Keys: []
+Functions [2]: [partial_sum(CASE WHEN (substring(p_type#36, 1, 5) = PROMO) THEN (l_extendedprice#32 * (1 - l_discount#33)) ELSE 0.0000 END), partial_sum((l_extendedprice#32 * (1 - l_discount#33)))]
+Aggregate Attributes [4]: [sum#41, isEmpty#42, sum#43, isEmpty#44]
+Results [4]: [sum#45, isEmpty#46, sum#47, isEmpty#48]
+
+(10) Exchange
+Input [4]: [sum#45, isEmpty#46, sum#47, isEmpty#48]
+Arguments: SinglePartition, ENSURE_REQUIREMENTS, [plan_id=70]
+
+(11) HashAggregate
+Input [4]: [sum#45, isEmpty#46, sum#47, isEmpty#48]
+Keys: []
+Functions [2]: [sum(CASE WHEN (substring(p_type#36, 1, 5) = PROMO) THEN (l_extendedprice#32 * (1 - l_discount#33)) ELSE 0.0000 END), sum((l_extendedprice#32 * (1 - l_discount#33)))]
+Aggregate Attributes [2]: [sum(CASE WHEN (substring(p_type#36, 1, 5) = PROMO) THEN (l_extendedprice#32 * (1 - l_discount#33)) ELSE 0.0000 END)#39, sum((l_extendedprice#32 * (1 - l_discount#33)))#40]
+Results [1]: [((100.00 * sum(CASE WHEN (substring(p_type#36, 1, 5) = PROMO) THEN (l_extendedprice#32 * (1 - l_discount#33)) ELSE 0.0000 END)#39) / sum((l_extendedprice#32 * (1 - l_discount#33)))#40) AS promo_revenue#30]
+
+(12) AdaptiveSparkPlan
+Output [1]: [promo_revenue#30]
+Arguments: isFinalPlan=false
+
+
