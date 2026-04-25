@@ -1,0 +1,289 @@
+== Physical Plan ==
+AdaptiveSparkPlan (48)
++- TakeOrderedAndProject (47)
+   +- HashAggregate (46)
+      +- Exchange (45)
+         +- HashAggregate (44)
+            +- Project (43)
+               +- BroadcastHashJoin Inner BuildRight (42)
+                  :- Project (38)
+                  :  +- BroadcastHashJoin Inner BuildRight (37)
+                  :     :- Project (32)
+                  :     :  +- BroadcastHashJoin LeftSemi BuildRight (31)
+                  :     :     :- BroadcastHashJoin LeftSemi BuildRight (12)
+                  :     :     :  :- Filter (2)
+                  :     :     :  :  +- Scan parquet spark_catalog.default.customer (1)
+                  :     :     :  +- BroadcastExchange (11)
+                  :     :     :     +- Project (10)
+                  :     :     :        +- BroadcastHashJoin Inner BuildRight (9)
+                  :     :     :           :- Filter (4)
+                  :     :     :           :  +- Scan parquet spark_catalog.default.store_sales (3)
+                  :     :     :           +- BroadcastExchange (8)
+                  :     :     :              +- Project (7)
+                  :     :     :                 +- Filter (6)
+                  :     :     :                    +- Scan parquet spark_catalog.default.date_dim (5)
+                  :     :     +- BroadcastExchange (30)
+                  :     :        +- Union (29)
+                  :     :           :- Project (20)
+                  :     :           :  +- BroadcastHashJoin Inner BuildRight (19)
+                  :     :           :     :- Filter (14)
+                  :     :           :     :  +- Scan parquet spark_catalog.default.web_sales (13)
+                  :     :           :     +- BroadcastExchange (18)
+                  :     :           :        +- Project (17)
+                  :     :           :           +- Filter (16)
+                  :     :           :              +- Scan parquet spark_catalog.default.date_dim (15)
+                  :     :           +- Project (28)
+                  :     :              +- BroadcastHashJoin Inner BuildLeft (27)
+                  :     :                 :- BroadcastExchange (23)
+                  :     :                 :  +- Filter (22)
+                  :     :                 :     +- Scan parquet spark_catalog.default.catalog_sales (21)
+                  :     :                 +- Project (26)
+                  :     :                    +- Filter (25)
+                  :     :                       +- Scan parquet spark_catalog.default.date_dim (24)
+                  :     +- BroadcastExchange (36)
+                  :        +- Project (35)
+                  :           +- Filter (34)
+                  :              +- Scan parquet spark_catalog.default.customer_address (33)
+                  +- BroadcastExchange (41)
+                     +- Filter (40)
+                        +- Scan parquet spark_catalog.default.customer_demographics (39)
+
+
+(1) Scan parquet spark_catalog.default.customer
+Output [3]: [c_customer_sk#123, c_current_addr_sk#124, c_current_cdemo_sk#125]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/perf_0038_spark_plan_clx_052c/customer]
+PushedFilters: [IsNotNull(c_current_addr_sk), IsNotNull(c_current_cdemo_sk)]
+ReadSchema: struct<c_customer_sk:int,c_current_addr_sk:int,c_current_cdemo_sk:int>
+
+(2) Filter
+Input [3]: [c_customer_sk#123, c_current_addr_sk#124, c_current_cdemo_sk#125]
+Condition : (isnotnull(c_current_addr_sk#124) AND isnotnull(c_current_cdemo_sk#125))
+
+(3) Scan parquet spark_catalog.default.store_sales
+Output [2]: [ss_customer_sk#137, ss_sold_date_sk#138]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/perf_0038_spark_plan_clx_052c/store_sales]
+PushedFilters: [IsNotNull(ss_sold_date_sk)]
+ReadSchema: struct<ss_customer_sk:int,ss_sold_date_sk:int>
+
+(4) Filter
+Input [2]: [ss_customer_sk#137, ss_sold_date_sk#138]
+Condition : isnotnull(ss_sold_date_sk#138)
+
+(5) Scan parquet spark_catalog.default.date_dim
+Output [3]: [d_date_sk#139, d_year#140, d_moy#141]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/perf_0038_spark_plan_clx_052c/date_dim]
+PushedFilters: [IsNotNull(d_year), IsNotNull(d_moy), EqualTo(d_year,2002), GreaterThanOrEqual(d_moy,4), LessThanOrEqual(d_moy,7), IsNotNull(d_date_sk)]
+ReadSchema: struct<d_date_sk:int,d_year:int,d_moy:int>
+
+(6) Filter
+Input [3]: [d_date_sk#139, d_year#140, d_moy#141]
+Condition : (((((isnotnull(d_year#140) AND isnotnull(d_moy#141)) AND (d_year#140 = 2002)) AND (d_moy#141 >= 4)) AND (d_moy#141 <= 7)) AND isnotnull(d_date_sk#139))
+
+(7) Project
+Output [1]: [d_date_sk#139]
+Input [3]: [d_date_sk#139, d_year#140, d_moy#141]
+
+(8) BroadcastExchange
+Input [1]: [d_date_sk#139]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, true] as bigint)),false), [plan_id=433]
+
+(9) BroadcastHashJoin
+Left keys [1]: [ss_sold_date_sk#138]
+Right keys [1]: [d_date_sk#139]
+Join type: Inner
+Join condition: None
+
+(10) Project
+Output [1]: [ss_customer_sk#137]
+Input [3]: [ss_customer_sk#137, ss_sold_date_sk#138, d_date_sk#139]
+
+(11) BroadcastExchange
+Input [1]: [ss_customer_sk#137]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, true] as bigint)),false), [plan_id=437]
+
+(12) BroadcastHashJoin
+Left keys [1]: [c_customer_sk#123]
+Right keys [1]: [ss_customer_sk#137]
+Join type: LeftSemi
+Join condition: None
+
+(13) Scan parquet spark_catalog.default.web_sales
+Output [2]: [ws_bill_customer_sk#144, ws_sold_date_sk#145]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/perf_0038_spark_plan_clx_052c/web_sales]
+PushedFilters: [IsNotNull(ws_sold_date_sk)]
+ReadSchema: struct<ws_bill_customer_sk:int,ws_sold_date_sk:int>
+
+(14) Filter
+Input [2]: [ws_bill_customer_sk#144, ws_sold_date_sk#145]
+Condition : isnotnull(ws_sold_date_sk#145)
+
+(15) Scan parquet spark_catalog.default.date_dim
+Output [3]: [d_date_sk#182, d_year#183, d_moy#184]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/perf_0038_spark_plan_clx_052c/date_dim]
+PushedFilters: [IsNotNull(d_year), IsNotNull(d_moy), EqualTo(d_year,2002), GreaterThanOrEqual(d_moy,4), LessThanOrEqual(d_moy,7), IsNotNull(d_date_sk)]
+ReadSchema: struct<d_date_sk:int,d_year:int,d_moy:int>
+
+(16) Filter
+Input [3]: [d_date_sk#182, d_year#183, d_moy#184]
+Condition : (((((isnotnull(d_year#183) AND isnotnull(d_moy#184)) AND (d_year#183 = 2002)) AND (d_moy#184 >= 4)) AND (d_moy#184 <= 7)) AND isnotnull(d_date_sk#182))
+
+(17) Project
+Output [1]: [d_date_sk#182]
+Input [3]: [d_date_sk#182, d_year#183, d_moy#184]
+
+(18) BroadcastExchange
+Input [1]: [d_date_sk#182]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, true] as bigint)),false), [plan_id=439]
+
+(19) BroadcastHashJoin
+Left keys [1]: [ws_sold_date_sk#145]
+Right keys [1]: [d_date_sk#182]
+Join type: Inner
+Join condition: None
+
+(20) Project
+Output [1]: [ws_bill_customer_sk#144 AS customer_sk#169]
+Input [3]: [ws_bill_customer_sk#144, ws_sold_date_sk#145, d_date_sk#182]
+
+(21) Scan parquet spark_catalog.default.catalog_sales
+Output [2]: [cs_ship_customer_sk#146, cs_sold_date_sk#147]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/perf_0038_spark_plan_clx_052c/catalog_sales]
+PushedFilters: [IsNotNull(cs_sold_date_sk)]
+ReadSchema: struct<cs_ship_customer_sk:int,cs_sold_date_sk:int>
+
+(22) Filter
+Input [2]: [cs_ship_customer_sk#146, cs_sold_date_sk#147]
+Condition : isnotnull(cs_sold_date_sk#147)
+
+(23) BroadcastExchange
+Input [2]: [cs_ship_customer_sk#146, cs_sold_date_sk#147]
+Arguments: HashedRelationBroadcastMode(List(cast(input[1, int, false] as bigint)),false), [plan_id=442]
+
+(24) Scan parquet spark_catalog.default.date_dim
+Output [3]: [d_date_sk#178, d_year#179, d_moy#180]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/perf_0038_spark_plan_clx_052c/date_dim]
+PushedFilters: [IsNotNull(d_year), IsNotNull(d_moy), EqualTo(d_year,2002), GreaterThanOrEqual(d_moy,4), LessThanOrEqual(d_moy,7), IsNotNull(d_date_sk)]
+ReadSchema: struct<d_date_sk:int,d_year:int,d_moy:int>
+
+(25) Filter
+Input [3]: [d_date_sk#178, d_year#179, d_moy#180]
+Condition : (((((isnotnull(d_year#179) AND isnotnull(d_moy#180)) AND (d_year#179 = 2002)) AND (d_moy#180 >= 4)) AND (d_moy#180 <= 7)) AND isnotnull(d_date_sk#178))
+
+(26) Project
+Output [1]: [d_date_sk#178]
+Input [3]: [d_date_sk#178, d_year#179, d_moy#180]
+
+(27) BroadcastHashJoin
+Left keys [1]: [cs_sold_date_sk#147]
+Right keys [1]: [d_date_sk#178]
+Join type: Inner
+Join condition: None
+
+(28) Project
+Output [1]: [cs_ship_customer_sk#146 AS customer_sk#170]
+Input [3]: [cs_ship_customer_sk#146, cs_sold_date_sk#147, d_date_sk#178]
+
+(29) Union
+
+(30) BroadcastExchange
+Input [1]: [customer_sk#169]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, true] as bigint)),false), [plan_id=447]
+
+(31) BroadcastHashJoin
+Left keys [1]: [c_customer_sk#123]
+Right keys [1]: [customer_sk#169]
+Join type: LeftSemi
+Join condition: None
+
+(32) Project
+Output [2]: [c_current_addr_sk#124, c_current_cdemo_sk#125]
+Input [3]: [c_customer_sk#123, c_current_addr_sk#124, c_current_cdemo_sk#125]
+
+(33) Scan parquet spark_catalog.default.customer_address
+Output [2]: [ca_address_sk#126, ca_county#127]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/perf_0038_spark_plan_clx_052c/customer_address]
+PushedFilters: [In(ca_county, [Dona Ana County,Douglas County,Gaines County,Richland County,Walker County]), IsNotNull(ca_address_sk)]
+ReadSchema: struct<ca_address_sk:int,ca_county:string>
+
+(34) Filter
+Input [2]: [ca_address_sk#126, ca_county#127]
+Condition : (ca_county#127 IN (Walker County,Richland County,Gaines County,Douglas County,Dona Ana County) AND isnotnull(ca_address_sk#126))
+
+(35) Project
+Output [1]: [ca_address_sk#126]
+Input [2]: [ca_address_sk#126, ca_county#127]
+
+(36) BroadcastExchange
+Input [1]: [ca_address_sk#126]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, true] as bigint)),false), [plan_id=451]
+
+(37) BroadcastHashJoin
+Left keys [1]: [c_current_addr_sk#124]
+Right keys [1]: [ca_address_sk#126]
+Join type: Inner
+Join condition: None
+
+(38) Project
+Output [1]: [c_current_cdemo_sk#125]
+Input [3]: [c_current_addr_sk#124, c_current_cdemo_sk#125, ca_address_sk#126]
+
+(39) Scan parquet spark_catalog.default.customer_demographics
+Output [9]: [cd_demo_sk#128, cd_gender#129, cd_marital_status#130, cd_education_status#131, cd_purchase_estimate#132, cd_credit_rating#133, cd_dep_count#134, cd_dep_employed_count#135, cd_dep_college_count#136]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/perf_0038_spark_plan_clx_052c/customer_demographics]
+PushedFilters: [IsNotNull(cd_demo_sk)]
+ReadSchema: struct<cd_demo_sk:int,cd_gender:string,cd_marital_status:string,cd_education_status:string,cd_purchase_estimate:int,cd_credit_rating:string,cd_dep_count:int,cd_dep_employed_count:int,cd_dep_college_count:int>
+
+(40) Filter
+Input [9]: [cd_demo_sk#128, cd_gender#129, cd_marital_status#130, cd_education_status#131, cd_purchase_estimate#132, cd_credit_rating#133, cd_dep_count#134, cd_dep_employed_count#135, cd_dep_college_count#136]
+Condition : isnotnull(cd_demo_sk#128)
+
+(41) BroadcastExchange
+Input [9]: [cd_demo_sk#128, cd_gender#129, cd_marital_status#130, cd_education_status#131, cd_purchase_estimate#132, cd_credit_rating#133, cd_dep_count#134, cd_dep_employed_count#135, cd_dep_college_count#136]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, false] as bigint)),false), [plan_id=455]
+
+(42) BroadcastHashJoin
+Left keys [1]: [c_current_cdemo_sk#125]
+Right keys [1]: [cd_demo_sk#128]
+Join type: Inner
+Join condition: None
+
+(43) Project
+Output [8]: [cd_gender#129, cd_marital_status#130, cd_education_status#131, cd_purchase_estimate#132, cd_credit_rating#133, cd_dep_count#134, cd_dep_employed_count#135, cd_dep_college_count#136]
+Input [10]: [c_current_cdemo_sk#125, cd_demo_sk#128, cd_gender#129, cd_marital_status#130, cd_education_status#131, cd_purchase_estimate#132, cd_credit_rating#133, cd_dep_count#134, cd_dep_employed_count#135, cd_dep_college_count#136]
+
+(44) HashAggregate
+Input [8]: [cd_gender#129, cd_marital_status#130, cd_education_status#131, cd_purchase_estimate#132, cd_credit_rating#133, cd_dep_count#134, cd_dep_employed_count#135, cd_dep_college_count#136]
+Keys [8]: [cd_gender#129, cd_marital_status#130, cd_education_status#131, cd_purchase_estimate#132, cd_credit_rating#133, cd_dep_count#134, cd_dep_employed_count#135, cd_dep_college_count#136]
+Functions [1]: [partial_count(1)]
+Aggregate Attributes [1]: [count#185L]
+Results [9]: [cd_gender#129, cd_marital_status#130, cd_education_status#131, cd_purchase_estimate#132, cd_credit_rating#133, cd_dep_count#134, cd_dep_employed_count#135, cd_dep_college_count#136, count#186L]
+
+(45) Exchange
+Input [9]: [cd_gender#129, cd_marital_status#130, cd_education_status#131, cd_purchase_estimate#132, cd_credit_rating#133, cd_dep_count#134, cd_dep_employed_count#135, cd_dep_college_count#136, count#186L]
+Arguments: hashpartitioning(cd_gender#129, cd_marital_status#130, cd_education_status#131, cd_purchase_estimate#132, cd_credit_rating#133, cd_dep_count#134, cd_dep_employed_count#135, cd_dep_college_count#136, 1), ENSURE_REQUIREMENTS, [plan_id=460]
+
+(46) HashAggregate
+Input [9]: [cd_gender#129, cd_marital_status#130, cd_education_status#131, cd_purchase_estimate#132, cd_credit_rating#133, cd_dep_count#134, cd_dep_employed_count#135, cd_dep_college_count#136, count#186L]
+Keys [8]: [cd_gender#129, cd_marital_status#130, cd_education_status#131, cd_purchase_estimate#132, cd_credit_rating#133, cd_dep_count#134, cd_dep_employed_count#135, cd_dep_college_count#136]
+Functions [1]: [count(1)]
+Aggregate Attributes [1]: [count(1)#172L]
+Results [14]: [cd_gender#129, cd_marital_status#130, cd_education_status#131, count(1)#172L AS cnt1#162L, cd_purchase_estimate#132, count(1)#172L AS cnt2#163L, cd_credit_rating#133, count(1)#172L AS cnt3#164L, cd_dep_count#134, count(1)#172L AS cnt4#165L, cd_dep_employed_count#135, count(1)#172L AS cnt5#166L, cd_dep_college_count#136, count(1)#172L AS cnt6#167L]
+
+(47) TakeOrderedAndProject
+Input [14]: [cd_gender#129, cd_marital_status#130, cd_education_status#131, cnt1#162L, cd_purchase_estimate#132, cnt2#163L, cd_credit_rating#133, cnt3#164L, cd_dep_count#134, cnt4#165L, cd_dep_employed_count#135, cnt5#166L, cd_dep_college_count#136, cnt6#167L]
+Arguments: 100, [cd_gender#129 ASC NULLS FIRST, cd_marital_status#130 ASC NULLS FIRST, cd_education_status#131 ASC NULLS FIRST, cd_purchase_estimate#132 ASC NULLS FIRST, cd_credit_rating#133 ASC NULLS FIRST, cd_dep_count#134 ASC NULLS FIRST, cd_dep_employed_count#135 ASC NULLS FIRST, cd_dep_college_count#136 ASC NULLS FIRST], [cd_gender#129, cd_marital_status#130, cd_education_status#131, cnt1#162L, cd_purchase_estimate#132, cnt2#163L, cd_credit_rating#133, cnt3#164L, cd_dep_count#134, cnt4#165L, cd_dep_employed_count#135, cnt5#166L, cd_dep_college_count#136, cnt6#167L]
+
+(48) AdaptiveSparkPlan
+Output [14]: [cd_gender#129, cd_marital_status#130, cd_education_status#131, cnt1#162L, cd_purchase_estimate#132, cnt2#163L, cd_credit_rating#133, cnt3#164L, cd_dep_count#134, cnt4#165L, cd_dep_employed_count#135, cnt5#166L, cd_dep_college_count#136, cnt6#167L]
+Arguments: isFinalPlan=false
+
+
