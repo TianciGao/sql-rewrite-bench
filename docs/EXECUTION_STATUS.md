@@ -250,6 +250,14 @@
 | PERF_0003 | JOB / IMDB，27a.sql | PG validated performance draft with positive / negative pair | formal skeleton complete；release-grade incomplete（PG-only validated） | PostgreSQL | 还缺 MySQL / Spark closure；当前继续保持 not_yet_admitted staged；后续再决定是否推进 common-core candidate |
 | PERF_0004 | JOB / IMDB，30b.sql | PG validated performance draft with positive / negative pair | formal skeleton complete；release-grade incomplete（PG-only validated） | PostgreSQL | 还缺 MySQL / Spark closure；当前继续保持 not_yet_admitted staged；后续优先看是否复用 PERF_0003 的跨引擎扩展工艺 |
 
+### 7.1.1 Recent TPC-DS selective deepening checkpoint
+
+当前 TPC-DS performance 线的 selective deepening 已形成一个新的小型 Spark closure checkpoint。  
+在本轮选定批次中，`PERF_0034`、`PERF_0038`、`PERF_0043`、`PERF_0044`、`PERF_0047`、`PERF_0050` 现在都已具备 PostgreSQL / MySQL / Spark witness validation 与 PostgreSQL / MySQL / Spark plan artifacts。  
+`PERF_0046` 与 `PERF_0048` 仍保持 deferred，留待单独的人类决策处理其 special-shape / portability-sensitive 风险。  
+这些变化已经与 `inventory/case_registry.csv` 对齐；case 级 live facts 仍以 `inventory/case_registry.csv` 为准。  
+本 checkpoint 只表示当前 selective closure 进展，不意味着 admission、promotion、common-core movement，或 formal review completion。
+
 ### 7.2 Long-tail cases
 
 | case_id | 数据集 / 来源 | 当前成熟度 | package engineering 状态 | 已验证引擎 | 下一步缺口 |
