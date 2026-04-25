@@ -1,0 +1,143 @@
+== Physical Plan ==
+AdaptiveSparkPlan (23)
++- TakeOrderedAndProject (22)
+   +- HashAggregate (21)
+      +- Exchange (20)
+         +- HashAggregate (19)
+            +- Project (18)
+               +- BroadcastHashJoin Inner BuildRight (17)
+                  :- Project (12)
+                  :  +- BroadcastHashJoin Inner BuildRight (11)
+                  :     :- Project (7)
+                  :     :  +- BroadcastHashJoin Inner BuildRight (6)
+                  :     :     :- Filter (2)
+                  :     :     :  +- Scan parquet spark_catalog.default.catalog_sales (1)
+                  :     :     +- BroadcastExchange (5)
+                  :     :        +- Filter (4)
+                  :     :           +- Scan parquet spark_catalog.default.customer (3)
+                  :     +- BroadcastExchange (10)
+                  :        +- Filter (9)
+                  :           +- Scan parquet spark_catalog.default.customer_address (8)
+                  +- BroadcastExchange (16)
+                     +- Project (15)
+                        +- Filter (14)
+                           +- Scan parquet spark_catalog.default.date_dim (13)
+
+
+(1) Scan parquet spark_catalog.default.catalog_sales
+Output [3]: [cs_bill_customer_sk#44, cs_sold_date_sk#45, cs_sales_price#46]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/perf_0063_spark_plan_k33sc1t5/catalog_sales]
+PushedFilters: [IsNotNull(cs_bill_customer_sk), IsNotNull(cs_sold_date_sk)]
+ReadSchema: struct<cs_bill_customer_sk:int,cs_sold_date_sk:int,cs_sales_price:decimal(9,2)>
+
+(2) Filter
+Input [3]: [cs_bill_customer_sk#44, cs_sold_date_sk#45, cs_sales_price#46]
+Condition : (isnotnull(cs_bill_customer_sk#44) AND isnotnull(cs_sold_date_sk#45))
+
+(3) Scan parquet spark_catalog.default.customer
+Output [2]: [c_customer_sk#47, c_current_addr_sk#48]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/perf_0063_spark_plan_k33sc1t5/customer]
+PushedFilters: [IsNotNull(c_customer_sk), IsNotNull(c_current_addr_sk)]
+ReadSchema: struct<c_customer_sk:int,c_current_addr_sk:int>
+
+(4) Filter
+Input [2]: [c_customer_sk#47, c_current_addr_sk#48]
+Condition : (isnotnull(c_customer_sk#47) AND isnotnull(c_current_addr_sk#48))
+
+(5) BroadcastExchange
+Input [2]: [c_customer_sk#47, c_current_addr_sk#48]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, false] as bigint)),false), [plan_id=135]
+
+(6) BroadcastHashJoin
+Left keys [1]: [cs_bill_customer_sk#44]
+Right keys [1]: [c_customer_sk#47]
+Join type: Inner
+Join condition: None
+
+(7) Project
+Output [3]: [cs_sold_date_sk#45, cs_sales_price#46, c_current_addr_sk#48]
+Input [5]: [cs_bill_customer_sk#44, cs_sold_date_sk#45, cs_sales_price#46, c_customer_sk#47, c_current_addr_sk#48]
+
+(8) Scan parquet spark_catalog.default.customer_address
+Output [3]: [ca_address_sk#49, ca_zip#50, ca_state#51]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/perf_0063_spark_plan_k33sc1t5/customer_address]
+PushedFilters: [IsNotNull(ca_address_sk)]
+ReadSchema: struct<ca_address_sk:int,ca_zip:string,ca_state:string>
+
+(9) Filter
+Input [3]: [ca_address_sk#49, ca_zip#50, ca_state#51]
+Condition : isnotnull(ca_address_sk#49)
+
+(10) BroadcastExchange
+Input [3]: [ca_address_sk#49, ca_zip#50, ca_state#51]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, false] as bigint)),false), [plan_id=139]
+
+(11) BroadcastHashJoin
+Left keys [1]: [c_current_addr_sk#48]
+Right keys [1]: [ca_address_sk#49]
+Join type: Inner
+Join condition: ((substr(ca_zip#50, 1, 5) IN (85669,86197,88274,83405,86475,85392,85460,80348,81792) OR ca_state#51 IN (CA,WA,GA)) OR (cs_sales_price#46 > 500.00))
+
+(12) Project
+Output [3]: [cs_sold_date_sk#45, cs_sales_price#46, ca_zip#50]
+Input [6]: [cs_sold_date_sk#45, cs_sales_price#46, c_current_addr_sk#48, ca_address_sk#49, ca_zip#50, ca_state#51]
+
+(13) Scan parquet spark_catalog.default.date_dim
+Output [3]: [d_date_sk#52, d_qoy#53, d_year#54]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/perf_0063_spark_plan_k33sc1t5/date_dim]
+PushedFilters: [IsNotNull(d_qoy), IsNotNull(d_year), EqualTo(d_qoy,2), EqualTo(d_year,2000), IsNotNull(d_date_sk)]
+ReadSchema: struct<d_date_sk:int,d_qoy:int,d_year:int>
+
+(14) Filter
+Input [3]: [d_date_sk#52, d_qoy#53, d_year#54]
+Condition : ((((isnotnull(d_qoy#53) AND isnotnull(d_year#54)) AND (d_qoy#53 = 2)) AND (d_year#54 = 2000)) AND isnotnull(d_date_sk#52))
+
+(15) Project
+Output [1]: [d_date_sk#52]
+Input [3]: [d_date_sk#52, d_qoy#53, d_year#54]
+
+(16) BroadcastExchange
+Input [1]: [d_date_sk#52]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, true] as bigint)),false), [plan_id=143]
+
+(17) BroadcastHashJoin
+Left keys [1]: [cs_sold_date_sk#45]
+Right keys [1]: [d_date_sk#52]
+Join type: Inner
+Join condition: None
+
+(18) Project
+Output [2]: [cs_sales_price#46, ca_zip#50]
+Input [4]: [cs_sold_date_sk#45, cs_sales_price#46, ca_zip#50, d_date_sk#52]
+
+(19) HashAggregate
+Input [2]: [cs_sales_price#46, ca_zip#50]
+Keys [1]: [ca_zip#50]
+Functions [1]: [partial_sum(cs_sales_price#46)]
+Aggregate Attributes [2]: [sum#61, isEmpty#62]
+Results [3]: [ca_zip#50, sum#63, isEmpty#64]
+
+(20) Exchange
+Input [3]: [ca_zip#50, sum#63, isEmpty#64]
+Arguments: hashpartitioning(ca_zip#50, 1), ENSURE_REQUIREMENTS, [plan_id=148]
+
+(21) HashAggregate
+Input [3]: [ca_zip#50, sum#63, isEmpty#64]
+Keys [1]: [ca_zip#50]
+Functions [1]: [sum(cs_sales_price#46)]
+Aggregate Attributes [1]: [sum(cs_sales_price#46)#59]
+Results [2]: [ca_zip#50, sum(cs_sales_price#46)#59 AS sum(cs_sales_price)#60]
+
+(22) TakeOrderedAndProject
+Input [2]: [ca_zip#50, sum(cs_sales_price)#60]
+Arguments: 100, [ca_zip#50 ASC NULLS FIRST], [ca_zip#50, sum(cs_sales_price)#60]
+
+(23) AdaptiveSparkPlan
+Output [2]: [ca_zip#50, sum(cs_sales_price)#60]
+Arguments: isFinalPlan=false
+
+
