@@ -250,7 +250,7 @@
 | PERF_0003 | JOB / IMDB，27a.sql | PG validated performance draft with positive / negative pair | formal skeleton complete；release-grade incomplete（PG-only validated） | PostgreSQL | 还缺 MySQL / Spark closure；当前继续保持 not_yet_admitted staged；后续再决定是否推进 common-core candidate |
 | PERF_0004 | JOB / IMDB，30b.sql | PG validated performance draft with positive / negative pair | formal skeleton complete；release-grade incomplete（PG-only validated） | PostgreSQL | 还缺 MySQL / Spark closure；当前继续保持 not_yet_admitted staged；后续优先看是否复用 PERF_0003 的跨引擎扩展工艺 |
 
-补充说明：`PERF_0077` 已作为新构造的 JOB / IMDB 衍生 performance draft 进入当前快照视野；其 case-local package 基于 `JOB 3a.sql` / `JOB_DRAFT_0003`，现已具备 PostgreSQL / MySQL / Spark witness validation 与 PG/MySQL/Spark plan artifacts。该状态仅表示 tri-engine evidence 已形成；live case facts 仍以 `inventory/case_registry.csv` 为准，不意味着 admission、promotion、common-core movement 或 formal review completion。
+补充说明：`PERF_0077` 与 `PERF_0078` 已作为新构造的 JOB / IMDB 衍生 tri-engine performance drafts 进入当前快照视野；二者均已具备 PostgreSQL / MySQL / Spark witness validation，并形成对应 plan artifacts。该状态仅表示 tri-engine evidence 已形成；live case facts 仍以 `inventory/case_registry.csv` 为准，不意味着 admission、promotion、common-core movement、extended-line movement 或 formal review completion。
 
 ### 7.1.1 Recent TPC-DS selective deepening checkpoint
 
