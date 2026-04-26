@@ -69,21 +69,21 @@ The packet therefore answers a narrower question:
 | `PERF_0024` | Query 20 / Potential Part Promotion | A | subquery-heavy case | PostgreSQL / MySQL / Spark | PG/MySQL/Spark result checks all `ok=true` | PG/MySQL/Spark plan checks all `ok=true` | full current-generation package and validation bundle present | registry status layer is `not_assessed`, not `staged_not_yet_admitted` |
 | `PERF_0025` | Query 21 / Suppliers Who Kept Orders Waiting | A | subquery-heavy case | PostgreSQL / MySQL / Spark | PG/MySQL/Spark result checks all `ok=true` | PG/MySQL/Spark plan checks all `ok=true` | full current-generation package and validation bundle present | registry status layer is `not_assessed`, not `staged_not_yet_admitted` |
 | `PERF_0026` | Query 22 / Global Sales Opportunity | A | coverage extender | PostgreSQL / MySQL / Spark | PG/MySQL/Spark result checks all `ok=true` | PG/MySQL/Spark plan checks all `ok=true` | full current-generation package and validation bundle present | registry status layer is `not_assessed`, not `staged_not_yet_admitted` |
-| `PERF_0006` | Query 1 / Pricing Summary Report | B | representative join/aggregate case | PostgreSQL / MySQL / Spark | PG/MySQL/Spark result checks all `ok=true` | PG/MySQL/Spark plan checks all `ok=true` | tri-engine package consistent; older-generation Spark validation bundle layout | Spark witness / validation wrapper files absent locally, but Spark machine-readable evidence is present and `ok=true` |
-| `PERF_0007` | Query 6 / Forecasting Revenue Change | B | coverage extender | PostgreSQL / MySQL / Spark | PG/MySQL/Spark result checks all `ok=true` | PG/MySQL/Spark plan checks all `ok=true` | tri-engine package consistent; older-generation Spark validation bundle layout | same package-generation note as `PERF_0006` |
-| `PERF_0008` | Query 3 / Shipping Priority | B | representative join/aggregate case | PostgreSQL / MySQL / Spark | PG/MySQL/Spark result checks all `ok=true` | PG/MySQL/Spark plan checks all `ok=true` | tri-engine package consistent; older-generation Spark validation bundle layout | same package-generation note as `PERF_0006` |
-| `PERF_0009` | Query 4 / Order Priority Checking | B | subquery-heavy case | PostgreSQL / MySQL / Spark | PG/MySQL/Spark result checks all `ok=true` | PG/MySQL/Spark plan checks all `ok=true` | tri-engine package consistent; older-generation Spark validation bundle layout | same package-generation note as `PERF_0006` |
-| `PERF_0010` | Query 12 / Shipping Modes and Order Priority | B | subquery-heavy case | PostgreSQL / MySQL / Spark | PG/MySQL/Spark result checks all `ok=true` | PG/MySQL/Spark plan checks all `ok=true` | tri-engine package consistent; older-generation Spark validation bundle layout | same package-generation note as `PERF_0006` |
-| `PERF_0011` | Query 14 / Promotion Effect | B | coverage extender | PostgreSQL / MySQL / Spark | PG/MySQL/Spark result checks all `ok=true` | PG/MySQL/Spark plan checks all `ok=true` | tri-engine package consistent; older-generation Spark validation bundle layout | same package-generation note as `PERF_0006` |
-| `PERF_0012` | Query 2 / Minimum Cost Supplier | B | subquery-heavy case | PostgreSQL / MySQL / Spark | PG/MySQL/Spark result checks all `ok=true` | PG/MySQL/Spark plan checks all `ok=true` | tri-engine package consistent; older-generation Spark validation bundle layout | same package-generation note as `PERF_0006` |
-| `PERF_0013` | Query 5 / Local Supplier Volume | B | representative join/aggregate case | PostgreSQL / MySQL / Spark | PG/MySQL/Spark result checks all `ok=true` | PG/MySQL/Spark plan checks all `ok=true` | tri-engine package consistent; older-generation Spark validation bundle layout | same package-generation note as `PERF_0006` |
-| `PERF_0014` | Query 7 / Volume Shipping | B | subquery-heavy case | PostgreSQL / MySQL / Spark | PG/MySQL/Spark result checks all `ok=true` | PG/MySQL/Spark plan checks all `ok=true` | tri-engine package consistent; older-generation Spark validation bundle layout | same package-generation note as `PERF_0006` |
-| `PERF_0015` | Query 8 / National Market Share | B | representative join/aggregate case | PostgreSQL / MySQL / Spark | PG/MySQL/Spark result checks all `ok=true` | PG/MySQL/Spark plan checks all `ok=true` | tri-engine package consistent; older-generation Spark validation bundle layout | same package-generation note as `PERF_0006` |
-| `PERF_0016` | Query 9 / Product Type Profit Measure | B | representative join/aggregate case | PostgreSQL / MySQL / Spark | PG/MySQL/Spark result checks all `ok=true` | PG/MySQL/Spark plan checks all `ok=true` | tri-engine package consistent; older-generation Spark validation bundle layout | same package-generation note as `PERF_0006` |
-| `PERF_0027` | Query 8 Variant A | C | variant / edge case | PostgreSQL / MySQL / Spark | PG/MySQL/Spark result checks all `ok=true` | PG/MySQL/Spark plan checks all `ok=true` | tri-engine package consistent; taxonomy/trial file absent | taxonomy/trial backfill note, not an engine-closure failure |
-| `PERF_0028` | Query 12 Variant A | C | variant / edge case | PostgreSQL / MySQL / Spark | PG/MySQL/Spark result checks all `ok=true` | PG/MySQL/Spark plan checks all `ok=true` | tri-engine package consistent; taxonomy/trial file absent | taxonomy/trial backfill note, not an engine-closure failure |
-| `PERF_0030` | Query 14 Variant A | C | variant / edge case | PostgreSQL / MySQL / Spark | PG/MySQL/Spark result checks all `ok=true` | PG/MySQL/Spark plan checks all `ok=true` | tri-engine package consistent; taxonomy/trial file absent | taxonomy/trial backfill note, not an engine-closure failure |
-| `PERF_0031` | Query 15 Variant A | C | variant / edge case | PostgreSQL / MySQL / Spark | PG/MySQL/Spark result checks all `ok=true` | PG/MySQL/Spark plan checks all `ok=true` | tri-engine package consistent; taxonomy/trial file absent | taxonomy/trial backfill note, not an engine-closure failure |
+| `PERF_0006` | Query 1 / Pricing Summary Report | B | representative join/aggregate case | PostgreSQL / MySQL / Spark | PG/MySQL/Spark result checks all `ok=true` | PG/MySQL/Spark plan checks all `ok=true` | tri-engine evidence complete; current case-local Spark validation bundle remains partial | package-layout hardening remains before any later formal review packet, but this is not an engine-closure failure |
+| `PERF_0007` | Query 6 / Forecasting Revenue Change | B | coverage extender | PostgreSQL / MySQL / Spark | PG/MySQL/Spark result checks all `ok=true` | PG/MySQL/Spark plan checks all `ok=true` | tri-engine evidence complete; current case-local Spark validation bundle remains partial | package-layout hardening remains before any later formal review packet, but this is not an engine-closure failure |
+| `PERF_0008` | Query 3 / Shipping Priority | B | representative join/aggregate case | PostgreSQL / MySQL / Spark | PG/MySQL/Spark result checks all `ok=true` | PG/MySQL/Spark plan checks all `ok=true` | tri-engine evidence complete; current case-local Spark validation bundle remains partial | package-layout hardening remains before any later formal review packet, but this is not an engine-closure failure |
+| `PERF_0009` | Query 4 / Order Priority Checking | B | subquery-heavy case | PostgreSQL / MySQL / Spark | PG/MySQL/Spark result checks all `ok=true` | PG/MySQL/Spark plan checks all `ok=true` | tri-engine evidence complete; current case-local Spark validation bundle remains partial | package-layout hardening remains before any later formal review packet, but this is not an engine-closure failure |
+| `PERF_0010` | Query 12 / Shipping Modes and Order Priority | B | subquery-heavy case | PostgreSQL / MySQL / Spark | PG/MySQL/Spark result checks all `ok=true` | PG/MySQL/Spark plan checks all `ok=true` | tri-engine evidence complete; current case-local Spark validation bundle remains partial | package-layout hardening remains before any later formal review packet, but this is not an engine-closure failure |
+| `PERF_0011` | Query 14 / Promotion Effect | B | coverage extender | PostgreSQL / MySQL / Spark | PG/MySQL/Spark result checks all `ok=true` | PG/MySQL/Spark plan checks all `ok=true` | tri-engine evidence complete; current case-local Spark validation bundle remains partial | package-layout hardening remains before any later formal review packet, but this is not an engine-closure failure |
+| `PERF_0012` | Query 2 / Minimum Cost Supplier | B | subquery-heavy case | PostgreSQL / MySQL / Spark | PG/MySQL/Spark result checks all `ok=true` | PG/MySQL/Spark plan checks all `ok=true` | tri-engine evidence complete; current case-local Spark validation bundle remains partial | package-layout hardening remains before any later formal review packet, but this is not an engine-closure failure |
+| `PERF_0013` | Query 5 / Local Supplier Volume | B | representative join/aggregate case | PostgreSQL / MySQL / Spark | PG/MySQL/Spark result checks all `ok=true` | PG/MySQL/Spark plan checks all `ok=true` | tri-engine evidence complete; current case-local Spark validation bundle remains partial | package-layout hardening remains before any later formal review packet, but this is not an engine-closure failure |
+| `PERF_0014` | Query 7 / Volume Shipping | B | subquery-heavy case | PostgreSQL / MySQL / Spark | PG/MySQL/Spark result checks all `ok=true` | PG/MySQL/Spark plan checks all `ok=true` | tri-engine evidence complete; current case-local Spark validation bundle remains partial | package-layout hardening remains before any later formal review packet, but this is not an engine-closure failure |
+| `PERF_0015` | Query 8 / National Market Share | B | representative join/aggregate case | PostgreSQL / MySQL / Spark | PG/MySQL/Spark result checks all `ok=true` | PG/MySQL/Spark plan checks all `ok=true` | tri-engine evidence complete; current case-local Spark validation bundle remains partial | package-layout hardening remains before any later formal review packet, but this is not an engine-closure failure |
+| `PERF_0016` | Query 9 / Product Type Profit Measure | B | representative join/aggregate case | PostgreSQL / MySQL / Spark | PG/MySQL/Spark result checks all `ok=true` | PG/MySQL/Spark plan checks all `ok=true` | tri-engine evidence complete; current case-local Spark validation bundle remains partial | package-layout hardening remains before any later formal review packet, but this is not an engine-closure failure |
+| `PERF_0027` | Query 8 Variant A | C | variant / edge case | PostgreSQL / MySQL / Spark | PG/MySQL/Spark result checks all `ok=true` | PG/MySQL/Spark plan checks all `ok=true` | tri-engine evidence complete; case-local taxonomy/trial file remains absent | taxonomy/trial backfill remains before any later formal review packet, but this is not an engine-closure failure |
+| `PERF_0028` | Query 12 Variant A | C | variant / edge case | PostgreSQL / MySQL / Spark | PG/MySQL/Spark result checks all `ok=true` | PG/MySQL/Spark plan checks all `ok=true` | tri-engine evidence complete; case-local taxonomy/trial file remains absent | taxonomy/trial backfill remains before any later formal review packet, but this is not an engine-closure failure |
+| `PERF_0030` | Query 14 Variant A | C | variant / edge case | PostgreSQL / MySQL / Spark | PG/MySQL/Spark result checks all `ok=true` | PG/MySQL/Spark plan checks all `ok=true` | tri-engine evidence complete; case-local taxonomy/trial file remains absent | taxonomy/trial backfill remains before any later formal review packet, but this is not an engine-closure failure |
+| `PERF_0031` | Query 15 Variant A | C | variant / edge case | PostgreSQL / MySQL / Spark | PG/MySQL/Spark result checks all `ok=true` | PG/MySQL/Spark plan checks all `ok=true` | tri-engine evidence complete; case-local taxonomy/trial file remains absent | taxonomy/trial backfill remains before any later formal review packet, but this is not an engine-closure failure |
 
 ---
 
@@ -126,8 +126,8 @@ Recommended Group C order:
 Short rationale:
 
 - Group A should be reviewed first because it is the cleanest evidence-complete subset with current-generation package, validation-bundle, and taxonomy/trial coverage
-- Group B should follow because its tri-engine evidence is already machine-readable and consistent, but the package shape reflects an older-generation Spark validation layout
-- Group C should come last because it is evidence-consistent on tri-engine execution and plans, but still carries a case-local taxonomy/trial backfill note
+- Group B should follow because its tri-engine execution and plan evidence is already sufficient for review-prep ordering, while package-layout hardening remains a bounded follow-up item
+- Group C should come last because its tri-engine execution and plan evidence is already sufficient for review-prep ordering, while taxonomy/trial backfill remains a bounded follow-up item
 
 ---
 
@@ -267,97 +267,101 @@ Short rationale:
 
 ### 5.2 Group B: review-ready with minor package notes
 
+Group B cases are included in this packet because registry state and machine-readable tri-engine evidence are already aligned. The remaining issue is narrower: some current-generation case-local Spark validation-bundle components are not present in the package layout. In this packet, that gap is treated as package hardening still to be done before any later formal review packet, not as an engine-closure failure and not as a status judgment.
+
 #### `PERF_0006`
 - Query identity / variant: TPC-H Query 1 / Pricing Summary Report Query
 - Role: representative join/aggregate case
 - Evidence status: registry tri-engine closure matches PG/MySQL/Spark result and plan checks, all `ok=true`
-- Caveat: current case-local Spark validation bundle is incomplete (`spark_witness_data.sql`, `run_spark_validation.sh`, `run_spark_plan_collection.sh` absent), but Spark machine-readable evidence is present and `ok=true`
+- Caveat: current case-local Spark validation-bundle coverage remains partial (`spark_witness_data.sql`, `run_spark_validation.sh`, `run_spark_plan_collection.sh` absent); this is carried here as a package-layout hardening note, not as an engine-closure failure
 
 #### `PERF_0007`
 - Query identity / variant: TPC-H Query 6 / Forecasting Revenue Change Query
 - Role: coverage extender
 - Evidence status: tri-engine registry/artifact state is consistent and all result/plan checks are `ok=true`
-- Caveat: same package-generation note as `PERF_0006`
+- Caveat: current case-local Spark validation-bundle coverage remains partial; this is carried here as a package-layout hardening note, not as an engine-closure failure
 
 #### `PERF_0008`
 - Query identity / variant: TPC-H Query 3 / Shipping Priority Query
 - Role: representative join/aggregate case
 - Evidence status: tri-engine registry/artifact state is consistent and all result/plan checks are `ok=true`
-- Caveat: same package-generation note as `PERF_0006`
+- Caveat: current case-local Spark validation-bundle coverage remains partial; this is carried here as a package-layout hardening note, not as an engine-closure failure
 
 #### `PERF_0009`
 - Query identity / variant: TPC-H Query 4 / Order Priority Checking Query
 - Role: subquery-heavy case
 - Evidence status: tri-engine registry/artifact state is consistent and all result/plan checks are `ok=true`
-- Caveat: same package-generation note as `PERF_0006`
+- Caveat: current case-local Spark validation-bundle coverage remains partial; this is carried here as a package-layout hardening note, not as an engine-closure failure
 
 #### `PERF_0010`
 - Query identity / variant: TPC-H Query 12 / Shipping Modes and Order Priority Query
 - Role: subquery-heavy case
 - Evidence status: tri-engine registry/artifact state is consistent and all result/plan checks are `ok=true`
-- Caveat: same package-generation note as `PERF_0006`
+- Caveat: current case-local Spark validation-bundle coverage remains partial; this is carried here as a package-layout hardening note, not as an engine-closure failure
 
 #### `PERF_0011`
 - Query identity / variant: TPC-H Query 14 / Promotion Effect Query
 - Role: coverage extender
 - Evidence status: tri-engine registry/artifact state is consistent and all result/plan checks are `ok=true`
-- Caveat: same package-generation note as `PERF_0006`
+- Caveat: current case-local Spark validation-bundle coverage remains partial; this is carried here as a package-layout hardening note, not as an engine-closure failure
 
 #### `PERF_0012`
 - Query identity / variant: TPC-H Query 2 / Minimum Cost Supplier Query
 - Role: subquery-heavy case
 - Evidence status: tri-engine registry/artifact state is consistent and all result/plan checks are `ok=true`
-- Caveat: same package-generation note as `PERF_0006`
+- Caveat: current case-local Spark validation-bundle coverage remains partial; this is carried here as a package-layout hardening note, not as an engine-closure failure
 
 #### `PERF_0013`
 - Query identity / variant: TPC-H Query 5 / Local Supplier Volume Query
 - Role: representative join/aggregate case
 - Evidence status: tri-engine registry/artifact state is consistent and all result/plan checks are `ok=true`
-- Caveat: same package-generation note as `PERF_0006`
+- Caveat: current case-local Spark validation-bundle coverage remains partial; this is carried here as a package-layout hardening note, not as an engine-closure failure
 
 #### `PERF_0014`
 - Query identity / variant: TPC-H Query 7 / Volume Shipping Query
 - Role: subquery-heavy case
 - Evidence status: tri-engine registry/artifact state is consistent and all result/plan checks are `ok=true`
-- Caveat: same package-generation note as `PERF_0006`
+- Caveat: current case-local Spark validation-bundle coverage remains partial; this is carried here as a package-layout hardening note, not as an engine-closure failure
 
 #### `PERF_0015`
 - Query identity / variant: TPC-H Query 8 / National Market Share Query
 - Role: representative join/aggregate case
 - Evidence status: tri-engine registry/artifact state is consistent and all result/plan checks are `ok=true`
-- Caveat: same package-generation note as `PERF_0006`
+- Caveat: current case-local Spark validation-bundle coverage remains partial; this is carried here as a package-layout hardening note, not as an engine-closure failure
 
 #### `PERF_0016`
 - Query identity / variant: TPC-H Query 9 / Product Type Profit Measure Query
 - Role: representative join/aggregate case
 - Evidence status: tri-engine registry/artifact state is consistent and all result/plan checks are `ok=true`
-- Caveat: same package-generation note as `PERF_0006`
+- Caveat: current case-local Spark validation-bundle coverage remains partial; this is carried here as a package-layout hardening note, not as an engine-closure failure
 
 ### 5.3 Group C: review-ready evidence but taxonomy/trial backfill note
+
+Group C cases are included in this packet because registry state and machine-readable tri-engine evidence are already aligned. The remaining issue is narrower: a case-local taxonomy/trial file is not yet present in the package. In this packet, that gap is treated as review-prep backfill still to be done before any later formal review packet, not as an engine-closure failure and not as a status judgment.
 
 #### `PERF_0027`
 - Query identity / variant: TPC-H Query 8 Variant A
 - Role: variant / edge case
 - Evidence status: tri-engine registry/artifact state is consistent and all result/plan checks are `ok=true`
-- Caveat: case-local taxonomy/trial file is absent; this is a review-prep backfill note, not an engine-closure failure
+- Caveat: case-local taxonomy/trial coverage remains absent; this is carried here as a review-prep backfill note, not as an engine-closure failure
 
 #### `PERF_0028`
 - Query identity / variant: TPC-H Query 12 Variant A
 - Role: variant / edge case
 - Evidence status: tri-engine registry/artifact state is consistent and all result/plan checks are `ok=true`
-- Caveat: case-local taxonomy/trial file is absent; this is a review-prep backfill note, not an engine-closure failure
+- Caveat: case-local taxonomy/trial coverage remains absent; this is carried here as a review-prep backfill note, not as an engine-closure failure
 
 #### `PERF_0030`
 - Query identity / variant: TPC-H Query 14 Variant A
 - Role: variant / edge case
 - Evidence status: tri-engine registry/artifact state is consistent and all result/plan checks are `ok=true`
-- Caveat: case-local taxonomy/trial file is absent; this is a review-prep backfill note, not an engine-closure failure
+- Caveat: case-local taxonomy/trial coverage remains absent; this is carried here as a review-prep backfill note, not as an engine-closure failure
 
 #### `PERF_0031`
 - Query identity / variant: TPC-H Query 15 Variant A
 - Role: variant / edge case
 - Evidence status: tri-engine registry/artifact state is consistent and all result/plan checks are `ok=true`
-- Caveat: case-local taxonomy/trial file is absent; this is a review-prep backfill note, not an engine-closure failure
+- Caveat: case-local taxonomy/trial coverage remains absent; this is carried here as a review-prep backfill note, not as an engine-closure failure
 
 ---
 
