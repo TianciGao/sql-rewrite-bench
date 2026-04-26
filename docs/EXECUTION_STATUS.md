@@ -252,9 +252,9 @@
 
 ### 7.1.1 Recent TPC-DS selective deepening checkpoint
 
-当前 TPC-DS performance 线的 selective deepening 已形成一组更完整的 Spark closure checkpoint。  
-目前 `PERF_0033`、`PERF_0034`、`PERF_0035`、`PERF_0036`、`PERF_0038`、`PERF_0043`、`PERF_0044`、`PERF_0047`、`PERF_0050`、`PERF_0052`、`PERF_0053`、`PERF_0054`、`PERF_0056`、`PERF_0062`、`PERF_0063`、`PERF_0066` 已具备 PostgreSQL / MySQL / Spark witness validation 与 PostgreSQL / MySQL / Spark plan artifacts。  
-`PERF_0046` 与 `PERF_0048` 仍保持 deferred，留待单独的人类决策处理其 special-shape / portability-sensitive 风险；`PERF_0032` 仍需单独的人类 SQL normalization 决策，因此不计入 MySQL / Spark closed 集合。  
+当前 TPC-DS performance 线的 selective deepening 已形成最新一轮 tri-engine closure checkpoint。  
+目前 `PERF_0033`、`PERF_0034`、`PERF_0035`、`PERF_0036`、`PERF_0038`、`PERF_0043`、`PERF_0044`、`PERF_0047`、`PERF_0050`、`PERF_0052`、`PERF_0053`、`PERF_0054`、`PERF_0056`、`PERF_0062`、`PERF_0063`、`PERF_0065`、`PERF_0066`、`PERF_0071`、`PERF_0072`、`PERF_0073`、`PERF_0074`、`PERF_0075` 已具备 PostgreSQL / MySQL / Spark closure。  
+`PERF_0032` 仍待单独的人类 SQL normalization 决策，不计入 routine closed 集合；`PERF_0046` 与 `PERF_0048` 仍保持 deferred；`PERF_0067`、`PERF_0068`、`PERF_0076` 目前仍未形成 tri-engine closure，留待后续单独决策或推进。  
 这些变化已经与 `inventory/case_registry.csv` 对齐；case 级 live facts 仍以 `inventory/case_registry.csv` 为准。  
 本 checkpoint 只表示当前 selective closure 进展，不意味着 admission、promotion、common-core movement，或 formal review completion。
 
