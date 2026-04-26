@@ -21,5 +21,5 @@ INSERT INTO name (id, name) VALUES (2, 'Ctail');
 INSERT INTO title (id) VALUES (1);
 INSERT INTO title (id) VALUES (2);
 
-INSERT INTO cast_info (id, movie_id, person_id) VALUES (2, 2, 1);
+INSERT INTO cast_info (id, movie_id, person_id) VALUES (2, 2, 2);
 INSERT INTO cast_info (id, movie_id, person_id) VALUES (3, 1, 2);
