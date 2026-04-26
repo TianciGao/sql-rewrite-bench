@@ -16,4 +16,4 @@ INSERT INTO name (id, gender, name, name_pcode_cf) VALUES (1, 'f', 'Btail', 'A')
 
 INSERT INTO person_info (id, info_type_id, note, person_id) VALUES (1, 1, 'Volker Boehm', 1);
 
-INSERT INTO title (id, production_year, title) VALUES (1, '1980', 'Alpha Movie');
+INSERT INTO title (id, production_year, title) VALUES (1, 1980, 'Alpha Movie');
