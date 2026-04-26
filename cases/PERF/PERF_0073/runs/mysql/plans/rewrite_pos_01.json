@@ -1,0 +1,316 @@
+{
+  "query_block": {
+    "select_id": 1,
+    "cost_info": {
+      "query_cost": "1.00"
+    },
+    "nested_loop": [
+      {
+        "table": {
+          "table_name": "b1",
+          "access_type": "system",
+          "rows_examined_per_scan": 1,
+          "rows_produced_per_join": 1,
+          "filtered": "100.00",
+          "cost_info": {
+            "read_cost": "0.00",
+            "eval_cost": "0.10",
+            "prefix_cost": "0.00",
+            "data_read_per_join": "32"
+          },
+          "used_columns": [
+            "b1_lp",
+            "b1_cnt",
+            "b1_cntd"
+          ],
+          "materialized_from_subquery": {
+            "using_temporary_table": true,
+            "dependent": false,
+            "cacheable": true,
+            "query_block": {
+              "select_id": 2,
+              "cost_info": {
+                "query_cost": "0.85"
+              },
+              "table": {
+                "table_name": "store_sales",
+                "access_type": "ALL",
+                "rows_examined_per_scan": 6,
+                "rows_produced_per_join": 1,
+                "filtered": "16.67",
+                "cost_info": {
+                  "read_cost": "0.75",
+                  "eval_cost": "0.10",
+                  "prefix_cost": "0.85",
+                  "data_read_per_join": "24"
+                },
+                "used_columns": [
+                  "ss_quantity",
+                  "ss_list_price",
+                  "ss_coupon_amt",
+                  "ss_wholesale_cost"
+                ],
+                "attached_condition": "((`bench`.`store_sales`.`ss_quantity` between 0 and 5) and ((`bench`.`store_sales`.`ss_list_price` between 11 and 21) or (`bench`.`store_sales`.`ss_coupon_amt` between 460 and 1460) or (`bench`.`store_sales`.`ss_wholesale_cost` between 14 and 34)))"
+              }
+            }
+          }
+        }
+      },
+      {
+        "table": {
+          "table_name": "b2",
+          "access_type": "system",
+          "rows_examined_per_scan": 1,
+          "rows_produced_per_join": 1,
+          "filtered": "100.00",
+          "cost_info": {
+            "read_cost": "0.00",
+            "eval_cost": "0.10",
+            "prefix_cost": "0.00",
+            "data_read_per_join": "32"
+          },
+          "used_columns": [
+            "b2_lp",
+            "b2_cnt",
+            "b2_cntd"
+          ],
+          "materialized_from_subquery": {
+            "using_temporary_table": true,
+            "dependent": false,
+            "cacheable": true,
+            "query_block": {
+              "select_id": 3,
+              "cost_info": {
+                "query_cost": "0.85"
+              },
+              "table": {
+                "table_name": "store_sales",
+                "access_type": "ALL",
+                "rows_examined_per_scan": 6,
+                "rows_produced_per_join": 1,
+                "filtered": "16.67",
+                "cost_info": {
+                  "read_cost": "0.75",
+                  "eval_cost": "0.10",
+                  "prefix_cost": "0.85",
+                  "data_read_per_join": "24"
+                },
+                "used_columns": [
+                  "ss_quantity",
+                  "ss_list_price",
+                  "ss_coupon_amt",
+                  "ss_wholesale_cost"
+                ],
+                "attached_condition": "((`bench`.`store_sales`.`ss_quantity` between 6 and 10) and ((`bench`.`store_sales`.`ss_list_price` between 91 and 101) or (`bench`.`store_sales`.`ss_coupon_amt` between 1430 and 2430) or (`bench`.`store_sales`.`ss_wholesale_cost` between 32 and 52)))"
+              }
+            }
+          }
+        }
+      },
+      {
+        "table": {
+          "table_name": "b3",
+          "access_type": "system",
+          "rows_examined_per_scan": 1,
+          "rows_produced_per_join": 1,
+          "filtered": "100.00",
+          "cost_info": {
+            "read_cost": "0.00",
+            "eval_cost": "0.10",
+            "prefix_cost": "0.00",
+            "data_read_per_join": "32"
+          },
+          "used_columns": [
+            "b3_lp",
+            "b3_cnt",
+            "b3_cntd"
+          ],
+          "materialized_from_subquery": {
+            "using_temporary_table": true,
+            "dependent": false,
+            "cacheable": true,
+            "query_block": {
+              "select_id": 4,
+              "cost_info": {
+                "query_cost": "0.85"
+              },
+              "table": {
+                "table_name": "store_sales",
+                "access_type": "ALL",
+                "rows_examined_per_scan": 6,
+                "rows_produced_per_join": 1,
+                "filtered": "16.67",
+                "cost_info": {
+                  "read_cost": "0.75",
+                  "eval_cost": "0.10",
+                  "prefix_cost": "0.85",
+                  "data_read_per_join": "24"
+                },
+                "used_columns": [
+                  "ss_quantity",
+                  "ss_list_price",
+                  "ss_coupon_amt",
+                  "ss_wholesale_cost"
+                ],
+                "attached_condition": "((`bench`.`store_sales`.`ss_quantity` between 11 and 15) and ((`bench`.`store_sales`.`ss_list_price` between 66 and 76) or (`bench`.`store_sales`.`ss_coupon_amt` between 920 and 1920) or (`bench`.`store_sales`.`ss_wholesale_cost` between 4 and 24)))"
+              }
+            }
+          }
+        }
+      },
+      {
+        "table": {
+          "table_name": "b4",
+          "access_type": "system",
+          "rows_examined_per_scan": 1,
+          "rows_produced_per_join": 1,
+          "filtered": "100.00",
+          "cost_info": {
+            "read_cost": "0.00",
+            "eval_cost": "0.10",
+            "prefix_cost": "0.00",
+            "data_read_per_join": "32"
+          },
+          "used_columns": [
+            "b4_lp",
+            "b4_cnt",
+            "b4_cntd"
+          ],
+          "materialized_from_subquery": {
+            "using_temporary_table": true,
+            "dependent": false,
+            "cacheable": true,
+            "query_block": {
+              "select_id": 5,
+              "cost_info": {
+                "query_cost": "0.85"
+              },
+              "table": {
+                "table_name": "store_sales",
+                "access_type": "ALL",
+                "rows_examined_per_scan": 6,
+                "rows_produced_per_join": 1,
+                "filtered": "16.67",
+                "cost_info": {
+                  "read_cost": "0.75",
+                  "eval_cost": "0.10",
+                  "prefix_cost": "0.85",
+                  "data_read_per_join": "24"
+                },
+                "used_columns": [
+                  "ss_quantity",
+                  "ss_list_price",
+                  "ss_coupon_amt",
+                  "ss_wholesale_cost"
+                ],
+                "attached_condition": "((`bench`.`store_sales`.`ss_quantity` between 16 and 20) and ((`bench`.`store_sales`.`ss_list_price` between 142 and 152) or (`bench`.`store_sales`.`ss_coupon_amt` between 3054 and 4054) or (`bench`.`store_sales`.`ss_wholesale_cost` between 80 and 100)))"
+              }
+            }
+          }
+        }
+      },
+      {
+        "table": {
+          "table_name": "b5",
+          "access_type": "system",
+          "rows_examined_per_scan": 1,
+          "rows_produced_per_join": 1,
+          "filtered": "100.00",
+          "cost_info": {
+            "read_cost": "0.00",
+            "eval_cost": "0.10",
+            "prefix_cost": "0.00",
+            "data_read_per_join": "32"
+          },
+          "used_columns": [
+            "b5_lp",
+            "b5_cnt",
+            "b5_cntd"
+          ],
+          "materialized_from_subquery": {
+            "using_temporary_table": true,
+            "dependent": false,
+            "cacheable": true,
+            "query_block": {
+              "select_id": 6,
+              "cost_info": {
+                "query_cost": "0.85"
+              },
+              "table": {
+                "table_name": "store_sales",
+                "access_type": "ALL",
+                "rows_examined_per_scan": 6,
+                "rows_produced_per_join": 1,
+                "filtered": "16.67",
+                "cost_info": {
+                  "read_cost": "0.75",
+                  "eval_cost": "0.10",
+                  "prefix_cost": "0.85",
+                  "data_read_per_join": "24"
+                },
+                "used_columns": [
+                  "ss_quantity",
+                  "ss_list_price",
+                  "ss_coupon_amt",
+                  "ss_wholesale_cost"
+                ],
+                "attached_condition": "((`bench`.`store_sales`.`ss_quantity` between 21 and 25) and ((`bench`.`store_sales`.`ss_list_price` between 135 and 145) or (`bench`.`store_sales`.`ss_coupon_amt` between 14180 and 15180) or (`bench`.`store_sales`.`ss_wholesale_cost` between 38 and 58)))"
+              }
+            }
+          }
+        }
+      },
+      {
+        "table": {
+          "table_name": "b6",
+          "access_type": "system",
+          "rows_examined_per_scan": 1,
+          "rows_produced_per_join": 1,
+          "filtered": "100.00",
+          "cost_info": {
+            "read_cost": "0.00",
+            "eval_cost": "0.10",
+            "prefix_cost": "0.00",
+            "data_read_per_join": "32"
+          },
+          "used_columns": [
+            "b6_lp",
+            "b6_cnt",
+            "b6_cntd"
+          ],
+          "materialized_from_subquery": {
+            "using_temporary_table": true,
+            "dependent": false,
+            "cacheable": true,
+            "query_block": {
+              "select_id": 7,
+              "cost_info": {
+                "query_cost": "0.85"
+              },
+              "table": {
+                "table_name": "store_sales",
+                "access_type": "ALL",
+                "rows_examined_per_scan": 6,
+                "rows_produced_per_join": 1,
+                "filtered": "16.67",
+                "cost_info": {
+                  "read_cost": "0.75",
+                  "eval_cost": "0.10",
+                  "prefix_cost": "0.85",
+                  "data_read_per_join": "24"
+                },
+                "used_columns": [
+                  "ss_quantity",
+                  "ss_list_price",
+                  "ss_coupon_amt",
+                  "ss_wholesale_cost"
+                ],
+                "attached_condition": "((`bench`.`store_sales`.`ss_quantity` between 26 and 30) and ((`bench`.`store_sales`.`ss_list_price` between 28 and 38) or (`bench`.`store_sales`.`ss_coupon_amt` between 2513 and 3513) or (`bench`.`store_sales`.`ss_wholesale_cost` between 42 and 62)))"
+              }
+            }
+          }
+        }
+      }
+    ]
+  }
+}
