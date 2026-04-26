@@ -1,0 +1,21 @@
+SELECT min(chn.name) AS uncredited_voiced_character,
+       min(t.title) AS russian_movie
+FROM title AS t
+JOIN movie_companies AS mc
+  ON t.id = mc.movie_id
+JOIN cast_info AS ci
+  ON t.id = ci.movie_id
+ AND ci.movie_id = mc.movie_id
+JOIN char_name AS chn
+  ON chn.id = ci.person_role_id
+JOIN role_type AS rt
+  ON rt.id = ci.role_id
+JOIN company_name AS cn
+  ON cn.id = mc.company_id
+JOIN company_type AS ct
+  ON ct.id = mc.company_type_id
+WHERE ci.note like '%(voice)%'
+  AND ci.note like '%(uncredited)%'
+  AND cn.country_code = '[us]'
+  AND rt.role = 'actor'
+  AND t.production_year > 2005;
