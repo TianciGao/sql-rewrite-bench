@@ -1,0 +1,286 @@
+== Physical Plan ==
+AdaptiveSparkPlan (48)
++- Sort (47)
+   +- Exchange (46)
+      +- Project (45)
+         +- BroadcastHashJoin Inner BuildRight (44)
+            :- Project (21)
+            :  +- BroadcastHashJoin Inner BuildRight (20)
+            :     :- HashAggregate (15)
+            :     :  +- Exchange (14)
+            :     :     +- HashAggregate (13)
+            :     :        +- Project (12)
+            :     :           +- BroadcastHashJoin Inner BuildLeft (11)
+            :     :              :- BroadcastExchange (8)
+            :     :              :  +- Union (7)
+            :     :              :     :- Project (3)
+            :     :              :     :  +- Filter (2)
+            :     :              :     :     +- Scan parquet spark_catalog.default.web_sales (1)
+            :     :              :     +- Project (6)
+            :     :              :        +- Filter (5)
+            :     :              :           +- Scan parquet spark_catalog.default.catalog_sales (4)
+            :     :              +- Filter (10)
+            :     :                 +- Scan parquet spark_catalog.default.date_dim (9)
+            :     +- BroadcastExchange (19)
+            :        +- Project (18)
+            :           +- Filter (17)
+            :              +- Scan parquet spark_catalog.default.date_dim (16)
+            +- BroadcastExchange (43)
+               +- Project (42)
+                  +- BroadcastHashJoin Inner BuildRight (41)
+                     :- HashAggregate (36)
+                     :  +- Exchange (35)
+                     :     +- HashAggregate (34)
+                     :        +- Project (33)
+                     :           +- BroadcastHashJoin Inner BuildLeft (32)
+                     :              :- BroadcastExchange (29)
+                     :              :  +- Union (28)
+                     :              :     :- Project (24)
+                     :              :     :  +- Filter (23)
+                     :              :     :     +- Scan parquet spark_catalog.default.web_sales (22)
+                     :              :     +- Project (27)
+                     :              :        +- Filter (26)
+                     :              :           +- Scan parquet spark_catalog.default.catalog_sales (25)
+                     :              +- Filter (31)
+                     :                 +- Scan parquet spark_catalog.default.date_dim (30)
+                     +- BroadcastExchange (40)
+                        +- Project (39)
+                           +- Filter (38)
+                              +- Scan parquet spark_catalog.default.date_dim (37)
+
+
+(1) Scan parquet spark_catalog.default.web_sales
+Output [2]: [ws_sold_date_sk#53, ws_ext_sales_price#54]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/perf_0053_spark_plan_lxus6fvy/web_sales]
+PushedFilters: [IsNotNull(ws_sold_date_sk)]
+ReadSchema: struct<ws_sold_date_sk:int,ws_ext_sales_price:decimal(9,2)>
+
+(2) Filter
+Input [2]: [ws_sold_date_sk#53, ws_ext_sales_price#54]
+Condition : isnotnull(ws_sold_date_sk#53)
+
+(3) Project
+Output [2]: [ws_sold_date_sk#53 AS sold_date_sk#42, ws_ext_sales_price#54 AS sales_price#43]
+Input [2]: [ws_sold_date_sk#53, ws_ext_sales_price#54]
+
+(4) Scan parquet spark_catalog.default.catalog_sales
+Output [2]: [cs_sold_date_sk#55, cs_ext_sales_price#56]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/perf_0053_spark_plan_lxus6fvy/catalog_sales]
+PushedFilters: [IsNotNull(cs_sold_date_sk)]
+ReadSchema: struct<cs_sold_date_sk:int,cs_ext_sales_price:decimal(9,2)>
+
+(5) Filter
+Input [2]: [cs_sold_date_sk#55, cs_ext_sales_price#56]
+Condition : isnotnull(cs_sold_date_sk#55)
+
+(6) Project
+Output [2]: [cs_sold_date_sk#55 AS sold_date_sk#44, cs_ext_sales_price#56 AS sales_price#45]
+Input [2]: [cs_sold_date_sk#55, cs_ext_sales_price#56]
+
+(7) Union
+
+(8) BroadcastExchange
+Input [2]: [sold_date_sk#42, sales_price#43]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, true] as bigint)),false), [plan_id=178]
+
+(9) Scan parquet spark_catalog.default.date_dim
+Output [3]: [d_date_sk#57, d_week_seq#58, d_day_name#59]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/perf_0053_spark_plan_lxus6fvy/date_dim]
+PushedFilters: [IsNotNull(d_date_sk), IsNotNull(d_week_seq)]
+ReadSchema: struct<d_date_sk:int,d_week_seq:int,d_day_name:string>
+
+(10) Filter
+Input [3]: [d_date_sk#57, d_week_seq#58, d_day_name#59]
+Condition : (isnotnull(d_date_sk#57) AND isnotnull(d_week_seq#58))
+
+(11) BroadcastHashJoin
+Left keys [1]: [sold_date_sk#42]
+Right keys [1]: [d_date_sk#57]
+Join type: Inner
+Join condition: None
+
+(12) Project
+Output [3]: [sales_price#43, d_week_seq#58, d_day_name#59]
+Input [5]: [sold_date_sk#42, sales_price#43, d_date_sk#57, d_week_seq#58, d_day_name#59]
+
+(13) HashAggregate
+Input [3]: [sales_price#43, d_week_seq#58, d_day_name#59]
+Keys [1]: [d_week_seq#58]
+Functions [7]: [partial_sum(CASE WHEN (d_day_name#59 = Sunday) THEN sales_price#43 END), partial_sum(CASE WHEN (d_day_name#59 = Monday) THEN sales_price#43 END), partial_sum(CASE WHEN (d_day_name#59 = Tuesday) THEN sales_price#43 END), partial_sum(CASE WHEN (d_day_name#59 = Wednesday) THEN sales_price#43 END), partial_sum(CASE WHEN (d_day_name#59 = Thursday) THEN sales_price#43 END), partial_sum(CASE WHEN (d_day_name#59 = Friday) THEN sales_price#43 END), partial_sum(CASE WHEN (d_day_name#59 = Saturday) THEN sales_price#43 END)]
+Aggregate Attributes [14]: [sum#134, isEmpty#135, sum#136, isEmpty#137, sum#138, isEmpty#139, sum#140, isEmpty#141, sum#142, isEmpty#143, sum#144, isEmpty#145, sum#146, isEmpty#147]
+Results [15]: [d_week_seq#58, sum#148, isEmpty#149, sum#150, isEmpty#151, sum#152, isEmpty#153, sum#154, isEmpty#155, sum#156, isEmpty#157, sum#158, isEmpty#159, sum#160, isEmpty#161]
+
+(14) Exchange
+Input [15]: [d_week_seq#58, sum#148, isEmpty#149, sum#150, isEmpty#151, sum#152, isEmpty#153, sum#154, isEmpty#155, sum#156, isEmpty#157, sum#158, isEmpty#159, sum#160, isEmpty#161]
+Arguments: hashpartitioning(d_week_seq#58, 1), ENSURE_REQUIREMENTS, [plan_id=183]
+
+(15) HashAggregate
+Input [15]: [d_week_seq#58, sum#148, isEmpty#149, sum#150, isEmpty#151, sum#152, isEmpty#153, sum#154, isEmpty#155, sum#156, isEmpty#157, sum#158, isEmpty#159, sum#160, isEmpty#161]
+Keys [1]: [d_week_seq#58]
+Functions [7]: [sum(CASE WHEN (d_day_name#59 = Sunday) THEN sales_price#43 END), sum(CASE WHEN (d_day_name#59 = Monday) THEN sales_price#43 END), sum(CASE WHEN (d_day_name#59 = Tuesday) THEN sales_price#43 END), sum(CASE WHEN (d_day_name#59 = Wednesday) THEN sales_price#43 END), sum(CASE WHEN (d_day_name#59 = Thursday) THEN sales_price#43 END), sum(CASE WHEN (d_day_name#59 = Friday) THEN sales_price#43 END), sum(CASE WHEN (d_day_name#59 = Saturday) THEN sales_price#43 END)]
+Aggregate Attributes [7]: [sum(CASE WHEN (d_day_name#59 = Sunday) THEN sales_price#43 END)#72, sum(CASE WHEN (d_day_name#59 = Monday) THEN sales_price#43 END)#73, sum(CASE WHEN (d_day_name#59 = Tuesday) THEN sales_price#43 END)#74, sum(CASE WHEN (d_day_name#59 = Wednesday) THEN sales_price#43 END)#75, sum(CASE WHEN (d_day_name#59 = Thursday) THEN sales_price#43 END)#76, sum(CASE WHEN (d_day_name#59 = Friday) THEN sales_price#43 END)#77, sum(CASE WHEN (d_day_name#59 = Saturday) THEN sales_price#43 END)#78]
+Results [8]: [d_week_seq#58, sum(CASE WHEN (d_day_name#59 = Sunday) THEN sales_price#43 END)#72 AS sun_sales#46, sum(CASE WHEN (d_day_name#59 = Monday) THEN sales_price#43 END)#73 AS mon_sales#47, sum(CASE WHEN (d_day_name#59 = Tuesday) THEN sales_price#43 END)#74 AS tue_sales#48, sum(CASE WHEN (d_day_name#59 = Wednesday) THEN sales_price#43 END)#75 AS wed_sales#49, sum(CASE WHEN (d_day_name#59 = Thursday) THEN sales_price#43 END)#76 AS thu_sales#50, sum(CASE WHEN (d_day_name#59 = Friday) THEN sales_price#43 END)#77 AS fri_sales#51, sum(CASE WHEN (d_day_name#59 = Saturday) THEN sales_price#43 END)#78 AS sat_sales#52]
+
+(16) Scan parquet spark_catalog.default.date_dim
+Output [2]: [d_week_seq#62, d_year#64]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/perf_0053_spark_plan_lxus6fvy/date_dim]
+PushedFilters: [IsNotNull(d_year), EqualTo(d_year,2001), IsNotNull(d_week_seq)]
+ReadSchema: struct<d_week_seq:int,d_year:int>
+
+(17) Filter
+Input [2]: [d_week_seq#62, d_year#64]
+Condition : ((isnotnull(d_year#64) AND (d_year#64 = 2001)) AND isnotnull(d_week_seq#62))
+
+(18) Project
+Output [1]: [d_week_seq#62]
+Input [2]: [d_week_seq#62, d_year#64]
+
+(19) BroadcastExchange
+Input [1]: [d_week_seq#62]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, true] as bigint)),false), [plan_id=186]
+
+(20) BroadcastHashJoin
+Left keys [1]: [d_week_seq#58]
+Right keys [1]: [d_week_seq#62]
+Join type: Inner
+Join condition: None
+
+(21) Project
+Output [8]: [d_week_seq#58 AS d_week_seq1#26, sun_sales#46 AS sun_sales1#27, mon_sales#47 AS mon_sales1#28, tue_sales#48 AS tue_sales1#29, wed_sales#49 AS wed_sales1#30, thu_sales#50 AS thu_sales1#31, fri_sales#51 AS fri_sales1#32, sat_sales#52 AS sat_sales1#33]
+Input [9]: [d_week_seq#58, sun_sales#46, mon_sales#47, tue_sales#48, wed_sales#49, thu_sales#50, fri_sales#51, sat_sales#52, d_week_seq#62]
+
+(22) Scan parquet spark_catalog.default.web_sales
+Output [2]: [ws_sold_date_sk#115, ws_ext_sales_price#116]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/perf_0053_spark_plan_lxus6fvy/web_sales]
+PushedFilters: [IsNotNull(ws_sold_date_sk)]
+ReadSchema: struct<ws_sold_date_sk:int,ws_ext_sales_price:decimal(9,2)>
+
+(23) Filter
+Input [2]: [ws_sold_date_sk#115, ws_ext_sales_price#116]
+Condition : isnotnull(ws_sold_date_sk#115)
+
+(24) Project
+Output [2]: [ws_sold_date_sk#115 AS sold_date_sk#117, ws_ext_sales_price#116 AS sales_price#118]
+Input [2]: [ws_sold_date_sk#115, ws_ext_sales_price#116]
+
+(25) Scan parquet spark_catalog.default.catalog_sales
+Output [2]: [cs_sold_date_sk#119, cs_ext_sales_price#120]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/perf_0053_spark_plan_lxus6fvy/catalog_sales]
+PushedFilters: [IsNotNull(cs_sold_date_sk)]
+ReadSchema: struct<cs_sold_date_sk:int,cs_ext_sales_price:decimal(9,2)>
+
+(26) Filter
+Input [2]: [cs_sold_date_sk#119, cs_ext_sales_price#120]
+Condition : isnotnull(cs_sold_date_sk#119)
+
+(27) Project
+Output [2]: [cs_sold_date_sk#119 AS sold_date_sk#121, cs_ext_sales_price#120 AS sales_price#122]
+Input [2]: [cs_sold_date_sk#119, cs_ext_sales_price#120]
+
+(28) Union
+
+(29) BroadcastExchange
+Input [2]: [sold_date_sk#117, sales_price#118]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, true] as bigint)),false), [plan_id=189]
+
+(30) Scan parquet spark_catalog.default.date_dim
+Output [3]: [d_date_sk#123, d_week_seq#124, d_day_name#125]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/perf_0053_spark_plan_lxus6fvy/date_dim]
+PushedFilters: [IsNotNull(d_date_sk), IsNotNull(d_week_seq)]
+ReadSchema: struct<d_date_sk:int,d_week_seq:int,d_day_name:string>
+
+(31) Filter
+Input [3]: [d_date_sk#123, d_week_seq#124, d_day_name#125]
+Condition : (isnotnull(d_date_sk#123) AND isnotnull(d_week_seq#124))
+
+(32) BroadcastHashJoin
+Left keys [1]: [sold_date_sk#117]
+Right keys [1]: [d_date_sk#123]
+Join type: Inner
+Join condition: None
+
+(33) Project
+Output [3]: [sales_price#118, d_week_seq#124, d_day_name#125]
+Input [5]: [sold_date_sk#117, sales_price#118, d_date_sk#123, d_week_seq#124, d_day_name#125]
+
+(34) HashAggregate
+Input [3]: [sales_price#118, d_week_seq#124, d_day_name#125]
+Keys [1]: [d_week_seq#124]
+Functions [7]: [partial_sum(CASE WHEN (d_day_name#125 = Sunday) THEN sales_price#118 END), partial_sum(CASE WHEN (d_day_name#125 = Monday) THEN sales_price#118 END), partial_sum(CASE WHEN (d_day_name#125 = Tuesday) THEN sales_price#118 END), partial_sum(CASE WHEN (d_day_name#125 = Wednesday) THEN sales_price#118 END), partial_sum(CASE WHEN (d_day_name#125 = Thursday) THEN sales_price#118 END), partial_sum(CASE WHEN (d_day_name#125 = Friday) THEN sales_price#118 END), partial_sum(CASE WHEN (d_day_name#125 = Saturday) THEN sales_price#118 END)]
+Aggregate Attributes [14]: [sum#162, isEmpty#163, sum#164, isEmpty#165, sum#166, isEmpty#167, sum#168, isEmpty#169, sum#170, isEmpty#171, sum#172, isEmpty#173, sum#174, isEmpty#175]
+Results [15]: [d_week_seq#124, sum#176, isEmpty#177, sum#178, isEmpty#179, sum#180, isEmpty#181, sum#182, isEmpty#183, sum#184, isEmpty#185, sum#186, isEmpty#187, sum#188, isEmpty#189]
+
+(35) Exchange
+Input [15]: [d_week_seq#124, sum#176, isEmpty#177, sum#178, isEmpty#179, sum#180, isEmpty#181, sum#182, isEmpty#183, sum#184, isEmpty#185, sum#186, isEmpty#187, sum#188, isEmpty#189]
+Arguments: hashpartitioning(d_week_seq#124, 1), ENSURE_REQUIREMENTS, [plan_id=194]
+
+(36) HashAggregate
+Input [15]: [d_week_seq#124, sum#176, isEmpty#177, sum#178, isEmpty#179, sum#180, isEmpty#181, sum#182, isEmpty#183, sum#184, isEmpty#185, sum#186, isEmpty#187, sum#188, isEmpty#189]
+Keys [1]: [d_week_seq#124]
+Functions [7]: [sum(CASE WHEN (d_day_name#125 = Sunday) THEN sales_price#118 END), sum(CASE WHEN (d_day_name#125 = Monday) THEN sales_price#118 END), sum(CASE WHEN (d_day_name#125 = Tuesday) THEN sales_price#118 END), sum(CASE WHEN (d_day_name#125 = Wednesday) THEN sales_price#118 END), sum(CASE WHEN (d_day_name#125 = Thursday) THEN sales_price#118 END), sum(CASE WHEN (d_day_name#125 = Friday) THEN sales_price#118 END), sum(CASE WHEN (d_day_name#125 = Saturday) THEN sales_price#118 END)]
+Aggregate Attributes [7]: [sum(CASE WHEN (d_day_name#125 = Sunday) THEN sales_price#118 END)#72, sum(CASE WHEN (d_day_name#125 = Monday) THEN sales_price#118 END)#73, sum(CASE WHEN (d_day_name#125 = Tuesday) THEN sales_price#118 END)#74, sum(CASE WHEN (d_day_name#125 = Wednesday) THEN sales_price#118 END)#75, sum(CASE WHEN (d_day_name#125 = Thursday) THEN sales_price#118 END)#76, sum(CASE WHEN (d_day_name#125 = Friday) THEN sales_price#118 END)#77, sum(CASE WHEN (d_day_name#125 = Saturday) THEN sales_price#118 END)#78]
+Results [8]: [d_week_seq#124, sum(CASE WHEN (d_day_name#125 = Sunday) THEN sales_price#118 END)#72 AS sun_sales#80, sum(CASE WHEN (d_day_name#125 = Monday) THEN sales_price#118 END)#73 AS mon_sales#81, sum(CASE WHEN (d_day_name#125 = Tuesday) THEN sales_price#118 END)#74 AS tue_sales#82, sum(CASE WHEN (d_day_name#125 = Wednesday) THEN sales_price#118 END)#75 AS wed_sales#83, sum(CASE WHEN (d_day_name#125 = Thursday) THEN sales_price#118 END)#76 AS thu_sales#84, sum(CASE WHEN (d_day_name#125 = Friday) THEN sales_price#118 END)#77 AS fri_sales#85, sum(CASE WHEN (d_day_name#125 = Saturday) THEN sales_price#118 END)#78 AS sat_sales#86]
+
+(37) Scan parquet spark_catalog.default.date_dim
+Output [2]: [d_week_seq#66, d_year#68]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/perf_0053_spark_plan_lxus6fvy/date_dim]
+PushedFilters: [IsNotNull(d_year), EqualTo(d_year,2002), IsNotNull(d_week_seq)]
+ReadSchema: struct<d_week_seq:int,d_year:int>
+
+(38) Filter
+Input [2]: [d_week_seq#66, d_year#68]
+Condition : ((isnotnull(d_year#68) AND (d_year#68 = 2002)) AND isnotnull(d_week_seq#66))
+
+(39) Project
+Output [1]: [d_week_seq#66]
+Input [2]: [d_week_seq#66, d_year#68]
+
+(40) BroadcastExchange
+Input [1]: [d_week_seq#66]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, true] as bigint)),false), [plan_id=197]
+
+(41) BroadcastHashJoin
+Left keys [1]: [d_week_seq#124]
+Right keys [1]: [d_week_seq#66]
+Join type: Inner
+Join condition: None
+
+(42) Project
+Output [8]: [d_week_seq#124 AS d_week_seq2#34, sun_sales#80 AS sun_sales2#35, mon_sales#81 AS mon_sales2#36, tue_sales#82 AS tue_sales2#37, wed_sales#83 AS wed_sales2#38, thu_sales#84 AS thu_sales2#39, fri_sales#85 AS fri_sales2#40, sat_sales#86 AS sat_sales2#41]
+Input [9]: [d_week_seq#124, sun_sales#80, mon_sales#81, tue_sales#82, wed_sales#83, thu_sales#84, fri_sales#85, sat_sales#86, d_week_seq#66]
+
+(43) BroadcastExchange
+Input [8]: [d_week_seq2#34, sun_sales2#35, mon_sales2#36, tue_sales2#37, wed_sales2#38, thu_sales2#39, fri_sales2#40, sat_sales2#41]
+Arguments: HashedRelationBroadcastMode(List(cast((input[0, int, true] - 53) as bigint)),false), [plan_id=201]
+
+(44) BroadcastHashJoin
+Left keys [1]: [d_week_seq1#26]
+Right keys [1]: [(d_week_seq2#34 - 53)]
+Join type: Inner
+Join condition: None
+
+(45) Project
+Output [8]: [d_week_seq1#26, round((sun_sales1#27 / sun_sales2#35), 2) AS round((sun_sales1 / sun_sales2), 2)#87, round((mon_sales1#28 / mon_sales2#36), 2) AS round((mon_sales1 / mon_sales2), 2)#88, round((tue_sales1#29 / tue_sales2#37), 2) AS round((tue_sales1 / tue_sales2), 2)#89, round((wed_sales1#30 / wed_sales2#38), 2) AS round((wed_sales1 / wed_sales2), 2)#90, round((thu_sales1#31 / thu_sales2#39), 2) AS round((thu_sales1 / thu_sales2), 2)#91, round((fri_sales1#32 / fri_sales2#40), 2) AS round((fri_sales1 / fri_sales2), 2)#92, round((sat_sales1#33 / sat_sales2#41), 2) AS round((sat_sales1 / sat_sales2), 2)#93]
+Input [16]: [d_week_seq1#26, sun_sales1#27, mon_sales1#28, tue_sales1#29, wed_sales1#30, thu_sales1#31, fri_sales1#32, sat_sales1#33, d_week_seq2#34, sun_sales2#35, mon_sales2#36, tue_sales2#37, wed_sales2#38, thu_sales2#39, fri_sales2#40, sat_sales2#41]
+
+(46) Exchange
+Input [8]: [d_week_seq1#26, round((sun_sales1 / sun_sales2), 2)#87, round((mon_sales1 / mon_sales2), 2)#88, round((tue_sales1 / tue_sales2), 2)#89, round((wed_sales1 / wed_sales2), 2)#90, round((thu_sales1 / thu_sales2), 2)#91, round((fri_sales1 / fri_sales2), 2)#92, round((sat_sales1 / sat_sales2), 2)#93]
+Arguments: rangepartitioning(d_week_seq1#26 ASC NULLS FIRST, 1), ENSURE_REQUIREMENTS, [plan_id=205]
+
+(47) Sort
+Input [8]: [d_week_seq1#26, round((sun_sales1 / sun_sales2), 2)#87, round((mon_sales1 / mon_sales2), 2)#88, round((tue_sales1 / tue_sales2), 2)#89, round((wed_sales1 / wed_sales2), 2)#90, round((thu_sales1 / thu_sales2), 2)#91, round((fri_sales1 / fri_sales2), 2)#92, round((sat_sales1 / sat_sales2), 2)#93]
+Arguments: [d_week_seq1#26 ASC NULLS FIRST], true, 0
+
+(48) AdaptiveSparkPlan
+Output [8]: [d_week_seq1#26, round((sun_sales1 / sun_sales2), 2)#87, round((mon_sales1 / mon_sales2), 2)#88, round((tue_sales1 / tue_sales2), 2)#89, round((wed_sales1 / wed_sales2), 2)#90, round((thu_sales1 / thu_sales2), 2)#91, round((fri_sales1 / fri_sales2), 2)#92, round((sat_sales1 / sat_sales2), 2)#93]
+Arguments: isFinalPlan=false
+
+
