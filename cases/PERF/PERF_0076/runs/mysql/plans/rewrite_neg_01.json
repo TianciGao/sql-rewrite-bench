@@ -1,0 +1,354 @@
+{
+  "query_block": {
+    "select_id": 1,
+    "cost_info": {
+      "query_cost": "16.51"
+    },
+    "ordering_operation": {
+      "using_filesort": false,
+      "nested_loop": [
+        {
+          "table": {
+            "table_name": "ss1",
+            "access_type": "ALL",
+            "rows_examined_per_scan": 2,
+            "rows_produced_per_join": 1,
+            "filtered": "50.00",
+            "cost_info": {
+              "read_cost": "2.62",
+              "eval_cost": "0.10",
+              "prefix_cost": "2.73",
+              "data_read_per_join": "1K"
+            },
+            "used_columns": [
+              "ca_county",
+              "d_qoy",
+              "d_year",
+              "store_sales"
+            ],
+            "attached_condition": "((`ss1`.`d_year` = 2000) and (`ss1`.`d_qoy` = 1))",
+            "materialized_from_subquery": {
+              "using_temporary_table": true,
+              "dependent": false,
+              "cacheable": true,
+              "query_block": {
+                "select_id": 2,
+                "cost_info": {
+                  "query_cost": "1.25"
+                },
+                "grouping_operation": {
+                  "using_temporary_table": true,
+                  "using_filesort": false,
+                  "nested_loop": [
+                    {
+                      "table": {
+                        "table_name": "ca",
+                        "access_type": "ALL",
+                        "possible_keys": [
+                          "PRIMARY"
+                        ],
+                        "rows_examined_per_scan": 1,
+                        "rows_produced_per_join": 1,
+                        "filtered": "100.00",
+                        "cost_info": {
+                          "read_cost": "0.25",
+                          "eval_cost": "0.10",
+                          "prefix_cost": "0.35",
+                          "data_read_per_join": "1K"
+                        },
+                        "used_columns": [
+                          "ca_address_sk",
+                          "ca_county"
+                        ]
+                      }
+                    },
+                    {
+                      "table": {
+                        "table_name": "ss",
+                        "access_type": "ALL",
+                        "rows_examined_per_scan": 3,
+                        "rows_produced_per_join": 1,
+                        "filtered": "33.33",
+                        "using_join_buffer": "hash join",
+                        "cost_info": {
+                          "read_cost": "0.25",
+                          "eval_cost": "0.10",
+                          "prefix_cost": "0.90",
+                          "data_read_per_join": "16"
+                        },
+                        "used_columns": [
+                          "ss_sold_date_sk",
+                          "ss_addr_sk",
+                          "ss_ext_sales_price"
+                        ],
+                        "attached_condition": "(`bench`.`ss`.`ss_addr_sk` = `bench`.`ca`.`ca_address_sk`)"
+                      }
+                    },
+                    {
+                      "table": {
+                        "table_name": "d",
+                        "access_type": "eq_ref",
+                        "possible_keys": [
+                          "PRIMARY"
+                        ],
+                        "key": "PRIMARY",
+                        "used_key_parts": [
+                          "d_date_sk"
+                        ],
+                        "key_length": "4",
+                        "ref": [
+                          "bench.ss.ss_sold_date_sk"
+                        ],
+                        "rows_examined_per_scan": 1,
+                        "rows_produced_per_join": 1,
+                        "filtered": "100.00",
+                        "cost_info": {
+                          "read_cost": "0.25",
+                          "eval_cost": "0.10",
+                          "prefix_cost": "1.25",
+                          "data_read_per_join": "16"
+                        },
+                        "used_columns": [
+                          "d_date_sk",
+                          "d_qoy",
+                          "d_year"
+                        ]
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        {
+          "table": {
+            "table_name": "ss2",
+            "access_type": "ALL",
+            "rows_examined_per_scan": 2,
+            "rows_produced_per_join": 1,
+            "filtered": "50.00",
+            "using_join_buffer": "hash join",
+            "cost_info": {
+              "read_cost": "2.64",
+              "eval_cost": "0.10",
+              "prefix_cost": "5.46",
+              "data_read_per_join": "1K"
+            },
+            "used_columns": [
+              "ca_county",
+              "d_qoy",
+              "d_year",
+              "store_sales"
+            ],
+            "attached_condition": "((`ss2`.`ca_county` = `ss1`.`ca_county`) and (`ss2`.`d_year` = 2000) and (`ss2`.`d_qoy` = 2))",
+            "materialized_from_subquery": {
+              "sharing_temporary_table_with": {
+                "select_id": 2
+              }
+            }
+          }
+        },
+        {
+          "table": {
+            "table_name": "ss3",
+            "access_type": "ALL",
+            "rows_examined_per_scan": 2,
+            "rows_produced_per_join": 1,
+            "filtered": "50.00",
+            "using_join_buffer": "hash join",
+            "cost_info": {
+              "read_cost": "2.65",
+              "eval_cost": "0.10",
+              "prefix_cost": "8.21",
+              "data_read_per_join": "1K"
+            },
+            "used_columns": [
+              "ca_county",
+              "d_qoy",
+              "d_year",
+              "store_sales"
+            ],
+            "attached_condition": "((`ss3`.`ca_county` = `ss1`.`ca_county`) and (`ss3`.`d_year` = 2000) and (`ss3`.`d_qoy` = 3))",
+            "materialized_from_subquery": {
+              "sharing_temporary_table_with": {
+                "select_id": 2
+              }
+            }
+          }
+        },
+        {
+          "table": {
+            "table_name": "ws1",
+            "access_type": "ALL",
+            "rows_examined_per_scan": 2,
+            "rows_produced_per_join": 1,
+            "filtered": "50.00",
+            "using_join_buffer": "hash join",
+            "cost_info": {
+              "read_cost": "2.66",
+              "eval_cost": "0.10",
+              "prefix_cost": "10.96",
+              "data_read_per_join": "1K"
+            },
+            "used_columns": [
+              "ca_county",
+              "d_qoy",
+              "d_year",
+              "web_sales"
+            ],
+            "attached_condition": "((`ws1`.`ca_county` = `ss1`.`ca_county`) and (`ws1`.`d_year` = 2000) and (`ws1`.`d_qoy` = 1))",
+            "materialized_from_subquery": {
+              "using_temporary_table": true,
+              "dependent": false,
+              "cacheable": true,
+              "query_block": {
+                "select_id": 5,
+                "cost_info": {
+                  "query_cost": "1.25"
+                },
+                "grouping_operation": {
+                  "using_temporary_table": true,
+                  "using_filesort": false,
+                  "nested_loop": [
+                    {
+                      "table": {
+                        "table_name": "ca",
+                        "access_type": "ALL",
+                        "possible_keys": [
+                          "PRIMARY"
+                        ],
+                        "rows_examined_per_scan": 1,
+                        "rows_produced_per_join": 1,
+                        "filtered": "100.00",
+                        "cost_info": {
+                          "read_cost": "0.25",
+                          "eval_cost": "0.10",
+                          "prefix_cost": "0.35",
+                          "data_read_per_join": "1K"
+                        },
+                        "used_columns": [
+                          "ca_address_sk",
+                          "ca_county"
+                        ]
+                      }
+                    },
+                    {
+                      "table": {
+                        "table_name": "ws",
+                        "access_type": "ALL",
+                        "rows_examined_per_scan": 3,
+                        "rows_produced_per_join": 1,
+                        "filtered": "33.33",
+                        "using_join_buffer": "hash join",
+                        "cost_info": {
+                          "read_cost": "0.25",
+                          "eval_cost": "0.10",
+                          "prefix_cost": "0.90",
+                          "data_read_per_join": "16"
+                        },
+                        "used_columns": [
+                          "ws_sold_date_sk",
+                          "ws_bill_addr_sk",
+                          "ws_ext_sales_price"
+                        ],
+                        "attached_condition": "(`bench`.`ws`.`ws_bill_addr_sk` = `bench`.`ca`.`ca_address_sk`)"
+                      }
+                    },
+                    {
+                      "table": {
+                        "table_name": "d",
+                        "access_type": "eq_ref",
+                        "possible_keys": [
+                          "PRIMARY"
+                        ],
+                        "key": "PRIMARY",
+                        "used_key_parts": [
+                          "d_date_sk"
+                        ],
+                        "key_length": "4",
+                        "ref": [
+                          "bench.ws.ws_sold_date_sk"
+                        ],
+                        "rows_examined_per_scan": 1,
+                        "rows_produced_per_join": 1,
+                        "filtered": "100.00",
+                        "cost_info": {
+                          "read_cost": "0.25",
+                          "eval_cost": "0.10",
+                          "prefix_cost": "1.25",
+                          "data_read_per_join": "16"
+                        },
+                        "used_columns": [
+                          "d_date_sk",
+                          "d_qoy",
+                          "d_year"
+                        ]
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        {
+          "table": {
+            "table_name": "ws2",
+            "access_type": "ALL",
+            "rows_examined_per_scan": 2,
+            "rows_produced_per_join": 1,
+            "filtered": "50.00",
+            "using_join_buffer": "hash join",
+            "cost_info": {
+              "read_cost": "2.67",
+              "eval_cost": "0.10",
+              "prefix_cost": "13.73",
+              "data_read_per_join": "1K"
+            },
+            "used_columns": [
+              "ca_county",
+              "d_qoy",
+              "d_year",
+              "web_sales"
+            ],
+            "attached_condition": "((`ws2`.`ca_county` = `ss1`.`ca_county`) and (`ws2`.`d_year` = 2000) and (`ws2`.`d_qoy` = 2) and ((case when (`ws1`.`web_sales` > 0.00) then (`ws2`.`web_sales` / `ws1`.`web_sales`) else NULL end) < (case when (`ss1`.`store_sales` > 0.00) then (`ss2`.`store_sales` / `ss1`.`store_sales`) else NULL end)))",
+            "materialized_from_subquery": {
+              "sharing_temporary_table_with": {
+                "select_id": 5
+              }
+            }
+          }
+        },
+        {
+          "table": {
+            "table_name": "ws3",
+            "access_type": "ALL",
+            "rows_examined_per_scan": 2,
+            "rows_produced_per_join": 1,
+            "filtered": "50.00",
+            "using_join_buffer": "hash join",
+            "cost_info": {
+              "read_cost": "2.68",
+              "eval_cost": "0.10",
+              "prefix_cost": "16.51",
+              "data_read_per_join": "1K"
+            },
+            "used_columns": [
+              "ca_county",
+              "d_qoy",
+              "d_year",
+              "web_sales"
+            ],
+            "attached_condition": "((`ws3`.`ca_county` = `ss1`.`ca_county`) and (`ws3`.`d_year` = 2000) and (`ws3`.`d_qoy` = 3) and ((case when (`ws2`.`web_sales` > 0.00) then (`ws3`.`web_sales` / `ws2`.`web_sales`) else NULL end) > (case when (`ss2`.`store_sales` > 0.00) then (`ss3`.`store_sales` / `ss2`.`store_sales`) else NULL end)))",
+            "materialized_from_subquery": {
+              "sharing_temporary_table_with": {
+                "select_id": 5
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}
