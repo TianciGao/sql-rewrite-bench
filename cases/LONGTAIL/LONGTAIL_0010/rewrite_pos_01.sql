@@ -19,7 +19,7 @@ FROM (
         stats.TotalViews,
         stats.AvgScore,
         stats.AvgViews,
-        ROW_NUMBER() OVER (ORDER BY stats.TotalPosts DESC) AS Rank
+        ROW_NUMBER() OVER (ORDER BY stats.TotalPosts DESC) AS rank_value
     FROM (
         SELECT
             u.Id AS UserId,
@@ -36,4 +36,4 @@ FROM (
         GROUP BY u.Id, u.DisplayName
     ) AS stats
 ) AS ranked
-WHERE ranked.Rank <= 10;
+WHERE ranked.rank_value <= 10;

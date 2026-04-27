@@ -6,7 +6,7 @@ SELECT
     ranked.QuestionCount,
     ranked.AnswerCount,
     ranked.WikiCount,
-    ranked.Rank
+    ranked.rank_value
 FROM (
     SELECT
         stats.UserId,
@@ -16,7 +16,7 @@ FROM (
         stats.QuestionCount,
         stats.AnswerCount,
         stats.WikiCount,
-        ROW_NUMBER() OVER (ORDER BY stats.TotalPostScore DESC) AS Rank
+        ROW_NUMBER() OVER (ORDER BY stats.TotalPostScore DESC) AS rank_value
     FROM (
         SELECT
             U.Id AS UserId,
@@ -31,5 +31,5 @@ FROM (
         GROUP BY U.Id, U.Reputation
     ) AS stats
 ) AS ranked
-WHERE ranked.Rank <= 10
+WHERE ranked.rank_value <= 10
 ORDER BY ranked.TotalPostScore DESC;

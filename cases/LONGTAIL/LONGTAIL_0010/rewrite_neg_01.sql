@@ -24,7 +24,7 @@ TopUsers AS (
         TotalViews,
         AvgScore,
         AvgViews,
-        ROW_NUMBER() OVER (ORDER BY TotalPosts DESC) AS Rank
+        ROW_NUMBER() OVER (ORDER BY TotalPosts DESC) AS rank_value
     FROM UserPostStats
 )
 SELECT
@@ -38,4 +38,4 @@ SELECT
     AvgScore,
     AvgViews
 FROM TopUsers
-WHERE Rank <= 10;
+WHERE rank_value <= 10;

@@ -20,7 +20,7 @@ TopUsers AS (
         QuestionCount,
         AnswerCount,
         WikiCount,
-        ROW_NUMBER() OVER (ORDER BY TotalPostScore DESC) AS Rank
+        ROW_NUMBER() OVER (ORDER BY TotalPostScore DESC) AS rank_value
     FROM UserStats
 )
 SELECT
@@ -31,7 +31,7 @@ SELECT
     QuestionCount,
     AnswerCount,
     WikiCount,
-    Rank
+    rank_value
 FROM TopUsers
-WHERE Rank <= 10
+WHERE rank_value <= 10
 ORDER BY TotalPostScore DESC;

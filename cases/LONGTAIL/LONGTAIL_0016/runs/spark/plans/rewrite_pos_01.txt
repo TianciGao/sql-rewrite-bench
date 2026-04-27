@@ -1,0 +1,103 @@
+== Physical Plan ==
+AdaptiveSparkPlan (16)
++- Filter (15)
+   +- Window (14)
+      +- TakeOrderedAndProject (13)
+         +- HashAggregate (12)
+            +- Exchange (11)
+               +- HashAggregate (10)
+                  +- HashAggregate (9)
+                     +- Exchange (8)
+                        +- HashAggregate (7)
+                           +- Project (6)
+                              +- BroadcastHashJoin LeftOuter BuildRight (5)
+                                 :- Scan parquet spark_catalog.default.users (1)
+                                 +- BroadcastExchange (4)
+                                    +- Filter (3)
+                                       +- Scan parquet spark_catalog.default.posts (2)
+
+
+(1) Scan parquet spark_catalog.default.users
+Output [2]: [Id#32, Reputation#33]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/longtail_0016_spark_plan_tj8cctsf/users]
+ReadSchema: struct<Id:int,Reputation:int>
+
+(2) Scan parquet spark_catalog.default.posts
+Output [4]: [Id#34, OwnerUserId#35, PostTypeId#36, Score#37]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/longtail_0016_spark_plan_tj8cctsf/posts]
+PushedFilters: [IsNotNull(OwnerUserId)]
+ReadSchema: struct<Id:int,OwnerUserId:int,PostTypeId:int,Score:int>
+
+(3) Filter
+Input [4]: [Id#34, OwnerUserId#35, PostTypeId#36, Score#37]
+Condition : isnotnull(OwnerUserId#35)
+
+(4) BroadcastExchange
+Input [4]: [Id#34, OwnerUserId#35, PostTypeId#36, Score#37]
+Arguments: HashedRelationBroadcastMode(List(cast(input[1, int, false] as bigint)),false), [plan_id=163]
+
+(5) BroadcastHashJoin
+Left keys [1]: [Id#32]
+Right keys [1]: [OwnerUserId#35]
+Join type: LeftOuter
+Join condition: None
+
+(6) Project
+Output [5]: [Id#32, Reputation#33, Id#34, PostTypeId#36, Score#37]
+Input [6]: [Id#32, Reputation#33, Id#34, OwnerUserId#35, PostTypeId#36, Score#37]
+
+(7) HashAggregate
+Input [5]: [Id#32, Reputation#33, Id#34, PostTypeId#36, Score#37]
+Keys [3]: [Id#32, Reputation#33, Id#34]
+Functions [4]: [partial_sum(coalesce(Score#37, 0)), partial_sum(CASE WHEN (PostTypeId#36 = 1) THEN 1 ELSE 0 END), partial_sum(CASE WHEN (PostTypeId#36 = 2) THEN 1 ELSE 0 END), partial_sum(CASE WHEN PostTypeId#36 IN (3,4,5) THEN 1 ELSE 0 END)]
+Aggregate Attributes [4]: [sum(coalesce(Score#37, 0))#100L, sum(CASE WHEN (PostTypeId#36 = 1) THEN 1 ELSE 0 END)#101L, sum(CASE WHEN (PostTypeId#36 = 2) THEN 1 ELSE 0 END)#102L, sum(CASE WHEN PostTypeId#36 IN (3,4,5) THEN 1 ELSE 0 END)#103L]
+Results [7]: [Id#32, Reputation#33, Id#34, sum#105L, sum#107L, sum#109L, sum#111L]
+
+(8) Exchange
+Input [7]: [Id#32, Reputation#33, Id#34, sum#105L, sum#107L, sum#109L, sum#111L]
+Arguments: hashpartitioning(Id#32, Reputation#33, Id#34, 1), ENSURE_REQUIREMENTS, [plan_id=168]
+
+(9) HashAggregate
+Input [7]: [Id#32, Reputation#33, Id#34, sum#105L, sum#107L, sum#109L, sum#111L]
+Keys [3]: [Id#32, Reputation#33, Id#34]
+Functions [4]: [merge_sum(coalesce(Score#37, 0)), merge_sum(CASE WHEN (PostTypeId#36 = 1) THEN 1 ELSE 0 END), merge_sum(CASE WHEN (PostTypeId#36 = 2) THEN 1 ELSE 0 END), merge_sum(CASE WHEN PostTypeId#36 IN (3,4,5) THEN 1 ELSE 0 END)]
+Aggregate Attributes [4]: [sum(coalesce(Score#37, 0))#100L, sum(CASE WHEN (PostTypeId#36 = 1) THEN 1 ELSE 0 END)#101L, sum(CASE WHEN (PostTypeId#36 = 2) THEN 1 ELSE 0 END)#102L, sum(CASE WHEN PostTypeId#36 IN (3,4,5) THEN 1 ELSE 0 END)#103L]
+Results [7]: [Id#32, Reputation#33, Id#34, sum#105L, sum#107L, sum#109L, sum#111L]
+
+(10) HashAggregate
+Input [7]: [Id#32, Reputation#33, Id#34, sum#105L, sum#107L, sum#109L, sum#111L]
+Keys [2]: [Id#32, Reputation#33]
+Functions [5]: [merge_sum(coalesce(Score#37, 0)), merge_sum(CASE WHEN (PostTypeId#36 = 1) THEN 1 ELSE 0 END), merge_sum(CASE WHEN (PostTypeId#36 = 2) THEN 1 ELSE 0 END), merge_sum(CASE WHEN PostTypeId#36 IN (3,4,5) THEN 1 ELSE 0 END), partial_count(distinct Id#34)]
+Aggregate Attributes [5]: [sum(coalesce(Score#37, 0))#100L, sum(CASE WHEN (PostTypeId#36 = 1) THEN 1 ELSE 0 END)#101L, sum(CASE WHEN (PostTypeId#36 = 2) THEN 1 ELSE 0 END)#102L, sum(CASE WHEN PostTypeId#36 IN (3,4,5) THEN 1 ELSE 0 END)#103L, count(Id#34)#99L]
+Results [7]: [Id#32, Reputation#33, sum#105L, sum#107L, sum#109L, sum#111L, count#114L]
+
+(11) Exchange
+Input [7]: [Id#32, Reputation#33, sum#105L, sum#107L, sum#109L, sum#111L, count#114L]
+Arguments: hashpartitioning(Id#32, Reputation#33, 1), ENSURE_REQUIREMENTS, [plan_id=172]
+
+(12) HashAggregate
+Input [7]: [Id#32, Reputation#33, sum#105L, sum#107L, sum#109L, sum#111L, count#114L]
+Keys [2]: [Id#32, Reputation#33]
+Functions [5]: [sum(coalesce(Score#37, 0)), sum(CASE WHEN (PostTypeId#36 = 1) THEN 1 ELSE 0 END), sum(CASE WHEN (PostTypeId#36 = 2) THEN 1 ELSE 0 END), sum(CASE WHEN PostTypeId#36 IN (3,4,5) THEN 1 ELSE 0 END), count(distinct Id#34)]
+Aggregate Attributes [5]: [sum(coalesce(Score#37, 0))#100L, sum(CASE WHEN (PostTypeId#36 = 1) THEN 1 ELSE 0 END)#101L, sum(CASE WHEN (PostTypeId#36 = 2) THEN 1 ELSE 0 END)#102L, sum(CASE WHEN PostTypeId#36 IN (3,4,5) THEN 1 ELSE 0 END)#103L, count(Id#34)#99L]
+Results [7]: [Id#32 AS UserId#91, Reputation#33, count(Id#34)#99L AS PostCount#92L, sum(coalesce(Score#37, 0))#100L AS TotalPostScore#93L, sum(CASE WHEN (PostTypeId#36 = 1) THEN 1 ELSE 0 END)#101L AS QuestionCount#94L, sum(CASE WHEN (PostTypeId#36 = 2) THEN 1 ELSE 0 END)#102L AS AnswerCount#95L, sum(CASE WHEN PostTypeId#36 IN (3,4,5) THEN 1 ELSE 0 END)#103L AS WikiCount#96L]
+
+(13) TakeOrderedAndProject
+Input [7]: [UserId#91, Reputation#33, PostCount#92L, TotalPostScore#93L, QuestionCount#94L, AnswerCount#95L, WikiCount#96L]
+Arguments: 10, [TotalPostScore#93L DESC NULLS LAST], [UserId#91, Reputation#33, PostCount#92L, TotalPostScore#93L, QuestionCount#94L, AnswerCount#95L, WikiCount#96L]
+
+(14) Window
+Input [7]: [UserId#91, Reputation#33, PostCount#92L, TotalPostScore#93L, QuestionCount#94L, AnswerCount#95L, WikiCount#96L]
+Arguments: [row_number() windowspecdefinition(TotalPostScore#93L DESC NULLS LAST, specifiedwindowframe(RowFrame, unboundedpreceding$(), currentrow$())) AS rank_value#97], [TotalPostScore#93L DESC NULLS LAST]
+
+(15) Filter
+Input [8]: [UserId#91, Reputation#33, PostCount#92L, TotalPostScore#93L, QuestionCount#94L, AnswerCount#95L, WikiCount#96L, rank_value#97]
+Condition : (rank_value#97 <= 10)
+
+(16) AdaptiveSparkPlan
+Output [8]: [UserId#91, Reputation#33, PostCount#92L, TotalPostScore#93L, QuestionCount#94L, AnswerCount#95L, WikiCount#96L, rank_value#97]
+Arguments: isFinalPlan=false
+
+
