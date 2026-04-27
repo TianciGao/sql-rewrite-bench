@@ -267,6 +267,8 @@
 | LONGTAIL_0001 | 手工构造的 long-tail anchor case（非外部 benchmark） | stable pilot anchor | anchor package（尚未按 formal skeleton validator 全量回扫） | PostgreSQL / MySQL / Spark | 无 admission 缺口；继续作为 structure-rich longtail anchor；后续统一 package 工艺后再做 schema / validator 回扫 |
 | LONGTAIL_0002 | SQLStorm / StackOverflow workload seed | PG-validated draft with positive / negative pair；remain not_yet_admitted | formal skeleton complete；release-grade incomplete（PG-only validated） | PostgreSQL | benchmark 侧还缺 MySQL / Spark 验证；当前价值主要在 long-tail 结构覆盖，不急于推进 common-core |
 
+补充说明：当前 `inventory/case_registry.csv` 已注册 `19` 个 LONGTAIL rows，其中 `18` 个 case 满足 `tri_engine_closure=yes`；这 `18` 个 tri-engine cases 包括手工 / legacy anchor `LONGTAIL_0001`，以及 `17` 个 SQLStorm-derived witness-validated longtail drafts：`LONGTAIL_0003`、`LONGTAIL_0004`、`LONGTAIL_0005`、`LONGTAIL_0007`、`LONGTAIL_0008`、`LONGTAIL_0009`、`LONGTAIL_0010`、`LONGTAIL_0011`、`LONGTAIL_0012`、`LONGTAIL_0013`、`LONGTAIL_0014`、`LONGTAIL_0015`、`LONGTAIL_0016`、`LONGTAIL_0018`、`LONGTAIL_0019`、`LONGTAIL_0020`、`LONGTAIL_0021`。`LONGTAIL_0002` 当前仍是 PG-only registered legacy SQLStorm case；`LONGTAIL_0006` 与 `LONGTAIL_0017` 仍不计入已注册 tri-engine 集合。该状态只表示 tri-engine witness validation 与对应 plan artifacts 已形成；live case facts 仍以 `inventory/case_registry.csv` 为准，不意味着 formal admission、promotion、common-core movement、extended-line movement 或 formal review completion。剩余 SQLStorm candidate pool 中低 / 中风险候选已明显减少，后续若继续扩展，应以 deliberate repair / selection 为主，而不是继续按 broad wave 推进。
+
 ### 7.3 Consistency cases
 
 | case_id | 数据集 / 来源 | 当前成熟度 | package engineering 状态 | 已验证引擎 | 下一步缺口 |
@@ -316,7 +318,7 @@
 - **手工锚点 / repo 内 package**：`PERF_0001`, `LONGTAIL_0001`, `CONS_0001`, `PORT_0001`
 - **TPC-DS**：`PERF_0002`
 - **JOB**：`PERF_0003`, `PERF_0004`
-- **SQLStorm**：`LONGTAIL_0002`
+- **SQLStorm**：`LONGTAIL_0002`，以及当前已注册 tri-engine longtail drafts `LONGTAIL_0003`, `LONGTAIL_0004`, `LONGTAIL_0005`, `LONGTAIL_0007`, `LONGTAIL_0008`, `LONGTAIL_0009`, `LONGTAIL_0010`, `LONGTAIL_0011`, `LONGTAIL_0012`, `LONGTAIL_0013`, `LONGTAIL_0014`, `LONGTAIL_0015`, `LONGTAIL_0016`, `LONGTAIL_0018`, `LONGTAIL_0019`, `LONGTAIL_0020`, `LONGTAIL_0021`
 - **Calcite Seeds**：`CONS_0002`
 - **VeriEQL**：`CONS_0003`, `CONS_0004`
 - **PARROT**：`PORT_0002`
