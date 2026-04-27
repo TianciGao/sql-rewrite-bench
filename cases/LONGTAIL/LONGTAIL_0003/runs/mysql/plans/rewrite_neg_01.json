@@ -1,0 +1,165 @@
+{
+  "query_block": {
+    "select_id": 1,
+    "cost_info": {
+      "query_cost": "5.85"
+    },
+    "ordering_operation": {
+      "using_filesort": true,
+      "cost_info": {
+        "sort_cost": "1.67"
+      },
+      "table": {
+        "table_name": "tu",
+        "access_type": "ALL",
+        "rows_examined_per_scan": 15,
+        "rows_produced_per_join": 1,
+        "filtered": "11.11",
+        "cost_info": {
+          "read_cost": "4.02",
+          "eval_cost": "0.17",
+          "prefix_cost": "4.19",
+          "data_read_per_join": "173"
+        },
+        "used_columns": [
+          "UserId",
+          "DisplayName",
+          "TotalPosts",
+          "TotalQuestions",
+          "TotalAnswers",
+          "PositivePosts",
+          "NegativePosts",
+          "TotalViews",
+          "RankByPosts",
+          "RankByViews"
+        ],
+        "attached_condition": "((`tu`.`TotalPosts` > 50) and (`tu`.`TotalViews` > 1000))",
+        "materialized_from_subquery": {
+          "using_temporary_table": true,
+          "dependent": false,
+          "cacheable": true,
+          "query_block": {
+            "select_id": 2,
+            "cost_info": {
+              "query_cost": "34.19"
+            },
+            "windowing": {
+              "windows": [
+                {
+                  "name": "<unnamed window>",
+                  "definition_position": 1,
+                  "using_temporary_table": true,
+                  "using_filesort": true,
+                  "filesort_key": [
+                    "`TotalPosts` desc"
+                  ],
+                  "functions": [
+                    "rank"
+                  ]
+                },
+                {
+                  "name": "<unnamed window>",
+                  "definition_position": 2,
+                  "last_executed_window": true,
+                  "using_filesort": true,
+                  "filesort_key": [
+                    "`TotalViews` desc"
+                  ],
+                  "functions": [
+                    "rank"
+                  ]
+                }
+              ],
+              "cost_info": {
+                "sort_cost": "30.00"
+              },
+              "table": {
+                "table_name": "UserPostStats",
+                "access_type": "ALL",
+                "rows_examined_per_scan": 15,
+                "rows_produced_per_join": 15,
+                "filtered": "100.00",
+                "cost_info": {
+                  "read_cost": "2.69",
+                  "eval_cost": "1.50",
+                  "prefix_cost": "4.19",
+                  "data_read_per_join": "1K"
+                },
+                "used_columns": [
+                  "UserId",
+                  "DisplayName",
+                  "TotalPosts",
+                  "TotalQuestions",
+                  "TotalAnswers",
+                  "PositivePosts",
+                  "NegativePosts",
+                  "TotalViews"
+                ],
+                "materialized_from_subquery": {
+                  "using_temporary_table": true,
+                  "dependent": false,
+                  "cacheable": true,
+                  "query_block": {
+                    "select_id": 3,
+                    "cost_info": {
+                      "query_cost": "2.31"
+                    },
+                    "grouping_operation": {
+                      "using_temporary_table": true,
+                      "using_filesort": false,
+                      "nested_loop": [
+                        {
+                          "table": {
+                            "table_name": "u",
+                            "access_type": "ALL",
+                            "rows_examined_per_scan": 3,
+                            "rows_produced_per_join": 3,
+                            "filtered": "100.00",
+                            "cost_info": {
+                              "read_cost": "0.25",
+                              "eval_cost": "0.30",
+                              "prefix_cost": "0.55",
+                              "data_read_per_join": "48"
+                            },
+                            "used_columns": [
+                              "Id",
+                              "DisplayName"
+                            ]
+                          }
+                        },
+                        {
+                          "table": {
+                            "table_name": "p",
+                            "access_type": "ALL",
+                            "rows_examined_per_scan": 5,
+                            "rows_produced_per_join": 15,
+                            "filtered": "100.00",
+                            "using_join_buffer": "hash join",
+                            "cost_info": {
+                              "read_cost": "0.27",
+                              "eval_cost": "1.50",
+                              "prefix_cost": "2.32",
+                              "data_read_per_join": "360"
+                            },
+                            "used_columns": [
+                              "Id",
+                              "OwnerUserId",
+                              "PostTypeId",
+                              "Score",
+                              "ViewCount"
+                            ],
+                            "attached_condition": "<if>(is_not_null_compl(p), (`bench`.`p`.`OwnerUserId` = `bench`.`u`.`Id`), true)"
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

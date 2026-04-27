@@ -1,0 +1,104 @@
+== Physical Plan ==
+AdaptiveSparkPlan (16)
++- Sort (15)
+   +- Exchange (14)
+      +- HashAggregate (13)
+         +- Exchange (12)
+            +- HashAggregate (11)
+               +- HashAggregate (10)
+                  +- Exchange (9)
+                     +- HashAggregate (8)
+                        +- Project (7)
+                           +- BroadcastHashJoin Inner BuildRight (6)
+                              :- Filter (2)
+                              :  +- Scan parquet spark_catalog.default.posts (1)
+                              +- BroadcastExchange (5)
+                                 +- Filter (4)
+                                    +- Scan parquet spark_catalog.default.posttypes (3)
+
+
+(1) Scan parquet spark_catalog.default.posts
+Output [5]: [Id#33, PostTypeId#34, Score#35, ViewCount#36, OwnerUserId#37]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/longtail_0007_spark_plan_jvku1htv/posts]
+PushedFilters: [IsNotNull(PostTypeId)]
+ReadSchema: struct<Id:int,PostTypeId:int,Score:int,ViewCount:int,OwnerUserId:int>
+
+(2) Filter
+Input [5]: [Id#33, PostTypeId#34, Score#35, ViewCount#36, OwnerUserId#37]
+Condition : isnotnull(PostTypeId#34)
+
+(3) Scan parquet spark_catalog.default.posttypes
+Output [2]: [Id#38, Name#39]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/longtail_0007_spark_plan_jvku1htv/posttypes]
+PushedFilters: [IsNotNull(Id)]
+ReadSchema: struct<Id:int,Name:string>
+
+(4) Filter
+Input [2]: [Id#38, Name#39]
+Condition : isnotnull(Id#38)
+
+(5) BroadcastExchange
+Input [2]: [Id#38, Name#39]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, false] as bigint)),false), [plan_id=78]
+
+(6) BroadcastHashJoin
+Left keys [1]: [PostTypeId#34]
+Right keys [1]: [Id#38]
+Join type: Inner
+Join condition: None
+
+(7) Project
+Output [5]: [Id#33, Score#35, ViewCount#36, OwnerUserId#37, Name#39]
+Input [7]: [Id#33, PostTypeId#34, Score#35, ViewCount#36, OwnerUserId#37, Id#38, Name#39]
+
+(8) HashAggregate
+Input [5]: [Id#33, Score#35, ViewCount#36, OwnerUserId#37, Name#39]
+Keys [2]: [Name#39, OwnerUserId#37]
+Functions [3]: [partial_count(Id#33), partial_avg(Score#35), partial_avg(ViewCount#36)]
+Aggregate Attributes [3]: [count(Id#33)#40L, avg(Score#35)#41, avg(ViewCount#36)#42]
+Results [7]: [Name#39, OwnerUserId#37, count#47L, sum#50, count#51L, sum#54, count#55L]
+
+(9) Exchange
+Input [7]: [Name#39, OwnerUserId#37, count#47L, sum#50, count#51L, sum#54, count#55L]
+Arguments: hashpartitioning(Name#39, OwnerUserId#37, 1), ENSURE_REQUIREMENTS, [plan_id=83]
+
+(10) HashAggregate
+Input [7]: [Name#39, OwnerUserId#37, count#47L, sum#50, count#51L, sum#54, count#55L]
+Keys [2]: [Name#39, OwnerUserId#37]
+Functions [3]: [merge_count(Id#33), merge_avg(Score#35), merge_avg(ViewCount#36)]
+Aggregate Attributes [3]: [count(Id#33)#40L, avg(Score#35)#41, avg(ViewCount#36)#42]
+Results [7]: [Name#39, OwnerUserId#37, count#47L, sum#50, count#51L, sum#54, count#55L]
+
+(11) HashAggregate
+Input [7]: [Name#39, OwnerUserId#37, count#47L, sum#50, count#51L, sum#54, count#55L]
+Keys [1]: [Name#39]
+Functions [4]: [merge_count(Id#33), merge_avg(Score#35), merge_avg(ViewCount#36), partial_count(distinct OwnerUserId#37)]
+Aggregate Attributes [4]: [count(Id#33)#40L, avg(Score#35)#41, avg(ViewCount#36)#42, count(OwnerUserId#37)#43L]
+Results [7]: [Name#39, count#47L, sum#50, count#51L, sum#54, count#55L, count#58L]
+
+(12) Exchange
+Input [7]: [Name#39, count#47L, sum#50, count#51L, sum#54, count#55L, count#58L]
+Arguments: hashpartitioning(Name#39, 1), ENSURE_REQUIREMENTS, [plan_id=87]
+
+(13) HashAggregate
+Input [7]: [Name#39, count#47L, sum#50, count#51L, sum#54, count#55L, count#58L]
+Keys [1]: [Name#39]
+Functions [4]: [count(Id#33), avg(Score#35), avg(ViewCount#36), count(distinct OwnerUserId#37)]
+Aggregate Attributes [4]: [count(Id#33)#40L, avg(Score#35)#41, avg(ViewCount#36)#42, count(OwnerUserId#37)#43L]
+Results [5]: [Name#39 AS PostType#28, count(Id#33)#40L AS PostCount#29L, avg(Score#35)#41 AS AverageScore#30, avg(ViewCount#36)#42 AS AverageViewCount#31, count(OwnerUserId#37)#43L AS ActiveUsers#32L]
+
+(14) Exchange
+Input [5]: [PostType#28, PostCount#29L, AverageScore#30, AverageViewCount#31, ActiveUsers#32L]
+Arguments: rangepartitioning(PostCount#29L DESC NULLS LAST, 1), ENSURE_REQUIREMENTS, [plan_id=90]
+
+(15) Sort
+Input [5]: [PostType#28, PostCount#29L, AverageScore#30, AverageViewCount#31, ActiveUsers#32L]
+Arguments: [PostCount#29L DESC NULLS LAST], true, 0
+
+(16) AdaptiveSparkPlan
+Output [5]: [PostType#28, PostCount#29L, AverageScore#30, AverageViewCount#31, ActiveUsers#32L]
+Arguments: isFinalPlan=false
+
+

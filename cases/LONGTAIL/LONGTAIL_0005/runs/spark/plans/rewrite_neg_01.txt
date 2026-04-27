@@ -1,0 +1,78 @@
+== Physical Plan ==
+AdaptiveSparkPlan (12)
++- TakeOrderedAndProject (11)
+   +- HashAggregate (10)
+      +- Exchange (9)
+         +- HashAggregate (8)
+            +- Project (7)
+               +- BroadcastHashJoin Inner BuildLeft (6)
+                  :- BroadcastExchange (3)
+                  :  +- Filter (2)
+                  :     +- Scan parquet spark_catalog.default.users (1)
+                  +- Filter (5)
+                     +- Scan parquet spark_catalog.default.posts (4)
+
+
+(1) Scan parquet spark_catalog.default.users
+Output [2]: [Id#24, DisplayName#25]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/longtail_0005_spark_plan_offpelww/users]
+PushedFilters: [IsNotNull(Id)]
+ReadSchema: struct<Id:int,DisplayName:string>
+
+(2) Filter
+Input [2]: [Id#24, DisplayName#25]
+Condition : isnotnull(Id#24)
+
+(3) BroadcastExchange
+Input [2]: [Id#24, DisplayName#25]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, false] as bigint)),false), [plan_id=154]
+
+(4) Scan parquet spark_catalog.default.posts
+Output [3]: [Id#26, OwnerUserId#27, PostTypeId#28]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/longtail_0005_spark_plan_offpelww/posts]
+PushedFilters: [IsNotNull(OwnerUserId)]
+ReadSchema: struct<Id:int,OwnerUserId:int,PostTypeId:int>
+
+(5) Filter
+Input [3]: [Id#26, OwnerUserId#27, PostTypeId#28]
+Condition : isnotnull(OwnerUserId#27)
+
+(6) BroadcastHashJoin
+Left keys [1]: [Id#24]
+Right keys [1]: [OwnerUserId#27]
+Join type: Inner
+Join condition: None
+
+(7) Project
+Output [3]: [DisplayName#25, Id#26, PostTypeId#28]
+Input [5]: [Id#24, DisplayName#25, Id#26, OwnerUserId#27, PostTypeId#28]
+
+(8) HashAggregate
+Input [3]: [DisplayName#25, Id#26, PostTypeId#28]
+Keys [1]: [DisplayName#25]
+Functions [4]: [partial_count(Id#26), partial_sum(CASE WHEN (PostTypeId#28 = 1) THEN 1 ELSE 0 END), partial_sum(CASE WHEN (PostTypeId#28 = 2) THEN 1 ELSE 0 END), partial_sum(CASE WHEN PostTypeId#28 IN (4,5) THEN 1 ELSE 0 END)]
+Aggregate Attributes [4]: [count#71L, sum#72L, sum#73L, sum#74L]
+Results [5]: [DisplayName#25, count#75L, sum#76L, sum#77L, sum#78L]
+
+(9) Exchange
+Input [5]: [DisplayName#25, count#75L, sum#76L, sum#77L, sum#78L]
+Arguments: hashpartitioning(DisplayName#25, 1), ENSURE_REQUIREMENTS, [plan_id=159]
+
+(10) HashAggregate
+Input [5]: [DisplayName#25, count#75L, sum#76L, sum#77L, sum#78L]
+Keys [1]: [DisplayName#25]
+Functions [4]: [count(Id#26), sum(CASE WHEN (PostTypeId#28 = 1) THEN 1 ELSE 0 END), sum(CASE WHEN (PostTypeId#28 = 2) THEN 1 ELSE 0 END), sum(CASE WHEN PostTypeId#28 IN (4,5) THEN 1 ELSE 0 END)]
+Aggregate Attributes [4]: [count(Id#26)#67L, sum(CASE WHEN (PostTypeId#28 = 1) THEN 1 ELSE 0 END)#68L, sum(CASE WHEN (PostTypeId#28 = 2) THEN 1 ELSE 0 END)#69L, sum(CASE WHEN PostTypeId#28 IN (4,5) THEN 1 ELSE 0 END)#70L]
+Results [5]: [DisplayName#25, count(Id#26)#67L AS TotalPosts#63L, sum(CASE WHEN (PostTypeId#28 = 1) THEN 1 ELSE 0 END)#68L AS TotalQuestions#64L, sum(CASE WHEN (PostTypeId#28 = 2) THEN 1 ELSE 0 END)#69L AS TotalAnswers#65L, sum(CASE WHEN PostTypeId#28 IN (4,5) THEN 1 ELSE 0 END)#70L AS TotalTagWikis#66L]
+
+(11) TakeOrderedAndProject
+Input [5]: [DisplayName#25, TotalPosts#63L, TotalQuestions#64L, TotalAnswers#65L, TotalTagWikis#66L]
+Arguments: 10, [TotalPosts#63L DESC NULLS LAST], [DisplayName#25, TotalPosts#63L, TotalQuestions#64L, TotalAnswers#65L, TotalTagWikis#66L]
+
+(12) AdaptiveSparkPlan
+Output [5]: [DisplayName#25, TotalPosts#63L, TotalQuestions#64L, TotalAnswers#65L, TotalTagWikis#66L]
+Arguments: isFinalPlan=false
+
+
