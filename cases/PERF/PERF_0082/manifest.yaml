@@ -34,3 +34,31 @@ known_caveats:
   - text_like_semantics_require_human_review
   - theatrical_note_filter_requires_review
 registry_note: inventory/case_registry.csv is not updated during construction
+
+tags:
+  sql_feature:
+    primary:
+    - expression_complexity
+    secondary: []
+  rewrite_opportunity:
+    primary:
+    - join_reorder
+    secondary: []
+  plan_operator:
+    present:
+    - scan
+    - filter
+    - join
+    - aggregate
+    delta_relevant:
+    - filter
+    - join
+  workload_realism:
+    source_inherited:
+    - real_data_correlation
+    - realistic_query_style
+    case_specific:
+    - high_join_count
+  portability:
+    confirmed: []
+    suspected: []
