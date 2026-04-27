@@ -1,0 +1,335 @@
+== Physical Plan ==
+AdaptiveSparkPlan (55)
++- TakeOrderedAndProject (54)
+   +- Project (53)
+      +- BroadcastHashJoin Inner BuildRight (52)
+         :- Project (47)
+         :  +- BroadcastHashJoin Inner BuildRight (46)
+         :     :- Project (42)
+         :     :  +- SortMergeJoin Inner (41)
+         :     :     :- Sort (19)
+         :     :     :  +- Exchange (18)
+         :     :     :     +- Filter (17)
+         :     :     :        +- HashAggregate (16)
+         :     :     :           +- Exchange (15)
+         :     :     :              +- HashAggregate (14)
+         :     :     :                 +- Project (13)
+         :     :     :                    +- BroadcastHashJoin Inner BuildRight (12)
+         :     :     :                       :- Project (8)
+         :     :     :                       :  +- BroadcastHashJoin Inner BuildRight (7)
+         :     :     :                       :     :- Filter (2)
+         :     :     :                       :     :  +- Scan parquet spark_catalog.default.web_returns (1)
+         :     :     :                       :     +- BroadcastExchange (6)
+         :     :     :                       :        +- Project (5)
+         :     :     :                       :           +- Filter (4)
+         :     :     :                       :              +- Scan parquet spark_catalog.default.date_dim (3)
+         :     :     :                       +- BroadcastExchange (11)
+         :     :     :                          +- Filter (10)
+         :     :     :                             +- Scan parquet spark_catalog.default.customer_address (9)
+         :     :     +- Sort (40)
+         :     :        +- Filter (39)
+         :     :           +- HashAggregate (38)
+         :     :              +- Exchange (37)
+         :     :                 +- HashAggregate (36)
+         :     :                    +- HashAggregate (35)
+         :     :                       +- Exchange (34)
+         :     :                          +- HashAggregate (33)
+         :     :                             +- Project (32)
+         :     :                                +- BroadcastHashJoin Inner BuildRight (31)
+         :     :                                   :- Project (27)
+         :     :                                   :  +- BroadcastHashJoin Inner BuildRight (26)
+         :     :                                   :     :- Filter (21)
+         :     :                                   :     :  +- Scan parquet spark_catalog.default.web_returns (20)
+         :     :                                   :     +- BroadcastExchange (25)
+         :     :                                   :        +- Project (24)
+         :     :                                   :           +- Filter (23)
+         :     :                                   :              +- Scan parquet spark_catalog.default.date_dim (22)
+         :     :                                   +- BroadcastExchange (30)
+         :     :                                      +- Filter (29)
+         :     :                                         +- Scan parquet spark_catalog.default.customer_address (28)
+         :     +- BroadcastExchange (45)
+         :        +- Filter (44)
+         :           +- Scan parquet spark_catalog.default.customer (43)
+         +- BroadcastExchange (51)
+            +- Project (50)
+               +- Filter (49)
+                  +- Scan parquet spark_catalog.default.customer_address (48)
+
+
+(1) Scan parquet spark_catalog.default.web_returns
+Output [4]: [wr_returning_customer_sk#122, wr_returned_date_sk#123, wr_returning_addr_sk#124, wr_return_amt#125]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/perf_0075_spark_plan_9it96epg/web_returns]
+PushedFilters: [IsNotNull(wr_returned_date_sk), IsNotNull(wr_returning_addr_sk), IsNotNull(wr_returning_customer_sk)]
+ReadSchema: struct<wr_returning_customer_sk:int,wr_returned_date_sk:int,wr_returning_addr_sk:int,wr_return_amt:decimal(12,2)>
+
+(2) Filter
+Input [4]: [wr_returning_customer_sk#122, wr_returned_date_sk#123, wr_returning_addr_sk#124, wr_return_amt#125]
+Condition : ((isnotnull(wr_returned_date_sk#123) AND isnotnull(wr_returning_addr_sk#124)) AND isnotnull(wr_returning_customer_sk#122))
+
+(3) Scan parquet spark_catalog.default.date_dim
+Output [2]: [d_date_sk#126, d_year#127]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/perf_0075_spark_plan_9it96epg/date_dim]
+PushedFilters: [IsNotNull(d_year), EqualTo(d_year,2002), IsNotNull(d_date_sk)]
+ReadSchema: struct<d_date_sk:int,d_year:int>
+
+(4) Filter
+Input [2]: [d_date_sk#126, d_year#127]
+Condition : ((isnotnull(d_year#127) AND (d_year#127 = 2002)) AND isnotnull(d_date_sk#126))
+
+(5) Project
+Output [1]: [d_date_sk#126]
+Input [2]: [d_date_sk#126, d_year#127]
+
+(6) BroadcastExchange
+Input [1]: [d_date_sk#126]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, true] as bigint)),false), [plan_id=490]
+
+(7) BroadcastHashJoin
+Left keys [1]: [wr_returned_date_sk#123]
+Right keys [1]: [d_date_sk#126]
+Join type: Inner
+Join condition: None
+
+(8) Project
+Output [3]: [wr_returning_customer_sk#122, wr_returning_addr_sk#124, wr_return_amt#125]
+Input [5]: [wr_returning_customer_sk#122, wr_returned_date_sk#123, wr_returning_addr_sk#124, wr_return_amt#125, d_date_sk#126]
+
+(9) Scan parquet spark_catalog.default.customer_address
+Output [2]: [ca_address_sk#128, ca_state#129]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/perf_0075_spark_plan_9it96epg/customer_address]
+PushedFilters: [IsNotNull(ca_address_sk), IsNotNull(ca_state)]
+ReadSchema: struct<ca_address_sk:int,ca_state:string>
+
+(10) Filter
+Input [2]: [ca_address_sk#128, ca_state#129]
+Condition : (isnotnull(ca_address_sk#128) AND isnotnull(ca_state#129))
+
+(11) BroadcastExchange
+Input [2]: [ca_address_sk#128, ca_state#129]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, false] as bigint)),false), [plan_id=494]
+
+(12) BroadcastHashJoin
+Left keys [1]: [wr_returning_addr_sk#124]
+Right keys [1]: [ca_address_sk#128]
+Join type: Inner
+Join condition: None
+
+(13) Project
+Output [3]: [wr_returning_customer_sk#122, wr_return_amt#125, ca_state#129]
+Input [5]: [wr_returning_customer_sk#122, wr_returning_addr_sk#124, wr_return_amt#125, ca_address_sk#128, ca_state#129]
+
+(14) HashAggregate
+Input [3]: [wr_returning_customer_sk#122, wr_return_amt#125, ca_state#129]
+Keys [2]: [wr_returning_customer_sk#122, ca_state#129]
+Functions [1]: [partial_sum(wr_return_amt#125)]
+Aggregate Attributes [2]: [sum#226, isEmpty#227]
+Results [4]: [wr_returning_customer_sk#122, ca_state#129, sum#228, isEmpty#229]
+
+(15) Exchange
+Input [4]: [wr_returning_customer_sk#122, ca_state#129, sum#228, isEmpty#229]
+Arguments: hashpartitioning(wr_returning_customer_sk#122, ca_state#129, 1), ENSURE_REQUIREMENTS, [plan_id=499]
+
+(16) HashAggregate
+Input [4]: [wr_returning_customer_sk#122, ca_state#129, sum#228, isEmpty#229]
+Keys [2]: [wr_returning_customer_sk#122, ca_state#129]
+Functions [1]: [sum(wr_return_amt#125)]
+Aggregate Attributes [1]: [sum(wr_return_amt#125)#197]
+Results [3]: [wr_returning_customer_sk#122 AS ctr_customer_sk#192, ca_state#129 AS ctr_state#193, sum(wr_return_amt#125)#197 AS ctr_total_return#194]
+
+(17) Filter
+Input [3]: [ctr_customer_sk#192, ctr_state#193, ctr_total_return#194]
+Condition : isnotnull(ctr_total_return#194)
+
+(18) Exchange
+Input [3]: [ctr_customer_sk#192, ctr_state#193, ctr_total_return#194]
+Arguments: hashpartitioning(ctr_state#193, 1), ENSURE_REQUIREMENTS, [plan_id=520]
+
+(19) Sort
+Input [3]: [ctr_customer_sk#192, ctr_state#193, ctr_total_return#194]
+Arguments: [ctr_state#193 ASC NULLS FIRST], false, 0
+
+(20) Scan parquet spark_catalog.default.web_returns
+Output [4]: [wr_returning_customer_sk#215, wr_returned_date_sk#216, wr_returning_addr_sk#217, wr_return_amt#218]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/perf_0075_spark_plan_9it96epg/web_returns]
+PushedFilters: [IsNotNull(wr_returned_date_sk), IsNotNull(wr_returning_addr_sk)]
+ReadSchema: struct<wr_returning_customer_sk:int,wr_returned_date_sk:int,wr_returning_addr_sk:int,wr_return_amt:decimal(12,2)>
+
+(21) Filter
+Input [4]: [wr_returning_customer_sk#215, wr_returned_date_sk#216, wr_returning_addr_sk#217, wr_return_amt#218]
+Condition : (isnotnull(wr_returned_date_sk#216) AND isnotnull(wr_returning_addr_sk#217))
+
+(22) Scan parquet spark_catalog.default.date_dim
+Output [2]: [d_date_sk#219, d_year#220]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/perf_0075_spark_plan_9it96epg/date_dim]
+PushedFilters: [IsNotNull(d_year), EqualTo(d_year,2002), IsNotNull(d_date_sk)]
+ReadSchema: struct<d_date_sk:int,d_year:int>
+
+(23) Filter
+Input [2]: [d_date_sk#219, d_year#220]
+Condition : ((isnotnull(d_year#220) AND (d_year#220 = 2002)) AND isnotnull(d_date_sk#219))
+
+(24) Project
+Output [1]: [d_date_sk#219]
+Input [2]: [d_date_sk#219, d_year#220]
+
+(25) BroadcastExchange
+Input [1]: [d_date_sk#219]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, true] as bigint)),false), [plan_id=502]
+
+(26) BroadcastHashJoin
+Left keys [1]: [wr_returned_date_sk#216]
+Right keys [1]: [d_date_sk#219]
+Join type: Inner
+Join condition: None
+
+(27) Project
+Output [3]: [wr_returning_customer_sk#215, wr_returning_addr_sk#217, wr_return_amt#218]
+Input [5]: [wr_returning_customer_sk#215, wr_returned_date_sk#216, wr_returning_addr_sk#217, wr_return_amt#218, d_date_sk#219]
+
+(28) Scan parquet spark_catalog.default.customer_address
+Output [2]: [ca_address_sk#221, ca_state#222]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/perf_0075_spark_plan_9it96epg/customer_address]
+PushedFilters: [IsNotNull(ca_address_sk), IsNotNull(ca_state)]
+ReadSchema: struct<ca_address_sk:int,ca_state:string>
+
+(29) Filter
+Input [2]: [ca_address_sk#221, ca_state#222]
+Condition : (isnotnull(ca_address_sk#221) AND isnotnull(ca_state#222))
+
+(30) BroadcastExchange
+Input [2]: [ca_address_sk#221, ca_state#222]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, false] as bigint)),false), [plan_id=506]
+
+(31) BroadcastHashJoin
+Left keys [1]: [wr_returning_addr_sk#217]
+Right keys [1]: [ca_address_sk#221]
+Join type: Inner
+Join condition: None
+
+(32) Project
+Output [3]: [wr_returning_customer_sk#215, wr_return_amt#218, ca_state#222]
+Input [5]: [wr_returning_customer_sk#215, wr_returning_addr_sk#217, wr_return_amt#218, ca_address_sk#221, ca_state#222]
+
+(33) HashAggregate
+Input [3]: [wr_returning_customer_sk#215, wr_return_amt#218, ca_state#222]
+Keys [2]: [wr_returning_customer_sk#215, ca_state#222]
+Functions [1]: [partial_sum(wr_return_amt#218)]
+Aggregate Attributes [2]: [sum#234, isEmpty#235]
+Results [4]: [wr_returning_customer_sk#215, ca_state#222, sum#236, isEmpty#237]
+
+(34) Exchange
+Input [4]: [wr_returning_customer_sk#215, ca_state#222, sum#236, isEmpty#237]
+Arguments: hashpartitioning(wr_returning_customer_sk#215, ca_state#222, 1), ENSURE_REQUIREMENTS, [plan_id=511]
+
+(35) HashAggregate
+Input [4]: [wr_returning_customer_sk#215, ca_state#222, sum#236, isEmpty#237]
+Keys [2]: [wr_returning_customer_sk#215, ca_state#222]
+Functions [1]: [sum(wr_return_amt#218)]
+Aggregate Attributes [1]: [sum(wr_return_amt#218)#197]
+Results [2]: [ca_state#222 AS ctr_state#199, sum(wr_return_amt#218)#197 AS ctr_total_return#200]
+
+(36) HashAggregate
+Input [2]: [ctr_state#199, ctr_total_return#200]
+Keys [1]: [ctr_state#199]
+Functions [1]: [partial_avg(ctr_total_return#200)]
+Aggregate Attributes [2]: [sum#230, count#231L]
+Results [3]: [ctr_state#199, sum#232, count#233L]
+
+(37) Exchange
+Input [3]: [ctr_state#199, sum#232, count#233L]
+Arguments: hashpartitioning(ctr_state#199, 1), ENSURE_REQUIREMENTS, [plan_id=515]
+
+(38) HashAggregate
+Input [3]: [ctr_state#199, sum#232, count#233L]
+Keys [1]: [ctr_state#199]
+Functions [1]: [avg(ctr_total_return#200)]
+Aggregate Attributes [1]: [avg(ctr_total_return#200)#201]
+Results [2]: [(avg(ctr_total_return#200)#201 * 1.2) AS (avg(ctr_total_return) * 1.2)#202, ctr_state#199]
+
+(39) Filter
+Input [2]: [(avg(ctr_total_return) * 1.2)#202, ctr_state#199]
+Condition : isnotnull((avg(ctr_total_return) * 1.2)#202)
+
+(40) Sort
+Input [2]: [(avg(ctr_total_return) * 1.2)#202, ctr_state#199]
+Arguments: [ctr_state#199 ASC NULLS FIRST], false, 0
+
+(41) SortMergeJoin
+Left keys [1]: [ctr_state#193]
+Right keys [1]: [ctr_state#199]
+Join type: Inner
+Join condition: (cast(ctr_total_return#194 as decimal(29,7)) > (avg(ctr_total_return) * 1.2)#202)
+
+(42) Project
+Output [2]: [ctr_customer_sk#192, ctr_total_return#194]
+Input [5]: [ctr_customer_sk#192, ctr_state#193, ctr_total_return#194, (avg(ctr_total_return) * 1.2)#202, ctr_state#199]
+
+(43) Scan parquet spark_catalog.default.customer
+Output [14]: [c_customer_sk#130, c_current_addr_sk#131, c_customer_id#132, c_salutation#133, c_first_name#134, c_last_name#135, c_preferred_cust_flag#136, c_birth_day#137, c_birth_month#138, c_birth_year#139, c_birth_country#140, c_login#141, c_email_address#142, c_last_review_date_sk#143]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/perf_0075_spark_plan_9it96epg/customer]
+PushedFilters: [IsNotNull(c_customer_sk), IsNotNull(c_current_addr_sk)]
+ReadSchema: struct<c_customer_sk:int,c_current_addr_sk:int,c_customer_id:string,c_salutation:string,c_first_name:string,c_last_name:string,c_preferred_cust_flag:string,c_birth_day:int,c_birth_month:int,c_birth_year:int,c_birth_country:string,c_login:string,c_email_address:string,c_last_review_date_sk:int>
+
+(44) Filter
+Input [14]: [c_customer_sk#130, c_current_addr_sk#131, c_customer_id#132, c_salutation#133, c_first_name#134, c_last_name#135, c_preferred_cust_flag#136, c_birth_day#137, c_birth_month#138, c_birth_year#139, c_birth_country#140, c_login#141, c_email_address#142, c_last_review_date_sk#143]
+Condition : (isnotnull(c_customer_sk#130) AND isnotnull(c_current_addr_sk#131))
+
+(45) BroadcastExchange
+Input [14]: [c_customer_sk#130, c_current_addr_sk#131, c_customer_id#132, c_salutation#133, c_first_name#134, c_last_name#135, c_preferred_cust_flag#136, c_birth_day#137, c_birth_month#138, c_birth_year#139, c_birth_country#140, c_login#141, c_email_address#142, c_last_review_date_sk#143]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, false] as bigint)),false), [plan_id=526]
+
+(46) BroadcastHashJoin
+Left keys [1]: [ctr_customer_sk#192]
+Right keys [1]: [c_customer_sk#130]
+Join type: Inner
+Join condition: None
+
+(47) Project
+Output [14]: [ctr_total_return#194, c_current_addr_sk#131, c_customer_id#132, c_salutation#133, c_first_name#134, c_last_name#135, c_preferred_cust_flag#136, c_birth_day#137, c_birth_month#138, c_birth_year#139, c_birth_country#140, c_login#141, c_email_address#142, c_last_review_date_sk#143]
+Input [16]: [ctr_customer_sk#192, ctr_total_return#194, c_customer_sk#130, c_current_addr_sk#131, c_customer_id#132, c_salutation#133, c_first_name#134, c_last_name#135, c_preferred_cust_flag#136, c_birth_day#137, c_birth_month#138, c_birth_year#139, c_birth_country#140, c_login#141, c_email_address#142, c_last_review_date_sk#143]
+
+(48) Scan parquet spark_catalog.default.customer_address
+Output [2]: [ca_address_sk#195, ca_state#196]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/perf_0075_spark_plan_9it96epg/customer_address]
+PushedFilters: [IsNotNull(ca_state), EqualTo(ca_state,IL), IsNotNull(ca_address_sk)]
+ReadSchema: struct<ca_address_sk:int,ca_state:string>
+
+(49) Filter
+Input [2]: [ca_address_sk#195, ca_state#196]
+Condition : ((isnotnull(ca_state#196) AND (ca_state#196 = IL)) AND isnotnull(ca_address_sk#195))
+
+(50) Project
+Output [1]: [ca_address_sk#195]
+Input [2]: [ca_address_sk#195, ca_state#196]
+
+(51) BroadcastExchange
+Input [1]: [ca_address_sk#195]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, true] as bigint)),false), [plan_id=530]
+
+(52) BroadcastHashJoin
+Left keys [1]: [c_current_addr_sk#131]
+Right keys [1]: [ca_address_sk#195]
+Join type: Inner
+Join condition: None
+
+(53) Project
+Output [13]: [c_customer_id#132, c_salutation#133, c_first_name#134, c_last_name#135, c_preferred_cust_flag#136, c_birth_day#137, c_birth_month#138, c_birth_year#139, c_birth_country#140, c_login#141, c_email_address#142, c_last_review_date_sk#143, ctr_total_return#194]
+Input [15]: [ctr_total_return#194, c_current_addr_sk#131, c_customer_id#132, c_salutation#133, c_first_name#134, c_last_name#135, c_preferred_cust_flag#136, c_birth_day#137, c_birth_month#138, c_birth_year#139, c_birth_country#140, c_login#141, c_email_address#142, c_last_review_date_sk#143, ca_address_sk#195]
+
+(54) TakeOrderedAndProject
+Input [13]: [c_customer_id#132, c_salutation#133, c_first_name#134, c_last_name#135, c_preferred_cust_flag#136, c_birth_day#137, c_birth_month#138, c_birth_year#139, c_birth_country#140, c_login#141, c_email_address#142, c_last_review_date_sk#143, ctr_total_return#194]
+Arguments: 100, [c_customer_id#132 ASC NULLS FIRST, c_salutation#133 ASC NULLS FIRST, c_first_name#134 ASC NULLS FIRST, c_last_name#135 ASC NULLS FIRST, c_preferred_cust_flag#136 ASC NULLS FIRST, c_birth_day#137 ASC NULLS FIRST, c_birth_month#138 ASC NULLS FIRST, c_birth_year#139 ASC NULLS FIRST, c_birth_country#140 ASC NULLS FIRST, c_login#141 ASC NULLS FIRST, c_email_address#142 ASC NULLS FIRST, c_last_review_date_sk#143 ASC NULLS FIRST, ctr_total_return#194 ASC NULLS FIRST], [c_customer_id#132, c_salutation#133, c_first_name#134, c_last_name#135, c_preferred_cust_flag#136, c_birth_day#137, c_birth_month#138, c_birth_year#139, c_birth_country#140, c_login#141, c_email_address#142, c_last_review_date_sk#143, ctr_total_return#194]
+
+(55) AdaptiveSparkPlan
+Output [13]: [c_customer_id#132, c_salutation#133, c_first_name#134, c_last_name#135, c_preferred_cust_flag#136, c_birth_day#137, c_birth_month#138, c_birth_year#139, c_birth_country#140, c_login#141, c_email_address#142, c_last_review_date_sk#143, ctr_total_return#194]
+Arguments: isFinalPlan=false
+
+

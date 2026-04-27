@@ -1,0 +1,8 @@
+# Provenance notes for PERF_0067
+
+- Frozen mapping: PERF_0067 -> query_templates/query20.tpl.
+- Raw SQL was produced by the repo-local TPC-DS dsqgen tool using COUNT=1, QUALIFY=Y, SCALE=1, DIALECT=ansi.
+- The exact raw dsqgen SQL is preserved at `provenance/query20_instance_raw.sql`.
+- `source.sql` is derived from that output with only PostgreSQL execution normalization needed for witness validation.
+- Positive and negative rewrites are case-local witness rewrites for PostgreSQL result comparison only.
+- PostgreSQL plan collection, MySQL, Spark, registry writeback, admission, promotion, common-core, and extended judgments are not part of this step.

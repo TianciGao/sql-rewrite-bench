@@ -44,6 +44,35 @@ features:
 - aggregate
 - order_by
 - subquery
+tags:
+  sql_feature:
+    primary:
+      - window_function
+      - subquery_in_from
+    secondary: []
+  rewrite_opportunity:
+    primary:
+      - expression_simplification
+    secondary: []
+  plan_operator:
+    present:
+      - scan
+      - filter
+      - join
+      - aggregate
+      - window
+      - sort
+      - limit
+      - subquery
+    delta_relevant: []
+  workload_realism:
+    source_inherited:
+      - classic_analytical_baseline
+    case_specific: []
+  portability:
+    confirmed:
+      - limit_fetch_gap
+    suspected: []
 status:
   seed_materialized: true
   source_normalized: true

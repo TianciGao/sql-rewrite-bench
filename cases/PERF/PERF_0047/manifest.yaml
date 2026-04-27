@@ -1,0 +1,99 @@
+case_id: PERF_0047
+pool: performance
+provenance:
+  source_id: SRC_002
+  seed_id: TPCDS_QUERY70A_DSQGEN_COUNT1_SCALE1_ANSI_V0
+  source_name: TPC-DS
+  source_template: query70a.tpl
+  source_entry: datasets/raw/tpcds/DSGen-software-code-4.0.0/query_variants/query70a.tpl
+  materialized_instance: provenance/query70a_instance_raw.sql
+  generation_command: provenance/dsqgen_command.txt
+  provenance_notes: provenance/provenance_notes.txt
+source:
+  dialect: postgres_normalized_from_tpcds_ansi
+  file: source.sql
+variants:
+  positives:
+    - rewrite_pos_01.sql
+  negatives:
+    - rewrite_neg_01.sql
+targets:
+  engines:
+    - postgres
+required_tables:
+  - store_sales
+  - date_dim
+  - store
+features:
+  - cte
+  - aggregate
+  - group_by
+  - window
+  - rollup_emulation
+  - order_by
+  - limit
+status:
+  parse_checked: true
+  exec_checked_pg: true
+  exec_checked_mysql: false
+  exec_checked_spark: false
+  plan_checked: true
+  schema_ready: true
+  validation_ready: true
+  release_grade: false
+schema:
+  pg_ddl: schema/ddl_pg.sql
+data_profile:
+  file: data_profile.json
+validation:
+  checker: validation/checker.yaml
+  witness_dataset: validation/witness_dataset.yaml
+  pg_witness_data: validation/pg_witness_data.sql
+artifacts:
+  pg_source_result: runs/pg/source.tsv
+  pg_positive_result: runs/pg/rewrite_pos_01.tsv
+  pg_negative_result: runs/pg/rewrite_neg_01.tsv
+  pg_result_check: runs/pg/result_check.json
+  pg_source_plan: runs/pg/plans/source.json
+  pg_positive_plan: runs/pg/plans/rewrite_pos_01.json
+  pg_negative_plan: runs/pg/plans/rewrite_neg_01.json
+  pg_plan_check: runs/pg/plans/plan_check.json
+tags:
+  sql_feature:
+    primary:
+      - cte
+      - window_function
+      - set_operation
+    secondary:
+      - subquery_in_from
+  rewrite_opportunity:
+    primary:
+      - aggregation_rewrite
+    secondary:
+      - cte_strategy
+  plan_operator:
+    present:
+      - scan
+      - join
+      - aggregate
+      - sort
+      - limit
+      - window
+      - set_op
+      - materialize
+      - subquery
+    delta_relevant: []
+  workload_realism:
+    source_inherited:
+      - classic_analytical_baseline
+    case_specific:
+      - long_tail_structure
+  portability:
+    confirmed: []
+    suspected: []
+notes:
+  - Materialized from human-frozen TPC-DS query_variants/query70a.tpl with repaired repo-local dsqgen.
+  - source.sql is PostgreSQL-normalized from the exact generated SQL preserved in provenance.
+  - PostgreSQL witness validation passed for source/positive equality and source/negative divergence.
+  - PostgreSQL plan artifacts were collected with EXPLAIN (FORMAT JSON) for source, positive rewrite, and negative rewrite.
+  - No MySQL, Spark, admission, promotion, common-core, or registry facts are claimed.

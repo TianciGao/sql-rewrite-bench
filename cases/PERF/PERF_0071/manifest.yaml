@@ -1,0 +1,54 @@
+case_id: PERF_0071
+primary_pool: performance
+source_id: SRC_002
+source_name: TPC-DS
+source_family: tpcds_query_templates
+source_detail: query_templates/query25.tpl materialized by repo-local dsqgen with COUNT=1, QUALIFY=Y, SCALE=1, DIALECT=ansi
+archetype: performance_query_rewrite
+status: postgres_witness_validated
+engines:
+  postgres:
+    witness_validation: runs/pg/result_check.json
+inputs:
+  source: source.sql
+  positive_rewrites:
+    - rewrite_pos_01.sql
+  negative_rewrites:
+    - rewrite_neg_01.sql
+  ddl:
+    postgres: schema/ddl_pg.sql
+  witness_data:
+    postgres: validation/pg_witness_data.sql
+provenance:
+  dsqgen_command: provenance/dsqgen_command.txt
+  raw_record: provenance/raw_record.json
+  raw_sql: provenance/query25_instance_raw.sql
+  notes: provenance/provenance_notes.txt
+tags:
+  sql_feature:
+    primary: []
+    secondary: []
+  rewrite_opportunity:
+    primary:
+      - join_reorder
+    secondary:
+      - predicate_pushdown
+  plan_operator:
+    present:
+      - scan
+      - join
+      - aggregate
+      - sort
+      - limit
+    delta_relevant: []
+  workload_realism:
+    source_inherited:
+      - classic_analytical_baseline
+    case_specific:
+      - high_join_count
+  portability:
+    confirmed: []
+    suspected: []
+notes:
+  - Case-local construction and PostgreSQL witness validation only.
+  - PostgreSQL plan collection, MySQL, Spark, registry writeback, admission, promotion, common-core, and extended judgments are out of scope for this step.

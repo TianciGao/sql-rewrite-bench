@@ -1,0 +1,21 @@
+case_id: PERF_0064
+engine: postgres
+validation_type: witness_result_comparison
+inputs:
+  source: source.sql
+  positive_rewrite: rewrite_pos_01.sql
+  negative_rewrite: rewrite_neg_01.sql
+  ddl: schema/ddl_pg.sql
+  witness_data: validation/pg_witness_data.sql
+expected:
+  source_positive_equal: true
+  source_negative_different: true
+artifacts:
+  source_result: runs/pg/source.tsv
+  positive_result: runs/pg/rewrite_pos_01.tsv
+  negative_result: runs/pg/rewrite_neg_01.tsv
+  result_check: runs/pg/result_check.json
+notes:
+  - PostgreSQL-only witness validation.
+  - No PostgreSQL plan collection is part of this step.
+  - No MySQL, Spark, admission, promotion, common-core, or extended judgment is implied.

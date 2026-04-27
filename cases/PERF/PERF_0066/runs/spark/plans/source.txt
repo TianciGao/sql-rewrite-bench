@@ -1,0 +1,208 @@
+== Physical Plan ==
+AdaptiveSparkPlan (34)
++- TakeOrderedAndProject (33)
+   +- HashAggregate (32)
+      +- Exchange (31)
+         +- HashAggregate (30)
+            +- Project (29)
+               +- BroadcastHashJoin Inner BuildRight (28)
+                  :- Project (24)
+                  :  +- BroadcastHashJoin Inner BuildRight (23)
+                  :     :- Project (19)
+                  :     :  +- BroadcastHashJoin Inner BuildRight (18)
+                  :     :     :- Project (14)
+                  :     :     :  +- BroadcastHashJoin Inner BuildRight (13)
+                  :     :     :     :- Project (8)
+                  :     :     :     :  +- BroadcastHashJoin Inner BuildLeft (7)
+                  :     :     :     :     :- BroadcastExchange (4)
+                  :     :     :     :     :  +- Project (3)
+                  :     :     :     :     :     +- Filter (2)
+                  :     :     :     :     :        +- Scan parquet spark_catalog.default.date_dim (1)
+                  :     :     :     :     +- Filter (6)
+                  :     :     :     :        +- Scan parquet spark_catalog.default.store_sales (5)
+                  :     :     :     +- BroadcastExchange (12)
+                  :     :     :        +- Project (11)
+                  :     :     :           +- Filter (10)
+                  :     :     :              +- Scan parquet spark_catalog.default.item (9)
+                  :     :     +- BroadcastExchange (17)
+                  :     :        +- Filter (16)
+                  :     :           +- Scan parquet spark_catalog.default.customer (15)
+                  :     +- BroadcastExchange (22)
+                  :        +- Filter (21)
+                  :           +- Scan parquet spark_catalog.default.customer_address (20)
+                  +- BroadcastExchange (27)
+                     +- Filter (26)
+                        +- Scan parquet spark_catalog.default.store (25)
+
+
+(1) Scan parquet spark_catalog.default.date_dim
+Output [3]: [d_date_sk#83, d_moy#84, d_year#85]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/perf_0066_spark_plan_mvqibn0g/date_dim]
+PushedFilters: [IsNotNull(d_moy), IsNotNull(d_year), EqualTo(d_moy,11), EqualTo(d_year,1999), IsNotNull(d_date_sk)]
+ReadSchema: struct<d_date_sk:int,d_moy:int,d_year:int>
+
+(2) Filter
+Input [3]: [d_date_sk#83, d_moy#84, d_year#85]
+Condition : ((((isnotnull(d_moy#84) AND isnotnull(d_year#85)) AND (d_moy#84 = 11)) AND (d_year#85 = 1999)) AND isnotnull(d_date_sk#83))
+
+(3) Project
+Output [1]: [d_date_sk#83]
+Input [3]: [d_date_sk#83, d_moy#84, d_year#85]
+
+(4) BroadcastExchange
+Input [1]: [d_date_sk#83]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, true] as bigint)),false), [plan_id=201]
+
+(5) Scan parquet spark_catalog.default.store_sales
+Output [5]: [ss_sold_date_sk#86, ss_item_sk#87, ss_customer_sk#88, ss_store_sk#89, ss_ext_sales_price#90]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/perf_0066_spark_plan_mvqibn0g/store_sales]
+PushedFilters: [IsNotNull(ss_sold_date_sk), IsNotNull(ss_item_sk), IsNotNull(ss_customer_sk), IsNotNull(ss_store_sk)]
+ReadSchema: struct<ss_sold_date_sk:int,ss_item_sk:int,ss_customer_sk:int,ss_store_sk:int,ss_ext_sales_price:decimal(9,2)>
+
+(6) Filter
+Input [5]: [ss_sold_date_sk#86, ss_item_sk#87, ss_customer_sk#88, ss_store_sk#89, ss_ext_sales_price#90]
+Condition : (((isnotnull(ss_sold_date_sk#86) AND isnotnull(ss_item_sk#87)) AND isnotnull(ss_customer_sk#88)) AND isnotnull(ss_store_sk#89))
+
+(7) BroadcastHashJoin
+Left keys [1]: [d_date_sk#83]
+Right keys [1]: [ss_sold_date_sk#86]
+Join type: Inner
+Join condition: None
+
+(8) Project
+Output [4]: [ss_item_sk#87, ss_customer_sk#88, ss_store_sk#89, ss_ext_sales_price#90]
+Input [6]: [d_date_sk#83, ss_sold_date_sk#86, ss_item_sk#87, ss_customer_sk#88, ss_store_sk#89, ss_ext_sales_price#90]
+
+(9) Scan parquet spark_catalog.default.item
+Output [6]: [i_item_sk#91, i_brand_id#92, i_brand#93, i_manufact_id#94, i_manufact#95, i_manager_id#96]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/perf_0066_spark_plan_mvqibn0g/item]
+PushedFilters: [IsNotNull(i_manager_id), EqualTo(i_manager_id,7), IsNotNull(i_item_sk)]
+ReadSchema: struct<i_item_sk:int,i_brand_id:int,i_brand:string,i_manufact_id:int,i_manufact:string,i_manager_id:int>
+
+(10) Filter
+Input [6]: [i_item_sk#91, i_brand_id#92, i_brand#93, i_manufact_id#94, i_manufact#95, i_manager_id#96]
+Condition : ((isnotnull(i_manager_id#96) AND (i_manager_id#96 = 7)) AND isnotnull(i_item_sk#91))
+
+(11) Project
+Output [5]: [i_item_sk#91, i_brand_id#92, i_brand#93, i_manufact_id#94, i_manufact#95]
+Input [6]: [i_item_sk#91, i_brand_id#92, i_brand#93, i_manufact_id#94, i_manufact#95, i_manager_id#96]
+
+(12) BroadcastExchange
+Input [5]: [i_item_sk#91, i_brand_id#92, i_brand#93, i_manufact_id#94, i_manufact#95]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, true] as bigint)),false), [plan_id=205]
+
+(13) BroadcastHashJoin
+Left keys [1]: [ss_item_sk#87]
+Right keys [1]: [i_item_sk#91]
+Join type: Inner
+Join condition: None
+
+(14) Project
+Output [7]: [ss_customer_sk#88, ss_store_sk#89, ss_ext_sales_price#90, i_brand_id#92, i_brand#93, i_manufact_id#94, i_manufact#95]
+Input [9]: [ss_item_sk#87, ss_customer_sk#88, ss_store_sk#89, ss_ext_sales_price#90, i_item_sk#91, i_brand_id#92, i_brand#93, i_manufact_id#94, i_manufact#95]
+
+(15) Scan parquet spark_catalog.default.customer
+Output [2]: [c_customer_sk#97, c_current_addr_sk#98]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/perf_0066_spark_plan_mvqibn0g/customer]
+PushedFilters: [IsNotNull(c_customer_sk), IsNotNull(c_current_addr_sk)]
+ReadSchema: struct<c_customer_sk:int,c_current_addr_sk:int>
+
+(16) Filter
+Input [2]: [c_customer_sk#97, c_current_addr_sk#98]
+Condition : (isnotnull(c_customer_sk#97) AND isnotnull(c_current_addr_sk#98))
+
+(17) BroadcastExchange
+Input [2]: [c_customer_sk#97, c_current_addr_sk#98]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, false] as bigint)),false), [plan_id=209]
+
+(18) BroadcastHashJoin
+Left keys [1]: [ss_customer_sk#88]
+Right keys [1]: [c_customer_sk#97]
+Join type: Inner
+Join condition: None
+
+(19) Project
+Output [7]: [ss_store_sk#89, ss_ext_sales_price#90, i_brand_id#92, i_brand#93, i_manufact_id#94, i_manufact#95, c_current_addr_sk#98]
+Input [9]: [ss_customer_sk#88, ss_store_sk#89, ss_ext_sales_price#90, i_brand_id#92, i_brand#93, i_manufact_id#94, i_manufact#95, c_customer_sk#97, c_current_addr_sk#98]
+
+(20) Scan parquet spark_catalog.default.customer_address
+Output [2]: [ca_address_sk#99, ca_zip#100]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/perf_0066_spark_plan_mvqibn0g/customer_address]
+PushedFilters: [IsNotNull(ca_address_sk), IsNotNull(ca_zip)]
+ReadSchema: struct<ca_address_sk:int,ca_zip:string>
+
+(21) Filter
+Input [2]: [ca_address_sk#99, ca_zip#100]
+Condition : (isnotnull(ca_address_sk#99) AND isnotnull(ca_zip#100))
+
+(22) BroadcastExchange
+Input [2]: [ca_address_sk#99, ca_zip#100]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, false] as bigint)),false), [plan_id=213]
+
+(23) BroadcastHashJoin
+Left keys [1]: [c_current_addr_sk#98]
+Right keys [1]: [ca_address_sk#99]
+Join type: Inner
+Join condition: None
+
+(24) Project
+Output [7]: [ss_store_sk#89, ss_ext_sales_price#90, i_brand_id#92, i_brand#93, i_manufact_id#94, i_manufact#95, ca_zip#100]
+Input [9]: [ss_store_sk#89, ss_ext_sales_price#90, i_brand_id#92, i_brand#93, i_manufact_id#94, i_manufact#95, c_current_addr_sk#98, ca_address_sk#99, ca_zip#100]
+
+(25) Scan parquet spark_catalog.default.store
+Output [2]: [s_store_sk#101, s_zip#102]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/perf_0066_spark_plan_mvqibn0g/store]
+PushedFilters: [IsNotNull(s_zip), IsNotNull(s_store_sk)]
+ReadSchema: struct<s_store_sk:int,s_zip:string>
+
+(26) Filter
+Input [2]: [s_store_sk#101, s_zip#102]
+Condition : (isnotnull(s_zip#102) AND isnotnull(s_store_sk#101))
+
+(27) BroadcastExchange
+Input [2]: [s_store_sk#101, s_zip#102]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, false] as bigint)),false), [plan_id=217]
+
+(28) BroadcastHashJoin
+Left keys [1]: [ss_store_sk#89]
+Right keys [1]: [s_store_sk#101]
+Join type: Inner
+Join condition: NOT (substr(ca_zip#100, 1, 5) = substr(s_zip#102, 1, 5))
+
+(29) Project
+Output [5]: [ss_ext_sales_price#90, i_brand_id#92, i_brand#93, i_manufact_id#94, i_manufact#95]
+Input [9]: [ss_store_sk#89, ss_ext_sales_price#90, i_brand_id#92, i_brand#93, i_manufact_id#94, i_manufact#95, ca_zip#100, s_store_sk#101, s_zip#102]
+
+(30) HashAggregate
+Input [5]: [ss_ext_sales_price#90, i_brand_id#92, i_brand#93, i_manufact_id#94, i_manufact#95]
+Keys [4]: [i_brand#93, i_brand_id#92, i_manufact_id#94, i_manufact#95]
+Functions [1]: [partial_sum(ss_ext_sales_price#90)]
+Aggregate Attributes [2]: [sum#110, isEmpty#111]
+Results [6]: [i_brand#93, i_brand_id#92, i_manufact_id#94, i_manufact#95, sum#112, isEmpty#113]
+
+(31) Exchange
+Input [6]: [i_brand#93, i_brand_id#92, i_manufact_id#94, i_manufact#95, sum#112, isEmpty#113]
+Arguments: hashpartitioning(i_brand#93, i_brand_id#92, i_manufact_id#94, i_manufact#95, 1), ENSURE_REQUIREMENTS, [plan_id=222]
+
+(32) HashAggregate
+Input [6]: [i_brand#93, i_brand_id#92, i_manufact_id#94, i_manufact#95, sum#112, isEmpty#113]
+Keys [4]: [i_brand#93, i_brand_id#92, i_manufact_id#94, i_manufact#95]
+Functions [1]: [sum(ss_ext_sales_price#90)]
+Aggregate Attributes [1]: [sum(ss_ext_sales_price#90)#109]
+Results [5]: [i_brand_id#92 AS brand_id#80, i_brand#93 AS brand#81, i_manufact_id#94, i_manufact#95, sum(ss_ext_sales_price#90)#109 AS ext_price#82]
+
+(33) TakeOrderedAndProject
+Input [5]: [brand_id#80, brand#81, i_manufact_id#94, i_manufact#95, ext_price#82]
+Arguments: 100, [ext_price#82 DESC NULLS LAST, brand#81 ASC NULLS FIRST, brand_id#80 ASC NULLS FIRST, i_manufact_id#94 ASC NULLS FIRST, i_manufact#95 ASC NULLS FIRST], [brand_id#80, brand#81, i_manufact_id#94, i_manufact#95, ext_price#82]
+
+(34) AdaptiveSparkPlan
+Output [5]: [brand_id#80, brand#81, i_manufact_id#94, i_manufact#95, ext_price#82]
+Arguments: isFinalPlan=false
+
+

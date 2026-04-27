@@ -1,0 +1,171 @@
+taxonomy_name: rewrite_opportunity_taxonomy
+version: '0.3'
+status: draft_for_freeze
+scope:
+  engines:
+  - spark
+  - postgres
+  - mysql
+  applies_to:
+  - source_sql
+  - case_package
+  intent: 'Record why a query is interesting for SQL rewriting. These tags describe the intended rewrite opportunity or transformation class, not just syntax or plan shape.
+
+    '
+design_principles:
+- Separate rewrite intent from SQL feature presence.
+- Use coarse rewrite families for v0.3.
+- A case may carry multiple rewrite-opportunity tags, but should usually have one primary tag.
+- Keep report_bucket stable so benchmark slicing stays comparable across batches.
+tag_schema:
+  required_fields:
+  - tag_id
+  - label
+  - definition
+  - examples
+  - notes
+  optional_fields:
+  - related_sql_features
+  - related_plan_ops
+  - report_bucket
+  - review_hints
+tags:
+- tag_id: predicate_pushdown
+  label: Predicate Pushdown
+  definition: Query presents an opportunity to move filtering logic closer to data access or below joins/subqueries.
+  examples:
+  - Filter can be applied before join or before derived-table materialization.
+  notes: Often visible as reduced rows in scan/filter plan segments.
+  related_sql_features:
+  - subquery_in_from
+  - correlated_subquery
+  related_plan_ops:
+  - scan
+  - filter
+  - join
+  report_bucket: filter_pushdown
+  review_hints: Use when a meaningful filter could be moved closer to scans or below joins / derived tables.
+- tag_id: projection_pruning
+  label: Projection Pruning
+  definition: Query carries columns that may be removed earlier to reduce width or intermediate materialization.
+  examples:
+  - Outer query only needs a subset of columns selected inside a derived table.
+  notes: Common but still worth tagging explicitly in v0.2.
+  related_plan_ops:
+  - project
+  - materialize
+  report_bucket: projection
+  review_hints: Use when unnecessary columns materially flow through the plan or rewrite.
+- tag_id: join_reorder
+  label: Join Reordering Opportunity
+  definition: Query contains a join structure where alternative join ordering may materially affect performance.
+  examples:
+  - Multi-join analytical query with selective predicates.
+  notes: Especially relevant in performance and realism-heavy cases.
+  related_sql_features:
+  - non_equi_join
+  - outer_join
+  related_plan_ops:
+  - join
+  report_bucket: join
+  review_hints: Use when join graph shape or join order plausibly drives performance.
+- tag_id: subquery_decorrelation
+  label: Subquery Decorrelation
+  definition: Correlated or nested subquery structure may be rewritten into joins or semijoins.
+  examples:
+  - EXISTS / IN subquery referencing outer block.
+  notes: Strong bridge between SQL structure and plan observability.
+  related_sql_features:
+  - correlated_subquery
+  - subquery_in_from
+  related_plan_ops:
+  - subquery
+  - join
+  report_bucket: subquery
+  review_hints: Use when correlated or nested subqueries are central to the rewrite problem.
+- tag_id: cte_strategy
+  label: CTE Strategy Change
+  definition: Query may benefit from changing CTE inlining, factoring, or materialization behavior.
+  examples:
+  - Repeated CTE reference or expensive CTE body.
+  notes: Relevant even when engines handle CTEs differently.
+  related_sql_features:
+  - cte
+  - recursive_cte
+  related_plan_ops:
+  - materialize
+  report_bucket: materialization
+  review_hints: Use when WITH blocks may need inlining, reuse, or explicit materialization strategy choices.
+- tag_id: aggregation_rewrite
+  label: Aggregation Rewrite
+  definition: Query may benefit from moving, factoring, or simplifying aggregate computations.
+  examples:
+  - Pre-aggregation before join, or aggregate simplification.
+  notes: Important for both correctness and performance.
+  related_sql_features:
+  - grouping_sets
+  - window_function
+  related_plan_ops:
+  - aggregate
+  - join
+  report_bucket: aggregation
+  review_hints: Use when grouping placement, pre-aggregation, or aggregate semantics are central.
+- tag_id: order_limit_simplification
+  label: Order / Limit Simplification
+  definition: Query may benefit from simplifying ORDER BY or LIMIT interactions, or preserving semantic order constraints carefully.
+  examples:
+  - LIMIT with redundant ordering path.
+  notes: Use carefully; semantic equivalence must remain explicit.
+  related_sql_features:
+  - large_limit
+  related_plan_ops:
+  - sort
+  - limit
+  report_bucket: sort_limit
+  review_hints: Use when ORDER BY / LIMIT interaction is a core simplification target.
+- tag_id: expression_simplification
+  label: Expression Simplification
+  definition: Query contains expressions that can be normalized, simplified, or made more optimizer-friendly without changing semantics.
+  examples:
+  - Repeated casts, redundant arithmetic, nested conditionals.
+  notes: Often cross-cuts many source families.
+  related_plan_ops:
+  - project
+  - filter
+  report_bucket: expression
+  review_hints: Use when nested expressions, CASE logic, or repeated casts are the main rewrite handle.
+- tag_id: function_normalization
+  label: Function Normalization
+  definition: Query can be rewritten to use equivalent but more portable or optimizer-friendly function forms.
+  examples:
+  - Normalize date or string function usage.
+  notes: Frequently overlaps with portability concerns.
+  related_sql_features:
+  - date_time_function
+  - string_function
+  report_bucket: function
+  review_hints: Use when equivalent but more portable/optimizer-friendly function forms exist.
+- tag_id: dialect_adaptation
+  label: Dialect Adaptation
+  definition: Query is interesting because it requires translation or adaptation across Spark / PostgreSQL / MySQL.
+  examples:
+  - Replace engine-specific syntax with a target-engine equivalent.
+  notes: Primary rewrite-opportunity tag for portability-oriented cases.
+  related_plan_ops: []
+  report_bucket: portability
+  review_hints: Use when the rewrite primarily exists to cross a dialect or engine boundary.
+- tag_id: materialization_strategy
+  label: Materialization Strategy
+  definition: Query is interesting because intermediate results may need to be materialized, reused, or explicitly avoided for correctness or performance reasons.
+  examples:
+  - Rewrite changes whether a derived table / CTE / subquery is staged or fused into surrounding operators.
+  notes: Use beyond explicit WITH-based strategy; this tag covers broader intermediate-result staging choices.
+  related_sql_features:
+  - cte
+  - subquery_in_from
+  related_plan_ops:
+  - materialize
+  - subquery
+  - join
+  report_bucket: materialization
+  review_hints: Use when the key rewrite question is whether an intermediate result should exist as a staged relation.

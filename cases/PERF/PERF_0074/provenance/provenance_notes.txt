@@ -1,0 +1,7 @@
+PERF_0074 is constructed from repo-local TPC-DS query_templates/query29.tpl.
+
+The raw SQL in provenance/query29_instance_raw.sql is the dsqgen materialized output for COUNT=1, QUALIFY=Y, SCALE=1, DIALECT=ansi.
+
+source.sql preserves the generated query semantics and applies only PostgreSQL execution normalization: SQL Server style TOP 100 is represented as LIMIT 100.
+
+This step includes only case-local construction and PostgreSQL witness validation. It does not collect PostgreSQL plans, run MySQL or Spark, update registries/docs/reviews, or make admission/promotion/common-core/extended judgments.

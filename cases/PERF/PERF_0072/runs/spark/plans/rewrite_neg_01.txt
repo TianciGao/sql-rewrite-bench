@@ -1,0 +1,183 @@
+== Physical Plan ==
+AdaptiveSparkPlan (30)
++- TakeOrderedAndProject (29)
+   +- HashAggregate (28)
+      +- Exchange (27)
+         +- HashAggregate (26)
+            +- Project (25)
+               +- BroadcastHashJoin Inner BuildRight (24)
+                  :- Project (19)
+                  :  +- BroadcastHashJoin Inner BuildRight (18)
+                  :     :- Project (14)
+                  :     :  +- BroadcastHashJoin Inner BuildRight (13)
+                  :     :     :- Project (8)
+                  :     :     :  +- BroadcastHashJoin Inner BuildRight (7)
+                  :     :     :     :- Filter (2)
+                  :     :     :     :  +- Scan parquet spark_catalog.default.catalog_sales (1)
+                  :     :     :     +- BroadcastExchange (6)
+                  :     :     :        +- Project (5)
+                  :     :     :           +- Filter (4)
+                  :     :     :              +- Scan parquet spark_catalog.default.customer_demographics (3)
+                  :     :     +- BroadcastExchange (12)
+                  :     :        +- Project (11)
+                  :     :           +- Filter (10)
+                  :     :              +- Scan parquet spark_catalog.default.date_dim (9)
+                  :     +- BroadcastExchange (17)
+                  :        +- Filter (16)
+                  :           +- Scan parquet spark_catalog.default.item (15)
+                  +- BroadcastExchange (23)
+                     +- Project (22)
+                        +- Filter (21)
+                           +- Scan parquet spark_catalog.default.promotion (20)
+
+
+(1) Scan parquet spark_catalog.default.catalog_sales
+Output [8]: [cs_item_sk#80, cs_sold_date_sk#81, cs_bill_cdemo_sk#82, cs_promo_sk#83, cs_quantity#84, cs_list_price#85, cs_coupon_amt#86, cs_sales_price#87]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/perf_0072_spark_plan_mg6jjmxg/catalog_sales]
+PushedFilters: [IsNotNull(cs_bill_cdemo_sk), IsNotNull(cs_sold_date_sk), IsNotNull(cs_item_sk), IsNotNull(cs_promo_sk)]
+ReadSchema: struct<cs_item_sk:int,cs_sold_date_sk:int,cs_bill_cdemo_sk:int,cs_promo_sk:int,cs_quantity:decimal(12,2),cs_list_price:decimal(12,2),cs_coupon_amt:decimal(12,2),cs_sales_price:decimal(12,2)>
+
+(2) Filter
+Input [8]: [cs_item_sk#80, cs_sold_date_sk#81, cs_bill_cdemo_sk#82, cs_promo_sk#83, cs_quantity#84, cs_list_price#85, cs_coupon_amt#86, cs_sales_price#87]
+Condition : (((isnotnull(cs_bill_cdemo_sk#82) AND isnotnull(cs_sold_date_sk#81)) AND isnotnull(cs_item_sk#80)) AND isnotnull(cs_promo_sk#83))
+
+(3) Scan parquet spark_catalog.default.customer_demographics
+Output [4]: [cd_demo_sk#88, cd_gender#89, cd_marital_status#90, cd_education_status#91]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/perf_0072_spark_plan_mg6jjmxg/customer_demographics]
+PushedFilters: [IsNotNull(cd_gender), IsNotNull(cd_marital_status), IsNotNull(cd_education_status), EqualTo(cd_gender,F), EqualTo(cd_marital_status,W), EqualTo(cd_education_status,Primary), IsNotNull(cd_demo_sk)]
+ReadSchema: struct<cd_demo_sk:int,cd_gender:string,cd_marital_status:string,cd_education_status:string>
+
+(4) Filter
+Input [4]: [cd_demo_sk#88, cd_gender#89, cd_marital_status#90, cd_education_status#91]
+Condition : ((((((isnotnull(cd_gender#89) AND isnotnull(cd_marital_status#90)) AND isnotnull(cd_education_status#91)) AND (cd_gender#89 = F)) AND (cd_marital_status#90 = W)) AND (cd_education_status#91 = Primary)) AND isnotnull(cd_demo_sk#88))
+
+(5) Project
+Output [1]: [cd_demo_sk#88]
+Input [4]: [cd_demo_sk#88, cd_gender#89, cd_marital_status#90, cd_education_status#91]
+
+(6) BroadcastExchange
+Input [1]: [cd_demo_sk#88]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, true] as bigint)),false), [plan_id=394]
+
+(7) BroadcastHashJoin
+Left keys [1]: [cs_bill_cdemo_sk#82]
+Right keys [1]: [cd_demo_sk#88]
+Join type: Inner
+Join condition: None
+
+(8) Project
+Output [7]: [cs_item_sk#80, cs_sold_date_sk#81, cs_promo_sk#83, cs_quantity#84, cs_list_price#85, cs_coupon_amt#86, cs_sales_price#87]
+Input [9]: [cs_item_sk#80, cs_sold_date_sk#81, cs_bill_cdemo_sk#82, cs_promo_sk#83, cs_quantity#84, cs_list_price#85, cs_coupon_amt#86, cs_sales_price#87, cd_demo_sk#88]
+
+(9) Scan parquet spark_catalog.default.date_dim
+Output [2]: [d_date_sk#92, d_year#93]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/perf_0072_spark_plan_mg6jjmxg/date_dim]
+PushedFilters: [IsNotNull(d_year), EqualTo(d_year,1998), IsNotNull(d_date_sk)]
+ReadSchema: struct<d_date_sk:int,d_year:int>
+
+(10) Filter
+Input [2]: [d_date_sk#92, d_year#93]
+Condition : ((isnotnull(d_year#93) AND (d_year#93 = 1998)) AND isnotnull(d_date_sk#92))
+
+(11) Project
+Output [1]: [d_date_sk#92]
+Input [2]: [d_date_sk#92, d_year#93]
+
+(12) BroadcastExchange
+Input [1]: [d_date_sk#92]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, true] as bigint)),false), [plan_id=398]
+
+(13) BroadcastHashJoin
+Left keys [1]: [cs_sold_date_sk#81]
+Right keys [1]: [d_date_sk#92]
+Join type: Inner
+Join condition: None
+
+(14) Project
+Output [6]: [cs_item_sk#80, cs_promo_sk#83, cs_quantity#84, cs_list_price#85, cs_coupon_amt#86, cs_sales_price#87]
+Input [8]: [cs_item_sk#80, cs_sold_date_sk#81, cs_promo_sk#83, cs_quantity#84, cs_list_price#85, cs_coupon_amt#86, cs_sales_price#87, d_date_sk#92]
+
+(15) Scan parquet spark_catalog.default.item
+Output [2]: [i_item_sk#94, i_item_id#95]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/perf_0072_spark_plan_mg6jjmxg/item]
+PushedFilters: [IsNotNull(i_item_sk)]
+ReadSchema: struct<i_item_sk:int,i_item_id:string>
+
+(16) Filter
+Input [2]: [i_item_sk#94, i_item_id#95]
+Condition : isnotnull(i_item_sk#94)
+
+(17) BroadcastExchange
+Input [2]: [i_item_sk#94, i_item_id#95]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, false] as bigint)),false), [plan_id=402]
+
+(18) BroadcastHashJoin
+Left keys [1]: [cs_item_sk#80]
+Right keys [1]: [i_item_sk#94]
+Join type: Inner
+Join condition: None
+
+(19) Project
+Output [6]: [cs_promo_sk#83, cs_quantity#84, cs_list_price#85, cs_coupon_amt#86, cs_sales_price#87, i_item_id#95]
+Input [8]: [cs_item_sk#80, cs_promo_sk#83, cs_quantity#84, cs_list_price#85, cs_coupon_amt#86, cs_sales_price#87, i_item_sk#94, i_item_id#95]
+
+(20) Scan parquet spark_catalog.default.promotion
+Output [3]: [p_promo_sk#96, p_channel_email#97, p_channel_event#98]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/perf_0072_spark_plan_mg6jjmxg/promotion]
+PushedFilters: [IsNotNull(p_channel_email), IsNotNull(p_channel_event), EqualTo(p_channel_email,Y), EqualTo(p_channel_event,Y), IsNotNull(p_promo_sk)]
+ReadSchema: struct<p_promo_sk:int,p_channel_email:string,p_channel_event:string>
+
+(21) Filter
+Input [3]: [p_promo_sk#96, p_channel_email#97, p_channel_event#98]
+Condition : ((((isnotnull(p_channel_email#97) AND isnotnull(p_channel_event#98)) AND (p_channel_email#97 = Y)) AND (p_channel_event#98 = Y)) AND isnotnull(p_promo_sk#96))
+
+(22) Project
+Output [1]: [p_promo_sk#96]
+Input [3]: [p_promo_sk#96, p_channel_email#97, p_channel_event#98]
+
+(23) BroadcastExchange
+Input [1]: [p_promo_sk#96]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, true] as bigint)),false), [plan_id=406]
+
+(24) BroadcastHashJoin
+Left keys [1]: [cs_promo_sk#83]
+Right keys [1]: [p_promo_sk#96]
+Join type: Inner
+Join condition: None
+
+(25) Project
+Output [5]: [cs_quantity#84, cs_list_price#85, cs_coupon_amt#86, cs_sales_price#87, i_item_id#95]
+Input [7]: [cs_promo_sk#83, cs_quantity#84, cs_list_price#85, cs_coupon_amt#86, cs_sales_price#87, i_item_id#95, p_promo_sk#96]
+
+(26) HashAggregate
+Input [5]: [cs_quantity#84, cs_list_price#85, cs_coupon_amt#86, cs_sales_price#87, i_item_id#95]
+Keys [1]: [i_item_id#95]
+Functions [4]: [partial_avg(cs_quantity#84), partial_avg(cs_list_price#85), partial_avg(cs_coupon_amt#86), partial_avg(cs_sales_price#87)]
+Aggregate Attributes [8]: [sum#156, count#157L, sum#158, count#159L, sum#160, count#161L, sum#162, count#163L]
+Results [9]: [i_item_id#95, sum#164, count#165L, sum#166, count#167L, sum#168, count#169L, sum#170, count#171L]
+
+(27) Exchange
+Input [9]: [i_item_id#95, sum#164, count#165L, sum#166, count#167L, sum#168, count#169L, sum#170, count#171L]
+Arguments: hashpartitioning(i_item_id#95, 1), ENSURE_REQUIREMENTS, [plan_id=411]
+
+(28) HashAggregate
+Input [9]: [i_item_id#95, sum#164, count#165L, sum#166, count#167L, sum#168, count#169L, sum#170, count#171L]
+Keys [1]: [i_item_id#95]
+Functions [4]: [avg(cs_quantity#84), avg(cs_list_price#85), avg(cs_coupon_amt#86), avg(cs_sales_price#87)]
+Aggregate Attributes [4]: [avg(cs_quantity#84)#152, avg(cs_list_price#85)#153, avg(cs_coupon_amt#86)#154, avg(cs_sales_price#87)#155]
+Results [5]: [i_item_id#95, avg(cs_quantity#84)#152 AS agg1#148, avg(cs_list_price#85)#153 AS agg2#149, avg(cs_coupon_amt#86)#154 AS agg3#150, avg(cs_sales_price#87)#155 AS agg4#151]
+
+(29) TakeOrderedAndProject
+Input [5]: [i_item_id#95, agg1#148, agg2#149, agg3#150, agg4#151]
+Arguments: 100, [i_item_id#95 ASC NULLS FIRST], [i_item_id#95, agg1#148, agg2#149, agg3#150, agg4#151]
+
+(30) AdaptiveSparkPlan
+Output [5]: [i_item_id#95, agg1#148, agg2#149, agg3#150, agg4#151]
+Arguments: isFinalPlan=false
+
+

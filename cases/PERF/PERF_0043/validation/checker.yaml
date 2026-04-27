@@ -1,0 +1,32 @@
+type: value_normalized_result_equivalence_checker
+status: postgres_witness_validated
+normalization:
+  sort_rows: true
+  trim_whitespace: true
+  normalize_tabs: true
+  normalize_numeric_format: true
+  normalize_null: true
+inputs:
+  source: source.sql
+  positive_rewrite: rewrite_pos_01.sql
+  negative_rewrite: rewrite_neg_01.sql
+expectations:
+  equal:
+    - source.sql
+    - rewrite_pos_01.sql
+  not_equal:
+    - source.sql
+    - rewrite_neg_01.sql
+postgres_results:
+  source: runs/pg/source.tsv
+  positive_rewrite: runs/pg/rewrite_pos_01.tsv
+  negative_rewrite: runs/pg/rewrite_neg_01.tsv
+validation_evidence:
+  - runs/pg/result_check.json
+plan_evidence:
+  - runs/pg/plans/plan_check.json
+notes:
+  - PostgreSQL witness validation shows source and positive result captures match.
+  - PostgreSQL witness validation shows source and negative result captures differ.
+  - MySQL and Spark remain unvalidated.
+  - PostgreSQL EXPLAIN JSON plans were collected for source, positive rewrite, and negative rewrite.

@@ -1,0 +1,159 @@
+{
+  "query_block": {
+    "select_id": 1,
+    "cost_info": {
+      "query_cost": "2.80"
+    },
+    "nested_loop": [
+      {
+        "table": {
+          "table_name": "ci",
+          "access_type": "ALL",
+          "rows_examined_per_scan": 1,
+          "rows_produced_per_join": 1,
+          "filtered": "100.00",
+          "cost_info": {
+            "read_cost": "0.25",
+            "eval_cost": "0.10",
+            "prefix_cost": "0.35",
+            "data_read_per_join": "32"
+          },
+          "used_columns": [
+            "movie_id",
+            "note",
+            "person_id",
+            "role_id"
+          ],
+          "attached_condition": "(`bench`.`ci`.`note` = '(voice: English version)')"
+        }
+      },
+      {
+        "table": {
+          "table_name": "n1",
+          "access_type": "ALL",
+          "rows_examined_per_scan": 1,
+          "rows_produced_per_join": 1,
+          "filtered": "100.00",
+          "using_join_buffer": "hash join",
+          "cost_info": {
+            "read_cost": "0.27",
+            "eval_cost": "0.10",
+            "prefix_cost": "0.72",
+            "data_read_per_join": "16"
+          },
+          "used_columns": [
+            "id",
+            "name"
+          ],
+          "attached_condition": "((`bench`.`n1`.`id` = `bench`.`ci`.`person_id`) and (`bench`.`n1`.`name` like '%Yo%') and (not((`bench`.`n1`.`name` like '%Yu%'))))"
+        }
+      },
+      {
+        "table": {
+          "table_name": "rt",
+          "access_type": "ALL",
+          "rows_examined_per_scan": 1,
+          "rows_produced_per_join": 1,
+          "filtered": "100.00",
+          "using_join_buffer": "hash join",
+          "cost_info": {
+            "read_cost": "0.28",
+            "eval_cost": "0.10",
+            "prefix_cost": "1.10",
+            "data_read_per_join": "136"
+          },
+          "used_columns": [
+            "id",
+            "role"
+          ],
+          "attached_condition": "((`bench`.`rt`.`id` = `bench`.`ci`.`role_id`) and (`bench`.`rt`.`role` = 'actress'))"
+        }
+      },
+      {
+        "table": {
+          "table_name": "t",
+          "access_type": "ALL",
+          "rows_examined_per_scan": 1,
+          "rows_produced_per_join": 1,
+          "filtered": "100.00",
+          "using_join_buffer": "hash join",
+          "cost_info": {
+            "read_cost": "0.28",
+            "eval_cost": "0.10",
+            "prefix_cost": "1.48",
+            "data_read_per_join": "16"
+          },
+          "used_columns": [
+            "id",
+            "title"
+          ],
+          "attached_condition": "(`bench`.`t`.`id` = `bench`.`ci`.`movie_id`)"
+        }
+      },
+      {
+        "table": {
+          "table_name": "mc",
+          "access_type": "ALL",
+          "rows_examined_per_scan": 1,
+          "rows_produced_per_join": 1,
+          "filtered": "100.00",
+          "using_join_buffer": "hash join",
+          "cost_info": {
+            "read_cost": "0.30",
+            "eval_cost": "0.10",
+            "prefix_cost": "1.88",
+            "data_read_per_join": "24"
+          },
+          "used_columns": [
+            "company_id",
+            "movie_id",
+            "note"
+          ],
+          "attached_condition": "((`bench`.`mc`.`movie_id` = `bench`.`ci`.`movie_id`) and (`bench`.`mc`.`note` like '(Japan)%') and (not((`bench`.`mc`.`note` like '%(USA)%'))))"
+        }
+      },
+      {
+        "table": {
+          "table_name": "cn",
+          "access_type": "ALL",
+          "rows_examined_per_scan": 1,
+          "rows_produced_per_join": 1,
+          "filtered": "100.00",
+          "using_join_buffer": "hash join",
+          "cost_info": {
+            "read_cost": "0.31",
+            "eval_cost": "0.10",
+            "prefix_cost": "2.29",
+            "data_read_per_join": "1K"
+          },
+          "used_columns": [
+            "id",
+            "country_code"
+          ],
+          "attached_condition": "((`bench`.`cn`.`id` = `bench`.`mc`.`company_id`) and (`bench`.`cn`.`country_code` = '[jp]'))"
+        }
+      },
+      {
+        "table": {
+          "table_name": "an1",
+          "access_type": "ALL",
+          "rows_examined_per_scan": 2,
+          "rows_produced_per_join": 1,
+          "filtered": "50.00",
+          "using_join_buffer": "hash join",
+          "cost_info": {
+            "read_cost": "0.31",
+            "eval_cost": "0.10",
+            "prefix_cost": "2.80",
+            "data_read_per_join": "24"
+          },
+          "used_columns": [
+            "name",
+            "person_id"
+          ],
+          "attached_condition": "(`bench`.`an1`.`person_id` = `bench`.`ci`.`person_id`)"
+        }
+      }
+    ]
+  }
+}

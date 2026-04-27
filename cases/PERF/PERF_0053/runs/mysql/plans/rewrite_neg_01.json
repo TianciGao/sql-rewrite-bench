@@ -1,0 +1,270 @@
+{
+  "query_block": {
+    "select_id": 1,
+    "cost_info": {
+      "query_cost": "7.00"
+    },
+    "ordering_operation": {
+      "using_temporary_table": true,
+      "using_filesort": true,
+      "cost_info": {
+        "sort_cost": "4.00"
+      },
+      "nested_loop": [
+        {
+          "table": {
+            "table_name": "date_dim",
+            "access_type": "ALL",
+            "rows_examined_per_scan": 2,
+            "rows_produced_per_join": 1,
+            "filtered": "50.00",
+            "cost_info": {
+              "read_cost": "0.35",
+              "eval_cost": "0.10",
+              "prefix_cost": "0.45",
+              "data_read_per_join": "96"
+            },
+            "used_columns": [
+              "d_week_seq",
+              "d_year"
+            ],
+            "attached_condition": "(`bench`.`date_dim`.`d_year` = 2001)"
+          }
+        },
+        {
+          "table": {
+            "table_name": "date_dim",
+            "access_type": "ALL",
+            "rows_examined_per_scan": 2,
+            "rows_produced_per_join": 1,
+            "filtered": "50.00",
+            "using_join_buffer": "hash join",
+            "cost_info": {
+              "read_cost": "0.35",
+              "eval_cost": "0.10",
+              "prefix_cost": "0.90",
+              "data_read_per_join": "96"
+            },
+            "used_columns": [
+              "d_week_seq",
+              "d_year"
+            ],
+            "attached_condition": "((`bench`.`date_dim`.`d_year` = <cache>((2001 + 1))) and (`bench`.`date_dim`.`d_week_seq` is not null))"
+          }
+        },
+        {
+          "table": {
+            "table_name": "wswscs",
+            "access_type": "ref",
+            "possible_keys": [
+              "<auto_key0>"
+            ],
+            "key": "<auto_key0>",
+            "used_key_parts": [
+              "d_week_seq"
+            ],
+            "key_length": "5",
+            "ref": [
+              "bench.date_dim.d_week_seq"
+            ],
+            "rows_examined_per_scan": 2,
+            "rows_produced_per_join": 2,
+            "filtered": "100.00",
+            "cost_info": {
+              "read_cost": "0.50",
+              "eval_cost": "0.20",
+              "prefix_cost": "1.60",
+              "data_read_per_join": "224"
+            },
+            "used_columns": [
+              "d_week_seq",
+              "sun_sales",
+              "mon_sales",
+              "tue_sales",
+              "wed_sales",
+              "thu_sales",
+              "fri_sales",
+              "sat_sales"
+            ],
+            "materialized_from_subquery": {
+              "sharing_temporary_table_with": {
+                "select_id": 3
+              }
+            }
+          }
+        },
+        {
+          "table": {
+            "table_name": "wswscs",
+            "access_type": "ref",
+            "possible_keys": [
+              "<auto_key0>"
+            ],
+            "key": "<auto_key0>",
+            "used_key_parts": [
+              "d_week_seq"
+            ],
+            "key_length": "5",
+            "ref": [
+              "func"
+            ],
+            "rows_examined_per_scan": 2,
+            "rows_produced_per_join": 4,
+            "filtered": "100.00",
+            "cost_info": {
+              "read_cost": "1.00",
+              "eval_cost": "0.40",
+              "prefix_cost": "3.00",
+              "data_read_per_join": "448"
+            },
+            "used_columns": [
+              "d_week_seq",
+              "sun_sales",
+              "mon_sales",
+              "tue_sales",
+              "wed_sales",
+              "thu_sales",
+              "fri_sales",
+              "sat_sales"
+            ],
+            "attached_condition": "((`wswscs`.`d_week_seq` = `bench`.`date_dim`.`d_week_seq`) and (`wswscs`.`d_week_seq` = (`wswscs`.`d_week_seq` - 52)))",
+            "materialized_from_subquery": {
+              "using_temporary_table": true,
+              "dependent": false,
+              "cacheable": true,
+              "query_block": {
+                "select_id": 3,
+                "cost_info": {
+                  "query_cost": "1.85"
+                },
+                "grouping_operation": {
+                  "using_temporary_table": true,
+                  "using_filesort": false,
+                  "nested_loop": [
+                    {
+                      "table": {
+                        "table_name": "date_dim",
+                        "access_type": "ALL",
+                        "rows_examined_per_scan": 2,
+                        "rows_produced_per_join": 2,
+                        "filtered": "100.00",
+                        "cost_info": {
+                          "read_cost": "0.25",
+                          "eval_cost": "0.20",
+                          "prefix_cost": "0.45",
+                          "data_read_per_join": "192"
+                        },
+                        "used_columns": [
+                          "d_date_sk",
+                          "d_week_seq",
+                          "d_day_name"
+                        ],
+                        "attached_condition": "(`bench`.`date_dim`.`d_date_sk` is not null)"
+                      }
+                    },
+                    {
+                      "table": {
+                        "table_name": "u",
+                        "access_type": "ref",
+                        "possible_keys": [
+                          "<auto_key0>"
+                        ],
+                        "key": "<auto_key0>",
+                        "used_key_parts": [
+                          "sold_date_sk"
+                        ],
+                        "key_length": "5",
+                        "ref": [
+                          "bench.date_dim.d_date_sk"
+                        ],
+                        "rows_examined_per_scan": 2,
+                        "rows_produced_per_join": 4,
+                        "filtered": "100.00",
+                        "cost_info": {
+                          "read_cost": "1.00",
+                          "eval_cost": "0.40",
+                          "prefix_cost": "1.85",
+                          "data_read_per_join": "64"
+                        },
+                        "used_columns": [
+                          "sold_date_sk",
+                          "sales_price"
+                        ],
+                        "materialized_from_subquery": {
+                          "using_temporary_table": true,
+                          "dependent": false,
+                          "cacheable": true,
+                          "query_block": {
+                            "union_result": {
+                              "using_temporary_table": false,
+                              "query_specifications": [
+                                {
+                                  "dependent": false,
+                                  "cacheable": true,
+                                  "query_block": {
+                                    "select_id": 5,
+                                    "cost_info": {
+                                      "query_cost": "0.45"
+                                    },
+                                    "table": {
+                                      "table_name": "web_sales",
+                                      "access_type": "ALL",
+                                      "rows_examined_per_scan": 2,
+                                      "rows_produced_per_join": 2,
+                                      "filtered": "100.00",
+                                      "cost_info": {
+                                        "read_cost": "0.25",
+                                        "eval_cost": "0.20",
+                                        "prefix_cost": "0.45",
+                                        "data_read_per_join": "32"
+                                      },
+                                      "used_columns": [
+                                        "ws_sold_date_sk",
+                                        "ws_ext_sales_price"
+                                      ]
+                                    }
+                                  }
+                                },
+                                {
+                                  "dependent": false,
+                                  "cacheable": true,
+                                  "query_block": {
+                                    "select_id": 6,
+                                    "cost_info": {
+                                      "query_cost": "0.35"
+                                    },
+                                    "table": {
+                                      "table_name": "catalog_sales",
+                                      "access_type": "ALL",
+                                      "rows_examined_per_scan": 1,
+                                      "rows_produced_per_join": 1,
+                                      "filtered": "100.00",
+                                      "cost_info": {
+                                        "read_cost": "0.25",
+                                        "eval_cost": "0.10",
+                                        "prefix_cost": "0.35",
+                                        "data_read_per_join": "16"
+                                      },
+                                      "used_columns": [
+                                        "cs_sold_date_sk",
+                                        "cs_ext_sales_price"
+                                      ]
+                                    }
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

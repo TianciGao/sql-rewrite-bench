@@ -1,0 +1,28 @@
+{
+  "case_id": "PERF_0048",
+  "source_id": "SRC_002",
+  "source_name": "TPC-DS",
+  "source_family": "benchmark",
+  "source_registry_path": "inventory/source_registry.csv",
+  "source_storage_path": "datasets/raw/tpcds/",
+  "source_tool_version": "DSGen-software-code-4.0.0",
+  "template_name": "query77a.tpl",
+  "template_path": "datasets/raw/tpcds/DSGen-software-code-4.0.0/query_variants/query77a.tpl",
+  "seed_id": "TPCDS_QUERY77A_DSQGEN_COUNT1_SCALE1_ANSI_V0",
+  "materialized_source_path": "cases/PERF/PERF_0048/provenance/query77a_instance_raw.sql",
+  "normalized_source_path": "cases/PERF/PERF_0048/source.sql",
+  "materialization_method": "Repaired repo-local dsqgen with COUNT=1, QUALIFY=Y, SCALE=1, DIALECT=ansi using a temporary /tmp directory containing query77a.tpl and ansi.tpl; source.sql applies only PostgreSQL witness-execution syntax normalization.",
+  "substitutions": {
+    "YEAR": 1998,
+    "SALES_DATE": "1998-08-04",
+    "_LIMIT": 100
+  },
+  "validation_evidence": {
+    "postgres_result_check": "cases/PERF/PERF_0048/runs/pg/result_check.json"
+  },
+  "notes": [
+    "The exact dsqgen output is preserved in provenance/query77a_instance_raw.sql.",
+    "source.sql fixes the generated missing comma in the cr CTE projection as PostgreSQL syntax normalization.",
+    "No MySQL, Spark, plan, admission, promotion, common-core, or registry facts are claimed."
+  ]
+}

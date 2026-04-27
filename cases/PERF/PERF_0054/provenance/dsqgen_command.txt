@@ -1,0 +1,13 @@
+cd datasets/raw/tpcds/DSGen-software-code-4.0.0/tools
+
+mkdir -p /tmp/tpcds_perf_0054_query3
+
+./dsqgen \
+  -DIRECTORY ../query_templates \
+  -TEMPLATE query3.tpl \
+  -COUNT 1 \
+  -QUALIFY Y \
+  -SCALE 1 \
+  -DIALECT ansi \
+  -OUTPUT_DIR /tmp/tpcds_perf_0054_query3 \
+  -VERBOSE Y

@@ -34,3 +34,6 @@ spark-warehouse/
 
 *.rar
 *.bak
+
+# local agent automation runtime
+.agent_runtime/

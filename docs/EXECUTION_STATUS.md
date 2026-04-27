@@ -250,6 +250,16 @@
 | PERF_0003 | JOB / IMDB，27a.sql | PG validated performance draft with positive / negative pair | formal skeleton complete；release-grade incomplete（PG-only validated） | PostgreSQL | 还缺 MySQL / Spark closure；当前继续保持 not_yet_admitted staged；后续再决定是否推进 common-core candidate |
 | PERF_0004 | JOB / IMDB，30b.sql | PG validated performance draft with positive / negative pair | formal skeleton complete；release-grade incomplete（PG-only validated） | PostgreSQL | 还缺 MySQL / Spark closure；当前继续保持 not_yet_admitted staged；后续优先看是否复用 PERF_0003 的跨引擎扩展工艺 |
 
+补充说明：JOB / IMDB 衍生 tri-engine performance drafts 当前已包括 `PERF_0077`、`PERF_0078`、`PERF_0080`、`PERF_0081`、`PERF_0082`、`PERF_0083`、`PERF_0084`、`PERF_0085`、`PERF_0086`、`PERF_0090`、`PERF_0091`、`PERF_0093`、`PERF_0094`、`PERF_0095`、`PERF_0096`、`PERF_0097`；这些 case 均已具备 PostgreSQL / MySQL / Spark witness validation，并形成对应 plan artifacts。`PERF_0079`、`PERF_0087`、`PERF_0092` 仍不计入该已注册集合。该状态仅表示 tri-engine evidence 已形成；live case facts 仍以 `inventory/case_registry.csv` 为准，不意味着 admission、promotion、common-core movement、extended-line movement 或 formal review completion。
+
+### 7.1.1 Recent TPC-DS selective deepening checkpoint
+
+当前 TPC-DS performance 线的 selective deepening 已形成最新一轮 tri-engine closure checkpoint。  
+目前 `PERF_0033`、`PERF_0034`、`PERF_0035`、`PERF_0036`、`PERF_0038`、`PERF_0043`、`PERF_0044`、`PERF_0047`、`PERF_0050`、`PERF_0052`、`PERF_0053`、`PERF_0054`、`PERF_0056`、`PERF_0062`、`PERF_0063`、`PERF_0065`、`PERF_0066`、`PERF_0071`、`PERF_0072`、`PERF_0073`、`PERF_0074`、`PERF_0075`、`PERF_0076` 已具备 PostgreSQL / MySQL / Spark closure。  
+`PERF_0032` 仍不计入 routine closed 集合，当前仍待单独 human SQL normalization decision；`PERF_0046` / `PERF_0048` 保持 deferred；`PERF_0067` / `PERF_0068` 仍未形成 tri-engine closure，留待后续单独 decision 或 future work。  
+这些变化已经与 `inventory/case_registry.csv` 对齐；case 级 live facts 仍以 `inventory/case_registry.csv` 为准。  
+本 checkpoint 只表示当前 selective closure 进展，不意味着 admission、promotion、common-core movement，或 formal review completion。
+
 ### 7.2 Long-tail cases
 
 | case_id | 数据集 / 来源 | 当前成熟度 | package engineering 状态 | 已验证引擎 | 下一步缺口 |

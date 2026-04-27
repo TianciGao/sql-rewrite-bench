@@ -1,0 +1,8 @@
+PERF_0055 provenance notes
+
+- Frozen mapping: PERF_0055 -> query_templates/query4.tpl.
+- Materialization used the repaired repo-local TPC-DS dsqgen toolchain.
+- Command basis: COUNT=1, QUALIFY=Y, SCALE=1, DIALECT=ansi.
+- Exact generated SQL is preserved in provenance/query4_instance_raw.sql.
+- source.sql is derived from the generated SQL and limited to PostgreSQL/common-core syntax normalization for witness execution.
+- This package does not claim PostgreSQL plan collection, MySQL validation, Spark validation, admission, promotion, common-core, extended, or registry writeback.
