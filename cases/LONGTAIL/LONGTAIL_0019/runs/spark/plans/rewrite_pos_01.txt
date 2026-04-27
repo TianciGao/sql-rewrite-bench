@@ -1,0 +1,153 @@
+== Physical Plan ==
+AdaptiveSparkPlan (25)
++- Project (24)
+   +- Sort (23)
+      +- Exchange (22)
+         +- Project (21)
+            +- BroadcastHashJoin Inner BuildRight (20)
+               :- Filter (16)
+               :  +- Window (15)
+               :     +- WindowGroupLimit (14)
+               :        +- Sort (13)
+               :           +- HashAggregate (12)
+               :              +- Exchange (11)
+               :                 +- HashAggregate (10)
+               :                    +- HashAggregate (9)
+               :                       +- Exchange (8)
+               :                          +- HashAggregate (7)
+               :                             +- Project (6)
+               :                                +- BroadcastHashJoin LeftOuter BuildRight (5)
+               :                                   :- Scan parquet spark_catalog.default.users (1)
+               :                                   +- BroadcastExchange (4)
+               :                                      +- Filter (3)
+               :                                         +- Scan parquet spark_catalog.default.posts (2)
+               +- BroadcastExchange (19)
+                  +- Filter (18)
+                     +- Scan parquet spark_catalog.default.users (17)
+
+
+(1) Scan parquet spark_catalog.default.users
+Output [1]: [Id#35]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/longtail_0019_spark_plan_32ipvswe/users]
+ReadSchema: struct<Id:int>
+
+(2) Scan parquet spark_catalog.default.posts
+Output [3]: [Id#39, OwnerUserId#40, PostTypeId#41]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/longtail_0019_spark_plan_32ipvswe/posts]
+PushedFilters: [IsNotNull(OwnerUserId)]
+ReadSchema: struct<Id:int,OwnerUserId:int,PostTypeId:int>
+
+(3) Filter
+Input [3]: [Id#39, OwnerUserId#40, PostTypeId#41]
+Condition : isnotnull(OwnerUserId#40)
+
+(4) BroadcastExchange
+Input [3]: [Id#39, OwnerUserId#40, PostTypeId#41]
+Arguments: HashedRelationBroadcastMode(List(cast(input[1, int, false] as bigint)),false), [plan_id=235]
+
+(5) BroadcastHashJoin
+Left keys [1]: [Id#35]
+Right keys [1]: [OwnerUserId#40]
+Join type: LeftOuter
+Join condition: None
+
+(6) Project
+Output [3]: [Id#35, Id#39, PostTypeId#41]
+Input [4]: [Id#35, Id#39, OwnerUserId#40, PostTypeId#41]
+
+(7) HashAggregate
+Input [3]: [Id#35, Id#39, PostTypeId#41]
+Keys [2]: [Id#35, Id#39]
+Functions [2]: [partial_sum(CASE WHEN (PostTypeId#41 = 1) THEN 1 ELSE 0 END), partial_sum(CASE WHEN (PostTypeId#41 = 2) THEN 1 ELSE 0 END)]
+Aggregate Attributes [2]: [sum(CASE WHEN (PostTypeId#41 = 1) THEN 1 ELSE 0 END)#113L, sum(CASE WHEN (PostTypeId#41 = 2) THEN 1 ELSE 0 END)#114L]
+Results [4]: [Id#35, Id#39, sum#123L, sum#125L]
+
+(8) Exchange
+Input [4]: [Id#35, Id#39, sum#123L, sum#125L]
+Arguments: hashpartitioning(Id#35, Id#39, 1), ENSURE_REQUIREMENTS, [plan_id=240]
+
+(9) HashAggregate
+Input [4]: [Id#35, Id#39, sum#123L, sum#125L]
+Keys [2]: [Id#35, Id#39]
+Functions [2]: [merge_sum(CASE WHEN (PostTypeId#41 = 1) THEN 1 ELSE 0 END), merge_sum(CASE WHEN (PostTypeId#41 = 2) THEN 1 ELSE 0 END)]
+Aggregate Attributes [2]: [sum(CASE WHEN (PostTypeId#41 = 1) THEN 1 ELSE 0 END)#113L, sum(CASE WHEN (PostTypeId#41 = 2) THEN 1 ELSE 0 END)#114L]
+Results [4]: [Id#35, Id#39, sum#123L, sum#125L]
+
+(10) HashAggregate
+Input [4]: [Id#35, Id#39, sum#123L, sum#125L]
+Keys [1]: [Id#35]
+Functions [3]: [merge_sum(CASE WHEN (PostTypeId#41 = 1) THEN 1 ELSE 0 END), merge_sum(CASE WHEN (PostTypeId#41 = 2) THEN 1 ELSE 0 END), partial_count(distinct Id#39)]
+Aggregate Attributes [3]: [sum(CASE WHEN (PostTypeId#41 = 1) THEN 1 ELSE 0 END)#113L, sum(CASE WHEN (PostTypeId#41 = 2) THEN 1 ELSE 0 END)#114L, count(Id#39)#112L]
+Results [4]: [Id#35, sum#123L, sum#125L, count#128L]
+
+(11) Exchange
+Input [4]: [Id#35, sum#123L, sum#125L, count#128L]
+Arguments: hashpartitioning(Id#35, 1), ENSURE_REQUIREMENTS, [plan_id=244]
+
+(12) HashAggregate
+Input [4]: [Id#35, sum#123L, sum#125L, count#128L]
+Keys [1]: [Id#35]
+Functions [3]: [sum(CASE WHEN (PostTypeId#41 = 1) THEN 1 ELSE 0 END), sum(CASE WHEN (PostTypeId#41 = 2) THEN 1 ELSE 0 END), count(distinct Id#39)]
+Aggregate Attributes [3]: [sum(CASE WHEN (PostTypeId#41 = 1) THEN 1 ELSE 0 END)#113L, sum(CASE WHEN (PostTypeId#41 = 2) THEN 1 ELSE 0 END)#114L, count(Id#39)#112L]
+Results [4]: [Id#35 AS UserId#101, count(Id#39)#112L AS PostCount#102L, sum(CASE WHEN (PostTypeId#41 = 1) THEN 1 ELSE 0 END)#113L AS QuestionCount#103L, sum(CASE WHEN (PostTypeId#41 = 2) THEN 1 ELSE 0 END)#114L AS AnswerCount#104L]
+
+(13) Sort
+Input [4]: [UserId#101, PostCount#102L, QuestionCount#103L, AnswerCount#104L]
+Arguments: [PostCount#102L DESC NULLS LAST], false, 0
+
+(14) WindowGroupLimit
+Input [4]: [UserId#101, PostCount#102L, QuestionCount#103L, AnswerCount#104L]
+Arguments: [PostCount#102L DESC NULLS LAST], rank(PostCount#102L), 10, Final
+
+(15) Window
+Input [4]: [UserId#101, PostCount#102L, QuestionCount#103L, AnswerCount#104L]
+Arguments: [rank(PostCount#102L) windowspecdefinition(PostCount#102L DESC NULLS LAST, specifiedwindowframe(RowFrame, unboundedpreceding$(), currentrow$())) AS RankByPostCount#105], [PostCount#102L DESC NULLS LAST]
+
+(16) Filter
+Input [5]: [UserId#101, PostCount#102L, QuestionCount#103L, AnswerCount#104L, RankByPostCount#105]
+Condition : ((RankByPostCount#105 <= 10) AND isnotnull(UserId#101))
+
+(17) Scan parquet spark_catalog.default.users
+Output [4]: [Id#108, DisplayName#109, Reputation#110, CreationDate#111]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/longtail_0019_spark_plan_32ipvswe/users]
+PushedFilters: [IsNotNull(Id)]
+ReadSchema: struct<Id:int,DisplayName:string,Reputation:int,CreationDate:string>
+
+(18) Filter
+Input [4]: [Id#108, DisplayName#109, Reputation#110, CreationDate#111]
+Condition : isnotnull(Id#108)
+
+(19) BroadcastExchange
+Input [4]: [Id#108, DisplayName#109, Reputation#110, CreationDate#111]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, false] as bigint)),false), [plan_id=253]
+
+(20) BroadcastHashJoin
+Left keys [1]: [UserId#101]
+Right keys [1]: [Id#108]
+Join type: Inner
+Join condition: None
+
+(21) Project
+Output [7]: [DisplayName#109, Reputation#110, CreationDate#111, PostCount#102L, QuestionCount#103L, AnswerCount#104L, RankByPostCount#105]
+Input [9]: [UserId#101, PostCount#102L, QuestionCount#103L, AnswerCount#104L, RankByPostCount#105, Id#108, DisplayName#109, Reputation#110, CreationDate#111]
+
+(22) Exchange
+Input [7]: [DisplayName#109, Reputation#110, CreationDate#111, PostCount#102L, QuestionCount#103L, AnswerCount#104L, RankByPostCount#105]
+Arguments: rangepartitioning(RankByPostCount#105 ASC NULLS FIRST, 1), ENSURE_REQUIREMENTS, [plan_id=265]
+
+(23) Sort
+Input [7]: [DisplayName#109, Reputation#110, CreationDate#111, PostCount#102L, QuestionCount#103L, AnswerCount#104L, RankByPostCount#105]
+Arguments: [RankByPostCount#105 ASC NULLS FIRST], true, 0
+
+(24) Project
+Output [6]: [DisplayName#109, Reputation#110, CreationDate#111, PostCount#102L, QuestionCount#103L, AnswerCount#104L]
+Input [7]: [DisplayName#109, Reputation#110, CreationDate#111, PostCount#102L, QuestionCount#103L, AnswerCount#104L, RankByPostCount#105]
+
+(25) AdaptiveSparkPlan
+Output [6]: [DisplayName#109, Reputation#110, CreationDate#111, PostCount#102L, QuestionCount#103L, AnswerCount#104L]
+Arguments: isFinalPlan=false
+
+
