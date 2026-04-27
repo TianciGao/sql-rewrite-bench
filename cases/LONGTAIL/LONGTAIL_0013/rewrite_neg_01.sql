@@ -5,7 +5,7 @@ WITH RankedPosts AS (
         p.OwnerUserId,
         p.CreationDate,
         p.Score,
-        ROW_NUMBER() OVER (PARTITION BY p.OwnerUserId ORDER BY p.Score DESC) AS Rank
+        ROW_NUMBER() OVER (PARTITION BY p.OwnerUserId ORDER BY p.Score DESC) AS rank_value
     FROM Posts p
     WHERE p.PostTypeId = 1
 ),
@@ -32,7 +32,7 @@ SELECT
     bp.Body AS BestPostContent
 FROM Users u
 LEFT JOIN Posts p ON u.Id = p.OwnerUserId AND p.PostTypeId = 2
-JOIN RankedPosts rp ON u.Id = rp.OwnerUserId AND rp.Rank = 1
+JOIN RankedPosts rp ON u.Id = rp.OwnerUserId AND rp.rank_value = 1
 LEFT JOIN Posts bp ON rp.PostId = bp.Id
 LEFT JOIN UserStats us ON u.Id = us.UserId
 WHERE u.Reputation > 1000

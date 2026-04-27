@@ -16,12 +16,12 @@ LEFT JOIN (
         SELECT
             p.Id AS PostId,
             p.OwnerUserId,
-            ROW_NUMBER() OVER (PARTITION BY p.OwnerUserId ORDER BY p.Score DESC) AS Rank
+            ROW_NUMBER() OVER (PARTITION BY p.OwnerUserId ORDER BY p.Score DESC) AS rank_value
         FROM Posts p
         WHERE p.PostTypeId = 1
     ) AS ranked
     JOIN Posts posts ON ranked.PostId = posts.Id
-    WHERE ranked.Rank = 1
+    WHERE ranked.rank_value = 1
 ) AS best_posts
   ON u.Id = best_posts.OwnerUserId
 LEFT JOIN (

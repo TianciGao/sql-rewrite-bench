@@ -9,7 +9,7 @@ SELECT
     ranked.AvgDownVotes,
     ranked.Reputation,
     ranked.Views,
-    ranked.Rank
+    ranked.rank_value
 FROM (
     SELECT
         u.DisplayName AS UserName,
@@ -22,7 +22,7 @@ FROM (
         AVG(COALESCE(vc.DownVotes, 0)) AS AvgDownVotes,
         u.Reputation,
         u.Views,
-        ROW_NUMBER() OVER (ORDER BY COUNT(DISTINCT p.Id) DESC) AS Rank
+        ROW_NUMBER() OVER (ORDER BY COUNT(DISTINCT p.Id) DESC) AS rank_value
     FROM Users u
     LEFT JOIN Posts p ON u.Id = p.OwnerUserId
     LEFT JOIN (

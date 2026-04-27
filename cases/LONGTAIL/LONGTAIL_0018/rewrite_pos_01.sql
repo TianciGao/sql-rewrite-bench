@@ -6,7 +6,7 @@ SELECT
     ranked.TotalAnswers,
     ranked.TotalViews,
     ranked.TotalScore,
-    ranked.Rank
+    ranked.rank_value
 FROM (
     SELECT
         stats.UserId,
@@ -16,7 +16,7 @@ FROM (
         stats.TotalAnswers,
         stats.TotalViews,
         stats.TotalScore,
-        ROW_NUMBER() OVER (ORDER BY stats.TotalScore DESC) AS Rank
+        ROW_NUMBER() OVER (ORDER BY stats.TotalScore DESC) AS rank_value
     FROM (
         SELECT
             U.Id AS UserId,
@@ -31,4 +31,4 @@ FROM (
         GROUP BY U.Id, U.DisplayName
     ) AS stats
 ) AS ranked
-WHERE ranked.Rank <= 10;
+WHERE ranked.rank_value <= 10;

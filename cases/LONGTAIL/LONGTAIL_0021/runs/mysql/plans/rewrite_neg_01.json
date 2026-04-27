@@ -1,0 +1,139 @@
+{
+  "query_block": {
+    "select_id": 1,
+    "cost_info": {
+      "query_cost": "3.85"
+    },
+    "table": {
+      "table_name": "ranked",
+      "access_type": "ALL",
+      "rows_examined_per_scan": 12,
+      "rows_produced_per_join": 3,
+      "filtered": "33.33",
+      "cost_info": {
+        "read_cost": "3.45",
+        "eval_cost": "0.40",
+        "prefix_cost": "3.85",
+        "data_read_per_join": "223"
+      },
+      "used_columns": [
+        "UserId",
+        "Reputation",
+        "PostCount",
+        "QuestionCount",
+        "AnswerCount",
+        "rank_value"
+      ],
+      "attached_condition": "(`ranked`.`rank_value` <= 10)",
+      "materialized_from_subquery": {
+        "using_temporary_table": true,
+        "dependent": false,
+        "cacheable": true,
+        "query_block": {
+          "select_id": 2,
+          "cost_info": {
+            "query_cost": "15.85"
+          },
+          "windowing": {
+            "windows": [
+              {
+                "name": "<unnamed window>",
+                "using_filesort": true,
+                "filesort_key": [
+                  "`Reputation` desc"
+                ],
+                "functions": [
+                  "row_number"
+                ]
+              }
+            ],
+            "cost_info": {
+              "sort_cost": "12.00"
+            },
+            "table": {
+              "table_name": "stats",
+              "access_type": "ALL",
+              "rows_examined_per_scan": 12,
+              "rows_produced_per_join": 12,
+              "filtered": "100.00",
+              "cost_info": {
+                "read_cost": "2.65",
+                "eval_cost": "1.20",
+                "prefix_cost": "3.85",
+                "data_read_per_join": "576"
+              },
+              "used_columns": [
+                "UserId",
+                "Reputation",
+                "PostCount",
+                "QuestionCount",
+                "AnswerCount"
+              ],
+              "materialized_from_subquery": {
+                "using_temporary_table": true,
+                "dependent": false,
+                "cacheable": true,
+                "query_block": {
+                  "select_id": 3,
+                  "cost_info": {
+                    "query_cost": "25.80"
+                  },
+                  "grouping_operation": {
+                    "using_temporary_table": true,
+                    "using_filesort": true,
+                    "cost_info": {
+                      "sort_cost": "12.10"
+                    },
+                    "nested_loop": [
+                      {
+                        "table": {
+                          "table_name": "u",
+                          "access_type": "ALL",
+                          "rows_examined_per_scan": 11,
+                          "rows_produced_per_join": 11,
+                          "filtered": "100.00",
+                          "cost_info": {
+                            "read_cost": "0.25",
+                            "eval_cost": "1.10",
+                            "prefix_cost": "1.35",
+                            "data_read_per_join": "176"
+                          },
+                          "used_columns": [
+                            "Id",
+                            "Reputation"
+                          ]
+                        }
+                      },
+                      {
+                        "table": {
+                          "table_name": "p",
+                          "access_type": "ALL",
+                          "rows_examined_per_scan": 11,
+                          "rows_produced_per_join": 12,
+                          "filtered": "10.00",
+                          "using_join_buffer": "hash join",
+                          "cost_info": {
+                            "read_cost": "0.25",
+                            "eval_cost": "1.21",
+                            "prefix_cost": "13.70",
+                            "data_read_per_join": "193"
+                          },
+                          "used_columns": [
+                            "Id",
+                            "OwnerUserId",
+                            "PostTypeId"
+                          ],
+                          "attached_condition": "(`bench`.`p`.`OwnerUserId` = `bench`.`u`.`Id`)"
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

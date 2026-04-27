@@ -19,7 +19,7 @@ TopUsers AS (
         PostCount, 
         QuestionCount, 
         AnswerCount,
-        ROW_NUMBER() OVER (ORDER BY Reputation DESC) AS Rank
+        ROW_NUMBER() OVER (ORDER BY Reputation DESC) AS rank_value
     FROM 
         UserStats
 )
@@ -32,4 +32,4 @@ SELECT
 FROM 
     TopUsers
 WHERE 
-    Rank <= 10;
+    rank_value <= 10;

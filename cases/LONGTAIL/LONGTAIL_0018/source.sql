@@ -21,7 +21,7 @@ TopUsers AS (
         TotalAnswers,
         TotalViews,
         TotalScore,
-        ROW_NUMBER() OVER (ORDER BY TotalScore DESC) AS Rank
+        ROW_NUMBER() OVER (ORDER BY TotalScore DESC) AS rank_value
     FROM UserPostStats
 )
 
@@ -33,6 +33,6 @@ SELECT
     TotalAnswers,
     TotalViews,
     TotalScore,
-    Rank
+    rank_value
 FROM TopUsers
-WHERE Rank <= 10;
+WHERE rank_value <= 10;

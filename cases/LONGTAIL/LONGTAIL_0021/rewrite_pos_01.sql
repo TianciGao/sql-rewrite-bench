@@ -11,7 +11,7 @@ FROM (
         stats.PostCount,
         stats.QuestionCount,
         stats.AnswerCount,
-        ROW_NUMBER() OVER (ORDER BY stats.Reputation DESC) AS Rank
+        ROW_NUMBER() OVER (ORDER BY stats.Reputation DESC) AS rank_value
     FROM (
         SELECT 
             u.Id AS UserId,
@@ -24,4 +24,4 @@ FROM (
         GROUP BY u.Id, u.Reputation
     ) stats
 ) ranked
-WHERE ranked.Rank <= 10;
+WHERE ranked.rank_value <= 10;
