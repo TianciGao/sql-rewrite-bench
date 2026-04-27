@@ -1,0 +1,265 @@
+== Physical Plan ==
+AdaptiveSparkPlan (43)
++- Sort (42)
+   +- Exchange (41)
+      +- Project (40)
+         +- SortMergeJoin Inner (39)
+            :- Sort (26)
+            :  +- Exchange (25)
+            :     +- HashAggregate (24)
+            :        +- Exchange (23)
+            :           +- HashAggregate (22)
+            :              +- HashAggregate (21)
+            :                 +- Exchange (20)
+            :                    +- HashAggregate (19)
+            :                       +- Expand (18)
+            :                          +- Project (17)
+            :                             +- BroadcastHashJoin LeftOuter BuildRight (16)
+            :                                :- Project (12)
+            :                                :  +- BroadcastHashJoin LeftOuter BuildRight (11)
+            :                                :     :- Project (7)
+            :                                :     :  +- BroadcastHashJoin LeftOuter BuildRight (6)
+            :                                :     :     :- Filter (2)
+            :                                :     :     :  +- Scan parquet spark_catalog.default.users (1)
+            :                                :     :     +- BroadcastExchange (5)
+            :                                :     :        +- Filter (4)
+            :                                :     :           +- Scan parquet spark_catalog.default.posts (3)
+            :                                :     +- BroadcastExchange (10)
+            :                                :        +- Filter (9)
+            :                                :           +- Scan parquet spark_catalog.default.comments (8)
+            :                                +- BroadcastExchange (15)
+            :                                   +- Filter (14)
+            :                                      +- Scan parquet spark_catalog.default.votes (13)
+            +- Sort (38)
+               +- Exchange (37)
+                  +- HashAggregate (36)
+                     +- Exchange (35)
+                        +- HashAggregate (34)
+                           +- Project (33)
+                              +- BroadcastHashJoin LeftOuter BuildRight (32)
+                                 :- Filter (28)
+                                 :  +- Scan parquet spark_catalog.default.posts (27)
+                                 +- BroadcastExchange (31)
+                                    +- Filter (30)
+                                       +- Scan parquet spark_catalog.default.votes (29)
+
+
+(1) Scan parquet spark_catalog.default.users
+Output [3]: [Id#77, DisplayName#78, Reputation#79]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/longtail_0009_spark_plan__4zkc59h/users]
+PushedFilters: [IsNotNull(Id)]
+ReadSchema: struct<Id:int,DisplayName:string,Reputation:int>
+
+(2) Filter
+Input [3]: [Id#77, DisplayName#78, Reputation#79]
+Condition : isnotnull(Id#77)
+
+(3) Scan parquet spark_catalog.default.posts
+Output [2]: [Id#80, OwnerUserId#83]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/longtail_0009_spark_plan__4zkc59h/posts]
+PushedFilters: [IsNotNull(OwnerUserId)]
+ReadSchema: struct<Id:int,OwnerUserId:int>
+
+(4) Filter
+Input [2]: [Id#80, OwnerUserId#83]
+Condition : isnotnull(OwnerUserId#83)
+
+(5) BroadcastExchange
+Input [2]: [Id#80, OwnerUserId#83]
+Arguments: HashedRelationBroadcastMode(List(cast(input[1, int, false] as bigint)),false), [plan_id=368]
+
+(6) BroadcastHashJoin
+Left keys [1]: [Id#77]
+Right keys [1]: [OwnerUserId#83]
+Join type: LeftOuter
+Join condition: None
+
+(7) Project
+Output [4]: [Id#77, DisplayName#78, Reputation#79, Id#80]
+Input [5]: [Id#77, DisplayName#78, Reputation#79, Id#80, OwnerUserId#83]
+
+(8) Scan parquet spark_catalog.default.comments
+Output [2]: [Id#89, PostId#90]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/longtail_0009_spark_plan__4zkc59h/comments]
+PushedFilters: [IsNotNull(PostId)]
+ReadSchema: struct<Id:int,PostId:int>
+
+(9) Filter
+Input [2]: [Id#89, PostId#90]
+Condition : isnotnull(PostId#90)
+
+(10) BroadcastExchange
+Input [2]: [Id#89, PostId#90]
+Arguments: HashedRelationBroadcastMode(List(cast(input[1, int, false] as bigint)),false), [plan_id=372]
+
+(11) BroadcastHashJoin
+Left keys [1]: [Id#80]
+Right keys [1]: [PostId#90]
+Join type: LeftOuter
+Join condition: None
+
+(12) Project
+Output [5]: [Id#77, DisplayName#78, Reputation#79, Id#80, Id#89]
+Input [6]: [Id#77, DisplayName#78, Reputation#79, Id#80, Id#89, PostId#90]
+
+(13) Scan parquet spark_catalog.default.votes
+Output [2]: [PostId#92, VoteTypeId#93]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/longtail_0009_spark_plan__4zkc59h/votes]
+PushedFilters: [IsNotNull(PostId)]
+ReadSchema: struct<PostId:int,VoteTypeId:int>
+
+(14) Filter
+Input [2]: [PostId#92, VoteTypeId#93]
+Condition : isnotnull(PostId#92)
+
+(15) BroadcastExchange
+Input [2]: [PostId#92, VoteTypeId#93]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, false] as bigint)),false), [plan_id=376]
+
+(16) BroadcastHashJoin
+Left keys [1]: [Id#80]
+Right keys [1]: [PostId#92]
+Join type: LeftOuter
+Join condition: None
+
+(17) Project
+Output [6]: [Id#77, DisplayName#78, Reputation#79, Id#80, Id#89, VoteTypeId#93]
+Input [7]: [Id#77, DisplayName#78, Reputation#79, Id#80, Id#89, PostId#92, VoteTypeId#93]
+
+(18) Expand
+Input [6]: [Id#77, DisplayName#78, Reputation#79, Id#80, Id#89, VoteTypeId#93]
+Arguments: [[Id#77, DisplayName#78, Reputation#79, null, null, 0, CASE WHEN (VoteTypeId#93 = 2) THEN 1 ELSE 0 END, CASE WHEN (VoteTypeId#93 = 3) THEN 1 ELSE 0 END], [Id#77, DisplayName#78, Reputation#79, Id#89, null, 1, null, null], [Id#77, DisplayName#78, Reputation#79, null, Id#80, 2, null, null]], [Id#77, DisplayName#78, Reputation#79, C.Id#177, P.Id#178, gid#176, CASE WHEN (V.VoteTypeId = 2) THEN 1 ELSE 0 END#179, CASE WHEN (V.VoteTypeId = 3) THEN 1 ELSE 0 END#180]
+
+(19) HashAggregate
+Input [8]: [Id#77, DisplayName#78, Reputation#79, C.Id#177, P.Id#178, gid#176, CASE WHEN (V.VoteTypeId = 2) THEN 1 ELSE 0 END#179, CASE WHEN (V.VoteTypeId = 3) THEN 1 ELSE 0 END#180]
+Keys [6]: [Id#77, DisplayName#78, Reputation#79, C.Id#177, P.Id#178, gid#176]
+Functions [2]: [partial_sum(CASE WHEN (V.VoteTypeId = 2) THEN 1 ELSE 0 END#179), partial_sum(CASE WHEN (V.VoteTypeId = 3) THEN 1 ELSE 0 END#180)]
+Aggregate Attributes [2]: [sum#197L, sum#198L]
+Results [8]: [Id#77, DisplayName#78, Reputation#79, C.Id#177, P.Id#178, gid#176, sum#199L, sum#200L]
+
+(20) Exchange
+Input [8]: [Id#77, DisplayName#78, Reputation#79, C.Id#177, P.Id#178, gid#176, sum#199L, sum#200L]
+Arguments: hashpartitioning(Id#77, DisplayName#78, Reputation#79, C.Id#177, P.Id#178, gid#176, 1), ENSURE_REQUIREMENTS, [plan_id=382]
+
+(21) HashAggregate
+Input [8]: [Id#77, DisplayName#78, Reputation#79, C.Id#177, P.Id#178, gid#176, sum#199L, sum#200L]
+Keys [6]: [Id#77, DisplayName#78, Reputation#79, C.Id#177, P.Id#178, gid#176]
+Functions [2]: [sum(CASE WHEN (V.VoteTypeId = 2) THEN 1 ELSE 0 END#179), sum(CASE WHEN (V.VoteTypeId = 3) THEN 1 ELSE 0 END#180)]
+Aggregate Attributes [2]: [sum(CASE WHEN (V.VoteTypeId = 2) THEN 1 ELSE 0 END#179)#170L, sum(CASE WHEN (V.VoteTypeId = 3) THEN 1 ELSE 0 END#180)#171L]
+Results [8]: [Id#77, DisplayName#78, Reputation#79, C.Id#177, P.Id#178, gid#176, sum(CASE WHEN (V.VoteTypeId = 2) THEN 1 ELSE 0 END#179)#170L AS sum(CASE WHEN (V.VoteTypeId = 2) THEN 1 ELSE 0 END)#181L, sum(CASE WHEN (V.VoteTypeId = 3) THEN 1 ELSE 0 END#180)#171L AS sum(CASE WHEN (V.VoteTypeId = 3) THEN 1 ELSE 0 END)#183L]
+
+(22) HashAggregate
+Input [8]: [Id#77, DisplayName#78, Reputation#79, C.Id#177, P.Id#178, gid#176, sum(CASE WHEN (V.VoteTypeId = 2) THEN 1 ELSE 0 END)#181L, sum(CASE WHEN (V.VoteTypeId = 3) THEN 1 ELSE 0 END)#183L]
+Keys [3]: [Id#77, DisplayName#78, Reputation#79]
+Functions [4]: [partial_count(P.Id#178) FILTER (WHERE (gid#176 = 2)), partial_count(C.Id#177) FILTER (WHERE (gid#176 = 1)), partial_first(sum(CASE WHEN (V.VoteTypeId = 2) THEN 1 ELSE 0 END)#181L, true) FILTER (WHERE (gid#176 = 0)), partial_first(sum(CASE WHEN (V.VoteTypeId = 3) THEN 1 ELSE 0 END)#183L, true) FILTER (WHERE (gid#176 = 0))]
+Aggregate Attributes [6]: [count#185L, count#186L, first#187L, valueSet#188, first#189L, valueSet#190]
+Results [9]: [Id#77, DisplayName#78, Reputation#79, count#191L, count#192L, first#193L, valueSet#194, first#195L, valueSet#196]
+
+(23) Exchange
+Input [9]: [Id#77, DisplayName#78, Reputation#79, count#191L, count#192L, first#193L, valueSet#194, first#195L, valueSet#196]
+Arguments: hashpartitioning(Id#77, DisplayName#78, Reputation#79, 1), ENSURE_REQUIREMENTS, [plan_id=386]
+
+(24) HashAggregate
+Input [9]: [Id#77, DisplayName#78, Reputation#79, count#191L, count#192L, first#193L, valueSet#194, first#195L, valueSet#196]
+Keys [3]: [Id#77, DisplayName#78, Reputation#79]
+Functions [4]: [count(P.Id#178), count(C.Id#177), first(sum(CASE WHEN (V.VoteTypeId = 2) THEN 1 ELSE 0 END)#181L, true), first(sum(CASE WHEN (V.VoteTypeId = 3) THEN 1 ELSE 0 END)#183L, true)]
+Aggregate Attributes [4]: [count(P.Id#178)#168L, count(C.Id#177)#169L, first(sum(CASE WHEN (V.VoteTypeId = 2) THEN 1 ELSE 0 END)#181L) ignore nulls#182L, first(sum(CASE WHEN (V.VoteTypeId = 3) THEN 1 ELSE 0 END)#183L) ignore nulls#184L]
+Results [7]: [Id#77 AS UserId#147, DisplayName#78, Reputation#79, count(P.Id#178)#168L AS PostCount#148L, count(C.Id#177)#169L AS CommentCount#149L, first(sum(CASE WHEN (V.VoteTypeId = 2) THEN 1 ELSE 0 END)#181L) ignore nulls#182L AS UpVoteCount#150L, first(sum(CASE WHEN (V.VoteTypeId = 3) THEN 1 ELSE 0 END)#183L) ignore nulls#184L AS DownVoteCount#151L]
+
+(25) Exchange
+Input [7]: [UserId#147, DisplayName#78, Reputation#79, PostCount#148L, CommentCount#149L, UpVoteCount#150L, DownVoteCount#151L]
+Arguments: hashpartitioning(UserId#147, 1), ENSURE_REQUIREMENTS, [plan_id=397]
+
+(26) Sort
+Input [7]: [UserId#147, DisplayName#78, Reputation#79, PostCount#148L, CommentCount#149L, UpVoteCount#150L, DownVoteCount#151L]
+Arguments: [UserId#147 ASC NULLS FIRST], false, 0
+
+(27) Scan parquet spark_catalog.default.posts
+Output [9]: [Id#156, Title#157, CreationDate#158, OwnerUserId#159, ViewCount#160, Score#161, AnswerCount#162, CommentCount#163, PostTypeId#164]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/longtail_0009_spark_plan__4zkc59h/posts]
+PushedFilters: [IsNotNull(OwnerUserId)]
+ReadSchema: struct<Id:int,Title:string,CreationDate:string,OwnerUserId:int,ViewCount:int,Score:int,AnswerCount:int,CommentCount:int,PostTypeId:int>
+
+(28) Filter
+Input [9]: [Id#156, Title#157, CreationDate#158, OwnerUserId#159, ViewCount#160, Score#161, AnswerCount#162, CommentCount#163, PostTypeId#164]
+Condition : isnotnull(OwnerUserId#159)
+
+(29) Scan parquet spark_catalog.default.votes
+Output [2]: [PostId#166, VoteTypeId#167]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/longtail_0009_spark_plan__4zkc59h/votes]
+PushedFilters: [IsNotNull(PostId)]
+ReadSchema: struct<PostId:int,VoteTypeId:int>
+
+(30) Filter
+Input [2]: [PostId#166, VoteTypeId#167]
+Condition : isnotnull(PostId#166)
+
+(31) BroadcastExchange
+Input [2]: [PostId#166, VoteTypeId#167]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, false] as bigint)),false), [plan_id=388]
+
+(32) BroadcastHashJoin
+Left keys [1]: [Id#156]
+Right keys [1]: [PostId#166]
+Join type: LeftOuter
+Join condition: None
+
+(33) Project
+Output [10]: [Id#156, Title#157, CreationDate#158, OwnerUserId#159, ViewCount#160, Score#161, AnswerCount#162, CommentCount#163, PostTypeId#164, VoteTypeId#167]
+Input [11]: [Id#156, Title#157, CreationDate#158, OwnerUserId#159, ViewCount#160, Score#161, AnswerCount#162, CommentCount#163, PostTypeId#164, PostId#166, VoteTypeId#167]
+
+(34) HashAggregate
+Input [10]: [Id#156, Title#157, CreationDate#158, OwnerUserId#159, ViewCount#160, Score#161, AnswerCount#162, CommentCount#163, PostTypeId#164, VoteTypeId#167]
+Keys [9]: [Id#156, Title#157, CreationDate#158, OwnerUserId#159, ViewCount#160, Score#161, AnswerCount#162, CommentCount#163, PostTypeId#164]
+Functions [2]: [partial_count(CASE WHEN (VoteTypeId#167 = 2) THEN 1 END), partial_count(CASE WHEN (VoteTypeId#167 = 3) THEN 1 END)]
+Aggregate Attributes [2]: [count#201L, count#202L]
+Results [11]: [Id#156, Title#157, CreationDate#158, OwnerUserId#159, ViewCount#160, Score#161, AnswerCount#162, CommentCount#163, PostTypeId#164, count#203L, count#204L]
+
+(35) Exchange
+Input [11]: [Id#156, Title#157, CreationDate#158, OwnerUserId#159, ViewCount#160, Score#161, AnswerCount#162, CommentCount#163, PostTypeId#164, count#203L, count#204L]
+Arguments: hashpartitioning(Id#156, Title#157, CreationDate#158, OwnerUserId#159, ViewCount#160, Score#161, AnswerCount#162, CommentCount#163, PostTypeId#164, 1), ENSURE_REQUIREMENTS, [plan_id=393]
+
+(36) HashAggregate
+Input [11]: [Id#156, Title#157, CreationDate#158, OwnerUserId#159, ViewCount#160, Score#161, AnswerCount#162, CommentCount#163, PostTypeId#164, count#203L, count#204L]
+Keys [9]: [Id#156, Title#157, CreationDate#158, OwnerUserId#159, ViewCount#160, Score#161, AnswerCount#162, CommentCount#163, PostTypeId#164]
+Functions [2]: [count(CASE WHEN (VoteTypeId#167 = 2) THEN 1 END), count(CASE WHEN (VoteTypeId#167 = 3) THEN 1 END)]
+Aggregate Attributes [2]: [count(CASE WHEN (VoteTypeId#167 = 2) THEN 1 END)#172L, count(CASE WHEN (VoteTypeId#167 = 3) THEN 1 END)#173L]
+Results [11]: [Id#156 AS PostId#152, Title#157, CreationDate#158, OwnerUserId#159, ViewCount#160, Score#161, AnswerCount#162, CommentCount#163, CASE WHEN (PostTypeId#164 = 1) THEN Question WHEN (PostTypeId#164 = 2) THEN Answer ELSE Other END AS PostType#153, count(CASE WHEN (VoteTypeId#167 = 2) THEN 1 END)#172L AS UpVotes#154L, count(CASE WHEN (VoteTypeId#167 = 3) THEN 1 END)#173L AS DownVotes#155L]
+
+(37) Exchange
+Input [11]: [PostId#152, Title#157, CreationDate#158, OwnerUserId#159, ViewCount#160, Score#161, AnswerCount#162, CommentCount#163, PostType#153, UpVotes#154L, DownVotes#155L]
+Arguments: hashpartitioning(OwnerUserId#159, 1), ENSURE_REQUIREMENTS, [plan_id=398]
+
+(38) Sort
+Input [11]: [PostId#152, Title#157, CreationDate#158, OwnerUserId#159, ViewCount#160, Score#161, AnswerCount#162, CommentCount#163, PostType#153, UpVotes#154L, DownVotes#155L]
+Arguments: [OwnerUserId#159 ASC NULLS FIRST], false, 0
+
+(39) SortMergeJoin
+Left keys [1]: [UserId#147]
+Right keys [1]: [OwnerUserId#159]
+Join type: Inner
+Join condition: None
+
+(40) Project
+Output [16]: [DisplayName#78, Reputation#79, PostCount#148L, CommentCount#149L, UpVoteCount#150L, DownVoteCount#151L, PostId#152, Title#157, CreationDate#158, ViewCount#160, Score#161, AnswerCount#162, CommentCount#163, PostType#153, UpVotes#154L, DownVotes#155L]
+Input [18]: [UserId#147, DisplayName#78, Reputation#79, PostCount#148L, CommentCount#149L, UpVoteCount#150L, DownVoteCount#151L, PostId#152, Title#157, CreationDate#158, OwnerUserId#159, ViewCount#160, Score#161, AnswerCount#162, CommentCount#163, PostType#153, UpVotes#154L, DownVotes#155L]
+
+(41) Exchange
+Input [16]: [DisplayName#78, Reputation#79, PostCount#148L, CommentCount#149L, UpVoteCount#150L, DownVoteCount#151L, PostId#152, Title#157, CreationDate#158, ViewCount#160, Score#161, AnswerCount#162, CommentCount#163, PostType#153, UpVotes#154L, DownVotes#155L]
+Arguments: rangepartitioning(Reputation#79 DESC NULLS LAST, ViewCount#160 DESC NULLS LAST, 1), ENSURE_REQUIREMENTS, [plan_id=404]
+
+(42) Sort
+Input [16]: [DisplayName#78, Reputation#79, PostCount#148L, CommentCount#149L, UpVoteCount#150L, DownVoteCount#151L, PostId#152, Title#157, CreationDate#158, ViewCount#160, Score#161, AnswerCount#162, CommentCount#163, PostType#153, UpVotes#154L, DownVotes#155L]
+Arguments: [Reputation#79 DESC NULLS LAST, ViewCount#160 DESC NULLS LAST], true, 0
+
+(43) AdaptiveSparkPlan
+Output [16]: [DisplayName#78, Reputation#79, PostCount#148L, CommentCount#149L, UpVoteCount#150L, DownVoteCount#151L, PostId#152, Title#157, CreationDate#158, ViewCount#160, Score#161, AnswerCount#162, CommentCount#163, PostType#153, UpVotes#154L, DownVotes#155L]
+Arguments: isFinalPlan=false
+
+
