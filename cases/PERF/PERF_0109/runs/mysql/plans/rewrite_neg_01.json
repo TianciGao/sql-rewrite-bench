@@ -1,0 +1,243 @@
+{
+  "query_block": {
+    "select_id": 1,
+    "cost_info": {
+      "query_cost": "5.22"
+    },
+    "nested_loop": [
+      {
+        "table": {
+          "table_name": "k",
+          "access_type": "ALL",
+          "rows_examined_per_scan": 1,
+          "rows_produced_per_join": 1,
+          "filtered": "100.00",
+          "cost_info": {
+            "read_cost": "0.25",
+            "eval_cost": "0.10",
+            "prefix_cost": "0.35",
+            "data_read_per_join": "16"
+          },
+          "used_columns": [
+            "id",
+            "keyword"
+          ],
+          "attached_condition": "(`bench`.`k`.`keyword` in ('murder','violence','blood','gore','death','female-nudity','hospital'))"
+        }
+      },
+      {
+        "table": {
+          "table_name": "it1",
+          "access_type": "ALL",
+          "rows_examined_per_scan": 2,
+          "rows_produced_per_join": 1,
+          "filtered": "50.00",
+          "using_join_buffer": "hash join",
+          "cost_info": {
+            "read_cost": "0.37",
+            "eval_cost": "0.10",
+            "prefix_cost": "0.82",
+            "data_read_per_join": "264"
+          },
+          "used_columns": [
+            "id",
+            "info"
+          ],
+          "attached_condition": "(`bench`.`it1`.`info` = 'genres')"
+        }
+      },
+      {
+        "table": {
+          "table_name": "it2",
+          "access_type": "ALL",
+          "rows_examined_per_scan": 2,
+          "rows_produced_per_join": 1,
+          "filtered": "50.00",
+          "using_join_buffer": "hash join",
+          "cost_info": {
+            "read_cost": "0.37",
+            "eval_cost": "0.10",
+            "prefix_cost": "1.29",
+            "data_read_per_join": "264"
+          },
+          "used_columns": [
+            "id",
+            "info"
+          ],
+          "attached_condition": "(`bench`.`it2`.`info` = 'votes')"
+        }
+      },
+      {
+        "table": {
+          "table_name": "mi_idx",
+          "access_type": "ALL",
+          "rows_examined_per_scan": 2,
+          "rows_produced_per_join": 1,
+          "filtered": "50.00",
+          "using_join_buffer": "hash join",
+          "cost_info": {
+            "read_cost": "0.27",
+            "eval_cost": "0.10",
+            "prefix_cost": "1.76",
+            "data_read_per_join": "24"
+          },
+          "used_columns": [
+            "movie_id",
+            "info_type_id",
+            "info"
+          ],
+          "attached_condition": "(`bench`.`mi_idx`.`info_type_id` = `bench`.`it2`.`id`)"
+        }
+      },
+      {
+        "table": {
+          "table_name": "t",
+          "access_type": "ALL",
+          "rows_examined_per_scan": 2,
+          "rows_produced_per_join": 1,
+          "filtered": "50.00",
+          "using_join_buffer": "hash join",
+          "cost_info": {
+            "read_cost": "0.27",
+            "eval_cost": "0.10",
+            "prefix_cost": "2.23",
+            "data_read_per_join": "16"
+          },
+          "used_columns": [
+            "id",
+            "title"
+          ],
+          "attached_condition": "(`bench`.`t`.`id` = `bench`.`mi_idx`.`movie_id`)"
+        }
+      },
+      {
+        "table": {
+          "table_name": "mk",
+          "access_type": "ALL",
+          "rows_examined_per_scan": 2,
+          "rows_produced_per_join": 1,
+          "filtered": "50.00",
+          "using_join_buffer": "hash join",
+          "cost_info": {
+            "read_cost": "0.28",
+            "eval_cost": "0.10",
+            "prefix_cost": "2.72",
+            "data_read_per_join": "16"
+          },
+          "used_columns": [
+            "movie_id",
+            "keyword_id"
+          ],
+          "attached_condition": "((`bench`.`mk`.`keyword_id` = `bench`.`k`.`id`) and (`bench`.`mk`.`movie_id` = `bench`.`mi_idx`.`movie_id`))"
+        }
+      },
+      {
+        "table": {
+          "table_name": "mc",
+          "access_type": "ALL",
+          "rows_examined_per_scan": 2,
+          "rows_produced_per_join": 1,
+          "filtered": "50.00",
+          "using_join_buffer": "hash join",
+          "cost_info": {
+            "read_cost": "0.28",
+            "eval_cost": "0.10",
+            "prefix_cost": "3.20",
+            "data_read_per_join": "16"
+          },
+          "used_columns": [
+            "movie_id",
+            "company_id"
+          ],
+          "attached_condition": "(`bench`.`mc`.`movie_id` = `bench`.`mi_idx`.`movie_id`)"
+        }
+      },
+      {
+        "table": {
+          "table_name": "mi",
+          "access_type": "ALL",
+          "rows_examined_per_scan": 2,
+          "rows_produced_per_join": 1,
+          "filtered": "50.00",
+          "using_join_buffer": "hash join",
+          "cost_info": {
+            "read_cost": "0.39",
+            "eval_cost": "0.10",
+            "prefix_cost": "3.69",
+            "data_read_per_join": "24"
+          },
+          "used_columns": [
+            "movie_id",
+            "info_type_id",
+            "info"
+          ],
+          "attached_condition": "((`bench`.`mi`.`info_type_id` = `bench`.`it1`.`id`) and (`bench`.`mi`.`movie_id` = `bench`.`mi_idx`.`movie_id`) and (`bench`.`mi`.`info` in ('Horror','Thriller')))"
+        }
+      },
+      {
+        "table": {
+          "table_name": "ci",
+          "access_type": "ALL",
+          "rows_examined_per_scan": 2,
+          "rows_produced_per_join": 1,
+          "filtered": "50.00",
+          "using_join_buffer": "hash join",
+          "cost_info": {
+            "read_cost": "0.41",
+            "eval_cost": "0.10",
+            "prefix_cost": "4.20",
+            "data_read_per_join": "24"
+          },
+          "used_columns": [
+            "movie_id",
+            "person_id",
+            "note"
+          ],
+          "attached_condition": "((`bench`.`ci`.`movie_id` = `bench`.`mi_idx`.`movie_id`) and (`bench`.`ci`.`note` in ('(writer)','(head writer)','(written by)','(story)','(story editor)')))"
+        }
+      },
+      {
+        "table": {
+          "table_name": "n",
+          "access_type": "ALL",
+          "rows_examined_per_scan": 2,
+          "rows_produced_per_join": 1,
+          "filtered": "50.00",
+          "using_join_buffer": "hash join",
+          "cost_info": {
+            "read_cost": "0.30",
+            "eval_cost": "0.10",
+            "prefix_cost": "4.70",
+            "data_read_per_join": "16"
+          },
+          "used_columns": [
+            "id",
+            "name"
+          ],
+          "attached_condition": "(`bench`.`n`.`id` = `bench`.`ci`.`person_id`)"
+        }
+      },
+      {
+        "table": {
+          "table_name": "cn",
+          "access_type": "ALL",
+          "rows_examined_per_scan": 2,
+          "rows_produced_per_join": 1,
+          "filtered": "50.00",
+          "using_join_buffer": "hash join",
+          "cost_info": {
+            "read_cost": "0.43",
+            "eval_cost": "0.10",
+            "prefix_cost": "5.22",
+            "data_read_per_join": "16"
+          },
+          "used_columns": [
+            "id",
+            "name"
+          ],
+          "attached_condition": "((`bench`.`cn`.`id` = `bench`.`mc`.`company_id`) and (`bench`.`cn`.`name` like 'Lionsgate%'))"
+        }
+      }
+    ]
+  }
+}

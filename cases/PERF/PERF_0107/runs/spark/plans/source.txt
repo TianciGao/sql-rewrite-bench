@@ -1,0 +1,393 @@
+== Physical Plan ==
+AdaptiveSparkPlan (65)
++- SortAggregate (64)
+   +- Exchange (63)
+      +- SortAggregate (62)
+         +- Project (61)
+            +- BroadcastHashJoin Inner BuildRight (60)
+               :- Project (55)
+               :  +- BroadcastHashJoin Inner BuildRight (54)
+               :     :- BroadcastHashJoin Inner BuildRight (50)
+               :     :  :- Project (46)
+               :     :  :  +- BroadcastHashJoin Inner BuildRight (45)
+               :     :  :     :- BroadcastHashJoin Inner BuildRight (40)
+               :     :  :     :  :- BroadcastHashJoin Inner BuildRight (36)
+               :     :  :     :  :  :- Project (31)
+               :     :  :     :  :  :  +- BroadcastHashJoin Inner BuildRight (30)
+               :     :  :     :  :  :     :- Project (25)
+               :     :  :     :  :  :     :  +- BroadcastHashJoin Inner BuildRight (24)
+               :     :  :     :  :  :     :     :- BroadcastHashJoin Inner BuildRight (19)
+               :     :  :     :  :  :     :     :  :- Project (14)
+               :     :  :     :  :  :     :     :  :  +- BroadcastHashJoin Inner BuildRight (13)
+               :     :  :     :  :  :     :     :  :     :- Project (8)
+               :     :  :     :  :  :     :     :  :     :  +- BroadcastHashJoin Inner BuildRight (7)
+               :     :  :     :  :  :     :     :  :     :     :- Filter (2)
+               :     :  :     :  :  :     :     :  :     :     :  +- Scan parquet spark_catalog.default.complete_cast (1)
+               :     :  :     :  :  :     :     :  :     :     +- BroadcastExchange (6)
+               :     :  :     :  :  :     :     :  :     :        +- Project (5)
+               :     :  :     :  :  :     :     :  :     :           +- Filter (4)
+               :     :  :     :  :  :     :     :  :     :              +- Scan parquet spark_catalog.default.comp_cast_type (3)
+               :     :  :     :  :  :     :     :  :     +- BroadcastExchange (12)
+               :     :  :     :  :  :     :     :  :        +- Project (11)
+               :     :  :     :  :  :     :     :  :           +- Filter (10)
+               :     :  :     :  :  :     :     :  :              +- Scan parquet spark_catalog.default.comp_cast_type (9)
+               :     :  :     :  :  :     :     :  +- BroadcastExchange (18)
+               :     :  :     :  :  :     :     :     +- Project (17)
+               :     :  :     :  :  :     :     :        +- Filter (16)
+               :     :  :     :  :  :     :     :           +- Scan parquet spark_catalog.default.movie_companies (15)
+               :     :  :     :  :  :     :     +- BroadcastExchange (23)
+               :     :  :     :  :  :     :        +- Project (22)
+               :     :  :     :  :  :     :           +- Filter (21)
+               :     :  :     :  :  :     :              +- Scan parquet spark_catalog.default.company_name (20)
+               :     :  :     :  :  :     +- BroadcastExchange (29)
+               :     :  :     :  :  :        +- Project (28)
+               :     :  :     :  :  :           +- Filter (27)
+               :     :  :     :  :  :              +- Scan parquet spark_catalog.default.company_type (26)
+               :     :  :     :  :  +- BroadcastExchange (35)
+               :     :  :     :  :     +- Project (34)
+               :     :  :     :  :        +- Filter (33)
+               :     :  :     :  :           +- Scan parquet spark_catalog.default.movie_info (32)
+               :     :  :     :  +- BroadcastExchange (39)
+               :     :  :     :     +- Filter (38)
+               :     :  :     :        +- Scan parquet spark_catalog.default.movie_keyword (37)
+               :     :  :     +- BroadcastExchange (44)
+               :     :  :        +- Project (43)
+               :     :  :           +- Filter (42)
+               :     :  :              +- Scan parquet spark_catalog.default.keyword (41)
+               :     :  +- BroadcastExchange (49)
+               :     :     +- Filter (48)
+               :     :        +- Scan parquet spark_catalog.default.movie_link (47)
+               :     +- BroadcastExchange (53)
+               :        +- Filter (52)
+               :           +- Scan parquet spark_catalog.default.link_type (51)
+               +- BroadcastExchange (59)
+                  +- Project (58)
+                     +- Filter (57)
+                        +- Scan parquet spark_catalog.default.title (56)
+
+
+(1) Scan parquet spark_catalog.default.complete_cast
+Output [3]: [movie_id#115, subject_id#116, status_id#117]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/perf_0107_spark_plan_rrseuop5/complete_cast]
+PushedFilters: [IsNotNull(subject_id), IsNotNull(status_id), IsNotNull(movie_id)]
+ReadSchema: struct<movie_id:int,subject_id:int,status_id:int>
+
+(2) Filter
+Input [3]: [movie_id#115, subject_id#116, status_id#117]
+Condition : ((isnotnull(subject_id#116) AND isnotnull(status_id#117)) AND isnotnull(movie_id#115))
+
+(3) Scan parquet spark_catalog.default.comp_cast_type
+Output [2]: [id#118, kind#119]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/perf_0107_spark_plan_rrseuop5/comp_cast_type]
+PushedFilters: [IsNotNull(kind), EqualTo(kind,cast), IsNotNull(id)]
+ReadSchema: struct<id:int,kind:string>
+
+(4) Filter
+Input [2]: [id#118, kind#119]
+Condition : ((isnotnull(kind#119) AND (kind#119 = cast)) AND isnotnull(id#118))
+
+(5) Project
+Output [1]: [id#118]
+Input [2]: [id#118, kind#119]
+
+(6) BroadcastExchange
+Input [1]: [id#118]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, true] as bigint)),false), [plan_id=360]
+
+(7) BroadcastHashJoin
+Left keys [1]: [subject_id#116]
+Right keys [1]: [id#118]
+Join type: Inner
+Join condition: None
+
+(8) Project
+Output [2]: [movie_id#115, status_id#117]
+Input [4]: [movie_id#115, subject_id#116, status_id#117, id#118]
+
+(9) Scan parquet spark_catalog.default.comp_cast_type
+Output [2]: [id#143, kind#144]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/perf_0107_spark_plan_rrseuop5/comp_cast_type]
+PushedFilters: [IsNotNull(kind), StringStartsWith(kind,complete), IsNotNull(id)]
+ReadSchema: struct<id:int,kind:string>
+
+(10) Filter
+Input [2]: [id#143, kind#144]
+Condition : ((isnotnull(kind#144) AND StartsWith(kind#144, complete)) AND isnotnull(id#143))
+
+(11) Project
+Output [1]: [id#143]
+Input [2]: [id#143, kind#144]
+
+(12) BroadcastExchange
+Input [1]: [id#143]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, true] as bigint)),false), [plan_id=364]
+
+(13) BroadcastHashJoin
+Left keys [1]: [status_id#117]
+Right keys [1]: [id#143]
+Join type: Inner
+Join condition: None
+
+(14) Project
+Output [1]: [movie_id#115]
+Input [3]: [movie_id#115, status_id#117, id#143]
+
+(15) Scan parquet spark_catalog.default.movie_companies
+Output [4]: [movie_id#129, company_id#130, company_type_id#131, note#132]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/perf_0107_spark_plan_rrseuop5/movie_companies]
+PushedFilters: [IsNull(note), IsNotNull(movie_id), IsNotNull(company_type_id), IsNotNull(company_id)]
+ReadSchema: struct<movie_id:int,company_id:int,company_type_id:int,note:string>
+
+(16) Filter
+Input [4]: [movie_id#129, company_id#130, company_type_id#131, note#132]
+Condition : (((isnull(note#132) AND isnotnull(movie_id#129)) AND isnotnull(company_type_id#131)) AND isnotnull(company_id#130))
+
+(17) Project
+Output [3]: [movie_id#129, company_id#130, company_type_id#131]
+Input [4]: [movie_id#129, company_id#130, company_type_id#131, note#132]
+
+(18) BroadcastExchange
+Input [3]: [movie_id#129, company_id#130, company_type_id#131]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, true] as bigint)),false), [plan_id=368]
+
+(19) BroadcastHashJoin
+Left keys [1]: [movie_id#115]
+Right keys [1]: [movie_id#129]
+Join type: Inner
+Join condition: None
+
+(20) Scan parquet spark_catalog.default.company_name
+Output [3]: [id#120, country_code#121, name#122]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/perf_0107_spark_plan_rrseuop5/company_name]
+PushedFilters: [IsNotNull(country_code), Not(EqualTo(country_code,[pl])), Or(StringContains(name,Film),StringContains(name,Warner)), IsNotNull(id)]
+ReadSchema: struct<id:int,country_code:string,name:string>
+
+(21) Filter
+Input [3]: [id#120, country_code#121, name#122]
+Condition : (((isnotnull(country_code#121) AND NOT (country_code#121 = [pl])) AND (Contains(name#122, Film) OR Contains(name#122, Warner))) AND isnotnull(id#120))
+
+(22) Project
+Output [2]: [id#120, name#122]
+Input [3]: [id#120, country_code#121, name#122]
+
+(23) BroadcastExchange
+Input [2]: [id#120, name#122]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, true] as bigint)),false), [plan_id=371]
+
+(24) BroadcastHashJoin
+Left keys [1]: [company_id#130]
+Right keys [1]: [id#120]
+Join type: Inner
+Join condition: None
+
+(25) Project
+Output [4]: [movie_id#115, movie_id#129, company_type_id#131, name#122]
+Input [6]: [movie_id#115, movie_id#129, company_id#130, company_type_id#131, id#120, name#122]
+
+(26) Scan parquet spark_catalog.default.company_type
+Output [2]: [id#123, kind#124]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/perf_0107_spark_plan_rrseuop5/company_type]
+PushedFilters: [IsNotNull(kind), EqualTo(kind,production companies), IsNotNull(id)]
+ReadSchema: struct<id:int,kind:string>
+
+(27) Filter
+Input [2]: [id#123, kind#124]
+Condition : ((isnotnull(kind#124) AND (kind#124 = production companies)) AND isnotnull(id#123))
+
+(28) Project
+Output [1]: [id#123]
+Input [2]: [id#123, kind#124]
+
+(29) BroadcastExchange
+Input [1]: [id#123]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, true] as bigint)),false), [plan_id=375]
+
+(30) BroadcastHashJoin
+Left keys [1]: [company_type_id#131]
+Right keys [1]: [id#123]
+Join type: Inner
+Join condition: None
+
+(31) Project
+Output [3]: [movie_id#115, movie_id#129, name#122]
+Input [5]: [movie_id#115, movie_id#129, company_type_id#131, name#122, id#123]
+
+(32) Scan parquet spark_catalog.default.movie_info
+Output [2]: [movie_id#133, info#134]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/perf_0107_spark_plan_rrseuop5/movie_info]
+PushedFilters: [In(info, [Denish,Denmark,English,German,Germany,Norway,Norwegian,Sweden,Swedish]), IsNotNull(movie_id)]
+ReadSchema: struct<movie_id:int,info:string>
+
+(33) Filter
+Input [2]: [movie_id#133, info#134]
+Condition : (info#134 IN (Sweden,Norway,Germany,Denmark,Swedish,Denish,Norwegian,German,English) AND isnotnull(movie_id#133))
+
+(34) Project
+Output [1]: [movie_id#133]
+Input [2]: [movie_id#133, info#134]
+
+(35) BroadcastExchange
+Input [1]: [movie_id#133]
+Arguments: HashedRelationBroadcastMode(List((shiftleft(cast(input[0, int, true] as bigint), 32) | (cast(input[0, int, true] as bigint) & 4294967295))),false), [plan_id=379]
+
+(36) BroadcastHashJoin
+Left keys [2]: [movie_id#129, movie_id#115]
+Right keys [2]: [movie_id#133, movie_id#133]
+Join type: Inner
+Join condition: None
+
+(37) Scan parquet spark_catalog.default.movie_keyword
+Output [2]: [movie_id#135, keyword_id#136]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/perf_0107_spark_plan_rrseuop5/movie_keyword]
+PushedFilters: [IsNotNull(movie_id), IsNotNull(keyword_id)]
+ReadSchema: struct<movie_id:int,keyword_id:int>
+
+(38) Filter
+Input [2]: [movie_id#135, keyword_id#136]
+Condition : (isnotnull(movie_id#135) AND isnotnull(keyword_id#136))
+
+(39) BroadcastExchange
+Input [2]: [movie_id#135, keyword_id#136]
+Arguments: HashedRelationBroadcastMode(List(input[0, int, false], input[0, int, false], input[0, int, false]),false), [plan_id=382]
+
+(40) BroadcastHashJoin
+Left keys [3]: [movie_id#129, movie_id#133, movie_id#115]
+Right keys [3]: [movie_id#135, movie_id#135, movie_id#135]
+Join type: Inner
+Join condition: None
+
+(41) Scan parquet spark_catalog.default.keyword
+Output [2]: [id#125, keyword#126]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/perf_0107_spark_plan_rrseuop5/keyword]
+PushedFilters: [IsNotNull(keyword), EqualTo(keyword,sequel), IsNotNull(id)]
+ReadSchema: struct<id:int,keyword:string>
+
+(42) Filter
+Input [2]: [id#125, keyword#126]
+Condition : ((isnotnull(keyword#126) AND (keyword#126 = sequel)) AND isnotnull(id#125))
+
+(43) Project
+Output [1]: [id#125]
+Input [2]: [id#125, keyword#126]
+
+(44) BroadcastExchange
+Input [1]: [id#125]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, true] as bigint)),false), [plan_id=385]
+
+(45) BroadcastHashJoin
+Left keys [1]: [keyword_id#136]
+Right keys [1]: [id#125]
+Join type: Inner
+Join condition: None
+
+(46) Project
+Output [5]: [movie_id#115, movie_id#129, name#122, movie_id#133, movie_id#135]
+Input [7]: [movie_id#115, movie_id#129, name#122, movie_id#133, movie_id#135, keyword_id#136, id#125]
+
+(47) Scan parquet spark_catalog.default.movie_link
+Output [2]: [movie_id#137, link_type_id#139]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/perf_0107_spark_plan_rrseuop5/movie_link]
+PushedFilters: [IsNotNull(movie_id), IsNotNull(link_type_id)]
+ReadSchema: struct<movie_id:int,link_type_id:int>
+
+(48) Filter
+Input [2]: [movie_id#137, link_type_id#139]
+Condition : (isnotnull(movie_id#137) AND isnotnull(link_type_id#139))
+
+(49) BroadcastExchange
+Input [2]: [movie_id#137, link_type_id#139]
+Arguments: HashedRelationBroadcastMode(List(input[0, int, false], input[0, int, false], input[0, int, false], input[0, int, false]),false), [plan_id=389]
+
+(50) BroadcastHashJoin
+Left keys [4]: [movie_id#135, movie_id#129, movie_id#133, movie_id#115]
+Right keys [4]: [movie_id#137, movie_id#137, movie_id#137, movie_id#137]
+Join type: Inner
+Join condition: None
+
+(51) Scan parquet spark_catalog.default.link_type
+Output [2]: [id#127, link#128]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/perf_0107_spark_plan_rrseuop5/link_type]
+PushedFilters: [IsNotNull(link), StringContains(link,follow), IsNotNull(id)]
+ReadSchema: struct<id:int,link:string>
+
+(52) Filter
+Input [2]: [id#127, link#128]
+Condition : ((isnotnull(link#128) AND Contains(link#128, follow)) AND isnotnull(id#127))
+
+(53) BroadcastExchange
+Input [2]: [id#127, link#128]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, false] as bigint)),false), [plan_id=392]
+
+(54) BroadcastHashJoin
+Left keys [1]: [link_type_id#139]
+Right keys [1]: [id#127]
+Join type: Inner
+Join condition: None
+
+(55) Project
+Output [7]: [movie_id#115, movie_id#129, name#122, movie_id#133, movie_id#135, movie_id#137, link#128]
+Input [9]: [movie_id#115, movie_id#129, name#122, movie_id#133, movie_id#135, movie_id#137, link_type_id#139, id#127, link#128]
+
+(56) Scan parquet spark_catalog.default.title
+Output [3]: [id#140, title#141, production_year#142]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/perf_0107_spark_plan_rrseuop5/title]
+PushedFilters: [IsNotNull(production_year), GreaterThanOrEqual(production_year,1950), LessThanOrEqual(production_year,2010), IsNotNull(id)]
+ReadSchema: struct<id:int,title:string,production_year:int>
+
+(57) Filter
+Input [3]: [id#140, title#141, production_year#142]
+Condition : (((isnotnull(production_year#142) AND (production_year#142 >= 1950)) AND (production_year#142 <= 2010)) AND isnotnull(id#140))
+
+(58) Project
+Output [2]: [id#140, title#141]
+Input [3]: [id#140, title#141, production_year#142]
+
+(59) BroadcastExchange
+Input [2]: [id#140, title#141]
+Arguments: HashedRelationBroadcastMode(List(input[0, int, true], input[0, int, true], input[0, int, true], input[0, int, true], input[0, int, true]),false), [plan_id=396]
+
+(60) BroadcastHashJoin
+Left keys [5]: [movie_id#137, movie_id#135, movie_id#129, movie_id#133, movie_id#115]
+Right keys [5]: [id#140, id#140, id#140, id#140, id#140]
+Join type: Inner
+Join condition: None
+
+(61) Project
+Output [3]: [name#122, link#128, title#141]
+Input [9]: [movie_id#115, movie_id#129, name#122, movie_id#133, movie_id#135, movie_id#137, link#128, id#140, title#141]
+
+(62) SortAggregate
+Input [3]: [name#122, link#128, title#141]
+Keys: []
+Functions [3]: [partial_min(name#122), partial_min(link#128), partial_min(title#141)]
+Aggregate Attributes [3]: [min#160, min#161, min#162]
+Results [3]: [min#163, min#164, min#165]
+
+(63) Exchange
+Input [3]: [min#163, min#164, min#165]
+Arguments: SinglePartition, ENSURE_REQUIREMENTS, [plan_id=401]
+
+(64) SortAggregate
+Input [3]: [min#163, min#164, min#165]
+Keys: []
+Functions [3]: [min(name#122), min(link#128), min(title#141)]
+Aggregate Attributes [3]: [min(name#122)#157, min(link#128)#158, min(title#141)#159]
+Results [3]: [min(name#122)#157 AS producing_company#112, min(link#128)#158 AS link_type#113, min(title#141)#159 AS complete_western_sequel#114]
+
+(65) AdaptiveSparkPlan
+Output [3]: [producing_company#112, link_type#113, complete_western_sequel#114]
+Arguments: isFinalPlan=false
+
+
