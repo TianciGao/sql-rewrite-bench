@@ -37,10 +37,10 @@ tags:
       - join_reorder
   plan_operator:
     present:
-      - scan
-      - join
       - aggregate
+      - join
       - materialize
+      - scan
     delta_relevant: []
   workload_realism:
     source_inherited:

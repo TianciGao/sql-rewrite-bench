@@ -35,11 +35,11 @@ tags:
       - predicate_pushdown
   plan_operator:
     present:
-      - scan
-      - join
       - aggregate
-      - sort
+      - join
       - limit
+      - scan
+      - sort
     delta_relevant: []
   workload_realism:
     source_inherited:

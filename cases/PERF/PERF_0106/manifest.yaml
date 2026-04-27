@@ -38,28 +38,30 @@ registry_note: inventory/case_registry.csv is not updated during construction
 
 tags:
   sql_feature:
-    primary:
-    - expression_complexity
+    primary: []
     secondary: []
   rewrite_opportunity:
     primary:
-    - join_reorder
-    secondary: []
+      - join_reorder
+    secondary:
+      - predicate_pushdown
   plan_operator:
     present:
-    - scan
-    - filter
-    - join
-    - aggregate
+      - aggregate
+      - filter
+      - join
+      - materialize
+      - scan
+      - sort
     delta_relevant:
-    - filter
-    - join
+      - sort
   workload_realism:
     source_inherited:
-    - real_data_correlation
-    - realistic_query_style
+      - classic_analytical_baseline
+      - real_data_correlation
     case_specific:
-    - high_join_count
+      - high_join_count
+      - long_query_text
   portability:
     confirmed: []
     suspected: []

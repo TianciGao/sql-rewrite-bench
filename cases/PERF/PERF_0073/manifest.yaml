@@ -36,11 +36,11 @@ tags:
       - expression_simplification
   plan_operator:
     present:
-      - scan
       - aggregate
-      - sort
       - join
       - limit
+      - scan
+      - sort
     delta_relevant: []
   workload_realism:
     source_inherited:

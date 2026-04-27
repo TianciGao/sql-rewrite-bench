@@ -37,12 +37,13 @@ tags:
       - cte_strategy
   plan_operator:
     present:
-      - scan
-      - join
       - aggregate
-      - sort
+      - join
       - limit
       - materialize
+      - scan
+      - sort
+      - subquery
     delta_relevant: []
   workload_realism:
     source_inherited:
