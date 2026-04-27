@@ -1,0 +1,37 @@
+case_id: PERF_0104
+primary_pool: performance
+source_family: JOB/IMDB
+source_query_identity: 21b.sql
+draft_origin: local_job_corpus_direct_wave_06
+local_source_path: datasets/raw/job/staged/job/21b.sql
+official_case_status: case_local_constructed_not_registry_admitted
+expected_engines:
+  - PostgreSQL
+  - MySQL
+  - Spark
+source_files:
+  source: source.sql
+  positive_rewrite: rewrite_pos_01.sql
+  negative_rewrite: rewrite_neg_01.sql
+schema_files:
+  postgres: schema/ddl_pg.sql
+  mysql: schema/ddl_mysql.sql
+  spark: schema/ddl_spark.sql
+witness_data_files:
+  postgres: validation/pg_witness_data.sql
+  mysql: validation/mysql_witness_data.sql
+  spark: validation/spark_witness_data.sql
+validation_scripts:
+  postgres_validation: validation/run_pg_validation.sh
+  postgres_plan_collection: validation/run_pg_plan_collection.sh
+  mysql_validation: validation/run_mysql_validation.sh
+  mysql_plan_collection: validation/run_mysql_plan_collection.sh
+  spark_validation: validation/run_spark_validation.sh
+  spark_plan_collection: validation/run_spark_plan_collection.sh
+known_caveats:
+  - not_yet_validated_as_official_case
+  - registry_not_updated
+  - no_admission_or_promotion_claim
+  - text_like_semantics_require_human_review
+  - aggregate_min_result_sensitivity_requires_review
+registry_note: inventory/case_registry.csv is not updated during construction
