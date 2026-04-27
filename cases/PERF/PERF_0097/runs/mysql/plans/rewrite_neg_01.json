@@ -1,0 +1,310 @@
+{
+  "query_block": {
+    "select_id": 1,
+    "cost_info": {
+      "query_cost": "7.59"
+    },
+    "nested_loop": [
+      {
+        "table": {
+          "table_name": "kt1",
+          "access_type": "ALL",
+          "rows_examined_per_scan": 1,
+          "rows_produced_per_join": 1,
+          "filtered": "100.00",
+          "cost_info": {
+            "read_cost": "0.25",
+            "eval_cost": "0.10",
+            "prefix_cost": "0.35",
+            "data_read_per_join": "136"
+          },
+          "used_columns": [
+            "id",
+            "kind"
+          ],
+          "attached_condition": "(`bench`.`kt1`.`kind` = 'tv series')"
+        }
+      },
+      {
+        "table": {
+          "table_name": "kt2",
+          "access_type": "ALL",
+          "rows_examined_per_scan": 1,
+          "rows_produced_per_join": 1,
+          "filtered": "100.00",
+          "using_join_buffer": "hash join",
+          "cost_info": {
+            "read_cost": "0.25",
+            "eval_cost": "0.10",
+            "prefix_cost": "0.70",
+            "data_read_per_join": "136"
+          },
+          "used_columns": [
+            "id",
+            "kind"
+          ],
+          "attached_condition": "(`bench`.`kt2`.`kind` = 'tv series')"
+        }
+      },
+      {
+        "table": {
+          "table_name": "lt",
+          "access_type": "ALL",
+          "rows_examined_per_scan": 2,
+          "rows_produced_per_join": 1,
+          "filtered": "50.00",
+          "using_join_buffer": "hash join",
+          "cost_info": {
+            "read_cost": "0.35",
+            "eval_cost": "0.10",
+            "prefix_cost": "1.15",
+            "data_read_per_join": "264"
+          },
+          "used_columns": [
+            "id",
+            "link"
+          ],
+          "attached_condition": "(`bench`.`lt`.`link` = 'sequel')"
+        }
+      },
+      {
+        "table": {
+          "table_name": "ml",
+          "access_type": "ALL",
+          "rows_examined_per_scan": 2,
+          "rows_produced_per_join": 1,
+          "filtered": "50.00",
+          "using_join_buffer": "hash join",
+          "cost_info": {
+            "read_cost": "0.25",
+            "eval_cost": "0.10",
+            "prefix_cost": "1.60",
+            "data_read_per_join": "16"
+          },
+          "used_columns": [
+            "movie_id",
+            "linked_movie_id",
+            "link_type_id"
+          ],
+          "attached_condition": "(`bench`.`ml`.`link_type_id` = `bench`.`lt`.`id`)"
+        }
+      },
+      {
+        "table": {
+          "table_name": "it1",
+          "access_type": "ALL",
+          "rows_examined_per_scan": 2,
+          "rows_produced_per_join": 1,
+          "filtered": "50.00",
+          "using_join_buffer": "hash join",
+          "cost_info": {
+            "read_cost": "0.35",
+            "eval_cost": "0.10",
+            "prefix_cost": "2.05",
+            "data_read_per_join": "264"
+          },
+          "used_columns": [
+            "id",
+            "info"
+          ],
+          "attached_condition": "(`bench`.`it1`.`info` = 'rating')"
+        }
+      },
+      {
+        "table": {
+          "table_name": "it2",
+          "access_type": "ALL",
+          "rows_examined_per_scan": 2,
+          "rows_produced_per_join": 1,
+          "filtered": "50.00",
+          "using_join_buffer": "hash join",
+          "cost_info": {
+            "read_cost": "0.35",
+            "eval_cost": "0.10",
+            "prefix_cost": "2.50",
+            "data_read_per_join": "264"
+          },
+          "used_columns": [
+            "id",
+            "info"
+          ],
+          "attached_condition": "(`bench`.`it2`.`info` = 'rating')"
+        }
+      },
+      {
+        "table": {
+          "table_name": "mc1",
+          "access_type": "ALL",
+          "rows_examined_per_scan": 4,
+          "rows_produced_per_join": 1,
+          "filtered": "25.00",
+          "using_join_buffer": "hash join",
+          "cost_info": {
+            "read_cost": "0.25",
+            "eval_cost": "0.10",
+            "prefix_cost": "3.15",
+            "data_read_per_join": "16"
+          },
+          "used_columns": [
+            "movie_id",
+            "company_id"
+          ],
+          "attached_condition": "(`bench`.`mc1`.`movie_id` = `bench`.`ml`.`movie_id`)"
+        }
+      },
+      {
+        "table": {
+          "table_name": "mc2",
+          "access_type": "ALL",
+          "rows_examined_per_scan": 4,
+          "rows_produced_per_join": 1,
+          "filtered": "25.00",
+          "using_join_buffer": "hash join",
+          "cost_info": {
+            "read_cost": "0.25",
+            "eval_cost": "0.10",
+            "prefix_cost": "3.80",
+            "data_read_per_join": "16"
+          },
+          "used_columns": [
+            "movie_id",
+            "company_id"
+          ],
+          "attached_condition": "(`bench`.`mc2`.`movie_id` = `bench`.`ml`.`linked_movie_id`)"
+        }
+      },
+      {
+        "table": {
+          "table_name": "t2",
+          "access_type": "ALL",
+          "rows_examined_per_scan": 4,
+          "rows_produced_per_join": 1,
+          "filtered": "25.00",
+          "using_join_buffer": "hash join",
+          "cost_info": {
+            "read_cost": "0.55",
+            "eval_cost": "0.10",
+            "prefix_cost": "4.46",
+            "data_read_per_join": "24"
+          },
+          "used_columns": [
+            "id",
+            "title",
+            "kind_id",
+            "production_year"
+          ],
+          "attached_condition": "((`bench`.`t2`.`kind_id` = `bench`.`kt2`.`id`) and (`bench`.`t2`.`id` = `bench`.`ml`.`linked_movie_id`) and (`bench`.`t2`.`production_year` between 2005 and 2008))"
+        }
+      },
+      {
+        "table": {
+          "table_name": "mi_idx2",
+          "access_type": "ALL",
+          "rows_examined_per_scan": 4,
+          "rows_produced_per_join": 1,
+          "filtered": "25.00",
+          "using_join_buffer": "hash join",
+          "cost_info": {
+            "read_cost": "0.53",
+            "eval_cost": "0.10",
+            "prefix_cost": "5.12",
+            "data_read_per_join": "24"
+          },
+          "used_columns": [
+            "movie_id",
+            "info_type_id",
+            "info"
+          ],
+          "attached_condition": "((`bench`.`mi_idx2`.`info_type_id` = `bench`.`it2`.`id`) and (`bench`.`mi_idx2`.`movie_id` = `bench`.`ml`.`linked_movie_id`) and (`bench`.`mi_idx2`.`info` < '3.0'))"
+        }
+      },
+      {
+        "table": {
+          "table_name": "cn1",
+          "access_type": "ALL",
+          "rows_examined_per_scan": 3,
+          "rows_produced_per_join": 1,
+          "filtered": "33.33",
+          "using_join_buffer": "hash join",
+          "cost_info": {
+            "read_cost": "0.47",
+            "eval_cost": "0.10",
+            "prefix_cost": "5.68",
+            "data_read_per_join": "56"
+          },
+          "used_columns": [
+            "id",
+            "country_code",
+            "name"
+          ],
+          "attached_condition": "((`bench`.`cn1`.`id` = `bench`.`mc1`.`company_id`) and (`bench`.`cn1`.`country_code` = '[us]'))"
+        }
+      },
+      {
+        "table": {
+          "table_name": "t1",
+          "access_type": "ALL",
+          "rows_examined_per_scan": 4,
+          "rows_produced_per_join": 1,
+          "filtered": "25.00",
+          "using_join_buffer": "hash join",
+          "cost_info": {
+            "read_cost": "0.26",
+            "eval_cost": "0.10",
+            "prefix_cost": "6.35",
+            "data_read_per_join": "24"
+          },
+          "used_columns": [
+            "id",
+            "title",
+            "kind_id"
+          ],
+          "attached_condition": "((`bench`.`t1`.`kind_id` = `bench`.`kt1`.`id`) and (`bench`.`t1`.`id` = `bench`.`ml`.`movie_id`))"
+        }
+      },
+      {
+        "table": {
+          "table_name": "mi_idx1",
+          "access_type": "ALL",
+          "rows_examined_per_scan": 4,
+          "rows_produced_per_join": 1,
+          "filtered": "25.00",
+          "using_join_buffer": "hash join",
+          "cost_info": {
+            "read_cost": "0.27",
+            "eval_cost": "0.10",
+            "prefix_cost": "7.02",
+            "data_read_per_join": "24"
+          },
+          "used_columns": [
+            "movie_id",
+            "info_type_id",
+            "info"
+          ],
+          "attached_condition": "((`bench`.`mi_idx1`.`info_type_id` = `bench`.`it1`.`id`) and (`bench`.`mi_idx1`.`movie_id` = `bench`.`ml`.`movie_id`))"
+        }
+      },
+      {
+        "table": {
+          "table_name": "cn2",
+          "access_type": "ALL",
+          "rows_examined_per_scan": 3,
+          "rows_produced_per_join": 1,
+          "filtered": "33.33",
+          "using_join_buffer": "hash join",
+          "cost_info": {
+            "read_cost": "0.27",
+            "eval_cost": "0.10",
+            "prefix_cost": "7.59",
+            "data_read_per_join": "56"
+          },
+          "used_columns": [
+            "id",
+            "name"
+          ],
+          "attached_condition": "(`bench`.`cn2`.`id` = `bench`.`mc2`.`company_id`)"
+        }
+      }
+    ]
+  }
+}

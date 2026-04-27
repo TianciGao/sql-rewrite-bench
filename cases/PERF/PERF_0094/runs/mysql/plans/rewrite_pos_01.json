@@ -1,0 +1,161 @@
+{
+  "query_block": {
+    "select_id": 1,
+    "cost_info": {
+      "query_cost": "3.35"
+    },
+    "nested_loop": [
+      {
+        "table": {
+          "table_name": "t",
+          "access_type": "ALL",
+          "rows_examined_per_scan": 2,
+          "rows_produced_per_join": 1,
+          "filtered": "50.00",
+          "cost_info": {
+            "read_cost": "0.35",
+            "eval_cost": "0.10",
+            "prefix_cost": "0.45",
+            "data_read_per_join": "24"
+          },
+          "used_columns": [
+            "id",
+            "title",
+            "production_year"
+          ],
+          "attached_condition": "(`bench`.`t`.`production_year` between 2008 and 2014)"
+        }
+      },
+      {
+        "table": {
+          "table_name": "mi",
+          "access_type": "ALL",
+          "rows_examined_per_scan": 2,
+          "rows_produced_per_join": 1,
+          "filtered": "50.00",
+          "using_join_buffer": "hash join",
+          "cost_info": {
+            "read_cost": "0.36",
+            "eval_cost": "0.10",
+            "prefix_cost": "0.91",
+            "data_read_per_join": "32"
+          },
+          "used_columns": [
+            "movie_id",
+            "info_type_id",
+            "info",
+            "note"
+          ],
+          "attached_condition": "((`bench`.`mi`.`movie_id` = `bench`.`t`.`id`) and (`bench`.`mi`.`info` in ('Horror','Thriller')) and (`bench`.`mi`.`note` is null))"
+        }
+      },
+      {
+        "table": {
+          "table_name": "mi_idx",
+          "access_type": "ALL",
+          "rows_examined_per_scan": 2,
+          "rows_produced_per_join": 1,
+          "filtered": "50.00",
+          "using_join_buffer": "hash join",
+          "cost_info": {
+            "read_cost": "0.37",
+            "eval_cost": "0.10",
+            "prefix_cost": "1.38",
+            "data_read_per_join": "24"
+          },
+          "used_columns": [
+            "movie_id",
+            "info_type_id",
+            "info"
+          ],
+          "attached_condition": "((`bench`.`mi_idx`.`movie_id` = `bench`.`t`.`id`) and (`bench`.`mi_idx`.`info` > '8.0'))"
+        }
+      },
+      {
+        "table": {
+          "table_name": "ci",
+          "access_type": "ALL",
+          "rows_examined_per_scan": 2,
+          "rows_produced_per_join": 1,
+          "filtered": "50.00",
+          "using_join_buffer": "hash join",
+          "cost_info": {
+            "read_cost": "0.38",
+            "eval_cost": "0.10",
+            "prefix_cost": "1.87",
+            "data_read_per_join": "24"
+          },
+          "used_columns": [
+            "movie_id",
+            "person_id",
+            "note"
+          ],
+          "attached_condition": "((`bench`.`ci`.`movie_id` = `bench`.`t`.`id`) and (`bench`.`ci`.`note` in ('(writer)','(head writer)','(written by)','(story)','(story editor)')))"
+        }
+      },
+      {
+        "table": {
+          "table_name": "n",
+          "access_type": "ALL",
+          "rows_examined_per_scan": 2,
+          "rows_produced_per_join": 1,
+          "filtered": "50.00",
+          "using_join_buffer": "hash join",
+          "cost_info": {
+            "read_cost": "0.39",
+            "eval_cost": "0.10",
+            "prefix_cost": "2.36",
+            "data_read_per_join": "16"
+          },
+          "used_columns": [
+            "id",
+            "gender"
+          ],
+          "attached_condition": "((`bench`.`n`.`id` = `bench`.`ci`.`person_id`) and (`bench`.`n`.`gender` = 'f') and (`bench`.`n`.`gender` is not null))"
+        }
+      },
+      {
+        "table": {
+          "table_name": "it1",
+          "access_type": "ALL",
+          "rows_examined_per_scan": 2,
+          "rows_produced_per_join": 1,
+          "filtered": "50.00",
+          "using_join_buffer": "hash join",
+          "cost_info": {
+            "read_cost": "0.39",
+            "eval_cost": "0.10",
+            "prefix_cost": "2.85",
+            "data_read_per_join": "264"
+          },
+          "used_columns": [
+            "id",
+            "info"
+          ],
+          "attached_condition": "((`bench`.`it1`.`id` = `bench`.`mi`.`info_type_id`) and (`bench`.`it1`.`info` = 'genres'))"
+        }
+      },
+      {
+        "table": {
+          "table_name": "it2",
+          "access_type": "ALL",
+          "rows_examined_per_scan": 2,
+          "rows_produced_per_join": 1,
+          "filtered": "50.00",
+          "using_join_buffer": "hash join",
+          "cost_info": {
+            "read_cost": "0.39",
+            "eval_cost": "0.10",
+            "prefix_cost": "3.35",
+            "data_read_per_join": "264"
+          },
+          "used_columns": [
+            "id",
+            "info"
+          ],
+          "attached_condition": "((`bench`.`it2`.`id` = `bench`.`mi_idx`.`info_type_id`) and (`bench`.`it2`.`info` = 'rating'))"
+        }
+      }
+    ]
+  }
+}

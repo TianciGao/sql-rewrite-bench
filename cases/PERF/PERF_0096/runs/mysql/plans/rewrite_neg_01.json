@@ -1,0 +1,135 @@
+{
+  "query_block": {
+    "select_id": 1,
+    "cost_info": {
+      "query_cost": "3.02"
+    },
+    "nested_loop": [
+      {
+        "table": {
+          "table_name": "lt",
+          "access_type": "ALL",
+          "rows_examined_per_scan": 1,
+          "rows_produced_per_join": 1,
+          "filtered": "100.00",
+          "cost_info": {
+            "read_cost": "0.25",
+            "eval_cost": "0.10",
+            "prefix_cost": "0.35",
+            "data_read_per_join": "264"
+          },
+          "used_columns": [
+            "id",
+            "link"
+          ]
+        }
+      },
+      {
+        "table": {
+          "table_name": "ml",
+          "access_type": "ALL",
+          "rows_examined_per_scan": 2,
+          "rows_produced_per_join": 1,
+          "filtered": "50.00",
+          "using_join_buffer": "hash join",
+          "cost_info": {
+            "read_cost": "0.25",
+            "eval_cost": "0.10",
+            "prefix_cost": "0.80",
+            "data_read_per_join": "16"
+          },
+          "used_columns": [
+            "movie_id",
+            "linked_movie_id",
+            "link_type_id"
+          ],
+          "attached_condition": "(`bench`.`ml`.`link_type_id` = `bench`.`lt`.`id`)"
+        }
+      },
+      {
+        "table": {
+          "table_name": "mk",
+          "access_type": "ALL",
+          "rows_examined_per_scan": 2,
+          "rows_produced_per_join": 1,
+          "filtered": "50.00",
+          "using_join_buffer": "hash join",
+          "cost_info": {
+            "read_cost": "0.25",
+            "eval_cost": "0.10",
+            "prefix_cost": "1.25",
+            "data_read_per_join": "16"
+          },
+          "used_columns": [
+            "movie_id",
+            "keyword_id"
+          ],
+          "attached_condition": "(`bench`.`mk`.`movie_id` = `bench`.`ml`.`movie_id`)"
+        }
+      },
+      {
+        "table": {
+          "table_name": "k",
+          "access_type": "ALL",
+          "rows_examined_per_scan": 2,
+          "rows_produced_per_join": 1,
+          "filtered": "50.00",
+          "using_join_buffer": "hash join",
+          "cost_info": {
+            "read_cost": "0.35",
+            "eval_cost": "0.10",
+            "prefix_cost": "1.70",
+            "data_read_per_join": "16"
+          },
+          "used_columns": [
+            "id",
+            "keyword"
+          ],
+          "attached_condition": "((`bench`.`k`.`id` = `bench`.`mk`.`keyword_id`) and (`bench`.`k`.`keyword` = '10,000-mile-club'))"
+        }
+      },
+      {
+        "table": {
+          "table_name": "t1",
+          "access_type": "ALL",
+          "rows_examined_per_scan": 4,
+          "rows_produced_per_join": 1,
+          "filtered": "25.00",
+          "using_join_buffer": "hash join",
+          "cost_info": {
+            "read_cost": "0.26",
+            "eval_cost": "0.10",
+            "prefix_cost": "2.36",
+            "data_read_per_join": "16"
+          },
+          "used_columns": [
+            "id",
+            "title"
+          ],
+          "attached_condition": "(`bench`.`t1`.`id` = `bench`.`ml`.`movie_id`)"
+        }
+      },
+      {
+        "table": {
+          "table_name": "t2",
+          "access_type": "ALL",
+          "rows_examined_per_scan": 4,
+          "rows_produced_per_join": 1,
+          "filtered": "25.00",
+          "using_join_buffer": "hash join",
+          "cost_info": {
+            "read_cost": "0.26",
+            "eval_cost": "0.10",
+            "prefix_cost": "3.02",
+            "data_read_per_join": "16"
+          },
+          "used_columns": [
+            "id",
+            "title"
+          ],
+          "attached_condition": "(`bench`.`t2`.`id` = `bench`.`ml`.`linked_movie_id`)"
+        }
+      }
+    ]
+  }
+}
