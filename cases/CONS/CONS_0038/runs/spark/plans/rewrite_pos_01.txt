@@ -1,0 +1,64 @@
+== Physical Plan ==
+AdaptiveSparkPlan (11)
++- Project (10)
+   +- BroadcastNestedLoopJoin LeftOuter BuildRight (9)
+      :- Scan parquet spark_catalog.default.emp (1)
+      +- BroadcastExchange (8)
+         +- GlobalLimit (7)
+            +- Exchange (6)
+               +- LocalLimit (5)
+                  +- Project (4)
+                     +- Filter (3)
+                        +- Scan parquet spark_catalog.default.emp (2)
+
+
+(1) Scan parquet spark_catalog.default.emp
+Output [1]: [EMPNO#6L]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/cons_0038_spark_plan_ssh_4x2m/emp]
+ReadSchema: struct<EMPNO:bigint>
+
+(2) Scan parquet spark_catalog.default.emp
+Output [1]: [EMPNO#12L]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/cons_0038_spark_plan_ssh_4x2m/emp]
+PushedFilters: [IsNotNull(EMPNO), LessThan(EMPNO,20)]
+ReadSchema: struct<EMPNO:bigint>
+
+(3) Filter
+Input [1]: [EMPNO#12L]
+Condition : (isnotnull(EMPNO#12L) AND (EMPNO#12L < 20))
+
+(4) Project
+Output [1]: [true AS i#10]
+Input [1]: [EMPNO#12L]
+
+(5) LocalLimit
+Input [1]: [i#10]
+Arguments: 1
+
+(6) Exchange
+Input [1]: [i#10]
+Arguments: SinglePartition, ENSURE_REQUIREMENTS, [plan_id=65]
+
+(7) GlobalLimit
+Input [1]: [i#10]
+Arguments: 1, 0
+
+(8) BroadcastExchange
+Input [1]: [i#10]
+Arguments: IdentityBroadcastMode, [plan_id=68]
+
+(9) BroadcastNestedLoopJoin
+Join type: LeftOuter
+Join condition: true
+
+(10) Project
+Output [2]: [EMPNO#6L, isnotnull(i#10) AS D#11]
+Input [2]: [EMPNO#6L, i#10]
+
+(11) AdaptiveSparkPlan
+Output [2]: [EMPNO#6L, D#11]
+Arguments: isFinalPlan=false
+
+

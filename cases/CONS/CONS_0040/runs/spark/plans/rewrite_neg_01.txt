@@ -1,0 +1,49 @@
+== Physical Plan ==
+AdaptiveSparkPlan (8)
++- Project (7)
+   +- BroadcastNestedLoopJoin ExistenceJoin(exists#36) BuildRight (6)
+      :- Scan parquet spark_catalog.default.emp (1)
+      +- BroadcastExchange (5)
+         +- Project (4)
+            +- Filter (3)
+               +- Scan parquet spark_catalog.default.emp (2)
+
+
+(1) Scan parquet spark_catalog.default.emp
+Output [2]: [EMPNO#10L, DEPTNO#11L]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/cons_0040_spark_plan_df694t2a/emp]
+ReadSchema: struct<EMPNO:bigint,DEPTNO:bigint>
+
+(2) Scan parquet spark_catalog.default.emp
+Output [2]: [EMPNO#34L, DEPTNO#35L]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/cons_0040_spark_plan_df694t2a/emp]
+PushedFilters: [IsNotNull(EMPNO), LessThan(EMPNO,20)]
+ReadSchema: struct<EMPNO:bigint,DEPTNO:bigint>
+
+(3) Filter
+Input [2]: [EMPNO#34L, DEPTNO#35L]
+Condition : (isnotnull(EMPNO#34L) AND (EMPNO#34L < 20))
+
+(4) Project
+Output [1]: [DEPTNO#35L]
+Input [2]: [EMPNO#34L, DEPTNO#35L]
+
+(5) BroadcastExchange
+Input [1]: [DEPTNO#35L]
+Arguments: IdentityBroadcastMode, [plan_id=115]
+
+(6) BroadcastNestedLoopJoin
+Join type: ExistenceJoin(exists#36)
+Join condition: ((DEPTNO#11L = DEPTNO#35L) OR isnull((DEPTNO#11L = DEPTNO#35L)))
+
+(7) Project
+Output [2]: [EMPNO#10L, NOT exists#36 AS D#33]
+Input [3]: [EMPNO#10L, DEPTNO#11L, exists#36]
+
+(8) AdaptiveSparkPlan
+Output [2]: [EMPNO#10L, D#33]
+Arguments: isFinalPlan=false
+
+

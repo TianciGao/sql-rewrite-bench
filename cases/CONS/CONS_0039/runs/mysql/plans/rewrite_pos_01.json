@@ -1,0 +1,77 @@
+{
+  "query_block": {
+    "select_id": 1,
+    "cost_info": {
+      "query_cost": "3.16"
+    },
+    "nested_loop": [
+      {
+        "table": {
+          "table_name": "EMP1",
+          "access_type": "ALL",
+          "rows_examined_per_scan": 2,
+          "rows_produced_per_join": 2,
+          "filtered": "100.00",
+          "cost_info": {
+            "read_cost": "0.25",
+            "eval_cost": "0.20",
+            "prefix_cost": "0.45",
+            "data_read_per_join": "32"
+          },
+          "used_columns": [
+            "EMPNO",
+            "SAL"
+          ]
+        }
+      },
+      {
+        "table": {
+          "table_name": "t5",
+          "access_type": "ALL",
+          "rows_examined_per_scan": 1,
+          "rows_produced_per_join": 2,
+          "filtered": "100.00",
+          "using_join_buffer": "hash join",
+          "cost_info": {
+            "read_cost": "2.51",
+            "eval_cost": "0.20",
+            "prefix_cost": "3.16",
+            "data_read_per_join": "32"
+          },
+          "used_columns": [
+            "i"
+          ],
+          "attached_condition": "(<if>(found_match(t5), ((`t5`.`i` is not null) or (`bench`.`EMP1`.`SAL` < 100.00)), true) and <if>(is_not_null_compl(t5), true, true))",
+          "materialized_from_subquery": {
+            "using_temporary_table": true,
+            "dependent": false,
+            "cacheable": true,
+            "query_block": {
+              "select_id": 2,
+              "cost_info": {
+                "query_cost": "0.45"
+              },
+              "table": {
+                "table_name": "EMP",
+                "access_type": "ALL",
+                "rows_examined_per_scan": 2,
+                "rows_produced_per_join": 1,
+                "filtered": "50.00",
+                "cost_info": {
+                  "read_cost": "0.35",
+                  "eval_cost": "0.10",
+                  "prefix_cost": "0.45",
+                  "data_read_per_join": "16"
+                },
+                "used_columns": [
+                  "EMPNO"
+                ],
+                "attached_condition": "(`bench`.`EMP`.`EMPNO` < 20)"
+              }
+            }
+          }
+        }
+      }
+    ]
+  }
+}
