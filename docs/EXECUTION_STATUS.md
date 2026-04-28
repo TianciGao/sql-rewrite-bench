@@ -278,6 +278,8 @@
 | CONS_0004 | VeriEQL / calcite subset，Calcite-397 / 362 | PG + MySQL validated staged consistency draft | formal skeleton complete；release-grade incomplete | PostgreSQL / MySQL | benchmark 仍缺 Spark closure；当前保持 staged / not_yet_admitted；下一步与 CONS_0003 同步推进更整齐 |
 | CONS_0002 | Calcite seeds，core/src/test/resources/sql/new-decorr.iq | PG-validated draft with positive / negative pair；remain not_yet_admitted | staged draft（pre-skeleton / 尚未完全回填 formal package 结构） | PostgreSQL | 还缺 broader engine validation；package 侧也还没 formal skeleton；当前先保持 staged 更稳 |
 
+补充说明：当前 `inventory/case_registry.csv` 已注册 `13` 个 CONS rows，其中 `10` 个 case 满足 `tri_engine_closure=yes`。这 `10` 个 tri-engine consistency cases 包括手工 / legacy anchor `CONS_0001`，以及 `9` 个 Calcite-derived witness-validated consistency drafts：`CONS_0005`、`CONS_0007`、`CONS_0008`、`CONS_0009`、`CONS_0010`、`CONS_0011`、`CONS_0012`、`CONS_0013`、`CONS_0014`。这些 Calcite cases 当前均表现为 PG + MySQL + Spark witness-validated consistency drafts，并带有 source / positive / negative pair 与对应 plan artifacts。`CONS_0002` 当前仍是 Calcite PG-only legacy / pre-skeleton backlog；`CONS_0003` 与 `CONS_0004` 仍是 VeriEQL PG+MySQL partial cases；`CONS_0006` 仍是 constructed but unregistered Calcite wave-01 backlog，并因 `pg_validation` failure 暂未计入已注册 tri-engine 集合。该状态只表示 registry-backed witness validation 与对应 plan artifacts 已形成；live case facts 仍以 `inventory/case_registry.csv` 为准，不意味着 admission、promotion、common-core movement、extended-line movement 或 formal review completion。
+
 ### 7.4 Portability cases
 
 | case_id | 数据集 / 来源 | 当前成熟度 | package engineering 状态 | 已验证引擎 | 下一步缺口 |
@@ -319,7 +321,7 @@
 - **TPC-DS**：`PERF_0002`
 - **JOB**：`PERF_0003`, `PERF_0004`
 - **SQLStorm**：`LONGTAIL_0002`，以及当前已注册 tri-engine longtail drafts `LONGTAIL_0003`, `LONGTAIL_0004`, `LONGTAIL_0005`, `LONGTAIL_0007`, `LONGTAIL_0008`, `LONGTAIL_0009`, `LONGTAIL_0010`, `LONGTAIL_0011`, `LONGTAIL_0012`, `LONGTAIL_0013`, `LONGTAIL_0014`, `LONGTAIL_0015`, `LONGTAIL_0016`, `LONGTAIL_0018`, `LONGTAIL_0019`, `LONGTAIL_0020`, `LONGTAIL_0021`
-- **Calcite Seeds**：`CONS_0002`
+- **Calcite Seeds**：`CONS_0002`，以及当前已注册 tri-engine consistency drafts `CONS_0005`, `CONS_0007`, `CONS_0008`, `CONS_0009`, `CONS_0010`, `CONS_0011`, `CONS_0012`, `CONS_0013`, `CONS_0014`
 - **VeriEQL**：`CONS_0003`, `CONS_0004`
 - **PARROT**：`PORT_0002`
 
