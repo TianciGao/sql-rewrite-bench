@@ -1,0 +1,3 @@
+INSERT INTO EMP VALUES
+(1, NULL, 10),
+(2, 7, 10);

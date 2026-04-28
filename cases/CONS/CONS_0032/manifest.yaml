@@ -1,0 +1,42 @@
+case_id: CONS_0032
+primary_pool: consistency
+source_family: VeriEQL
+source_workload: calcite_subset
+source_query_identity: Calcite-397/46 correlated NOT IN over derived EMP rows
+source_path: datasets/raw/verieql/staged/VeriEQL/benchmarks/calcite/calcite2.jsonlines#index=46
+draft_origin: CONS_VERIEQL_DRAFT_0002
+consistency_focus:
+- subquery_semantics
+- anti_join_semantics
+- null_semantics
+expected_engines:
+- postgres
+- mysql
+- spark
+official_case_status: case_local_constructed_not_registry_admitted
+source_files:
+  source: source.sql
+  positive_rewrite: rewrite_pos_01.sql
+  negative_rewrite: rewrite_neg_01.sql
+schema_files:
+  postgres: schema/ddl_pg.sql
+  mysql: schema/ddl_mysql.sql
+  spark: schema/ddl_spark.sql
+witness_data_files:
+  postgres: validation/pg_witness_data.sql
+  mysql: validation/mysql_witness_data.sql
+  spark: validation/spark_witness_data.sql
+validation_scripts:
+  postgres_validation: validation/run_pg_validation.sh
+  postgres_plan_collection: validation/run_pg_plan_collection.sh
+  mysql_validation: validation/run_mysql_validation.sh
+  mysql_plan_collection: validation/run_mysql_plan_collection.sh
+  spark_validation: validation/run_spark_validation.sh
+  spark_plan_collection: validation/run_spark_plan_collection.sh
+known_caveats:
+- not_yet_validated_as_official_case
+- registry_not_updated
+- no_admission_or_promotion_claim
+- witness_data_is_small_and_case_local
+- taxonomy_review_not_yet_backfilled
+registry_note: inventory/case_registry.csv is not updated during construction
