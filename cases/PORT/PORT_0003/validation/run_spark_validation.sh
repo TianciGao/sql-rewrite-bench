@@ -8,6 +8,7 @@ RUN_DIR="${CASE_DIR}/runs/spark"
 PYTHON_BIN="${PYTHON_BIN:-python}"
 
 # DRAFT-ONLY validation scaffold. Do not treat this as executed evidence.
+# Spark runs only the target rewrites for this portability case.
 # shellcheck disable=SC1091
 source "${REPO_ROOT}/scripts/env_spark.sh"
 
@@ -56,20 +57,11 @@ try:
     for stmt in read_statements(case_dir / "validation/load_witness_spark.sql"):
         spark.sql(stmt)
 
-    source = spark.sql(read_query(case_dir / "source.sql")).collect()
     positive = spark.sql(read_query(case_dir / "rewrite_pos_02_spark.sql")).collect()
     negative = spark.sql(read_query(case_dir / "rewrite_neg_02_spark.sql")).collect()
 
-    write_rows(run_dir / "source.tsv", source)
     write_rows(run_dir / "rewrite_pos_02_spark.tsv", positive)
     write_rows(run_dir / "rewrite_neg_02_spark.tsv", negative)
 finally:
     spark.stop()
 PY
-
-python "${CASE_DIR}/validation/check_results.py" \
-  spark \
-  "${RUN_DIR}/source.tsv" \
-  "${RUN_DIR}/rewrite_pos_02_spark.tsv" \
-  "${RUN_DIR}/rewrite_neg_02_spark.tsv" \
-  "${RUN_DIR}/result_check.json"

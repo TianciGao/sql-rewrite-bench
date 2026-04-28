@@ -12,12 +12,21 @@ This directory now contains draft executable-looking validation scaffolding:
 - `run_spark_validation.sh`
 - `check_results.py`
 
+This is a cross-dialect portability validation model.
+
+- `source.sql` is PostgreSQL-shaped source SQL for this case.
+- `source.sql` should be executed only in PostgreSQL to produce the semantic reference output.
+- MySQL and Spark should execute only their target rewrite files.
+
 A later validation task should:
 
-1. review the witness rows against the portability claim,
-2. confirm the draft DDLs are acceptable for each engine,
-3. run the per-engine scripts manually in a prepared shell,
-4. inspect the generated `runs/<engine>/` outputs,
-5. treat any success as draft evidence only until registry writeback is explicitly requested.
+1. run PostgreSQL source reference generation with `run_pg_validation.sh`,
+2. run MySQL target rewrites with `run_mysql_validation.sh`,
+3. run Spark target rewrites with `run_spark_validation.sh`,
+4. run `check_results.py` against the five generated TSV files,
+5. inspect the generated `runs/<engine>/` outputs,
+6. treat any success as draft evidence only until registry writeback is explicitly requested.
+
+Status remains draft-only, not executed, not validated, and not registered.
 
 No engine commands have been run for this draft package in the current task.

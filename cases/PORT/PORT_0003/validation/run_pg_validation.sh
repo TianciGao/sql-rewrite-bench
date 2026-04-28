@@ -8,6 +8,7 @@ RUN_DIR="${CASE_DIR}/runs/pg"
 SCHEMA_NAME="port_0003_validation"
 
 # DRAFT-ONLY validation scaffold. Do not treat this as executed evidence.
+# PostgreSQL is the source-reference engine for this portability case.
 # shellcheck disable=SC1091
 source "${REPO_ROOT}/scripts/env_postgres.sh"
 
@@ -34,12 +35,3 @@ run_query() {
 }
 
 run_query "source.sql" "source.tsv"
-run_query "rewrite_pos_01.sql" "rewrite_pos_01.tsv"
-run_query "rewrite_neg_01.sql" "rewrite_neg_01.tsv"
-
-python "${CASE_DIR}/validation/check_results.py" \
-  postgres \
-  "${RUN_DIR}/source.tsv" \
-  "${RUN_DIR}/rewrite_pos_01.tsv" \
-  "${RUN_DIR}/rewrite_neg_01.tsv" \
-  "${RUN_DIR}/result_check.json"

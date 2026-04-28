@@ -1,29 +1,43 @@
 status: draft_only
 not_executed: true
-source_vs_positive_check_required: true
-source_vs_negative_check_required: true
-source_query: source.sql
-positive_queries:
-  - rewrite_pos_01.sql
-  - rewrite_pos_02_spark.sql
-negative_queries:
-  - rewrite_neg_01.sql
-  - rewrite_neg_02_spark.sql
-expected_positive_relation: equivalent_pending_execution
-expected_negative_relation: non_equivalent_pending_execution
-engines_pending:
-  - pg
-  - mysql
-  - spark
+validation_model: cross_dialect_reference
+source_reference:
+  engine: pg
+  query_file: source.sql
+  output: runs/pg/source.tsv
+target_positive_checks:
+  - engine: mysql
+    query_file: rewrite_pos_01.sql
+    output: runs/mysql/rewrite_pos_01.tsv
+    compare_to: runs/pg/source.tsv
+    expected_relation: equivalent_pending_execution
+  - engine: spark
+    query_file: rewrite_pos_02_spark.sql
+    output: runs/spark/rewrite_pos_02_spark.tsv
+    compare_to: runs/pg/source.tsv
+    expected_relation: equivalent_pending_execution
+target_negative_checks:
+  - engine: mysql
+    query_file: rewrite_neg_01.sql
+    output: runs/mysql/rewrite_neg_01.tsv
+    compare_to: runs/pg/source.tsv
+    expected_relation: non_equivalent_pending_execution
+  - engine: spark
+    query_file: rewrite_neg_02_spark.sql
+    output: runs/spark/rewrite_neg_02_spark.tsv
+    compare_to: runs/pg/source.tsv
+    expected_relation: non_equivalent_pending_execution
 normalization_notes:
   - top-1 result comparison should normalize row rendering before value comparison
   - scalar text outputs should be whitespace-trimmed
   - null rendering should be normalized before comparison
   - ordering logic should be preserved rather than dropped during adaptation review
+  - cross-engine text and numeric formatting may need normalization before equality checks
 result_ordering_assumptions:
   - source query is intentionally order-sensitive because of LIMIT 1
-  - positive rewrite is expected to preserve the effective top-row choice
-  - negative rewrite is expected to change the chosen row by altering sort semantics
+  - PostgreSQL source output is the semantic reference for later MySQL and Spark checks
+  - positive rewrites are expected to preserve the effective top-row choice
+  - negative rewrites are expected to change the chosen row by altering sort semantics
 null_handling_assumptions:
   - source semantics depend on explicit NULLS LAST behavior
   - MySQL-like positive rewrite relies on implicit exclusion of nulls from the descending winner in the draft witness
@@ -31,5 +45,6 @@ null_handling_assumptions:
 known_risks:
   - null-order handling is central to the portability story
   - Spark rewrite is still marked review-required
-  - witness data has not been implemented
+  - witness data is draft-only and not yet loaded
+  - cross-engine null ordering and formatting may still require normalization review
   - a witness with no null or tie pressure would under-test the portability claim
