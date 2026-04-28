@@ -2,11 +2,7 @@ SELECT deptno
 FROM dept d1
 WHERE EXISTS (
   SELECT 1
-  FROM dept d2
+  FROM dept d2, dept d3
   WHERE d2.deptno = d1.deptno
-    AND EXISTS (
-      SELECT 1
-      FROM dept d3
-      WHERE d3.dname = d1.dname
-    )
+    AND d3.dname = d1.dname
 );

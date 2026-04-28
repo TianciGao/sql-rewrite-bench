@@ -1,0 +1,83 @@
+[
+  {
+    "Plan": {
+      "Node Type": "Hash Join",
+      "Parallel Aware": false,
+      "Async Capable": false,
+      "Join Type": "Left",
+      "Startup Cost": 21.60,
+      "Total Cost": 36.80,
+      "Plan Rows": 410,
+      "Plan Width": 176,
+      "Inner Unique": true,
+      "Hash Cond": "(d.deptno = agg.deptno)",
+      "Plans": [
+        {
+          "Node Type": "Seq Scan",
+          "Parent Relationship": "Outer",
+          "Parallel Aware": false,
+          "Async Capable": false,
+          "Relation Name": "dept",
+          "Alias": "d",
+          "Startup Cost": 0.00,
+          "Total Cost": 14.10,
+          "Plan Rows": 410,
+          "Plan Width": 168
+        },
+        {
+          "Node Type": "Hash",
+          "Parent Relationship": "Inner",
+          "Parallel Aware": false,
+          "Async Capable": false,
+          "Startup Cost": 19.10,
+          "Total Cost": 19.10,
+          "Plan Rows": 200,
+          "Plan Width": 12,
+          "Plans": [
+            {
+              "Node Type": "Subquery Scan",
+              "Parent Relationship": "Outer",
+              "Parallel Aware": false,
+              "Async Capable": false,
+              "Alias": "agg",
+              "Startup Cost": 15.10,
+              "Total Cost": 19.10,
+              "Plan Rows": 200,
+              "Plan Width": 12,
+              "Plans": [
+                {
+                  "Node Type": "Aggregate",
+                  "Strategy": "Hashed",
+                  "Partial Mode": "Simple",
+                  "Parent Relationship": "Subquery",
+                  "Parallel Aware": false,
+                  "Async Capable": false,
+                  "Startup Cost": 15.10,
+                  "Total Cost": 17.10,
+                  "Plan Rows": 200,
+                  "Plan Width": 12,
+                  "Group Key": ["emp.deptno"],
+                  "Planned Partitions": 0,
+                  "Plans": [
+                    {
+                      "Node Type": "Seq Scan",
+                      "Parent Relationship": "Outer",
+                      "Parallel Aware": false,
+                      "Async Capable": false,
+                      "Relation Name": "emp",
+                      "Alias": "emp",
+                      "Startup Cost": 0.00,
+                      "Total Cost": 13.40,
+                      "Plan Rows": 340,
+                      "Plan Width": 4
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  }
+]

@@ -1,0 +1,110 @@
+[
+  {
+    "Plan": {
+      "Node Type": "Hash Join",
+      "Parallel Aware": false,
+      "Async Capable": false,
+      "Join Type": "Semi",
+      "Startup Cost": 38.85,
+      "Total Cost": 60.15,
+      "Plan Rows": 102,
+      "Plan Width": 4,
+      "Inner Unique": false,
+      "Hash Cond": "((d1.loc)::text = (d3.loc)::text)",
+      "Join Filter": "((d3.dname)::text <> (d1.dname)::text)",
+      "Plans": [
+        {
+          "Node Type": "Hash Join",
+          "Parent Relationship": "Outer",
+          "Parallel Aware": false,
+          "Async Capable": false,
+          "Join Type": "Inner",
+          "Startup Cost": 19.62,
+          "Total Cost": 37.08,
+          "Plan Rows": 205,
+          "Plan Width": 168,
+          "Inner Unique": true,
+          "Hash Cond": "(d1.deptno = d2.deptno)",
+          "Plans": [
+            {
+              "Node Type": "Seq Scan",
+              "Parent Relationship": "Outer",
+              "Parallel Aware": false,
+              "Async Capable": false,
+              "Relation Name": "dept",
+              "Alias": "d1",
+              "Startup Cost": 0.00,
+              "Total Cost": 14.10,
+              "Plan Rows": 410,
+              "Plan Width": 168
+            },
+            {
+              "Node Type": "Hash",
+              "Parent Relationship": "Inner",
+              "Parallel Aware": false,
+              "Async Capable": false,
+              "Startup Cost": 17.12,
+              "Total Cost": 17.12,
+              "Plan Rows": 200,
+              "Plan Width": 4,
+              "Plans": [
+                {
+                  "Node Type": "Aggregate",
+                  "Strategy": "Hashed",
+                  "Partial Mode": "Simple",
+                  "Parent Relationship": "Outer",
+                  "Parallel Aware": false,
+                  "Async Capable": false,
+                  "Startup Cost": 15.12,
+                  "Total Cost": 17.12,
+                  "Plan Rows": 200,
+                  "Plan Width": 4,
+                  "Group Key": ["d2.deptno"],
+                  "Planned Partitions": 0,
+                  "Plans": [
+                    {
+                      "Node Type": "Seq Scan",
+                      "Parent Relationship": "Outer",
+                      "Parallel Aware": false,
+                      "Async Capable": false,
+                      "Relation Name": "dept",
+                      "Alias": "d2",
+                      "Startup Cost": 0.00,
+                      "Total Cost": 14.10,
+                      "Plan Rows": 410,
+                      "Plan Width": 4
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "Node Type": "Hash",
+          "Parent Relationship": "Inner",
+          "Parallel Aware": false,
+          "Async Capable": false,
+          "Startup Cost": 14.10,
+          "Total Cost": 14.10,
+          "Plan Rows": 410,
+          "Plan Width": 164,
+          "Plans": [
+            {
+              "Node Type": "Seq Scan",
+              "Parent Relationship": "Outer",
+              "Parallel Aware": false,
+              "Async Capable": false,
+              "Relation Name": "dept",
+              "Alias": "d3",
+              "Startup Cost": 0.00,
+              "Total Cost": 14.10,
+              "Plan Rows": 410,
+              "Plan Width": 164
+            }
+          ]
+        }
+      ]
+    }
+  }
+]

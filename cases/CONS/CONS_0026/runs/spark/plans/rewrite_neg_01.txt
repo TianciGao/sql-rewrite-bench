@@ -1,0 +1,88 @@
+== Physical Plan ==
+AdaptiveSparkPlan (13)
++- Project (12)
+   +- BroadcastHashJoin LeftOuter BuildRight (11)
+      :- Scan parquet spark_catalog.default.dept (1)
+      +- BroadcastExchange (10)
+         +- HashAggregate (9)
+            +- Exchange (8)
+               +- HashAggregate (7)
+                  +- HashAggregate (6)
+                     +- Exchange (5)
+                        +- HashAggregate (4)
+                           +- Filter (3)
+                              +- Scan parquet spark_catalog.default.emp (2)
+
+
+(1) Scan parquet spark_catalog.default.dept
+Output [3]: [deptno#46, dname#47, loc#48]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/cons_0026_spark_plan_gvbx5e0i/dept]
+ReadSchema: struct<deptno:int,dname:string,loc:string>
+
+(2) Scan parquet spark_catalog.default.emp
+Output [2]: [job#53, deptno#58]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/cons_0026_spark_plan_gvbx5e0i/emp]
+PushedFilters: [IsNotNull(deptno)]
+ReadSchema: struct<job:string,deptno:int>
+
+(3) Filter
+Input [2]: [job#53, deptno#58]
+Condition : isnotnull(deptno#58)
+
+(4) HashAggregate
+Input [2]: [job#53, deptno#58]
+Keys [2]: [deptno#58, job#53]
+Functions: []
+Aggregate Attributes: []
+Results [2]: [deptno#58, job#53]
+
+(5) Exchange
+Input [2]: [deptno#58, job#53]
+Arguments: hashpartitioning(deptno#58, job#53, 1), ENSURE_REQUIREMENTS, [plan_id=143]
+
+(6) HashAggregate
+Input [2]: [deptno#58, job#53]
+Keys [2]: [deptno#58, job#53]
+Functions: []
+Aggregate Attributes: []
+Results [2]: [deptno#58, job#53]
+
+(7) HashAggregate
+Input [2]: [deptno#58, job#53]
+Keys [1]: [deptno#58]
+Functions [1]: [partial_count(distinct job#53)]
+Aggregate Attributes [1]: [count(job#53)#70L]
+Results [2]: [deptno#58, count#73L]
+
+(8) Exchange
+Input [2]: [deptno#58, count#73L]
+Arguments: hashpartitioning(deptno#58, 1), ENSURE_REQUIREMENTS, [plan_id=147]
+
+(9) HashAggregate
+Input [2]: [deptno#58, count#73L]
+Keys [1]: [deptno#58]
+Functions [1]: [count(distinct job#53)]
+Aggregate Attributes [1]: [count(job#53)#70L]
+Results [2]: [deptno#58, count(job#53)#70L AS job_count#68L]
+
+(10) BroadcastExchange
+Input [2]: [deptno#58, job_count#68L]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, true] as bigint)),false), [plan_id=150]
+
+(11) BroadcastHashJoin
+Left keys [1]: [deptno#46]
+Right keys [1]: [deptno#58]
+Join type: LeftOuter
+Join condition: None
+
+(12) Project
+Output [4]: [deptno#46, dname#47, loc#48, job_count#68L AS num_dept_groups#69L]
+Input [5]: [deptno#46, dname#47, loc#48, deptno#58, job_count#68L]
+
+(13) AdaptiveSparkPlan
+Output [4]: [deptno#46, dname#47, loc#48, num_dept_groups#69L]
+Arguments: isFinalPlan=false
+
+
