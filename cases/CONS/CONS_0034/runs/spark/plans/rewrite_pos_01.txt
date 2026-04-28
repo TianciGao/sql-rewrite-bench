@@ -1,0 +1,72 @@
+== Physical Plan ==
+AdaptiveSparkPlan (11)
++- HashAggregate (10)
+   +- Exchange (9)
+      +- HashAggregate (8)
+         +- Project (7)
+            +- BroadcastHashJoin LeftOuter BuildRight (6)
+               :- Scan parquet spark_catalog.default.bonus (1)
+               +- BroadcastExchange (5)
+                  +- Project (4)
+                     +- Filter (3)
+                        +- Scan parquet spark_catalog.default.emp (2)
+
+
+(1) Scan parquet spark_catalog.default.bonus
+Output [1]: [ENAME#49]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/cons_0034_spark_plan_hdds03v6/bonus]
+ReadSchema: struct<ENAME:string>
+
+(2) Scan parquet spark_catalog.default.emp
+Output [2]: [ENAME#54, SAL#58]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/cons_0034_spark_plan_hdds03v6/emp]
+PushedFilters: [IsNotNull(ENAME)]
+ReadSchema: struct<ENAME:string,SAL:decimal(10,2)>
+
+(3) Filter
+Input [2]: [ENAME#54, SAL#58]
+Condition : isnotnull(ENAME#54)
+
+(4) Project
+Output [2]: [ENAME#54, CASE WHEN (SAL#58 < 11.00) THEN (-1 * SAL#58) ELSE cast(SAL#58 as decimal(12,2)) END AS EXPR_1#68]
+Input [2]: [ENAME#54, SAL#58]
+
+(5) BroadcastExchange
+Input [2]: [ENAME#54, EXPR_1#68]
+Arguments: HashedRelationBroadcastMode(List(input[0, string, true]),false), [plan_id=101]
+
+(6) BroadcastHashJoin
+Left keys [1]: [ENAME#49]
+Right keys [1]: [ENAME#54]
+Join type: LeftOuter
+Join condition: None
+
+(7) Project
+Output [1]: [EXPR_1#68]
+Input [3]: [ENAME#49, ENAME#54, EXPR_1#68]
+
+(8) HashAggregate
+Input [1]: [EXPR_1#68]
+Keys [1]: [EXPR_1#68]
+Functions [1]: [partial_count(1)]
+Aggregate Attributes [1]: [count#71L]
+Results [2]: [EXPR_1#68, count#72L]
+
+(9) Exchange
+Input [2]: [EXPR_1#68, count#72L]
+Arguments: hashpartitioning(EXPR_1#68, 1), ENSURE_REQUIREMENTS, [plan_id=106]
+
+(10) HashAggregate
+Input [2]: [EXPR_1#68, count#72L]
+Keys [1]: [EXPR_1#68]
+Functions [1]: [count(1)]
+Aggregate Attributes [1]: [count(1)#69L]
+Results [2]: [count(1)#69L AS count(1)#70L, EXPR_1#68]
+
+(11) AdaptiveSparkPlan
+Output [2]: [count(1)#70L, EXPR_1#68]
+Arguments: isFinalPlan=false
+
+
