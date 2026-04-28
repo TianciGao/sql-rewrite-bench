@@ -1,0 +1,141 @@
+{
+  "query_block": {
+    "select_id": 1,
+    "cost_info": {
+      "query_cost": "5.37"
+    },
+    "nested_loop": [
+      {
+        "table": {
+          "table_name": "d",
+          "access_type": "ALL",
+          "rows_examined_per_scan": 2,
+          "rows_produced_per_join": 2,
+          "filtered": "100.00",
+          "cost_info": {
+            "read_cost": "2.52",
+            "eval_cost": "0.20",
+            "prefix_cost": "2.73",
+            "data_read_per_join": "32"
+          },
+          "used_columns": [
+            "t1a"
+          ],
+          "materialized_from_subquery": {
+            "using_temporary_table": true,
+            "dependent": false,
+            "cacheable": true,
+            "query_block": {
+              "select_id": 2,
+              "cost_info": {
+                "query_cost": "0.35"
+              },
+              "duplicates_removal": {
+                "using_temporary_table": true,
+                "using_filesort": false,
+                "table": {
+                  "table_name": "t1",
+                  "access_type": "ALL",
+                  "rows_examined_per_scan": 1,
+                  "rows_produced_per_join": 1,
+                  "filtered": "100.00",
+                  "cost_info": {
+                    "read_cost": "0.25",
+                    "eval_cost": "0.10",
+                    "prefix_cost": "0.35",
+                    "data_read_per_join": "16"
+                  },
+                  "used_columns": [
+                    "t1a"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      {
+        "table": {
+          "table_name": "e",
+          "access_type": "ALL",
+          "rows_examined_per_scan": 5,
+          "rows_produced_per_join": 2,
+          "filtered": "20.00",
+          "using_join_buffer": "hash join",
+          "cost_info": {
+            "read_cost": "0.25",
+            "eval_cost": "0.20",
+            "prefix_cost": "3.98",
+            "data_read_per_join": "32"
+          },
+          "used_columns": [
+            "t0a",
+            "t0b"
+          ],
+          "attached_condition": "((`bench`.`e`.`t0a` = `d`.`t1a`) and (`bench`.`e`.`t0b` is not null))"
+        }
+      },
+      {
+        "table": {
+          "table_name": "b",
+          "access_type": "ref",
+          "possible_keys": [
+            "<auto_key0>"
+          ],
+          "key": "<auto_key0>",
+          "used_key_parts": [
+            "t2b"
+          ],
+          "key_length": "5",
+          "ref": [
+            "bench.e.t0b"
+          ],
+          "rows_examined_per_scan": 2,
+          "rows_produced_per_join": 4,
+          "filtered": "100.00",
+          "using_index": true,
+          "cost_info": {
+            "read_cost": "1.00",
+            "eval_cost": "0.40",
+            "prefix_cost": "5.38",
+            "data_read_per_join": "64"
+          },
+          "used_columns": [
+            "t2b"
+          ],
+          "materialized_from_subquery": {
+            "using_temporary_table": true,
+            "dependent": false,
+            "cacheable": true,
+            "query_block": {
+              "select_id": 3,
+              "cost_info": {
+                "query_cost": "0.45"
+              },
+              "duplicates_removal": {
+                "using_temporary_table": true,
+                "using_filesort": false,
+                "table": {
+                  "table_name": "t2",
+                  "access_type": "ALL",
+                  "rows_examined_per_scan": 2,
+                  "rows_produced_per_join": 2,
+                  "filtered": "100.00",
+                  "cost_info": {
+                    "read_cost": "0.25",
+                    "eval_cost": "0.20",
+                    "prefix_cost": "0.45",
+                    "data_read_per_join": "32"
+                  },
+                  "used_columns": [
+                    "t2b"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    ]
+  }
+}

@@ -1,12 +1,9 @@
 SELECT e1.ename
 FROM emp e1
-WHERE EXISTS (
-  SELECT 1
+WHERE (
+  SELECT COUNT(*)
   FROM dept d
-  WHERE EXISTS (
-    SELECT 1
-    FROM bonus b
-    WHERE b.ename = d.dname
-      AND b.job = e1.job
-  )
-);
+  JOIN bonus b
+    ON d.dname = b.ename
+   AND b.job = e1.job
+) > 0;
