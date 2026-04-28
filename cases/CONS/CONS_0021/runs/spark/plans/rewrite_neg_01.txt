@@ -1,0 +1,118 @@
+== Physical Plan ==
+AdaptiveSparkPlan (18)
++- Project (17)
+   +- BroadcastHashJoin LeftOuter BuildRight (16)
+      :- Project (9)
+      :  +- BroadcastHashJoin LeftOuter BuildRight (8)
+      :     :- Scan parquet spark_catalog.default.t0 (1)
+      :     +- BroadcastExchange (7)
+      :        +- HashAggregate (6)
+      :           +- Exchange (5)
+      :              +- HashAggregate (4)
+      :                 +- Filter (3)
+      :                    +- Scan parquet spark_catalog.default.t1 (2)
+      +- BroadcastExchange (15)
+         +- HashAggregate (14)
+            +- Exchange (13)
+               +- HashAggregate (12)
+                  +- Filter (11)
+                     +- Scan parquet spark_catalog.default.t2 (10)
+
+
+(1) Scan parquet spark_catalog.default.t0
+Output [1]: [t0a#35]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/cons_0021_spark_plan_z207s4gd/t0]
+ReadSchema: struct<t0a:int>
+
+(2) Scan parquet spark_catalog.default.t1
+Output [2]: [t1a#37, t1c#39]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/cons_0021_spark_plan_z207s4gd/t1]
+PushedFilters: [IsNotNull(t1a)]
+ReadSchema: struct<t1a:int,t1c:int>
+
+(3) Filter
+Input [2]: [t1a#37, t1c#39]
+Condition : isnotnull(t1a#37)
+
+(4) HashAggregate
+Input [2]: [t1a#37, t1c#39]
+Keys [1]: [t1a#37]
+Functions [1]: [partial_sum(t1c#39)]
+Aggregate Attributes [1]: [sum#69L]
+Results [2]: [t1a#37, sum#70L]
+
+(5) Exchange
+Input [2]: [t1a#37, sum#70L]
+Arguments: hashpartitioning(t1a#37, 1), ENSURE_REQUIREMENTS, [plan_id=292]
+
+(6) HashAggregate
+Input [2]: [t1a#37, sum#70L]
+Keys [1]: [t1a#37]
+Functions [1]: [sum(t1c#39)]
+Aggregate Attributes [1]: [sum(t1c#39)#66L]
+Results [2]: [t1a#37, sum(t1c#39)#66L AS sum_t1c#64L]
+
+(7) BroadcastExchange
+Input [2]: [t1a#37, sum_t1c#64L]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, true] as bigint)),false), [plan_id=295]
+
+(8) BroadcastHashJoin
+Left keys [1]: [t0a#35]
+Right keys [1]: [t1a#37]
+Join type: LeftOuter
+Join condition: None
+
+(9) Project
+Output [2]: [t0a#35, sum_t1c#64L]
+Input [3]: [t0a#35, t1a#37, sum_t1c#64L]
+
+(10) Scan parquet spark_catalog.default.t2
+Output [2]: [t2a#40, t2c#42]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/cons_0021_spark_plan_z207s4gd/t2]
+PushedFilters: [IsNotNull(t2a)]
+ReadSchema: struct<t2a:int,t2c:int>
+
+(11) Filter
+Input [2]: [t2a#40, t2c#42]
+Condition : isnotnull(t2a#40)
+
+(12) HashAggregate
+Input [2]: [t2a#40, t2c#42]
+Keys [1]: [t2a#40]
+Functions [1]: [partial_sum(t2c#42)]
+Aggregate Attributes [1]: [sum#71L]
+Results [2]: [t2a#40, sum#72L]
+
+(13) Exchange
+Input [2]: [t2a#40, sum#72L]
+Arguments: hashpartitioning(t2a#40, 1), ENSURE_REQUIREMENTS, [plan_id=298]
+
+(14) HashAggregate
+Input [2]: [t2a#40, sum#72L]
+Keys [1]: [t2a#40]
+Functions [1]: [sum(t2c#42)]
+Aggregate Attributes [1]: [sum(t2c#42)#67L]
+Results [2]: [t2a#40, sum(t2c#42)#67L AS sum_t2c#65L]
+
+(15) BroadcastExchange
+Input [2]: [t2a#40, sum_t2c#65L]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, true] as bigint)),false), [plan_id=301]
+
+(16) BroadcastHashJoin
+Left keys [1]: [t0a#35]
+Right keys [1]: [t2a#40]
+Join type: LeftOuter
+Join condition: None
+
+(17) Project
+Output [2]: [t0a#35, CASE WHEN (isnull(sum_t1c#64L) AND isnull(sum_t2c#65L)) THEN null ELSE (coalesce(sum_t1c#64L, 0) + coalesce(sum_t2c#65L, 0)) END AS CASE WHEN ((sum_t1c IS NULL) AND (sum_t2c IS NULL)) THEN NULL ELSE (coalesce(sum_t1c, 0) + coalesce(sum_t2c, 0)) END#68L]
+Input [4]: [t0a#35, sum_t1c#64L, t2a#40, sum_t2c#65L]
+
+(18) AdaptiveSparkPlan
+Output [2]: [t0a#35, CASE WHEN ((sum_t1c IS NULL) AND (sum_t2c IS NULL)) THEN NULL ELSE (coalesce(sum_t1c, 0) + coalesce(sum_t2c, 0)) END#68L]
+Arguments: isFinalPlan=false
+
+

@@ -1,0 +1,14 @@
+[
+  {
+    "Plan": {
+      "Node Type": "Result",
+      "Parallel Aware": false,
+      "Async Capable": false,
+      "Startup Cost": 0.00,
+      "Total Cost": 0.00,
+      "Plan Rows": 0,
+      "Plan Width": 168,
+      "One-Time Filter": "false"
+    }
+  }
+]

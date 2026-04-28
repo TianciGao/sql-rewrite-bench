@@ -1,0 +1,78 @@
+== Physical Plan ==
+AdaptiveSparkPlan (12)
++- BroadcastHashJoin LeftSemi BuildRight (11)
+   :- Scan parquet spark_catalog.default.dept (1)
+   +- BroadcastExchange (10)
+      +- Project (9)
+         +- BroadcastHashJoin LeftOuter BuildRight (8)
+            :- HashAggregate (5)
+            :  +- Exchange (4)
+            :     +- HashAggregate (3)
+            :        +- Scan parquet spark_catalog.default.dept (2)
+            +- BroadcastExchange (7)
+               +- LocalTableScan (6)
+
+
+(1) Scan parquet spark_catalog.default.dept
+Output [3]: [deptno#45, dname#46, loc#47]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/cons_0019_spark_plan_2v_995fr/dept]
+ReadSchema: struct<deptno:int,dname:string,loc:string>
+
+(2) Scan parquet spark_catalog.default.dept
+Output [1]: [deptno#45]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/cons_0019_spark_plan_2v_995fr/dept]
+ReadSchema: struct<deptno:int>
+
+(3) HashAggregate
+Input [1]: [deptno#45]
+Keys [1]: [deptno#45]
+Functions: []
+Aggregate Attributes: []
+Results [1]: [deptno#45]
+
+(4) Exchange
+Input [1]: [deptno#45]
+Arguments: hashpartitioning(deptno#45, 1), ENSURE_REQUIREMENTS, [plan_id=61]
+
+(5) HashAggregate
+Input [1]: [deptno#45]
+Keys [1]: [deptno#45]
+Functions: []
+Aggregate Attributes: []
+Results [1]: [deptno#45 AS deptno#62]
+
+(6) LocalTableScan
+Output [1]: [deptno#56]
+Arguments: <empty>, [deptno#56]
+
+(7) BroadcastExchange
+Input [1]: [deptno#56]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, true] as bigint)),false), [plan_id=64]
+
+(8) BroadcastHashJoin
+Left keys [1]: [deptno#62]
+Right keys [1]: [deptno#56]
+Join type: LeftOuter
+Join condition: None
+
+(9) Project
+Output [1]: [deptno#62]
+Input [2]: [deptno#62, deptno#56]
+
+(10) BroadcastExchange
+Input [1]: [deptno#62]
+Arguments: HashedRelationBroadcastMode(List(coalesce(input[0, int, true], 0), isnull(input[0, int, true])),false), [plan_id=68]
+
+(11) BroadcastHashJoin
+Left keys [2]: [coalesce(deptno#45, 0), isnull(deptno#45)]
+Right keys [2]: [coalesce(deptno#62, 0), isnull(deptno#62)]
+Join type: LeftSemi
+Join condition: None
+
+(12) AdaptiveSparkPlan
+Output [3]: [deptno#45, dname#46, loc#47]
+Arguments: isFinalPlan=false
+
+

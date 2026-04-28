@@ -1,0 +1,70 @@
+[
+  {
+    "Plan": {
+      "Node Type": "Hash Join",
+      "Parallel Aware": false,
+      "Async Capable": false,
+      "Join Type": "Inner",
+      "Startup Cost": 18.75,
+      "Total Cost": 36.21,
+      "Plan Rows": 205,
+      "Plan Width": 168,
+      "Inner Unique": true,
+      "Hash Cond": "(d.deptno = e.deptno)",
+      "Plans": [
+        {
+          "Node Type": "Seq Scan",
+          "Parent Relationship": "Outer",
+          "Parallel Aware": false,
+          "Async Capable": false,
+          "Relation Name": "dept",
+          "Alias": "d",
+          "Startup Cost": 0.00,
+          "Total Cost": 14.10,
+          "Plan Rows": 410,
+          "Plan Width": 168
+        },
+        {
+          "Node Type": "Hash",
+          "Parent Relationship": "Inner",
+          "Parallel Aware": false,
+          "Async Capable": false,
+          "Startup Cost": 16.25,
+          "Total Cost": 16.25,
+          "Plan Rows": 200,
+          "Plan Width": 4,
+          "Plans": [
+            {
+              "Node Type": "Aggregate",
+              "Strategy": "Hashed",
+              "Partial Mode": "Simple",
+              "Parent Relationship": "Outer",
+              "Parallel Aware": false,
+              "Async Capable": false,
+              "Startup Cost": 14.25,
+              "Total Cost": 16.25,
+              "Plan Rows": 200,
+              "Plan Width": 4,
+              "Group Key": ["e.deptno"],
+              "Planned Partitions": 0,
+              "Plans": [
+                {
+                  "Node Type": "Seq Scan",
+                  "Parent Relationship": "Outer",
+                  "Parallel Aware": false,
+                  "Async Capable": false,
+                  "Relation Name": "emp",
+                  "Alias": "e",
+                  "Startup Cost": 0.00,
+                  "Total Cost": 13.40,
+                  "Plan Rows": 340,
+                  "Plan Width": 4
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  }
+]

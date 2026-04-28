@@ -1,0 +1,185 @@
+== Physical Plan ==
+AdaptiveSparkPlan (29)
++- Project (28)
+   +- BroadcastHashJoin LeftOuter BuildRight (27)
+      :- Scan parquet spark_catalog.default.t0 (1)
+      +- BroadcastExchange (26)
+         +- HashAggregate (25)
+            +- Exchange (24)
+               +- HashAggregate (23)
+                  +- Union (22)
+                     :- Project (11)
+                     :  +- BroadcastHashJoin Inner BuildRight (10)
+                     :     :- HashAggregate (6)
+                     :     :  +- Exchange (5)
+                     :     :     +- HashAggregate (4)
+                     :     :        +- Filter (3)
+                     :     :           +- Scan parquet spark_catalog.default.t0 (2)
+                     :     +- BroadcastExchange (9)
+                     :        +- Filter (8)
+                     :           +- Scan parquet spark_catalog.default.t1 (7)
+                     +- Project (21)
+                        +- BroadcastHashJoin Inner BuildRight (20)
+                           :- HashAggregate (16)
+                           :  +- Exchange (15)
+                           :     +- HashAggregate (14)
+                           :        +- Filter (13)
+                           :           +- Scan parquet spark_catalog.default.t0 (12)
+                           +- BroadcastExchange (19)
+                              +- Filter (18)
+                                 +- Scan parquet spark_catalog.default.t2 (17)
+
+
+(1) Scan parquet spark_catalog.default.t0
+Output [2]: [t0a#35, t0b#36]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/cons_0021_spark_plan_z207s4gd/t0]
+ReadSchema: struct<t0a:int,t0b:int>
+
+(2) Scan parquet spark_catalog.default.t0
+Output [2]: [t0a#35, t0b#36]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/cons_0021_spark_plan_z207s4gd/t0]
+PushedFilters: [IsNotNull(t0a)]
+ReadSchema: struct<t0a:int,t0b:int>
+
+(3) Filter
+Input [2]: [t0a#35, t0b#36]
+Condition : isnotnull(t0a#35)
+
+(4) HashAggregate
+Input [2]: [t0a#35, t0b#36]
+Keys [2]: [t0a#35, t0b#36]
+Functions: []
+Aggregate Attributes: []
+Results [2]: [t0a#35, t0b#36]
+
+(5) Exchange
+Input [2]: [t0a#35, t0b#36]
+Arguments: hashpartitioning(t0a#35, t0b#36, 1), ENSURE_REQUIREMENTS, [plan_id=143]
+
+(6) HashAggregate
+Input [2]: [t0a#35, t0b#36]
+Keys [2]: [t0a#35, t0b#36]
+Functions: []
+Aggregate Attributes: []
+Results [2]: [t0a#35 AS t0a#49, t0b#36 AS t0b#50]
+
+(7) Scan parquet spark_catalog.default.t1
+Output [2]: [t1a#37, t1c#39]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/cons_0021_spark_plan_z207s4gd/t1]
+PushedFilters: [IsNotNull(t1a)]
+ReadSchema: struct<t1a:int,t1c:int>
+
+(8) Filter
+Input [2]: [t1a#37, t1c#39]
+Condition : isnotnull(t1a#37)
+
+(9) BroadcastExchange
+Input [2]: [t1a#37, t1c#39]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, false] as bigint)),false), [plan_id=146]
+
+(10) BroadcastHashJoin
+Left keys [1]: [t0a#49]
+Right keys [1]: [t1a#37]
+Join type: Inner
+Join condition: None
+
+(11) Project
+Output [3]: [t1c#39 AS c#32, t0a#49, t0b#50]
+Input [4]: [t0a#49, t0b#50, t1a#37, t1c#39]
+
+(12) Scan parquet spark_catalog.default.t0
+Output [2]: [t0a#35, t0b#36]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/cons_0021_spark_plan_z207s4gd/t0]
+PushedFilters: [IsNotNull(t0b)]
+ReadSchema: struct<t0a:int,t0b:int>
+
+(13) Filter
+Input [2]: [t0a#35, t0b#36]
+Condition : isnotnull(t0b#36)
+
+(14) HashAggregate
+Input [2]: [t0a#35, t0b#36]
+Keys [2]: [t0a#35, t0b#36]
+Functions: []
+Aggregate Attributes: []
+Results [2]: [t0a#35, t0b#36]
+
+(15) Exchange
+Input [2]: [t0a#35, t0b#36]
+Arguments: hashpartitioning(t0a#35, t0b#36, 1), ENSURE_REQUIREMENTS, [plan_id=149]
+
+(16) HashAggregate
+Input [2]: [t0a#35, t0b#36]
+Keys [2]: [t0a#35, t0b#36]
+Functions: []
+Aggregate Attributes: []
+Results [2]: [t0a#35 AS t0a#51, t0b#36 AS t0b#52]
+
+(17) Scan parquet spark_catalog.default.t2
+Output [2]: [t2b#41, t2c#42]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/cons_0021_spark_plan_z207s4gd/t2]
+PushedFilters: [IsNotNull(t2b)]
+ReadSchema: struct<t2b:int,t2c:int>
+
+(18) Filter
+Input [2]: [t2b#41, t2c#42]
+Condition : isnotnull(t2b#41)
+
+(19) BroadcastExchange
+Input [2]: [t2b#41, t2c#42]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, false] as bigint)),false), [plan_id=152]
+
+(20) BroadcastHashJoin
+Left keys [1]: [t0b#52]
+Right keys [1]: [t2b#41]
+Join type: Inner
+Join condition: None
+
+(21) Project
+Output [3]: [t2c#42 AS c#33, t0a#51, t0b#52]
+Input [4]: [t0a#51, t0b#52, t2b#41, t2c#42]
+
+(22) Union
+
+(23) HashAggregate
+Input [3]: [c#32, t0a#49, t0b#50]
+Keys [2]: [t0a#49, t0b#50]
+Functions [1]: [partial_sum(c#32)]
+Aggregate Attributes [1]: [sum#53L]
+Results [3]: [t0a#49, t0b#50, sum#54L]
+
+(24) Exchange
+Input [3]: [t0a#49, t0b#50, sum#54L]
+Arguments: hashpartitioning(t0a#49, t0b#50, 1), ENSURE_REQUIREMENTS, [plan_id=158]
+
+(25) HashAggregate
+Input [3]: [t0a#49, t0b#50, sum#54L]
+Keys [2]: [t0a#49, t0b#50]
+Functions [1]: [sum(c#32)]
+Aggregate Attributes [1]: [sum(c#32)#45L]
+Results [3]: [sum(c#32)#45L AS sum(c)#46L, t0a#49, t0b#50]
+
+(26) BroadcastExchange
+Input [3]: [sum(c)#46L, t0a#49, t0b#50]
+Arguments: HashedRelationBroadcastMode(List(coalesce(input[1, int, true], 0), isnull(input[1, int, true]), coalesce(input[2, int, true], 0), isnull(input[2, int, true])),false), [plan_id=161]
+
+(27) BroadcastHashJoin
+Left keys [4]: [coalesce(t0a#35, 0), isnull(t0a#35), coalesce(t0b#36, 0), isnull(t0b#36)]
+Right keys [4]: [coalesce(t0a#49, 0), isnull(t0a#49), coalesce(t0b#50, 0), isnull(t0b#50)]
+Join type: LeftOuter
+Join condition: None
+
+(28) Project
+Output [2]: [t0a#35, sum(c)#46L AS scalarsubquery(t0a, t0b)#47L]
+Input [5]: [t0a#35, t0b#36, sum(c)#46L, t0a#49, t0b#50]
+
+(29) AdaptiveSparkPlan
+Output [2]: [t0a#35, scalarsubquery(t0a, t0b)#47L]
+Arguments: isFinalPlan=false
+
+

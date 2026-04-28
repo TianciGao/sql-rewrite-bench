@@ -1,0 +1,97 @@
+== Physical Plan ==
+AdaptiveSparkPlan (15)
++- Project (14)
+   +- BroadcastHashJoin LeftOuter BuildRight (13)
+      :- Scan parquet spark_catalog.default.tmp_emps (1)
+      +- BroadcastExchange (12)
+         +- HashAggregate (11)
+            +- Exchange (10)
+               +- HashAggregate (9)
+                  +- Project (8)
+                     +- BroadcastHashJoin Inner BuildRight (7)
+                        :- Filter (3)
+                        :  +- Scan parquet spark_catalog.default.tmp_emps (2)
+                        +- BroadcastExchange (6)
+                           +- Filter (5)
+                              +- Scan parquet spark_catalog.default.tmp_emps (4)
+
+
+(1) Scan parquet spark_catalog.default.tmp_emps
+Output [5]: [empid#21, deptno#22, name#23, salary#24, commission#25]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/cons_0017_spark_plan_1mh3gntx/tmp_emps]
+ReadSchema: struct<empid:int,deptno:int,name:string,salary:decimal(10,2),commission:int>
+
+(2) Scan parquet spark_catalog.default.tmp_emps
+Output [2]: [deptno#35, commission#38]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/cons_0017_spark_plan_1mh3gntx/tmp_emps]
+PushedFilters: [IsNotNull(commission), IsNotNull(deptno)]
+ReadSchema: struct<deptno:int,commission:int>
+
+(3) Filter
+Input [2]: [deptno#35, commission#38]
+Condition : (isnotnull(commission#38) AND isnotnull(deptno#35))
+
+(4) Scan parquet spark_catalog.default.tmp_emps
+Output [2]: [deptno#40, commission#43]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/cons_0017_spark_plan_1mh3gntx/tmp_emps]
+PushedFilters: [IsNotNull(commission), IsNotNull(deptno)]
+ReadSchema: struct<deptno:int,commission:int>
+
+(5) Filter
+Input [2]: [deptno#40, commission#43]
+Condition : (isnotnull(commission#43) AND isnotnull(deptno#40))
+
+(6) BroadcastExchange
+Input [2]: [deptno#40, commission#43]
+Arguments: HashedRelationBroadcastMode(List(cast(input[1, int, false] as bigint)),false), [plan_id=87]
+
+(7) BroadcastHashJoin
+Left keys [1]: [commission#38]
+Right keys [1]: [commission#43]
+Join type: Inner
+Join condition: NOT (deptno#35 = deptno#40)
+
+(8) Project
+Output [1]: [commission#38]
+Input [4]: [deptno#35, commission#38, deptno#40, commission#43]
+
+(9) HashAggregate
+Input [1]: [commission#38]
+Keys [1]: [commission#38]
+Functions: []
+Aggregate Attributes: []
+Results [1]: [commission#38]
+
+(10) Exchange
+Input [1]: [commission#38]
+Arguments: hashpartitioning(commission#38, 1), ENSURE_REQUIREMENTS, [plan_id=92]
+
+(11) HashAggregate
+Input [1]: [commission#38]
+Keys [1]: [commission#38]
+Functions: []
+Aggregate Attributes: []
+Results [1]: [commission#38]
+
+(12) BroadcastExchange
+Input [1]: [commission#38]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, true] as bigint)),false), [plan_id=95]
+
+(13) BroadcastHashJoin
+Left keys [1]: [commission#25]
+Right keys [1]: [commission#38]
+Join type: LeftOuter
+Join condition: None
+
+(14) Project
+Output [6]: [empid#21, deptno#22, name#23, salary#24, commission#25, isnotnull(commission#38) AS CASE WHEN (commission IS NOT NULL) THEN true ELSE false END#46]
+Input [6]: [empid#21, deptno#22, name#23, salary#24, commission#25, commission#38]
+
+(15) AdaptiveSparkPlan
+Output [6]: [empid#21, deptno#22, name#23, salary#24, commission#25, CASE WHEN (commission IS NOT NULL) THEN true ELSE false END#46]
+Arguments: isFinalPlan=false
+
+

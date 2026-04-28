@@ -1,0 +1,43 @@
+== Physical Plan ==
+AdaptiveSparkPlan (7)
++- Project (6)
+   +- Filter (5)
+      +- BroadcastNestedLoopJoin ExistenceJoin(exists#23) BuildRight (4)
+         :- Scan parquet spark_catalog.default.table1 (1)
+         +- BroadcastExchange (3)
+            +- Scan parquet spark_catalog.default.table2 (2)
+
+
+(1) Scan parquet spark_catalog.default.table1
+Output [2]: [i#17, j#18]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/cons_0015_spark_plan_72umtumk/table1]
+ReadSchema: struct<i:int,j:int>
+
+(2) Scan parquet spark_catalog.default.table2
+Output [1]: [i#19]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/cons_0015_spark_plan_72umtumk/table2]
+ReadSchema: struct<i:int>
+
+(3) BroadcastExchange
+Input [1]: [i#19]
+Arguments: IdentityBroadcastMode, [plan_id=55]
+
+(4) BroadcastNestedLoopJoin
+Join type: ExistenceJoin(exists#23)
+Join condition: ((j#18 = i#19) OR isnull((j#18 = i#19)))
+
+(5) Filter
+Input [3]: [i#17, j#18, exists#23]
+Condition : (NOT exists#23 OR (i#17 = 1))
+
+(6) Project
+Output [2]: [i#17, j#18]
+Input [3]: [i#17, j#18, exists#23]
+
+(7) AdaptiveSparkPlan
+Output [2]: [i#17, j#18]
+Arguments: isFinalPlan=false
+
+

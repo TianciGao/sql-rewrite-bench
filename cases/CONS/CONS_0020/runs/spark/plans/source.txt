@@ -1,0 +1,15 @@
+== Physical Plan ==
+* ColumnarToRow (2)
++- Scan parquet spark_catalog.default.dept (1)
+
+
+(1) Scan parquet spark_catalog.default.dept
+Output [3]: [deptno#45, dname#46, loc#47]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/cons_0020_spark_plan_kxqtqjl7/dept]
+ReadSchema: struct<deptno:int,dname:string,loc:string>
+
+(2) ColumnarToRow [codegen id : 1]
+Input [3]: [deptno#45, dname#46, loc#47]
+
+
