@@ -1,0 +1,3 @@
+SELECT *
+FROM dept AS d
+WHERE EXISTS (SELECT 1);
