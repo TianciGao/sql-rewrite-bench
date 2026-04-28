@@ -1,0 +1,52 @@
+{
+  "query_block": {
+    "select_id": 1,
+    "cost_info": {
+      "query_cost": "1.10"
+    },
+    "nested_loop": [
+      {
+        "table": {
+          "table_name": "EMP",
+          "access_type": "ALL",
+          "rows_examined_per_scan": 2,
+          "rows_produced_per_join": 2,
+          "filtered": "100.00",
+          "cost_info": {
+            "read_cost": "0.25",
+            "eval_cost": "0.20",
+            "prefix_cost": "0.45",
+            "data_read_per_join": "608"
+          },
+          "used_columns": [
+            "EMPNO",
+            "JOB",
+            "SAL"
+          ]
+        }
+      },
+      {
+        "table": {
+          "table_name": "DEPT",
+          "access_type": "ALL",
+          "rows_examined_per_scan": 2,
+          "rows_produced_per_join": 2,
+          "filtered": "50.00",
+          "first_match": "EMP",
+          "using_join_buffer": "hash join",
+          "cost_info": {
+            "read_cost": "0.25",
+            "eval_cost": "0.20",
+            "prefix_cost": "1.10",
+            "data_read_per_join": "544"
+          },
+          "used_columns": [
+            "DEPTNO",
+            "NAME"
+          ],
+          "attached_condition": "((`bench`.`DEPT`.`NAME` = `bench`.`EMP`.`JOB`) and (`bench`.`DEPT`.`DEPTNO` = `bench`.`EMP`.`EMPNO`))"
+        }
+      }
+    ]
+  }
+}

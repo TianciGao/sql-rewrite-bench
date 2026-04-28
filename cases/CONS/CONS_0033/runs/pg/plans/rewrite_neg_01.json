@@ -1,0 +1,70 @@
+[
+  {
+    "Plan": {
+      "Node Type": "Hash Join",
+      "Parallel Aware": false,
+      "Async Capable": false,
+      "Join Type": "Inner",
+      "Startup Cost": 21.00,
+      "Total Cost": 36.86,
+      "Plan Rows": 80,
+      "Plan Width": 16,
+      "Inner Unique": true,
+      "Hash Cond": "(((emp.job)::text = (dept.name)::text) AND (emp.empno = dept.deptno))",
+      "Plans": [
+        {
+          "Node Type": "Seq Scan",
+          "Parent Relationship": "Outer",
+          "Parallel Aware": false,
+          "Async Capable": false,
+          "Relation Name": "emp",
+          "Alias": "emp",
+          "Startup Cost": 0.00,
+          "Total Cost": 13.20,
+          "Plan Rows": 320,
+          "Plan Width": 106
+        },
+        {
+          "Node Type": "Hash",
+          "Parent Relationship": "Inner",
+          "Parallel Aware": false,
+          "Async Capable": false,
+          "Startup Cost": 18.00,
+          "Total Cost": 18.00,
+          "Plan Rows": 200,
+          "Plan Width": 90,
+          "Plans": [
+            {
+              "Node Type": "Aggregate",
+              "Strategy": "Hashed",
+              "Partial Mode": "Simple",
+              "Parent Relationship": "Outer",
+              "Parallel Aware": false,
+              "Async Capable": false,
+              "Startup Cost": 16.00,
+              "Total Cost": 18.00,
+              "Plan Rows": 200,
+              "Plan Width": 90,
+              "Group Key": ["(dept.name)::text", "dept.deptno"],
+              "Planned Partitions": 0,
+              "Plans": [
+                {
+                  "Node Type": "Seq Scan",
+                  "Parent Relationship": "Outer",
+                  "Parallel Aware": false,
+                  "Async Capable": false,
+                  "Relation Name": "dept",
+                  "Alias": "dept",
+                  "Startup Cost": 0.00,
+                  "Total Cost": 14.00,
+                  "Plan Rows": 400,
+                  "Plan Width": 90
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  }
+]

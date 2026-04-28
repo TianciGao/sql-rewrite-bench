@@ -1,0 +1,107 @@
+== Physical Plan ==
+AdaptiveSparkPlan (17)
++- Project (16)
+   +- Filter (15)
+      +- BroadcastHashJoin LeftOuter BuildRight (14)
+         :- Project (9)
+         :  +- BroadcastHashJoin LeftOuter BuildRight (8)
+         :     :- Scan parquet spark_catalog.default.emp (1)
+         :     +- BroadcastExchange (7)
+         :        +- HashAggregate (6)
+         :           +- Exchange (5)
+         :              +- HashAggregate (4)
+         :                 +- Filter (3)
+         :                    +- Scan parquet spark_catalog.default.dept (2)
+         +- BroadcastExchange (13)
+            +- Project (12)
+               +- Filter (11)
+                  +- Scan parquet spark_catalog.default.dept (10)
+
+
+(1) Scan parquet spark_catalog.default.emp
+Output [3]: [EMPNO#45L, JOB#47, SAL#50]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/cons_0033_spark_plan_0x5stu3o/emp]
+ReadSchema: struct<EMPNO:bigint,JOB:string,SAL:decimal(10,2)>
+
+(2) Scan parquet spark_catalog.default.dept
+Output [1]: [NAME#54]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/cons_0033_spark_plan_0x5stu3o/dept]
+PushedFilters: [IsNotNull(NAME)]
+ReadSchema: struct<NAME:string>
+
+(3) Filter
+Input [1]: [NAME#54]
+Condition : isnotnull(NAME#54)
+
+(4) HashAggregate
+Input [1]: [NAME#54]
+Keys [1]: [NAME#54]
+Functions [1]: [partial_count(1)]
+Aggregate Attributes [1]: [count#67L]
+Results [2]: [NAME#54, count#68L]
+
+(5) Exchange
+Input [2]: [NAME#54, count#68L]
+Arguments: hashpartitioning(NAME#54, 1), ENSURE_REQUIREMENTS, [plan_id=107]
+
+(6) HashAggregate
+Input [2]: [NAME#54, count#68L]
+Keys [1]: [NAME#54]
+Functions [1]: [count(1)]
+Aggregate Attributes [1]: [count(1)#61L]
+Results [3]: [count(1)#61L AS c#58L, count(1)#61L AS ck#59L, NAME#54]
+
+(7) BroadcastExchange
+Input [3]: [c#58L, ck#59L, NAME#54]
+Arguments: HashedRelationBroadcastMode(List(input[2, string, true]),false), [plan_id=110]
+
+(8) BroadcastHashJoin
+Left keys [1]: [JOB#47]
+Right keys [1]: [NAME#54]
+Join type: LeftOuter
+Join condition: None
+
+(9) Project
+Output [5]: [EMPNO#45L, JOB#47, SAL#50, c#58L, ck#59L]
+Input [6]: [EMPNO#45L, JOB#47, SAL#50, c#58L, ck#59L, NAME#54]
+
+(10) Scan parquet spark_catalog.default.dept
+Output [2]: [DEPTNO#63L, NAME#64]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/cons_0033_spark_plan_0x5stu3o/dept]
+PushedFilters: [IsNotNull(DEPTNO), IsNotNull(NAME)]
+ReadSchema: struct<DEPTNO:bigint,NAME:string>
+
+(11) Filter
+Input [2]: [DEPTNO#63L, NAME#64]
+Condition : (isnotnull(DEPTNO#63L) AND isnotnull(NAME#64))
+
+(12) Project
+Output [3]: [DEPTNO#63L, true AS i#60, NAME#64]
+Input [2]: [DEPTNO#63L, NAME#64]
+
+(13) BroadcastExchange
+Input [3]: [DEPTNO#63L, i#60, NAME#64]
+Arguments: HashedRelationBroadcastMode(List(input[0, bigint, true], input[2, string, true]),false), [plan_id=114]
+
+(14) BroadcastHashJoin
+Left keys [2]: [EMPNO#45L, JOB#47]
+Right keys [2]: [DEPTNO#63L, NAME#64]
+Join type: LeftOuter
+Join condition: None
+
+(15) Filter
+Input [8]: [EMPNO#45L, JOB#47, SAL#50, c#58L, ck#59L, DEPTNO#63L, i#60, NAME#64]
+Condition : ((c#58L = 0) OR NOT ((isnotnull(i#60) OR (ck#59L < c#58L)) <=> true))
+
+(16) Project
+Output [1]: [SAL#50]
+Input [8]: [EMPNO#45L, JOB#47, SAL#50, c#58L, ck#59L, DEPTNO#63L, i#60, NAME#64]
+
+(17) AdaptiveSparkPlan
+Output [1]: [SAL#50]
+Arguments: isFinalPlan=false
+
+
