@@ -2,15 +2,34 @@ status: draft_only
 not_executed: true
 source_vs_positive_check_required: true
 source_vs_negative_check_required: true
+source_query: source.sql
+positive_queries:
+  - rewrite_pos_01.sql
+  - rewrite_pos_02_spark.sql
+negative_queries:
+  - rewrite_neg_01.sql
+  - rewrite_neg_02_spark.sql
+expected_positive_relation: equivalent_pending_execution
+expected_negative_relation: non_equivalent_pending_execution
 engines_pending:
   - pg
   - mysql
   - spark
 normalization_notes:
-  - row sorting may be required for scalar or top-1 outputs
-  - null formatting should be normalized before comparison
-  - numeric text normalization may be needed if the selected row contains numeric projections later
+  - top-1 result comparison should normalize row rendering before value comparison
+  - scalar text outputs should be whitespace-trimmed
+  - null rendering should be normalized before comparison
+  - ordering logic should be preserved rather than dropped during adaptation review
+result_ordering_assumptions:
+  - source query is intentionally order-sensitive because of LIMIT 1
+  - positive rewrite is expected to preserve the effective top-row choice
+  - negative rewrite is expected to change the chosen row by altering sort semantics
+null_handling_assumptions:
+  - source semantics depend on explicit NULLS LAST behavior
+  - MySQL-like positive rewrite relies on implicit exclusion of nulls from the descending winner in the draft witness
+  - Spark draft should later use an explicit null-order expression during execution review
 known_risks:
   - null-order handling is central to the portability story
   - Spark rewrite is still marked review-required
   - witness data has not been implemented
+  - a witness with no null or tie pressure would under-test the portability claim

@@ -2,6 +2,15 @@ status: draft_only
 not_executed: true
 source_vs_positive_check_required: true
 source_vs_negative_check_required: true
+source_query: source.sql
+positive_queries:
+  - rewrite_pos_01.sql
+  - rewrite_pos_02_spark.sql
+negative_queries:
+  - rewrite_neg_01.sql
+  - rewrite_neg_02_spark.sql
+expected_positive_relation: equivalent_pending_execution
+expected_negative_relation: non_equivalent_pending_execution
 engines_pending:
   - pg
   - mysql
@@ -10,7 +19,15 @@ normalization_notes:
   - normalize scalar numeric output before comparison
   - preserve percentage semantics instead of raw text formatting
   - normalize null text if null-bearing rows are later introduced
+  - if percentages are rendered with differing numeric precision, compare normalized numeric values
+result_ordering_assumptions:
+  - result is scalar, so row-order sensitivity is not expected
+  - denominator semantics must remain fixed across source and positive rewrites
+null_handling_assumptions:
+  - null birthdays should be excluded from the year-equality predicate under all engines
+  - null sex values should contribute zero to the female-count branch
 known_risks:
   - aggregate ratio checker behavior needs later review
   - datetime extraction semantics remain central
   - witness data has not been implemented
+  - year-boundary rows are required or the negative may appear equivalent

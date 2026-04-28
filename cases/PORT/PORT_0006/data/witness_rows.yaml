@@ -1,0 +1,25 @@
+status: draft_only
+not_loaded: true
+engine_neutral_intent: true
+tables:
+  loan:
+    columns:
+      - status
+      - account_id
+      - amount
+    rows:
+      - status: C
+        account_id: 1
+        amount: 90000
+      - status: A
+        account_id: 2
+        amount: 95000
+      - status: C
+        account_id: 3
+        amount: 100000
+      - status: null
+        account_id: 4
+        amount: 87000
+notes:
+  - Rows below the threshold drive the source and positive percentage.
+  - The amount = 100000 row is intended to make the hard negative diverge.

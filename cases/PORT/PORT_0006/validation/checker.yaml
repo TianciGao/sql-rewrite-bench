@@ -2,6 +2,15 @@ status: draft_only
 not_executed: true
 source_vs_positive_check_required: true
 source_vs_negative_check_required: true
+source_query: source.sql
+positive_queries:
+  - rewrite_pos_01.sql
+  - rewrite_pos_02_spark.sql
+negative_queries:
+  - rewrite_neg_01.sql
+  - rewrite_neg_02_spark.sql
+expected_positive_relation: equivalent_pending_execution
+expected_negative_relation: non_equivalent_pending_execution
 engines_pending:
   - pg
   - mysql
@@ -10,7 +19,15 @@ normalization_notes:
   - normalize scalar numeric output before comparison
   - preserve percentage semantics instead of raw text formatting
   - null text normalization may be required if a null status witness row is used
+  - boolean expressions should be reviewed for engine-specific coercion differences before execution
+result_ordering_assumptions:
+  - result is scalar, so row-order sensitivity is not expected
+  - the denominator should count the same row set in source and positive rewrites
+null_handling_assumptions:
+  - null status rows should not be counted as status = 'C'
+  - boundary amount rows must remain visible so the negative predicate change is testable
 known_risks:
   - boolean coercion semantics are central to the portability story
   - threshold-boundary row design is required for the negative
   - witness data has not been implemented
+  - engine-specific boolean aggregation behavior needs explicit review before execution
