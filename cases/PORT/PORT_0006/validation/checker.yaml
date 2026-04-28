@@ -1,0 +1,16 @@
+status: draft_only
+not_executed: true
+source_vs_positive_check_required: true
+source_vs_negative_check_required: true
+engines_pending:
+  - pg
+  - mysql
+  - spark
+normalization_notes:
+  - normalize scalar numeric output before comparison
+  - preserve percentage semantics instead of raw text formatting
+  - null text normalization may be required if a null status witness row is used
+known_risks:
+  - boolean coercion semantics are central to the portability story
+  - threshold-boundary row design is required for the negative
+  - witness data has not been implemented

@@ -1,0 +1,16 @@
+status: draft_only
+not_executed: true
+source_vs_positive_check_required: true
+source_vs_negative_check_required: true
+engines_pending:
+  - pg
+  - mysql
+  - spark
+normalization_notes:
+  - row sorting may be required for scalar or top-1 outputs
+  - null formatting should be normalized before comparison
+  - numeric text normalization may be needed if the selected row contains numeric projections later
+known_risks:
+  - null-order handling is central to the portability story
+  - Spark rewrite is still marked review-required
+  - witness data has not been implemented

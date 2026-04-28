@@ -1,0 +1,27 @@
+case_id: PORT_0007
+trial_version: "0.3"
+status: draft_trial_only
+candidate_primary_pool: portability
+expected_line: candidate_only
+
+sql_feature:
+  primary: subquery_in_from
+  secondary:
+    - expression_complexity
+    - date_time_function
+
+rewrite_opportunity:
+  primary: dialect_adaptation
+  secondary:
+    - order_limit_simplification
+
+portability:
+  confirmed:
+    - identifier_quoting
+  suspected:
+    - null_semantics_gap
+    - limit_fetch_gap
+
+notes:
+  - Trial tags only; no admission or common-core judgment is implied.
+  - The subquery is straightforward, but the ordering and null-handling semantics still need later confirmation.
