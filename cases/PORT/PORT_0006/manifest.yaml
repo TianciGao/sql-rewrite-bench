@@ -13,7 +13,7 @@ official_case_status: draft_constructed
 registry_status: staged_registered
 validation_status: draft_cross_dialect_evidence_tracked
 admission_status: not_under_review
-package_engineering_status: draft_package_constructed_with_tracked_result_evidence
+package_engineering_status: draft_package_constructed_with_tracked_result_evidence_and_tracked_draft_plan_evidence
 validated_engines:
   - mysql
   - pg
@@ -32,5 +32,6 @@ artifacts:
   provenance_notes: provenance/provenance_notes.txt
   checker: validation/checker.yaml
   taxonomy_trial: taxonomy_trial_v0.3.yaml
-next_gap: human review, plan evidence, portability review packet, and later admission decision
-artifact_warning: registry updated conservatively for tracked draft cross-dialect evidence only; this package is not admitted, not release-hardened, and not formal-review-finished
+  plan_check: runs/plan_check.json
+next_gap: human review, portability review-prep packet / later formal review, later admission decision, and plan semantics not formally reviewed
+artifact_warning: registry updated conservatively for tracked draft cross-dialect result evidence and tracked draft plan evidence only; this package is not admitted, not release-hardened, and not formal-review-finished
