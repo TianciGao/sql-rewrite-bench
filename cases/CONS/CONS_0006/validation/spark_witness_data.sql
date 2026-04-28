@@ -1,0 +1,6 @@
+INSERT INTO emp VALUES
+  (10, 100.00, 'CLERK'),
+  (20, 150.00, 'CLERK'),
+  (30, 50.00, 'MANAGER'),
+  (70, 10.00, 'ANALYST'),
+  (20, 25.00, 'MANAGER');

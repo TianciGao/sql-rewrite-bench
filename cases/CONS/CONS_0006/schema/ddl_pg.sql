@@ -1,0 +1,1 @@
+CREATE TABLE emp (deptno INTEGER, sal DECIMAL(12,2), job VARCHAR(32));
