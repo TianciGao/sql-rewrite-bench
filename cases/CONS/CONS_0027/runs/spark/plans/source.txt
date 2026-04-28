@@ -1,0 +1,100 @@
+== Physical Plan ==
+AdaptiveSparkPlan (16)
++- Project (15)
+   +- BroadcastHashJoin LeftSemi BuildRight (14)
+      :- Scan parquet spark_catalog.default.emp (1)
+      +- BroadcastExchange (13)
+         +- Project (12)
+            +- BroadcastNestedLoopJoin Inner BuildRight (11)
+               :- BroadcastNestedLoopJoin Inner BuildRight (8)
+               :  :- HashAggregate (5)
+               :  :  +- Exchange (4)
+               :  :     +- HashAggregate (3)
+               :  :        +- Scan parquet spark_catalog.default.emp (2)
+               :  +- BroadcastExchange (7)
+               :     +- Scan parquet spark_catalog.default.dept (6)
+               +- BroadcastExchange (10)
+                  +- Scan parquet spark_catalog.default.bonus (9)
+
+
+(1) Scan parquet spark_catalog.default.emp
+Output [2]: [ename#50, job#51]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/cons_0027_spark_plan__0dx57fe/emp]
+ReadSchema: struct<ename:string,job:string>
+
+(2) Scan parquet spark_catalog.default.emp
+Output [1]: [job#51]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/cons_0027_spark_plan__0dx57fe/emp]
+ReadSchema: struct<job:string>
+
+(3) HashAggregate
+Input [1]: [job#51]
+Keys [1]: [job#51]
+Functions: []
+Aggregate Attributes: []
+Results [1]: [job#51]
+
+(4) Exchange
+Input [1]: [job#51]
+Arguments: hashpartitioning(job#51, 1), ENSURE_REQUIREMENTS, [plan_id=76]
+
+(5) HashAggregate
+Input [1]: [job#51]
+Keys [1]: [job#51]
+Functions: []
+Aggregate Attributes: []
+Results [1]: [job#51 AS job#68]
+
+(6) Scan parquet spark_catalog.default.dept
+Output [1]: [loc#59]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/cons_0027_spark_plan__0dx57fe/dept]
+ReadSchema: struct<loc:string>
+
+(7) BroadcastExchange
+Input [1]: [loc#59]
+Arguments: IdentityBroadcastMode, [plan_id=79]
+
+(8) BroadcastNestedLoopJoin
+Join type: Inner
+Join condition: None
+
+(9) Scan parquet spark_catalog.default.bonus
+Output [1]: [job#61]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/cons_0027_spark_plan__0dx57fe/bonus]
+ReadSchema: struct<job:string>
+
+(10) BroadcastExchange
+Input [1]: [job#61]
+Arguments: IdentityBroadcastMode, [plan_id=82]
+
+(11) BroadcastNestedLoopJoin
+Join type: Inner
+Join condition: ((loc#59 = NEW YORK) OR (job#61 = job#68))
+
+(12) Project
+Output [1]: [job#68]
+Input [3]: [job#68, loc#59, job#61]
+
+(13) BroadcastExchange
+Input [1]: [job#68]
+Arguments: HashedRelationBroadcastMode(List(coalesce(input[0, string, true], ), isnull(input[0, string, true])),false), [plan_id=86]
+
+(14) BroadcastHashJoin
+Left keys [2]: [coalesce(job#51, ), isnull(job#51)]
+Right keys [2]: [coalesce(job#68, ), isnull(job#68)]
+Join type: LeftSemi
+Join condition: None
+
+(15) Project
+Output [1]: [ename#50]
+Input [2]: [ename#50, job#51]
+
+(16) AdaptiveSparkPlan
+Output [1]: [ename#50]
+Arguments: isFinalPlan=false
+
+

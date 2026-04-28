@@ -1,0 +1,76 @@
+== Physical Plan ==
+AdaptiveSparkPlan (12)
++- Project (11)
+   +- BroadcastHashJoin LeftSemi BuildRight (10)
+      :- Scan parquet spark_catalog.default.emp (1)
+      +- BroadcastExchange (9)
+         +- Project (8)
+            +- BroadcastHashJoin Inner BuildRight (7)
+               :- Filter (3)
+               :  +- Scan parquet spark_catalog.default.dept (2)
+               +- BroadcastExchange (6)
+                  +- Filter (5)
+                     +- Scan parquet spark_catalog.default.bonus (4)
+
+
+(1) Scan parquet spark_catalog.default.emp
+Output [2]: [ename#50, job#51]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/cons_0029_spark_plan_qttn5jvb/emp]
+ReadSchema: struct<ename:string,job:string>
+
+(2) Scan parquet spark_catalog.default.dept
+Output [1]: [dname#58]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/cons_0029_spark_plan_qttn5jvb/dept]
+PushedFilters: [IsNotNull(dname)]
+ReadSchema: struct<dname:string>
+
+(3) Filter
+Input [1]: [dname#58]
+Condition : isnotnull(dname#58)
+
+(4) Scan parquet spark_catalog.default.bonus
+Output [2]: [ename#60, job#61]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/cons_0029_spark_plan_qttn5jvb/bonus]
+PushedFilters: [IsNotNull(job), IsNotNull(ename)]
+ReadSchema: struct<ename:string,job:string>
+
+(5) Filter
+Input [2]: [ename#60, job#61]
+Condition : (isnotnull(job#61) AND isnotnull(ename#60))
+
+(6) BroadcastExchange
+Input [2]: [ename#60, job#61]
+Arguments: HashedRelationBroadcastMode(List(input[0, string, false]),false), [plan_id=157]
+
+(7) BroadcastHashJoin
+Left keys [1]: [dname#58]
+Right keys [1]: [ename#60]
+Join type: Inner
+Join condition: None
+
+(8) Project
+Output [1]: [job#61]
+Input [3]: [dname#58, ename#60, job#61]
+
+(9) BroadcastExchange
+Input [1]: [job#61]
+Arguments: HashedRelationBroadcastMode(List(input[0, string, true]),false), [plan_id=161]
+
+(10) BroadcastHashJoin
+Left keys [1]: [job#51]
+Right keys [1]: [job#61]
+Join type: LeftSemi
+Join condition: None
+
+(11) Project
+Output [1]: [ename#50]
+Input [2]: [ename#50, job#51]
+
+(12) AdaptiveSparkPlan
+Output [1]: [ename#50]
+Arguments: isFinalPlan=false
+
+

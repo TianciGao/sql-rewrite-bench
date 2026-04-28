@@ -1,0 +1,101 @@
+== Physical Plan ==
+AdaptiveSparkPlan (16)
++- Project (15)
+   +- BroadcastHashJoin LeftOuter BuildRight (14)
+      :- Project (10)
+      :  +- BroadcastHashJoin ExistenceJoin(exists#68) BuildRight (9)
+      :     :- Scan parquet spark_catalog.default.emp (1)
+      :     +- BroadcastExchange (8)
+      :        +- Project (7)
+      :           +- Filter (6)
+      :              +- HashAggregate (5)
+      :                 +- Exchange (4)
+      :                    +- HashAggregate (3)
+      :                       +- Scan parquet spark_catalog.default.emp (2)
+      +- BroadcastExchange (13)
+         +- Filter (12)
+            +- Scan parquet spark_catalog.default.dept (11)
+
+
+(1) Scan parquet spark_catalog.default.emp
+Output [3]: [empno#45, ename#46, deptno#52]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/cons_0030_spark_plan_cn52m3z5/emp]
+ReadSchema: struct<empno:int,ename:string,deptno:int>
+
+(2) Scan parquet spark_catalog.default.emp
+Output [2]: [sal#65, deptno#67]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/cons_0030_spark_plan_cn52m3z5/emp]
+ReadSchema: struct<sal:decimal(10,2),deptno:int>
+
+(3) HashAggregate
+Input [2]: [sal#65, deptno#67]
+Keys [1]: [deptno#67]
+Functions [1]: [partial_sum(sal#65)]
+Aggregate Attributes [2]: [sum#69, isEmpty#70]
+Results [3]: [deptno#67, sum#71, isEmpty#72]
+
+(4) Exchange
+Input [3]: [deptno#67, sum#71, isEmpty#72]
+Arguments: hashpartitioning(deptno#67, 1), ENSURE_REQUIREMENTS, [plan_id=79]
+
+(5) HashAggregate
+Input [3]: [deptno#67, sum#71, isEmpty#72]
+Keys [1]: [deptno#67]
+Functions [1]: [sum(sal#65)]
+Aggregate Attributes [1]: [sum(sal#65)#57]
+Results [2]: [deptno#67, sum(sal#65)#57 AS sum(sal)#58]
+
+(6) Filter
+Input [2]: [deptno#67, sum(sal)#58]
+Condition : (isnotnull(sum(sal)#58) AND (sum(sal)#58 > 1000000.00))
+
+(7) Project
+Output [1]: [deptno#67]
+Input [2]: [deptno#67, sum(sal)#58]
+
+(8) BroadcastExchange
+Input [1]: [deptno#67]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, true] as bigint)),false), [plan_id=84]
+
+(9) BroadcastHashJoin
+Left keys [1]: [deptno#52]
+Right keys [1]: [deptno#67]
+Join type: ExistenceJoin(exists#68)
+Join condition: None
+
+(10) Project
+Output [3]: [empno#45, ename#46, exists#68]
+Input [4]: [empno#45, ename#46, deptno#52, exists#68]
+
+(11) Scan parquet spark_catalog.default.dept
+Output [1]: [dname#54]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/cons_0030_spark_plan_cn52m3z5/dept]
+PushedFilters: [IsNotNull(dname)]
+ReadSchema: struct<dname:string>
+
+(12) Filter
+Input [1]: [dname#54]
+Condition : isnotnull(dname#54)
+
+(13) BroadcastExchange
+Input [1]: [dname#54]
+Arguments: HashedRelationBroadcastMode(List(input[0, string, false]),false), [plan_id=88]
+
+(14) BroadcastHashJoin
+Left keys [1]: [ename#46]
+Right keys [1]: [dname#54]
+Join type: LeftOuter
+Join condition: exists#68
+
+(15) Project
+Output [1]: [empno#45]
+Input [4]: [empno#45, ename#46, exists#68, dname#54]
+
+(16) AdaptiveSparkPlan
+Output [1]: [empno#45]
+Arguments: isFinalPlan=false
+
+

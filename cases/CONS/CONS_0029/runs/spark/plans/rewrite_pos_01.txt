@@ -1,0 +1,56 @@
+== Physical Plan ==
+AdaptiveSparkPlan (3)
++- Filter (2)
+   +- Scan parquet spark_catalog.default.emp (1)
+
+
+(1) Scan parquet spark_catalog.default.emp
+Output [1]: [ename#50]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/cons_0029_spark_plan_qttn5jvb/emp]
+ReadSchema: struct<ename:string>
+
+(2) Filter
+Input [1]: [ename#50]
+Condition : isnotnull(Subquery subquery#69, [id=#110])
+
+(3) AdaptiveSparkPlan
+Output [1]: [ename#50]
+Arguments: isFinalPlan=false
+
+===== Subqueries =====
+
+Subquery:1 Hosting operator id = 2 Hosting Expression = Subquery subquery#69, [id=#110]
+AdaptiveSparkPlan (7)
++- CollectLimit (6)
+   +- Project (5)
+      +- Scan parquet spark_catalog.default.dept (4)
+
+
+(4) Scan parquet spark_catalog.default.dept
+Output: []
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/cons_0029_spark_plan_qttn5jvb/dept]
+ReadSchema: struct<>
+
+(5) Project
+Output [1]: [1 AS col#71]
+Input: []
+
+(6) CollectLimit
+Input [1]: [col#71]
+Arguments: 1
+
+(7) AdaptiveSparkPlan
+Output [1]: [col#71]
+Arguments: isFinalPlan=false
+
+Subquery:2 Hosting operator id = 1 Hosting Expression = Subquery subquery#69, [id=#112]
+AdaptiveSparkPlan (7)
++- CollectLimit (6)
+   +- Project (5)
+      +- Scan parquet spark_catalog.default.dept (4)
+
+
+
+

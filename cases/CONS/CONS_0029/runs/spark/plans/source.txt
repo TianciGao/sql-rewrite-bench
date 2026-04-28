@@ -1,0 +1,108 @@
+== Physical Plan ==
+AdaptiveSparkPlan (17)
++- Project (16)
+   +- BroadcastHashJoin LeftSemi BuildRight (15)
+      :- Scan parquet spark_catalog.default.emp (1)
+      +- BroadcastExchange (14)
+         +- Project (13)
+            +- BroadcastHashJoin LeftOuter BuildRight (12)
+               :- BroadcastNestedLoopJoin Inner BuildRight (8)
+               :  :- HashAggregate (5)
+               :  :  +- Exchange (4)
+               :  :     +- HashAggregate (3)
+               :  :        +- Scan parquet spark_catalog.default.emp (2)
+               :  +- BroadcastExchange (7)
+               :     +- Scan parquet spark_catalog.default.dept (6)
+               +- BroadcastExchange (11)
+                  +- Filter (10)
+                     +- Scan parquet spark_catalog.default.bonus (9)
+
+
+(1) Scan parquet spark_catalog.default.emp
+Output [2]: [ename#50, job#51]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/cons_0029_spark_plan_qttn5jvb/emp]
+ReadSchema: struct<ename:string,job:string>
+
+(2) Scan parquet spark_catalog.default.emp
+Output [1]: [job#51]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/cons_0029_spark_plan_qttn5jvb/emp]
+ReadSchema: struct<job:string>
+
+(3) HashAggregate
+Input [1]: [job#51]
+Keys [1]: [job#51]
+Functions: []
+Aggregate Attributes: []
+Results [1]: [job#51]
+
+(4) Exchange
+Input [1]: [job#51]
+Arguments: hashpartitioning(job#51, 1), ENSURE_REQUIREMENTS, [plan_id=84]
+
+(5) HashAggregate
+Input [1]: [job#51]
+Keys [1]: [job#51]
+Functions: []
+Aggregate Attributes: []
+Results [1]: [job#51 AS job#68]
+
+(6) Scan parquet spark_catalog.default.dept
+Output [1]: [dname#58]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/cons_0029_spark_plan_qttn5jvb/dept]
+ReadSchema: struct<dname:string>
+
+(7) BroadcastExchange
+Input [1]: [dname#58]
+Arguments: IdentityBroadcastMode, [plan_id=87]
+
+(8) BroadcastNestedLoopJoin
+Join type: Inner
+Join condition: None
+
+(9) Scan parquet spark_catalog.default.bonus
+Output [2]: [ename#60, job#61]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/cons_0029_spark_plan_qttn5jvb/bonus]
+PushedFilters: [IsNotNull(job), IsNotNull(ename)]
+ReadSchema: struct<ename:string,job:string>
+
+(10) Filter
+Input [2]: [ename#60, job#61]
+Condition : (isnotnull(job#61) AND isnotnull(ename#60))
+
+(11) BroadcastExchange
+Input [2]: [ename#60, job#61]
+Arguments: HashedRelationBroadcastMode(List(input[1, string, false], input[0, string, false]),false), [plan_id=90]
+
+(12) BroadcastHashJoin
+Left keys [2]: [job#68, dname#58]
+Right keys [2]: [job#61, ename#60]
+Join type: LeftOuter
+Join condition: None
+
+(13) Project
+Output [1]: [job#68]
+Input [4]: [job#68, dname#58, ename#60, job#61]
+
+(14) BroadcastExchange
+Input [1]: [job#68]
+Arguments: HashedRelationBroadcastMode(List(coalesce(input[0, string, true], ), isnull(input[0, string, true])),false), [plan_id=94]
+
+(15) BroadcastHashJoin
+Left keys [2]: [coalesce(job#51, ), isnull(job#51)]
+Right keys [2]: [coalesce(job#68, ), isnull(job#68)]
+Join type: LeftSemi
+Join condition: None
+
+(16) Project
+Output [1]: [ename#50]
+Input [2]: [ename#50, job#51]
+
+(17) AdaptiveSparkPlan
+Output [1]: [ename#50]
+Arguments: isFinalPlan=false
+
+

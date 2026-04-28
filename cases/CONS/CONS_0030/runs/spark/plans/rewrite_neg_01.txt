@@ -1,0 +1,107 @@
+== Physical Plan ==
+AdaptiveSparkPlan (17)
++- Project (16)
+   +- BroadcastHashJoin Inner BuildRight (15)
+      :- Project (11)
+      :  +- BroadcastHashJoin LeftSemi BuildRight (10)
+      :     :- Filter (2)
+      :     :  +- Scan parquet spark_catalog.default.emp (1)
+      :     +- BroadcastExchange (9)
+      :        +- Project (8)
+      :           +- Filter (7)
+      :              +- HashAggregate (6)
+      :                 +- Exchange (5)
+      :                    +- HashAggregate (4)
+      :                       +- Scan parquet spark_catalog.default.emp (3)
+      +- BroadcastExchange (14)
+         +- Filter (13)
+            +- Scan parquet spark_catalog.default.dept (12)
+
+
+(1) Scan parquet spark_catalog.default.emp
+Output [3]: [empno#45, ename#46, deptno#52]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/cons_0030_spark_plan_cn52m3z5/emp]
+PushedFilters: [IsNotNull(ename)]
+ReadSchema: struct<empno:int,ename:string,deptno:int>
+
+(2) Filter
+Input [3]: [empno#45, ename#46, deptno#52]
+Condition : isnotnull(ename#46)
+
+(3) Scan parquet spark_catalog.default.emp
+Output [2]: [sal#82, deptno#84]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/cons_0030_spark_plan_cn52m3z5/emp]
+ReadSchema: struct<sal:decimal(10,2),deptno:int>
+
+(4) HashAggregate
+Input [2]: [sal#82, deptno#84]
+Keys [1]: [deptno#84]
+Functions [1]: [partial_sum(sal#82)]
+Aggregate Attributes [2]: [sum#85, isEmpty#86]
+Results [3]: [deptno#84, sum#87, isEmpty#88]
+
+(5) Exchange
+Input [3]: [deptno#84, sum#87, isEmpty#88]
+Arguments: hashpartitioning(deptno#84, 1), ENSURE_REQUIREMENTS, [plan_id=155]
+
+(6) HashAggregate
+Input [3]: [deptno#84, sum#87, isEmpty#88]
+Keys [1]: [deptno#84]
+Functions [1]: [sum(sal#82)]
+Aggregate Attributes [1]: [sum(sal#82)#75]
+Results [2]: [sum(sal#82)#75 AS sum(sal)#76, deptno#84]
+
+(7) Filter
+Input [2]: [sum(sal)#76, deptno#84]
+Condition : (isnotnull(sum(sal)#76) AND (sum(sal)#76 > 1000000.00))
+
+(8) Project
+Output [1]: [deptno#84]
+Input [2]: [sum(sal)#76, deptno#84]
+
+(9) BroadcastExchange
+Input [1]: [deptno#84]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, true] as bigint)),false), [plan_id=160]
+
+(10) BroadcastHashJoin
+Left keys [1]: [deptno#52]
+Right keys [1]: [deptno#84]
+Join type: LeftSemi
+Join condition: None
+
+(11) Project
+Output [2]: [empno#45, ename#46]
+Input [3]: [empno#45, ename#46, deptno#52]
+
+(12) Scan parquet spark_catalog.default.dept
+Output [1]: [dname#54]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/cons_0030_spark_plan_cn52m3z5/dept]
+PushedFilters: [IsNotNull(dname)]
+ReadSchema: struct<dname:string>
+
+(13) Filter
+Input [1]: [dname#54]
+Condition : isnotnull(dname#54)
+
+(14) BroadcastExchange
+Input [1]: [dname#54]
+Arguments: HashedRelationBroadcastMode(List(input[0, string, false]),false), [plan_id=164]
+
+(15) BroadcastHashJoin
+Left keys [1]: [ename#46]
+Right keys [1]: [dname#54]
+Join type: Inner
+Join condition: None
+
+(16) Project
+Output [1]: [empno#45]
+Input [3]: [empno#45, ename#46, dname#54]
+
+(17) AdaptiveSparkPlan
+Output [1]: [empno#45]
+Arguments: isFinalPlan=false
+
+
