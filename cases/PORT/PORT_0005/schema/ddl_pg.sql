@@ -1,5 +1,7 @@
--- DRAFT DDL only for PORT_0005; not executed
+-- DRAFT DDL only for PORT_0005; not validated evidence by itself
+DROP TABLE IF EXISTS drivers;
+
 CREATE TABLE drivers (
   nationality TEXT,
-  dob TIMESTAMP -- conservative choice; source may also tolerate DATE-level storage
+  dob TIMESTAMP
 );
