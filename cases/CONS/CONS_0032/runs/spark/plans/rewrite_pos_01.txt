@@ -1,0 +1,112 @@
+== Physical Plan ==
+AdaptiveSparkPlan (18)
++- Project (17)
+   +- Filter (16)
+      +- BroadcastHashJoin LeftOuter BuildRight (15)
+         :- Project (10)
+         :  +- BroadcastHashJoin LeftOuter BuildRight (9)
+         :     :- Scan parquet spark_catalog.default.emp (1)
+         :     +- BroadcastExchange (8)
+         :        +- HashAggregate (7)
+         :           +- Exchange (6)
+         :              +- HashAggregate (5)
+         :                 +- Project (4)
+         :                    +- Filter (3)
+         :                       +- Scan parquet spark_catalog.default.emp (2)
+         +- BroadcastExchange (14)
+            +- Project (13)
+               +- Filter (12)
+                  +- Scan parquet spark_catalog.default.emp (11)
+
+
+(1) Scan parquet spark_catalog.default.emp
+Output [9]: [EMPNO#38L, ENAME#39, JOB#40, MGR#41L, HIREDATE#42, SAL#43, COMM#44, DEPTNO#45L, SLACKER#46]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/cons_0032_spark_plan_o8idgy4d/emp]
+ReadSchema: struct<EMPNO:bigint,ENAME:string,JOB:string,MGR:bigint,HIREDATE:date,SAL:decimal(10,2),COMM:decimal(10,2),DEPTNO:bigint,SLACKER:boolean>
+
+(2) Scan parquet spark_catalog.default.emp
+Output [2]: [ENAME#65, SAL#69]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/cons_0032_spark_plan_o8idgy4d/emp]
+PushedFilters: [IsNotNull(SAL), GreaterThan(SAL,2.00), IsNotNull(ENAME)]
+ReadSchema: struct<ENAME:string,SAL:decimal(10,2)>
+
+(3) Filter
+Input [2]: [ENAME#65, SAL#69]
+Condition : ((isnotnull(SAL#69) AND (SAL#69 > 2.00)) AND isnotnull(ENAME#65))
+
+(4) Project
+Output [1]: [ENAME#65]
+Input [2]: [ENAME#65, SAL#69]
+
+(5) HashAggregate
+Input [1]: [ENAME#65]
+Keys [1]: [ENAME#65]
+Functions [1]: [partial_count(1)]
+Aggregate Attributes [1]: [count#84L]
+Results [2]: [ENAME#65, count#85L]
+
+(6) Exchange
+Input [2]: [ENAME#65, count#85L]
+Arguments: hashpartitioning(ENAME#65, 1), ENSURE_REQUIREMENTS, [plan_id=80]
+
+(7) HashAggregate
+Input [2]: [ENAME#65, count#85L]
+Keys [1]: [ENAME#65]
+Functions [1]: [count(1)]
+Aggregate Attributes [1]: [count(1)#62L]
+Results [3]: [count(1)#62L AS c#58L, count(1)#62L AS ck#59L, ENAME#65]
+
+(8) BroadcastExchange
+Input [3]: [c#58L, ck#59L, ENAME#65]
+Arguments: HashedRelationBroadcastMode(List(input[2, string, true]),false), [plan_id=83]
+
+(9) BroadcastHashJoin
+Left keys [1]: [ENAME#39]
+Right keys [1]: [ENAME#65]
+Join type: LeftOuter
+Join condition: None
+
+(10) Project
+Output [11]: [EMPNO#38L, ENAME#39, JOB#40, MGR#41L, HIREDATE#42, SAL#43, COMM#44, DEPTNO#45L, SLACKER#46, c#58L, ck#59L]
+Input [12]: [EMPNO#38L, ENAME#39, JOB#40, MGR#41L, HIREDATE#42, SAL#43, COMM#44, DEPTNO#45L, SLACKER#46, c#58L, ck#59L, ENAME#65]
+
+(11) Scan parquet spark_catalog.default.emp
+Output [3]: [EMPNO#73L, ENAME#74, SAL#78]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/cons_0032_spark_plan_o8idgy4d/emp]
+PushedFilters: [IsNotNull(SAL), GreaterThan(SAL,2.00), IsNotNull(EMPNO), IsNotNull(ENAME)]
+ReadSchema: struct<EMPNO:bigint,ENAME:string,SAL:decimal(10,2)>
+
+(12) Filter
+Input [3]: [EMPNO#73L, ENAME#74, SAL#78]
+Condition : (((isnotnull(SAL#78) AND (SAL#78 > 2.00)) AND isnotnull(EMPNO#73L)) AND isnotnull(ENAME#74))
+
+(13) Project
+Output [3]: [EMPNO#73L, true AS i#61, ENAME#74]
+Input [3]: [EMPNO#73L, ENAME#74, SAL#78]
+
+(14) BroadcastExchange
+Input [3]: [EMPNO#73L, i#61, ENAME#74]
+Arguments: HashedRelationBroadcastMode(List(input[0, bigint, true], input[2, string, true]),false), [plan_id=87]
+
+(15) BroadcastHashJoin
+Left keys [2]: [EMPNO#38L, ENAME#39]
+Right keys [2]: [EMPNO#73L, ENAME#74]
+Join type: LeftOuter
+Join condition: None
+
+(16) Filter
+Input [14]: [EMPNO#38L, ENAME#39, JOB#40, MGR#41L, HIREDATE#42, SAL#43, COMM#44, DEPTNO#45L, SLACKER#46, c#58L, ck#59L, EMPNO#73L, i#61, ENAME#74]
+Condition : ((c#58L = 0) OR NOT ((isnotnull(i#61) OR (ck#59L < c#58L)) <=> true))
+
+(17) Project
+Output [9]: [EMPNO#38L, ENAME#39, JOB#40, MGR#41L, HIREDATE#42, SAL#43, COMM#44, DEPTNO#45L, SLACKER#46]
+Input [14]: [EMPNO#38L, ENAME#39, JOB#40, MGR#41L, HIREDATE#42, SAL#43, COMM#44, DEPTNO#45L, SLACKER#46, c#58L, ck#59L, EMPNO#73L, i#61, ENAME#74]
+
+(18) AdaptiveSparkPlan
+Output [9]: [EMPNO#38L, ENAME#39, JOB#40, MGR#41L, HIREDATE#42, SAL#43, COMM#44, DEPTNO#45L, SLACKER#46]
+Arguments: isFinalPlan=false
+
+

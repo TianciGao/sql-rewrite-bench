@@ -1,0 +1,37 @@
+== Physical Plan ==
+AdaptiveSparkPlan (5)
++- HashAggregate (4)
+   +- Exchange (3)
+      +- HashAggregate (2)
+         +- Scan parquet spark_catalog.default.emp (1)
+
+
+(1) Scan parquet spark_catalog.default.emp
+Output [2]: [EMPNO#12L, DEPTNO#14L]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/cons_0035_spark_plan_zdmgvsea/emp]
+ReadSchema: struct<EMPNO:bigint,DEPTNO:bigint>
+
+(2) HashAggregate
+Input [2]: [EMPNO#12L, DEPTNO#14L]
+Keys [2]: [EMPNO#12L, DEPTNO#14L]
+Functions [1]: [partial_count(1)]
+Aggregate Attributes [1]: [count#23L]
+Results [3]: [EMPNO#12L, DEPTNO#14L, count#24L]
+
+(3) Exchange
+Input [3]: [EMPNO#12L, DEPTNO#14L, count#24L]
+Arguments: hashpartitioning(EMPNO#12L, DEPTNO#14L, 1), ENSURE_REQUIREMENTS, [plan_id=50]
+
+(4) HashAggregate
+Input [3]: [EMPNO#12L, DEPTNO#14L, count#24L]
+Keys [2]: [EMPNO#12L, DEPTNO#14L]
+Functions [1]: [count(1)]
+Aggregate Attributes [1]: [count(1)#21L]
+Results [2]: [EMPNO#12L, count(1)#21L AS count(1)#22L]
+
+(5) AdaptiveSparkPlan
+Output [2]: [EMPNO#12L, count(1)#22L]
+Arguments: isFinalPlan=false
+
+

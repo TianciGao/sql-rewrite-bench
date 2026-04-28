@@ -1,0 +1,64 @@
+{
+  "query_block": {
+    "select_id": 1,
+    "cost_info": {
+      "query_cost": "0.55"
+    },
+    "table": {
+      "table_name": "EMP",
+      "access_type": "ALL",
+      "rows_examined_per_scan": 3,
+      "rows_produced_per_join": 3,
+      "filtered": "100.00",
+      "cost_info": {
+        "read_cost": "0.25",
+        "eval_cost": "0.30",
+        "prefix_cost": "0.55",
+        "data_read_per_join": "912"
+      },
+      "used_columns": [
+        "EMPNO",
+        "ENAME",
+        "JOB",
+        "MGR",
+        "HIREDATE",
+        "SAL",
+        "COMM",
+        "DEPTNO",
+        "SLACKER"
+      ],
+      "attached_condition": "<in_optimizer>(`bench`.`EMP`.`EMPNO`,<exists>(/* select#2 */ select `bench`.`EMP`.`EMPNO` from `bench`.`EMP` where ((`bench`.`EMP`.`SAL` > 2.00) and (`bench`.`EMP`.`ENAME` = `bench`.`EMP`.`ENAME`) and <if>(outer_field_is_not_null, ((<cache>(`bench`.`EMP`.`EMPNO`) = `bench`.`EMP`.`EMPNO`) or (`bench`.`EMP`.`EMPNO` is null)), true)) having <if>(outer_field_is_not_null, <is_not_null_test>(`bench`.`EMP`.`EMPNO`), true)) is false)",
+      "attached_subqueries": [
+        {
+          "dependent": true,
+          "cacheable": false,
+          "query_block": {
+            "select_id": 2,
+            "cost_info": {
+              "query_cost": "0.55"
+            },
+            "table": {
+              "table_name": "EMP",
+              "access_type": "ALL",
+              "rows_examined_per_scan": 3,
+              "rows_produced_per_join": 1,
+              "filtered": "33.33",
+              "cost_info": {
+                "read_cost": "0.45",
+                "eval_cost": "0.10",
+                "prefix_cost": "0.55",
+                "data_read_per_join": "304"
+              },
+              "used_columns": [
+                "EMPNO",
+                "ENAME",
+                "SAL"
+              ],
+              "attached_condition": "((`bench`.`EMP`.`SAL` > 2.00) and (`bench`.`EMP`.`ENAME` = `bench`.`EMP`.`ENAME`) and <if>(outer_field_is_not_null, ((<cache>(`bench`.`EMP`.`EMPNO`) = `bench`.`EMP`.`EMPNO`) or (`bench`.`EMP`.`EMPNO` is null)), true))"
+            }
+          }
+        }
+      ]
+    }
+  }
+}

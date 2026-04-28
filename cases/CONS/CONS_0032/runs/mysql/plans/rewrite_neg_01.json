@@ -1,0 +1,59 @@
+{
+  "query_block": {
+    "select_id": 1,
+    "cost_info": {
+      "query_cost": "1.30"
+    },
+    "nested_loop": [
+      {
+        "table": {
+          "table_name": "EMP",
+          "access_type": "ALL",
+          "rows_examined_per_scan": 3,
+          "rows_produced_per_join": 3,
+          "filtered": "100.00",
+          "cost_info": {
+            "read_cost": "0.25",
+            "eval_cost": "0.30",
+            "prefix_cost": "0.55",
+            "data_read_per_join": "912"
+          },
+          "used_columns": [
+            "EMPNO",
+            "ENAME",
+            "JOB",
+            "MGR",
+            "HIREDATE",
+            "SAL",
+            "COMM",
+            "DEPTNO",
+            "SLACKER"
+          ]
+        }
+      },
+      {
+        "table": {
+          "table_name": "EMP",
+          "access_type": "ALL",
+          "rows_examined_per_scan": 3,
+          "rows_produced_per_join": 3,
+          "filtered": "33.33",
+          "first_match": "EMP",
+          "using_join_buffer": "hash join",
+          "cost_info": {
+            "read_cost": "0.45",
+            "eval_cost": "0.30",
+            "prefix_cost": "1.30",
+            "data_read_per_join": "912"
+          },
+          "used_columns": [
+            "EMPNO",
+            "ENAME",
+            "SAL"
+          ],
+          "attached_condition": "((`bench`.`EMP`.`ENAME` = `bench`.`EMP`.`ENAME`) and (`bench`.`EMP`.`EMPNO` = `bench`.`EMP`.`EMPNO`) and (`bench`.`EMP`.`SAL` > 2.00))"
+        }
+      }
+    ]
+  }
+}

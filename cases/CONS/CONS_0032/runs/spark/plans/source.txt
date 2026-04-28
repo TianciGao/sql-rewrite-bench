@@ -1,0 +1,46 @@
+== Physical Plan ==
+AdaptiveSparkPlan (7)
++- BroadcastHashJoin LeftAnti BuildRight (6)
+   :- Scan parquet spark_catalog.default.emp (1)
+   +- BroadcastExchange (5)
+      +- Project (4)
+         +- Filter (3)
+            +- Scan parquet spark_catalog.default.emp (2)
+
+
+(1) Scan parquet spark_catalog.default.emp
+Output [9]: [EMPNO#38L, ENAME#39, JOB#40, MGR#41L, HIREDATE#42, SAL#43, COMM#44, DEPTNO#45L, SLACKER#46]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/cons_0032_spark_plan_o8idgy4d/emp]
+ReadSchema: struct<EMPNO:bigint,ENAME:string,JOB:string,MGR:bigint,HIREDATE:date,SAL:decimal(10,2),COMM:decimal(10,2),DEPTNO:bigint,SLACKER:boolean>
+
+(2) Scan parquet spark_catalog.default.emp
+Output [3]: [EMPNO#48L, ENAME#49, SAL#53]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/cons_0032_spark_plan_o8idgy4d/emp]
+PushedFilters: [IsNotNull(SAL), GreaterThan(SAL,2.00)]
+ReadSchema: struct<EMPNO:bigint,ENAME:string,SAL:decimal(10,2)>
+
+(3) Filter
+Input [3]: [EMPNO#48L, ENAME#49, SAL#53]
+Condition : (isnotnull(SAL#53) AND (SAL#53 > 2.00))
+
+(4) Project
+Output [2]: [EMPNO#48L, ENAME#49]
+Input [3]: [EMPNO#48L, ENAME#49, SAL#53]
+
+(5) BroadcastExchange
+Input [2]: [EMPNO#48L, ENAME#49]
+Arguments: HashedRelationBroadcastMode(List(input[1, string, true]),false), [plan_id=31]
+
+(6) BroadcastHashJoin
+Left keys [1]: [ENAME#39]
+Right keys [1]: [ENAME#49]
+Join type: LeftAnti
+Join condition: ((EMPNO#38L = EMPNO#48L) OR isnull((EMPNO#38L = EMPNO#48L)))
+
+(7) AdaptiveSparkPlan
+Output [9]: [EMPNO#38L, ENAME#39, JOB#40, MGR#41L, HIREDATE#42, SAL#43, COMM#44, DEPTNO#45L, SLACKER#46]
+Arguments: isFinalPlan=false
+
+
