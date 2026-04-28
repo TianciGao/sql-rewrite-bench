@@ -10,12 +10,15 @@ target_engines:
   - mysql
   - spark
 official_case_status: draft_constructed
-registry_status: not_registered
-validation_status: not_validated
+registry_status: staged_registered
+validation_status: draft_cross_dialect_evidence_tracked
 admission_status: not_under_review
-package_engineering_status: draft_package_constructed
-validated_engines: []
-tri_engine_closure: no
+package_engineering_status: draft_package_constructed_with_tracked_result_evidence
+validated_engines:
+  - mysql
+  - pg
+  - spark
+tri_engine_closure: yes
 expected_line: candidate_only
 draft_origin: PORT_PARROT_DRAFT_0011
 artifacts:
@@ -24,9 +27,10 @@ artifacts:
   rewrite_neg_pg_like: rewrite_neg_01.sql
   rewrite_pos_spark_like: rewrite_pos_02_spark.sql
   rewrite_neg_spark_like: rewrite_neg_02_spark.sql
+  result_check: runs/result_check.json
   provenance_record: provenance/parrot_source_record.json
   provenance_notes: provenance/provenance_notes.txt
   checker: validation/checker.yaml
   taxonomy_trial: taxonomy_trial_v0.3.yaml
-next_gap: human review, witness implementation, checker implementation, tri-engine validation, registry writeback if successful
-artifact_warning: registry intentionally unchanged; this draft package is not registered, not validated, and not admitted
+next_gap: human review, plan evidence, portability review packet, and later admission decision
+artifact_warning: registry updated conservatively for tracked draft cross-dialect evidence only; this package is not admitted, not release-hardened, and not formal-review-finished
