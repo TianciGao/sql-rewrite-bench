@@ -1,0 +1,122 @@
+== Physical Plan ==
+AdaptiveSparkPlan (19)
++- Project (18)
+   +- Filter (17)
+      +- BroadcastHashJoin LeftOuter BuildRight (16)
+         :- Filter (2)
+         :  +- Scan parquet spark_catalog.default.emp (1)
+         +- BroadcastExchange (15)
+            +- HashAggregate (14)
+               +- HashAggregate (13)
+                  +- Project (12)
+                     +- BroadcastNestedLoopJoin Inner BuildRight (11)
+                        :- HashAggregate (7)
+                        :  +- Exchange (6)
+                        :     +- HashAggregate (5)
+                        :        +- Filter (4)
+                        :           +- Scan parquet spark_catalog.default.emp (3)
+                        +- BroadcastExchange (10)
+                           +- Filter (9)
+                              +- Scan parquet spark_catalog.default.bonus (8)
+
+
+(1) Scan parquet spark_catalog.default.emp
+Output [3]: [empno#61, sal#66, comm#67]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/cons_0023_spark_plan_zpy_l8ft/emp]
+PushedFilters: [IsNotNull(comm)]
+ReadSchema: struct<empno:int,sal:decimal(10,2),comm:decimal(10,2)>
+
+(2) Filter
+Input [3]: [empno#61, sal#66, comm#67]
+Condition : isnotnull(comm#67)
+
+(3) Scan parquet spark_catalog.default.emp
+Output [1]: [sal#66]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/cons_0023_spark_plan_zpy_l8ft/emp]
+PushedFilters: [IsNotNull(sal)]
+ReadSchema: struct<sal:decimal(10,2)>
+
+(4) Filter
+Input [1]: [sal#66]
+Condition : isnotnull(sal#66)
+
+(5) HashAggregate
+Input [1]: [sal#66]
+Keys [1]: [sal#66]
+Functions: []
+Aggregate Attributes: []
+Results [1]: [sal#66]
+
+(6) Exchange
+Input [1]: [sal#66]
+Arguments: hashpartitioning(sal#66, 1), ENSURE_REQUIREMENTS, [plan_id=307]
+
+(7) HashAggregate
+Input [1]: [sal#66]
+Keys [1]: [sal#66]
+Functions: []
+Aggregate Attributes: []
+Results [1]: [sal#66 AS sal#102]
+
+(8) Scan parquet spark_catalog.default.bonus
+Output [1]: [sal#72]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/cons_0023_spark_plan_zpy_l8ft/bonus]
+PushedFilters: [IsNotNull(sal)]
+ReadSchema: struct<sal:decimal(10,2)>
+
+(9) Filter
+Input [1]: [sal#72]
+Condition : isnotnull(sal#72)
+
+(10) BroadcastExchange
+Input [1]: [sal#72]
+Arguments: IdentityBroadcastMode, [plan_id=310]
+
+(11) BroadcastNestedLoopJoin
+Join type: Inner
+Join condition: (sal#72 > sal#102)
+
+(12) Project
+Output [1]: [sal#102]
+Input [2]: [sal#102, sal#72]
+
+(13) HashAggregate
+Input [1]: [sal#102]
+Keys [1]: [sal#102]
+Functions [1]: [partial_count(1)]
+Aggregate Attributes [1]: [count#105L]
+Results [2]: [sal#102, count#106L]
+
+(14) HashAggregate
+Input [2]: [sal#102, count#106L]
+Keys [1]: [sal#102]
+Functions [1]: [count(1)]
+Aggregate Attributes [1]: [count(1)#100L]
+Results [3]: [count(1)#100L AS count(1)#101L, sal#102, true AS alwaysTrue#103]
+
+(15) BroadcastExchange
+Input [3]: [count(1)#101L, sal#102, alwaysTrue#103]
+Arguments: HashedRelationBroadcastMode(List(coalesce(input[1, decimal(10,2), true], 0.00), isnull(input[1, decimal(10,2), true])),false), [plan_id=316]
+
+(16) BroadcastHashJoin
+Left keys [2]: [coalesce(sal#66, 0.00), isnull(sal#66)]
+Right keys [2]: [coalesce(sal#102, 0.00), isnull(sal#102)]
+Join type: LeftOuter
+Join condition: None
+
+(17) Filter
+Input [6]: [empno#61, sal#66, comm#67, count(1)#101L, sal#102, alwaysTrue#103]
+Condition : (cast(comm#67 as decimal(22,2)) > if (isnull(alwaysTrue#103)) 0.00 else cast(count(1)#101L as decimal(22,2)))
+
+(18) Project
+Output [2]: [empno#61, sal#66]
+Input [6]: [empno#61, sal#66, comm#67, count(1)#101L, sal#102, alwaysTrue#103]
+
+(19) AdaptiveSparkPlan
+Output [2]: [empno#61, sal#66]
+Arguments: isFinalPlan=false
+
+

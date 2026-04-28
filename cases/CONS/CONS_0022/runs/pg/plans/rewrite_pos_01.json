@@ -1,0 +1,41 @@
+[
+  {
+    "Plan": {
+      "Node Type": "Result",
+      "Parallel Aware": false,
+      "Async Capable": false,
+      "Startup Cost": 0.03,
+      "Total Cost": 13.43,
+      "Plan Rows": 340,
+      "Plan Width": 82,
+      "One-Time Filter": "(InitPlan 1).col1",
+      "Plans": [
+        {
+          "Node Type": "Seq Scan",
+          "Parent Relationship": "InitPlan",
+          "Subplan Name": "InitPlan 1",
+          "Parallel Aware": false,
+          "Async Capable": false,
+          "Relation Name": "dept",
+          "Alias": "d",
+          "Startup Cost": 0.00,
+          "Total Cost": 14.10,
+          "Plan Rows": 410,
+          "Plan Width": 0
+        },
+        {
+          "Node Type": "Seq Scan",
+          "Parent Relationship": "Outer",
+          "Parallel Aware": false,
+          "Async Capable": false,
+          "Relation Name": "emp",
+          "Alias": "e1",
+          "Startup Cost": 0.03,
+          "Total Cost": 13.43,
+          "Plan Rows": 340,
+          "Plan Width": 82
+        }
+      ]
+    }
+  }
+]

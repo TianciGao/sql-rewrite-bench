@@ -1,0 +1,71 @@
+{
+  "query_block": {
+    "select_id": 1,
+    "cost_info": {
+      "query_cost": "2.65"
+    },
+    "duplicates_removal": {
+      "using_temporary_table": true,
+      "nested_loop": [
+        {
+          "table": {
+            "table_name": "D",
+            "access_type": "ALL",
+            "rows_examined_per_scan": 1,
+            "rows_produced_per_join": 1,
+            "filtered": "100.00",
+            "cost_info": {
+              "read_cost": "0.25",
+              "eval_cost": "0.10",
+              "prefix_cost": "0.35",
+              "data_read_per_join": "264"
+            },
+            "used_columns": [
+              "loc"
+            ]
+          }
+        },
+        {
+          "table": {
+            "table_name": "E1",
+            "access_type": "ALL",
+            "rows_examined_per_scan": 2,
+            "rows_produced_per_join": 2,
+            "filtered": "100.00",
+            "using_join_buffer": "hash join",
+            "cost_info": {
+              "read_cost": "0.25",
+              "eval_cost": "0.20",
+              "prefix_cost": "0.80",
+              "data_read_per_join": "576"
+            },
+            "used_columns": [
+              "ename",
+              "job"
+            ]
+          }
+        },
+        {
+          "table": {
+            "table_name": "B",
+            "access_type": "ALL",
+            "rows_examined_per_scan": 1,
+            "rows_produced_per_join": 2,
+            "filtered": "100.00",
+            "using_join_buffer": "hash join",
+            "cost_info": {
+              "read_cost": "0.25",
+              "eval_cost": "0.20",
+              "prefix_cost": "2.65",
+              "data_read_per_join": "544"
+            },
+            "used_columns": [
+              "job"
+            ],
+            "attached_condition": "<if>(is_not_null_compl(B), ((`bench`.`D`.`loc` = 'NEW YORK') or (`bench`.`B`.`job` = `bench`.`E1`.`job`)), true)"
+          }
+        }
+      ]
+    }
+  }
+}
