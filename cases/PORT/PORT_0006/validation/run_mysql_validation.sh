@@ -38,13 +38,5 @@ run_query() {
   } | mysql_cmd --batch --raw --skip-column-names > "${out_file}"
 }
 
+# MySQL is the source-reference engine for this portability case.
 run_query "${CASE_DIR}/source.sql" "${RUN_DIR}/source.tsv"
-run_query "${CASE_DIR}/rewrite_pos_01.sql" "${RUN_DIR}/rewrite_pos_01.tsv"
-run_query "${CASE_DIR}/rewrite_neg_01.sql" "${RUN_DIR}/rewrite_neg_01.tsv"
-
-python "${CASE_DIR}/validation/check_results.py" \
-  mysql \
-  "${RUN_DIR}/source.tsv" \
-  "${RUN_DIR}/rewrite_pos_01.tsv" \
-  "${RUN_DIR}/rewrite_neg_01.tsv" \
-  "${RUN_DIR}/result_check.json"

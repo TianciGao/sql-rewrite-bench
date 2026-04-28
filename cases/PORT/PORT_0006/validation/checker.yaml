@@ -1,33 +1,46 @@
 status: draft_only
 not_executed: true
-source_vs_positive_check_required: true
-source_vs_negative_check_required: true
-source_query: source.sql
-positive_queries:
-  - rewrite_pos_01.sql
-  - rewrite_pos_02_spark.sql
-negative_queries:
-  - rewrite_neg_01.sql
-  - rewrite_neg_02_spark.sql
-expected_positive_relation: equivalent_pending_execution
-expected_negative_relation: non_equivalent_pending_execution
-engines_pending:
-  - pg
-  - mysql
-  - spark
+validation_model: cross_dialect_reference
+source_reference:
+  engine: mysql
+  query_file: source.sql
+  output: runs/mysql/source.tsv
+target_positive_checks:
+  - engine: pg
+    query_file: rewrite_pos_01.sql
+    output: runs/pg/rewrite_pos_01.tsv
+    compare_to: runs/mysql/source.tsv
+    expected_relation: equivalent_pending_execution
+  - engine: spark
+    query_file: rewrite_pos_02_spark.sql
+    output: runs/spark/rewrite_pos_02_spark.tsv
+    compare_to: runs/mysql/source.tsv
+    expected_relation: equivalent_pending_execution
+target_negative_checks:
+  - engine: pg
+    query_file: rewrite_neg_01.sql
+    output: runs/pg/rewrite_neg_01.tsv
+    compare_to: runs/mysql/source.tsv
+    expected_relation: non_equivalent_pending_execution
+  - engine: spark
+    query_file: rewrite_neg_02_spark.sql
+    output: runs/spark/rewrite_neg_02_spark.tsv
+    compare_to: runs/mysql/source.tsv
+    expected_relation: non_equivalent_pending_execution
 normalization_notes:
   - normalize scalar numeric output before comparison
   - preserve percentage semantics instead of raw text formatting
+  - cross-engine numeric text may need normalization before equality checks
   - null text normalization may be required if a null status witness row is used
-  - boolean expressions should be reviewed for engine-specific coercion differences before execution
 result_ordering_assumptions:
   - result is scalar, so row-order sensitivity is not expected
-  - the denominator should count the same row set in source and positive rewrites
+  - the MySQL source result is the semantic reference for later PG and Spark checks
 null_handling_assumptions:
   - null status rows should not be counted as status = 'C'
   - boundary amount rows must remain visible so the negative predicate change is testable
 known_risks:
   - boolean coercion semantics are central to the portability story
   - threshold-boundary row design is required for the negative
-  - witness data has not been implemented
+  - witness data is draft-only and not yet loaded
+  - cross-engine numeric formatting may require normalization
   - engine-specific boolean aggregation behavior needs explicit review before execution
