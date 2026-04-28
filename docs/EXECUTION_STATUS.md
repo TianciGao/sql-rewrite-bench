@@ -156,7 +156,7 @@
 
 - anchor packages 稳定
 - 多个 external cases 已达到 formal skeleton complete
-- release-grade completeness 仍明显不足
+- release-grade maturity 仍明显不足
 - canonical AST / logical IR / span→logical→physical mapping 仍是后续深化重点
 
 简言之：
@@ -286,10 +286,11 @@
 | --- | --- | --- | --- | --- | --- |
 | PORT_0001 | `PORT_0001_package.zip` 锚点包（repo 内 portability anchor；非外部 seed） | stable pilot anchor | anchor package（尚未按新 formal skeleton validator 全量回扫） | PostgreSQL / MySQL / Spark | 无 admission 缺口；继续作为 clean portability anchor；若后续统一 package 工艺，再按新 schema / validator 回扫 |
 | PORT_0002 | PARROT / BIRD，`benchmark/BIRD/pg_res.json[0]` | admitted external common-core | formal skeleton complete；release-grade incomplete | PostgreSQL / MySQL / Spark（PG source；MySQL+Spark rewrite closure） | admission 已过；package 骨架已补齐；后续若继续深化，应优先做 portability-specific checker / deeper observability，而不是继续争 admission |
-| PORT_0003 | PARROT / BIRD，`benchmark/BIRD/pg_res.json[3]` | registry-backed staged PARROT / BIRD portability draft with tracked cross-dialect result evidence and tracked draft plan evidence | draft package with tracked result evidence and tracked draft plan evidence；release hardening incomplete | PostgreSQL / MySQL / Spark（PG source reference；MySQL+Spark target positive/negative outputs；`result_check.json` `ok=true`；`plan_check.json` `status=complete`） | 当前仍是 `not_admitted` / `not_under_review` draft，不意味着 admission / common-core movement / formal review completion；plan semantics 也尚未 formal review。后续缺口仍是 human review、portability review-prep packet 与 later admission decision |
-| PORT_0006 | PARROT / BIRD，`benchmark/BIRD/mysql_res.json[22]` | registry-backed staged PARROT / BIRD portability draft with tracked cross-dialect result evidence and tracked draft plan evidence | draft package with tracked result evidence and tracked draft plan evidence；release hardening incomplete | MySQL / PostgreSQL / Spark（MySQL source reference；PG+Spark target positive/negative outputs；`result_check.json` `ok=true`；`plan_check.json` `status=complete`） | 当前仍是 `not_admitted` / `not_under_review` draft，不意味着 admission / common-core movement / formal review completion；plan semantics 也尚未 formal review。后续缺口仍是 human review、portability review-prep packet 与 later admission decision |
+| PORT_0003 | PARROT / BIRD，`benchmark/BIRD/pg_res.json[3]` | registry-backed staged PARROT / BIRD portability draft with tracked cross-dialect result evidence and tracked draft plan evidence | draft package with tracked result evidence and tracked draft plan evidence；release hardening incomplete | PostgreSQL / MySQL / Spark（PG source reference；MySQL+Spark target positive/negative outputs；`result_check.json` `ok=true`；`plan_check.json` `status=complete`） | 当前仍是 `not_admitted` / `not_under_review` draft，不意味着 admission / common-core movement / formal review completion；plan semantics 也尚未 formal review。后续缺口仍是 human review、portability review-prep / later formal review、later admission decision 与 plan semantics not formally reviewed |
+| PORT_0004 | PARROT / BIRD，`benchmark/BIRD/mysql_res.json[3]` | registry-backed staged PARROT / BIRD portability draft with tracked cross-dialect result evidence and tracked draft plan evidence | draft package with tracked result evidence and tracked draft plan evidence；release hardening incomplete | MySQL / PostgreSQL / Spark（MySQL source reference；PG+Spark target positive/negative outputs；`result_check.json` `ok=true`；`plan_check.json` `status=complete`） | 当前仍是 `not_admitted` / `not_under_review` draft，不意味着 admission / common-core movement / formal review completion；plan semantics 也尚未 formal review。后续缺口仍是 human review、portability review-prep / later formal review、later admission decision 与 plan semantics not formally reviewed |
+| PORT_0006 | PARROT / BIRD，`benchmark/BIRD/mysql_res.json[22]` | registry-backed staged PARROT / BIRD portability draft with tracked cross-dialect result evidence and tracked draft plan evidence | draft package with tracked result evidence and tracked draft plan evidence；release hardening incomplete | MySQL / PostgreSQL / Spark（MySQL source reference；PG+Spark target positive/negative outputs；`result_check.json` `ok=true`；`plan_check.json` `status=complete`） | 当前仍是 `not_admitted` / `not_under_review` draft，不意味着 admission / common-core movement / formal review completion；plan semantics 也尚未 formal review。后续缺口仍是 human review、portability review-prep / later formal review、later admission decision 与 plan semantics not formally reviewed |
 
-补充说明：当前 `inventory/case_registry.csv` 已注册 `3` 个 external PORT rows。`PORT_0002` 仍是 admitted external common-core portability reference；`PORT_0003` 与 `PORT_0006` 当前都只是 registry-backed staged PARROT / BIRD portability drafts，并各自带有 tracked cross-dialect result evidence 与 `result_check.json` `ok=true`，以及 tracked draft plan evidence 与 `plan_check.json` `status=complete`。该状态仅表示 tracked draft result / plan evidence 已被回写并纳入当前 dashboard 解释；不意味着 admitted、common-core admitted、formal review complete、release-grade complete，或 plan semantics / portability review-prep packet 已经补齐。live case facts 仍以 `inventory/case_registry.csv` 为准。
+补充说明：当前 `inventory/case_registry.csv` 已注册 `4` 个 external PORT rows。`PORT_0002` 仍是 admitted external common-core portability reference；`PORT_0003`、`PORT_0004` 与 `PORT_0006` 当前都只是 registry-backed staged PARROT / BIRD portability drafts，并各自带有 tracked cross-dialect result evidence 与 `result_check.json` `ok=true`，以及 tracked draft plan evidence 与 `plan_check.json` `status=complete`。`PORT_0005` 与 `PORT_0007` 若在 portability line 解释中被提及，当前仍只应视为 draft packages without registry-backed validation evidence。该状态仅表示 tracked draft result / plan evidence 已被回写并纳入当前 dashboard 解释；不意味着 admitted、common-core admitted、formal review closure、release-grade closure，或 human review / portability review-prep / later formal review / later admission decision / plan semantics review 已经补齐。live case facts 仍以 `inventory/case_registry.csv` 为准。
 
 ### 7.5 快照维护原则
 - 本节只保留代表性 case
@@ -327,7 +328,7 @@
 - **SQLStorm**：`LONGTAIL_0002`，以及当前已注册 tri-engine longtail drafts `LONGTAIL_0003`, `LONGTAIL_0004`, `LONGTAIL_0005`, `LONGTAIL_0007`, `LONGTAIL_0008`, `LONGTAIL_0009`, `LONGTAIL_0010`, `LONGTAIL_0011`, `LONGTAIL_0012`, `LONGTAIL_0013`, `LONGTAIL_0014`, `LONGTAIL_0015`, `LONGTAIL_0016`, `LONGTAIL_0018`, `LONGTAIL_0019`, `LONGTAIL_0020`, `LONGTAIL_0021`
 - **Calcite Seeds**：`CONS_0002`，以及当前已注册 tri-engine consistency drafts `CONS_0005`, `CONS_0006`, `CONS_0007`, `CONS_0008`, `CONS_0009`, `CONS_0010`, `CONS_0011`, `CONS_0012`, `CONS_0013`, `CONS_0014`, `CONS_0015`, `CONS_0016`, `CONS_0017`, `CONS_0018`, `CONS_0019`, `CONS_0020`, `CONS_0021`, `CONS_0022`, `CONS_0023`, `CONS_0024`, `CONS_0025`, `CONS_0026`, `CONS_0027`, `CONS_0028`, `CONS_0029`, `CONS_0030`
 - **VeriEQL**：legacy partials `CONS_0003`, `CONS_0004`，以及当前已注册 tri-engine consistency drafts `CONS_0031`, `CONS_0032`, `CONS_0033`, `CONS_0034`, `CONS_0035`, `CONS_0036`, `CONS_0037`, `CONS_0038`, `CONS_0039`, `CONS_0040`
-- **PARROT**：`PORT_0002`，以及当前已注册 staged portability drafts `PORT_0003`, `PORT_0006`
+- **PARROT**：`PORT_0002`，以及当前已注册 staged portability drafts `PORT_0003`, `PORT_0004`, `PORT_0006`
 
 ### 8.2 解释原则
 本节的作用不是定义“最终 source roster”，而是解释：
@@ -386,7 +387,7 @@
 - 本文件只做快照与解释层回写
 
 ### 10.3 package engineering 与 benchmark maturity 仍未完全解耦
-当前多个 case 已达到 formal skeleton complete，但 release-grade completeness 仍不足。  
+当前多个 case 已达到 formal skeleton complete，但 release-grade maturity 仍不足。
 若不显式区分这两层状态，后续容易在 maturity 判断上发生混读。
 
 ### 10.4 selective deepening 的边界需要继续守住
