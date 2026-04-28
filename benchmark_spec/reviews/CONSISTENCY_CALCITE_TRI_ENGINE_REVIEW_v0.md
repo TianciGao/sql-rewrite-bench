@@ -26,6 +26,12 @@ Current scope:
 - `CONS_0022`
 - `CONS_0023`
 - `CONS_0024`
+- `CONS_0025`
+- `CONS_0026`
+- `CONS_0027`
+- `CONS_0028`
+- `CONS_0029`
+- `CONS_0030`
 
 These cases are the current registry-backed Calcite-derived CONSISTENCY tri-engine draft subset. Live case facts remain in:
 
@@ -55,11 +61,12 @@ It summarizes current registry-backed package and evidence status only. The narr
 
 | group | count | notes |
 | --- | --- | --- |
-| all CONS registry rows | `24` | current registry-backed CONS population |
-| tri-engine CONS rows | `21` | `tri_engine_closure=yes` |
-| Calcite tri-engine draft rows | `20` | current Calcite-derived witness-validated consistency draft set |
+| all CONS registry rows | `30` | current registry-backed CONS population |
+| tri-engine CONS rows | `27` | `tri_engine_closure=yes` |
+| Calcite tri-engine draft rows | `26` | current Calcite-derived witness-validated consistency draft set |
 | manual / legacy anchor | `1` | `CONS_0001` |
 | partial / legacy backlog | `3` | `CONS_0002`, `CONS_0003`, `CONS_0004` |
+| constructed-but-unregistered Calcite backlog | `0` | none after wave-01 / wave-02 / wave-03 repairs |
 
 ---
 
@@ -87,6 +94,12 @@ It summarizes current registry-backed package and evidence status only. The narr
 | `CONS_0022` | `Calcite` | `sub-query.iq EXISTS LEFT JOIN OR predicate` | `outer_join_semantics`, `predicate_scope` | PG/MySQL/Spark result checks all `ok=true` | PG/MySQL/Spark plan checks all `ok=true` | formal skeleton complete; release-grade incomplete | repaired after MySQL compatibility issue |
 | `CONS_0023` | `Calcite` | `sub-query.iq COMM > correlated join count` | `aggregation_semantics` | PG/MySQL/Spark result checks all `ok=true` | PG/MySQL/Spark plan checks all `ok=true` | formal skeleton complete; release-grade incomplete | repaired after MySQL compatibility issue |
 | `CONS_0024` | `Calcite` | `sub-query.iq LEFT JOIN EXISTS HAVING SUM` | `outer_join_semantics`, `aggregation_semantics` | PG/MySQL/Spark result checks all `ok=true` | PG/MySQL/Spark plan checks all `ok=true` | formal skeleton complete; release-grade incomplete | repaired after initial PG witness-discrimination issue |
+| `CONS_0025` | `Calcite` | `sub-query.iq two-level nested dept EXISTS` | `subquery_semantics`, `predicate_scope` | PG/MySQL/Spark result checks all `ok=true` | PG/MySQL/Spark plan checks all `ok=true` | formal skeleton complete; release-grade incomplete | repaired after narrow Spark nested-correlation compatibility issue |
+| `CONS_0026` | `Calcite` | `sub-query.iq scalar group count from correlated subquery` | `aggregation_semantics`, `subquery_semantics` | PG/MySQL/Spark result checks all `ok=true` | PG/MySQL/Spark plan checks all `ok=true` | formal skeleton complete; release-grade incomplete | repaired after narrow Spark correlated-group compatibility issue |
+| `CONS_0027` | `Calcite` | `sub-query.iq EXISTS inner join OR predicate` | `subquery_semantics`, `predicate_scope` | PG/MySQL/Spark result checks all `ok=true` | PG/MySQL/Spark plan checks all `ok=true` | formal skeleton complete; release-grade incomplete | wave-03 direct success; inner-join OR-predicate semantics |
+| `CONS_0028` | `Calcite` | `sub-query.iq COMM > left-join correlated count` | `outer_join_semantics`, `aggregation_semantics` | PG/MySQL/Spark result checks all `ok=true` | PG/MySQL/Spark plan checks all `ok=true` | formal skeleton complete; release-grade incomplete | wave-03 direct success; correlated left-join count variant |
+| `CONS_0029` | `Calcite` | `sub-query.iq LEFT JOIN BONUS EXISTS without NULL filter` | `outer_join_semantics`, `null_semantics` | PG/MySQL/Spark result checks all `ok=true` | PG/MySQL/Spark plan checks all `ok=true` | formal skeleton complete; release-grade incomplete | wave-03 direct success; left-join EXISTS null-sensitivity variant |
+| `CONS_0030` | `Calcite` | `sub-query.iq LEFT JOIN EXISTS HAVING SUM with name condition` | `outer_join_semantics`, `aggregation_semantics`, `predicate_scope` | PG/MySQL/Spark result checks all `ok=true` | PG/MySQL/Spark plan checks all `ok=true` | formal skeleton complete; release-grade incomplete | wave-03 direct success; HAVING + join + name-condition variant |
 
 ---
 
@@ -114,6 +127,12 @@ It summarizes current registry-backed package and evidence status only. The narr
 | `CONS_0022` | `ok=true` | `ok=true` | `ok=true` | `ok=true` | `ok=true` | `ok=true` | `yes` |
 | `CONS_0023` | `ok=true` | `ok=true` | `ok=true` | `ok=true` | `ok=true` | `ok=true` | `yes` |
 | `CONS_0024` | `ok=true` | `ok=true` | `ok=true` | `ok=true` | `ok=true` | `ok=true` | `yes` |
+| `CONS_0025` | `ok=true` | `ok=true` | `ok=true` | `ok=true` | `ok=true` | `ok=true` | `yes` |
+| `CONS_0026` | `ok=true` | `ok=true` | `ok=true` | `ok=true` | `ok=true` | `ok=true` | `yes` |
+| `CONS_0027` | `ok=true` | `ok=true` | `ok=true` | `ok=true` | `ok=true` | `ok=true` | `yes` |
+| `CONS_0028` | `ok=true` | `ok=true` | `ok=true` | `ok=true` | `ok=true` | `ok=true` | `yes` |
+| `CONS_0029` | `ok=true` | `ok=true` | `ok=true` | `ok=true` | `ok=true` | `ok=true` | `yes` |
+| `CONS_0030` | `ok=true` | `ok=true` | `ok=true` | `ok=true` | `ok=true` | `ok=true` | `yes` |
 
 ---
 
@@ -125,6 +144,7 @@ Relative to the current performance-oriented TPC-H, TPC-DS, and JOB / IMDB group
 - stronger concentration of correlated subqueries, EXISTS / NOT EXISTS, IN / NOT IN, scalar-subquery thresholds, and alias-scope cases
 - more direct use of small witness data to prove `source = positive` and `source != negative`
 - broader exposure to null-sensitive, duplicate-sensitive, aggregation-sensitive, predicate-scope, projection-scope, and outer-join-sensitive behaviors
+- wave-03 additions through `CONS_0030` extend the line with more Spark-closed correlated-subquery, join-scope, OR-predicate, and aggregate-sensitive variants without changing the packet's conservative draft status
 
 At a high level, the current Calcite-derived set contributes:
 
@@ -132,7 +152,7 @@ At a high level, the current Calcite-derived set contributes:
 - anti-join and null-sensitive NOT IN behavior
 - outer-join and null-filter correctness coverage
 - aggregate / scalar-predicate and HAVING-sensitive correctness coverage
-- alias-shadow and scope-discipline cases that are less central in the performance families
+- alias-shadow, predicate-scope, and join-scope discipline cases that are less central in the performance families
 
 This is useful even without formal review or admission because it strengthens the benchmark's correctness and semantic-preservation coverage in a way that is distinct from the performance-oriented TPC and JOB lines.
 
@@ -148,7 +168,7 @@ Explicitly excluded from the current Calcite tri-engine packet:
 
 Additional scope notes:
 
-- constructed Calcite wave-01 / wave-02 backlog is now empty after repairs
+- constructed Calcite wave-01 / wave-02 / wave-03 backlog is now empty after repairs
 - remaining candidate pool may still contain unused Calcite drafts, but this packet is limited to the registry-backed tri-engine cases only
 
 ---
@@ -169,7 +189,7 @@ Additional scope notes:
 - Should `CONS_0002` be backfilled into the newer package pattern, or replaced by the stronger later Calcite cohort?
 - Should `CONS_0003` and `CONS_0004` be Spark-closed, or handled instead in a separate VeriEQL-oriented packet?
 - Should taxonomy tags be calibrated before the first human review pass on this line?
-- Should the remaining unused Calcite candidates become a later wave 03?
+- Should the remaining unused Calcite candidates become a later wave beyond the current registry-backed set?
 
 ---
 
@@ -177,8 +197,8 @@ Additional scope notes:
 
 The current Calcite consistency line now has a substantial registry-backed tri-engine draft subset:
 
-- `20` Calcite-derived tri-engine consistency drafts
-- `21` tri-engine CONS cases overall when the manual anchor `CONS_0001` is included
+- `26` Calcite-derived tri-engine consistency drafts
+- `27` tri-engine CONS cases overall when the manual anchor `CONS_0001` is included
 
 That subset is useful for:
 
