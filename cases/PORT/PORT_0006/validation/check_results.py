@@ -62,7 +62,7 @@ def main(argv: list[str]) -> int:
         "status": "validated" if ok else "failed",
         "ok": ok,
         "draft_only": True,
-        "not_executed_in_current_task": True,
+        "compared_existing_outputs": True,
         "expected_future_inputs": EXPECTED_FILES,
         "checks": {
             "pg_positive_equals_mysql_source": pg_positive_equal,
@@ -75,7 +75,8 @@ def main(argv: list[str]) -> int:
             "MySQL source output is treated as the semantic reference.",
             "Scalar results are normalized numerically before comparison.",
             "The checker will fail if any required TSV file is missing.",
-            "No validation was executed in the scaffolding task that created this file.",
+            "This checker compares existing MySQL, PostgreSQL, and Spark TSV outputs only.",
+            "No registry validation or admission claim is implied.",
         ],
     }
     pathlib.Path(json_path).write_text(json.dumps(payload, indent=2) + "\n")
