@@ -7,6 +7,7 @@ REPO_ROOT="$(cd "${CASE_DIR}/../../.." && pwd)"
 RUN_DIR="${CASE_DIR}/runs/mysql"
 
 # DRAFT-ONLY validation scaffold. Do not treat this as executed evidence.
+# MySQL is the source-reference engine for this portability case.
 # shellcheck disable=SC1091
 source "${REPO_ROOT}/scripts/env_mysql.sh"
 
@@ -39,12 +40,3 @@ run_query() {
 }
 
 run_query "${CASE_DIR}/source.sql" "${RUN_DIR}/source.tsv"
-run_query "${CASE_DIR}/rewrite_pos_01.sql" "${RUN_DIR}/rewrite_pos_01.tsv"
-run_query "${CASE_DIR}/rewrite_neg_01.sql" "${RUN_DIR}/rewrite_neg_01.tsv"
-
-python "${CASE_DIR}/validation/check_results.py" \
-  mysql \
-  "${RUN_DIR}/source.tsv" \
-  "${RUN_DIR}/rewrite_pos_01.tsv" \
-  "${RUN_DIR}/rewrite_neg_01.tsv" \
-  "${RUN_DIR}/result_check.json"
