@@ -1,0 +1,108 @@
+== Physical Plan ==
+AdaptiveSparkPlan (6)
++- HashAggregate (5)
+   +- Exchange (4)
+      +- HashAggregate (3)
+         +- Project (2)
+            +- Scan parquet spark_catalog.default.emp (1)
+
+
+(1) Scan parquet spark_catalog.default.emp
+Output [2]: [deptno#23, sal#24]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/cons_0006_spark_plan_u8towp8d/emp]
+ReadSchema: struct<deptno:int,sal:decimal(12,2)>
+
+(2) Project
+Output [9]: [sal#24, CASE WHEN (deptno#23 = 10) THEN sal#24 END AS sal_d10#142, CASE WHEN (deptno#23 = 20) THEN sal#24 ELSE 0.00 END AS sal_d20#143, CASE WHEN (deptno#23 = 20) THEN 1 ELSE 0 END AS cnt_d30#144, CASE WHEN (deptno#23 = 40) THEN 1 ELSE 0 END AS cnt_d40#145, CASE WHEN (deptno#23 = 45) THEN 1 END AS cnt_d45#146, CASE WHEN (deptno#23 = 50) THEN 1 END AS cnt_d50#147, CASE WHEN (deptno#23 = 70) THEN null ELSE 1 END AS sum_null_d70#149, CASE WHEN (deptno#23 = 20) THEN 1 END AS cnt_d20#150]
+Input [2]: [deptno#23, sal#24]
+
+(3) HashAggregate
+Input [9]: [sal#24, sal_d10#142, sal_d20#143, cnt_d30#144, cnt_d40#145, cnt_d45#146, cnt_d50#147, sum_null_d70#149, cnt_d20#150]
+Keys: []
+Functions [10]: [partial_sum(sal#24), partial_sum(sal_d10#142), partial_sum(sal_d20#143), partial_sum(cnt_d30#144), partial_sum(cnt_d40#145), partial_sum(cnt_d45#146), partial_sum(cnt_d50#147), partial_sum(null), partial_sum(sum_null_d70#149), partial_sum(cnt_d20#150)]
+Aggregate Attributes [14]: [sum#178, isEmpty#179, sum#180, isEmpty#181, sum#182, isEmpty#183, sum#184L, sum#185L, sum#186L, sum#187L, sum#188, isEmpty#189, sum#190L, sum#191L]
+Results [14]: [sum#192, isEmpty#193, sum#194, isEmpty#195, sum#196, isEmpty#197, sum#198L, sum#199L, sum#200L, sum#201L, sum#202, isEmpty#203, sum#204L, sum#205L]
+
+(4) Exchange
+Input [14]: [sum#192, isEmpty#193, sum#194, isEmpty#195, sum#196, isEmpty#197, sum#198L, sum#199L, sum#200L, sum#201L, sum#202, isEmpty#203, sum#204L, sum#205L]
+Arguments: SinglePartition, ENSURE_REQUIREMENTS, [plan_id=118]
+
+(5) HashAggregate
+Input [14]: [sum#192, isEmpty#193, sum#194, isEmpty#195, sum#196, isEmpty#197, sum#198L, sum#199L, sum#200L, sum#201L, sum#202, isEmpty#203, sum#204L, sum#205L]
+Keys: []
+Functions [10]: [sum(sal#24), sum(sal_d10#142), sum(sal_d20#143), sum(cnt_d30#144), sum(cnt_d40#145), sum(cnt_d45#146), sum(cnt_d50#147), sum(null), sum(sum_null_d70#149), sum(cnt_d20#150)]
+Aggregate Attributes [10]: [sum(sal#24)#163, sum(sal_d10#142)#164, sum(sal_d20#143)#165, sum(cnt_d30#144)#166L, sum(cnt_d40#145)#167L, sum(cnt_d45#146)#168L, sum(cnt_d50#147)#169L, sum(null)#170, sum(sum_null_d70#149)#171L, sum(cnt_d20#150)#172L]
+Results [11]: [sum(sal#24)#163 AS sum_sal#151, Subquery subquery#152, [id=#115] AS count_distinct_clerk#153L, sum(sal_d10#142)#164 AS sum_sal_d10#154, sum(sal_d20#143)#165 AS sum_sal_d20#155, sum(cnt_d30#144)#166L AS count_d30#156L, sum(cnt_d40#145)#167L AS count_d40#157L, sum(cnt_d45#146)#168L AS count_d45#158L, sum(cnt_d50#147)#169L AS count_d50#159L, sum(null)#170 AS sum_null_d60#160, sum(sum_null_d70#149)#171L AS sum_null_d70#161L, sum(cnt_d20#150)#172L AS count_d20#162L]
+
+(6) AdaptiveSparkPlan
+Output [11]: [sum_sal#151, count_distinct_clerk#153L, sum_sal_d10#154, sum_sal_d20#155, count_d30#156L, count_d40#157L, count_d45#158L, count_d50#159L, sum_null_d60#160, sum_null_d70#161L, count_d20#162L]
+Arguments: isFinalPlan=false
+
+===== Subqueries =====
+
+Subquery:1 Hosting operator id = 5 Hosting Expression = Subquery subquery#152, [id=#115]
+AdaptiveSparkPlan (15)
++- HashAggregate (14)
+   +- HashAggregate (13)
+      +- HashAggregate (12)
+         +- Exchange (11)
+            +- HashAggregate (10)
+               +- Project (9)
+                  +- Filter (8)
+                     +- Scan parquet spark_catalog.default.emp (7)
+
+
+(7) Scan parquet spark_catalog.default.emp
+Output [2]: [deptno#175, job#177]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/cons_0006_spark_plan_u8towp8d/emp]
+PushedFilters: [IsNotNull(job), EqualTo(job,CLERK)]
+ReadSchema: struct<deptno:int,job:string>
+
+(8) Filter
+Input [2]: [deptno#175, job#177]
+Condition : (isnotnull(job#177) AND (job#177 = CLERK))
+
+(9) Project
+Output [1]: [deptno#175]
+Input [2]: [deptno#175, job#177]
+
+(10) HashAggregate
+Input [1]: [deptno#175]
+Keys [1]: [deptno#175]
+Functions: []
+Aggregate Attributes: []
+Results [1]: [deptno#175]
+
+(11) Exchange
+Input [1]: [deptno#175]
+Arguments: hashpartitioning(deptno#175, 1), ENSURE_REQUIREMENTS, [plan_id=111]
+
+(12) HashAggregate
+Input [1]: [deptno#175]
+Keys [1]: [deptno#175]
+Functions: []
+Aggregate Attributes: []
+Results [1]: [deptno#175]
+
+(13) HashAggregate
+Input [1]: [deptno#175]
+Keys: []
+Functions [1]: [partial_count(distinct deptno#175)]
+Aggregate Attributes [1]: [count(deptno#175)#173L]
+Results [1]: [count#208L]
+
+(14) HashAggregate
+Input [1]: [count#208L]
+Keys: []
+Functions [1]: [count(distinct deptno#175)]
+Aggregate Attributes [1]: [count(deptno#175)#173L]
+Results [1]: [count(deptno#175)#173L AS count(DISTINCT deptno)#174L]
+
+(15) AdaptiveSparkPlan
+Output [1]: [count(DISTINCT deptno)#174L]
+Arguments: isFinalPlan=false
+
+
+

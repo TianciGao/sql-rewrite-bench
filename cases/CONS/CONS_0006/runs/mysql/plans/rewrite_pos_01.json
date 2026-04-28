@@ -1,0 +1,55 @@
+{
+  "query_block": {
+    "select_id": 1,
+    "cost_info": {
+      "query_cost": "0.75"
+    },
+    "table": {
+      "table_name": "emp",
+      "access_type": "ALL",
+      "rows_examined_per_scan": 5,
+      "rows_produced_per_join": 5,
+      "filtered": "100.00",
+      "cost_info": {
+        "read_cost": "0.25",
+        "eval_cost": "0.50",
+        "prefix_cost": "0.75",
+        "data_read_per_join": "720"
+      },
+      "used_columns": [
+        "deptno",
+        "sal"
+      ]
+    },
+    "select_list_subqueries": [
+      {
+        "dependent": false,
+        "cacheable": true,
+        "query_block": {
+          "select_id": 2,
+          "cost_info": {
+            "query_cost": "0.75"
+          },
+          "table": {
+            "table_name": "emp",
+            "access_type": "ALL",
+            "rows_examined_per_scan": 5,
+            "rows_produced_per_join": 1,
+            "filtered": "20.00",
+            "cost_info": {
+              "read_cost": "0.65",
+              "eval_cost": "0.10",
+              "prefix_cost": "0.75",
+              "data_read_per_join": "144"
+            },
+            "used_columns": [
+              "deptno",
+              "job"
+            ],
+            "attached_condition": "(`bench`.`emp`.`job` = 'CLERK')"
+          }
+        }
+      }
+    ]
+  }
+}

@@ -19,7 +19,7 @@ FROM (
     CASE WHEN deptno = 40 THEN 1 ELSE 0 END AS cnt_d40,
     CASE WHEN deptno = 45 THEN 1 ELSE NULL END AS cnt_d45,
     CASE WHEN deptno = 50 THEN 1 ELSE NULL END AS cnt_d50,
-    CASE WHEN deptno = 60 THEN NULL ELSE NULL END AS sum_null_d60,
+    CASE WHEN deptno = 60 THEN CAST(NULL AS DECIMAL(12,2)) ELSE CAST(NULL AS DECIMAL(12,2)) END AS sum_null_d60,
     CASE WHEN deptno = 70 THEN NULL ELSE 1 END AS sum_null_d70,
     CASE WHEN deptno = 20 THEN 1 ELSE NULL END AS cnt_d20
   FROM emp
