@@ -20,6 +20,8 @@ live_facts:
   - cases/PORT/PORT_0010/runs/plan_check.json
   - cases/PORT/PORT_0011/runs/result_check.json
   - cases/PORT/PORT_0011/runs/plan_check.json
+  - cases/PORT/PORT_0014/runs/result_check.json
+  - cases/PORT/PORT_0014/runs/plan_check.json
 frozen_decisions:
   - benchmark_spec/decision_log.md
 ---
@@ -40,18 +42,18 @@ Covered cases:
 - `PORT_0009`
 - `PORT_0010`
 - `PORT_0011`
+- `PORT_0014`
 
 Explicitly excluded cases:
 
 - `PORT_0007`
 - `PORT_0012`
 - `PORT_0013`
-- `PORT_0014`
 - `PORT_0015`
 - `PORT_0016`
 - `PORT_0017`
 
-Those excluded cases are not covered here because they remain draft packages without registry-backed validation evidence in the current repository status layer.
+Those excluded cases are not covered here because they remain outside the current registry-backed staged PARROT tri-engine draft subset used in this review-prep packet.
 
 ---
 
@@ -87,6 +89,7 @@ Nothing in this document should be read as an admission, common-core, or formal 
 | `PORT_0009` | `BIRD` / `benchmark/BIRD/pg_res.json[6]` | PostgreSQL | MySQL, Spark | `draft_result_artifacts_present`, `ok=true` | `draft_plan_artifacts_present`, `ok=true` | registry-backed staged draft; `staged_not_yet_admitted`; `not_yet_admitted`; `not_under_review` | human review; portability review-prep packet follow-through; later admission decision; plan semantics not formally reviewed |
 | `PORT_0010` | `BIRD` / `benchmark/BIRD/pg_res.json[10]` | PostgreSQL | MySQL, Spark | `draft_result_artifacts_present`, `ok=true` | `draft_plan_artifacts_present`, `ok=true` | registry-backed staged draft; `staged_not_yet_admitted`; `not_yet_admitted`; `not_under_review` | human review; portability review-prep packet follow-through; later admission decision; plan semantics not formally reviewed |
 | `PORT_0011` | `BIRD` / `benchmark/BIRD/pg_res.json[11]` | PostgreSQL | MySQL, Spark | `draft_result_artifacts_present`, `ok=true` | `draft_plan_artifacts_present`, `ok=true` | registry-backed staged draft; `staged_not_yet_admitted`; `not_yet_admitted`; `not_under_review` | human review; portability review-prep packet follow-through; later admission decision; plan semantics not formally reviewed |
+| `PORT_0014` | `BIRD` / `benchmark/BIRD/mysql_res.json[25]` | MySQL | PostgreSQL, Spark | `validated`, `ok=true` | `complete` | registry-backed staged draft; `staged_not_yet_admitted`; `not_yet_admitted`; `not_under_review` | human review; portability review-prep packet follow-through; later admission decision; plan semantics not formally reviewed |
 
 ---
 
@@ -252,6 +255,26 @@ Nothing in this document should be read as an admission, common-core, or formal 
 - Plan evidence summary:
   `cases/PORT/PORT_0011/runs/plan_check.json`
 
+### 4.9 `PORT_0014`
+
+- Source reference output:
+  `cases/PORT/PORT_0014/runs/mysql/source.tsv`
+- Target positive / negative outputs:
+  - `cases/PORT/PORT_0014/runs/pg/rewrite_pos_01.tsv`
+  - `cases/PORT/PORT_0014/runs/pg/rewrite_neg_01.tsv`
+  - `cases/PORT/PORT_0014/runs/spark/rewrite_pos_01.tsv`
+  - `cases/PORT/PORT_0014/runs/spark/rewrite_neg_01.tsv`
+- Result evidence summary:
+  `cases/PORT/PORT_0014/runs/result_check.json`
+- Plan files by engine:
+  - MySQL: `cases/PORT/PORT_0014/runs/mysql/plans/source.json`
+  - PostgreSQL: `cases/PORT/PORT_0014/runs/pg/plans/rewrite_pos_01.json`
+  - PostgreSQL: `cases/PORT/PORT_0014/runs/pg/plans/rewrite_neg_01.json`
+  - Spark: `cases/PORT/PORT_0014/runs/spark/plans/rewrite_pos_01.txt`
+  - Spark: `cases/PORT/PORT_0014/runs/spark/plans/rewrite_neg_01.txt`
+- Plan evidence summary:
+  `cases/PORT/PORT_0014/runs/plan_check.json`
+
 ---
 
 ## 5. Validation Model
@@ -314,6 +337,13 @@ The covered cases use a **cross-dialect reference model**.
 - Positive rewrites must equal the PostgreSQL source reference.
 - Negative rewrites must differ from the PostgreSQL source reference.
 
+### 5.9 `PORT_0014`
+
+- MySQL source output is the semantic reference.
+- PostgreSQL and Spark run target rewrites only.
+- Positive rewrites must equal the MySQL source reference.
+- Negative rewrites must differ from the MySQL source reference.
+
 This validation model supports draft portability evidence, but by itself it does not imply admission or formal review completion.
 
 ---
@@ -337,6 +367,7 @@ Case-level status within that boundary:
 - `PORT_0009`: `result_check.json` `ok=true`; `plan_check.json` indicates tracked draft plan artifacts are present; plan semantics not formally reviewed
 - `PORT_0010`: `result_check.json` `ok=true`; `plan_check.json` indicates tracked draft plan artifacts are present; plan semantics not formally reviewed
 - `PORT_0011`: `result_check.json` `ok=true`; `plan_check.json` indicates tracked draft plan artifacts are present; plan semantics not formally reviewed
+- `PORT_0014`: `result_check.json` `ok=true`; `plan_check.json` `status=complete`; plan semantics not formally reviewed
 
 The current plan evidence is therefore useful as review-prep input, not as a completed portability judgment.
 
@@ -362,6 +393,7 @@ Case-local design notes also continue to point to portability-specific risk surf
 - `PORT_0009`: date-time semantics and pagination / limit-offset portability risk
 - `PORT_0010`: date-time semantics and boolean semantics portability risk
 - `PORT_0011`: null semantics and pagination / limit-offset portability risk
+- `PORT_0014`: boolean semantics portability risk
 
 These risks are consistent with keeping all covered cases staged while using the tracked draft evidence to prepare a later formal review.
 
@@ -379,6 +411,7 @@ Current recommendation:
 - keep `PORT_0009` as `staged_not_yet_admitted`
 - keep `PORT_0010` as `staged_not_yet_admitted`
 - keep `PORT_0011` as `staged_not_yet_admitted`
+- keep `PORT_0014` as `staged_not_yet_admitted`
 - use this packet as the basis for a later formal portability review
 - do not promote or admit any covered case yet
 
