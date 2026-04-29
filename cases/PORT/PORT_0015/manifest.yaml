@@ -1,0 +1,45 @@
+case_id: PORT_0015
+primary_pool: portability
+source_family: PARROT
+source_id: SRC_009
+source_subset: BIRD
+source_entry_pointer: datasets/raw/parrot/PARROT/benchmark/BIRD/mysql_res.json[41]
+source_dialect: mysql_like_candidate
+portability_focus:
+  - aggregate_edge_case
+target_engines:
+  - pg
+  - mysql
+  - spark
+official_case_status: draft_constructed
+registry_status: not_registered
+validation_status: not_validated
+admission_status: not_under_review
+package_engineering_status: draft_package_constructed
+draft_origin: PORT_DRAFT_0017
+validated_engines: []
+tri_engine_closure: no
+expected_line: candidate_only
+required_tables:
+  - league
+  - match_tbl
+artifacts:
+  source_sql: source.sql
+  rewrite_pos_01: rewrite_pos_01.sql
+  rewrite_neg_01: rewrite_neg_01.sql
+  provenance_record: provenance/parrot_source_record.json
+  provenance_notes: provenance/provenance_notes.txt
+  pg_schema: schema/ddl_pg.sql
+  mysql_schema: schema/ddl_mysql.sql
+  spark_schema: schema/ddl_spark.sql
+  pg_witness_data: validation/pg_witness_data.sql
+  mysql_witness_data: validation/mysql_witness_data.sql
+  spark_witness_data: validation/spark_witness_data.sql
+  run_pg_validation: validation/run_pg_validation.sh
+  run_pg_plan_collection: validation/run_pg_plan_collection.sh
+  run_mysql_validation: validation/run_mysql_validation.sh
+  run_mysql_plan_collection: validation/run_mysql_plan_collection.sh
+  run_spark_validation: validation/run_spark_validation.sh
+  run_spark_plan_collection: validation/run_spark_plan_collection.sh
+next_gap: human review, witness execution, tri-engine validation, registry writeback if later evidence succeeds, and later plan-semantics review
+artifact_warning: draft-only case-local package; not registered, not validated, not admitted, and not formal-review-complete

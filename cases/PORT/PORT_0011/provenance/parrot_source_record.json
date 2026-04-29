@@ -1,0 +1,17 @@
+{
+  "case_id": "PORT_0011",
+  "draft_id": "PORT_DRAFT_0006",
+  "source_file_path": "datasets/raw/parrot/PARROT/benchmark/BIRD/pg_res.json",
+  "source_record_index": 11,
+  "source_sql_field": "pg",
+  "target_sql_field": "cracksql",
+  "source_record_subset": {
+    "pg": "SELECT \"t2\".\"event_name\" FROM \"budget\" AS \"t1\" INNER JOIN \"event\" AS \"t2\" ON \"t2\".\"event_id\" = \"t1\".\"link_to_event\" WHERE \"t1\".\"event_status\" = 'Closed' AND \"t1\".\"remaining\" < 0 ORDER BY \"t1\".\"remaining\" NULLS FIRST LIMIT 1",
+    "cracksql": "SELECT `t2`.`event_name` FROM `budget` AS `t1` INNER JOIN `event` AS `t2` ON `t2`.`event_id` = `t1`.`link_to_event` WHERE `t1`.`event_status` = 'Closed' AND `t1`.`remaining` < 0 ORDER BY `t1`.`remaining` ASC LIMIT 1",
+    "result_preview": [
+      {
+        "event_name": "September Speaker"
+      }
+    ]
+  }
+}

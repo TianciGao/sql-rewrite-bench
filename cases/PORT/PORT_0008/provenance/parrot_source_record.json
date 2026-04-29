@@ -1,0 +1,18 @@
+{
+  "case_id": "PORT_0008",
+  "draft_id": "PORT_DRAFT_0002",
+  "source_file_path": "datasets/raw/parrot/PARROT/benchmark/BIRD/pg_res.json",
+  "source_record_index": 4,
+  "source_sql_field": "pg",
+  "target_sql_field": "cracksql",
+  "source_record_subset": {
+    "pg": "SELECT \"t2\".\"admemail1\" , \"t2\".\"admemail2\" FROM \"frpm\" AS \"t1\" INNER JOIN \"schools\" AS \"t2\" ON \"t1\".\"cdscode\" = \"t2\".\"cdscode\" WHERE \"t2\".\"county\" = 'San Bernardino' AND \"t2\".\"city\" = 'San Bernardino' AND \"t2\".\"doc\" :: integer = 54 AND EXTRACT( YEAR FROM \"t2\".\"opendate\" ) BETWEEN 2009 AND 2010 AND \"t2\".\"soc\" :: integer = 62",
+    "cracksql": "SELECT `t2`.`admemail1`, `t2`.`admemail2` FROM `frpm` AS `t1` INNER JOIN `schools` AS `t2` ON `t1`.`cdscode` = `t2`.`cdscode` WHERE `t2`.`county` = 'San Bernardino' AND `t2`.`city` = 'San Bernardino' AND `t2`.`doc` = 54 AND YEAR(`t2`.`opendate`) BETWEEN 2009 AND 2010 AND `t2`.`soc` = 62",
+    "result_preview": [
+      {
+        "admemail1": "a.lucero@realjourney.org",
+        "admemail2": "j.hernandez@realjourney.org"
+      }
+    ]
+  }
+}

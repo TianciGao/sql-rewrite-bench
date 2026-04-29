@@ -1,0 +1,23 @@
+{
+  "case_id": "PORT_0016",
+  "draft_id": "PORT_DRAFT_0018",
+  "source_file_path": "datasets/raw/parrot/PARROT/benchmark/BIRD/mysql_res.json",
+  "source_record_index": 44,
+  "source_sql_field": "mysql",
+  "target_sql_field": "cracksql",
+  "source_record_subset": {
+    "mysql": "SELECT `name` FROM `races` WHERE DATE_FORMAT( CAST( `date` AS DATETIME ) , '%Y' ) = ( SELECT DATE_FORMAT( CAST( `date` AS DATETIME ) , '%Y' ) FROM `races` ORDER BY `date` ASC LIMIT 1 ) AND DATE_FORMAT( CAST( `date` AS DATETIME ) , '%m' ) = ( SELECT DATE_FORMAT( CAST( `date` AS DATETIME ) , '%m' ) FROM `races` ORDER BY `date` ASC LIMIT 1 )",
+    "cracksql": "SELECT \"name\" FROM \"races\" WHERE EXTRACT(YEAR FROM CAST( \"date\" AS TIMESTAMP )) = ( SELECT EXTRACT(YEAR FROM CAST(\"date\" AS TIMESTAMP)) FROM \"races\" ORDER BY \"date\" ASC LIMIT 1 ) AND EXTRACT(MONTH FROM CAST(\"date\" AS TIMESTAMP)) = ( SELECT EXTRACT(MONTH FROM CAST(\"date\" AS TIMESTAMP)) FROM \"races\" ORDER BY \"date\" ASC LIMIT 1 )",
+    "result_preview": [
+      {
+        "name": "British Grand Prix"
+      },
+      {
+        "name": "Monaco Grand Prix"
+      },
+      {
+        "name": "Indianapolis 500"
+      }
+    ]
+  }
+}
