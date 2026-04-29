@@ -1,0 +1,17 @@
+{
+  "case_id": "PORT_0022",
+  "draft_id": "PORT_DRAFT_0025",
+  "source_file_path": "datasets/raw/parrot/PARROT/benchmark/BIRD/mysql_res.json",
+  "source_record_index": 0,
+  "source_sql_field": "mysql",
+  "target_sql_field": "cracksql",
+  "source_record_subset": {
+    "mysql": "SELECT CAST( COUNT( `t1`.`id` ) AS DOUBLE ) / 12 FROM `postlinks` AS `t1` INNER JOIN `posts` AS `t2` ON `t1`.`postid` = `t2`.`id` WHERE `t2`.`answercount` <= 2 AND DATE_FORMAT( CAST( `t1`.`creationdate` AS DATETIME ) , '%Y' ) = '2010'\n",
+    "cracksql": "SELECT CAST( COUNT( \"t1\".\"id\" ) AS DOUBLE PRECISION ) / 12 FROM \"postlinks\" AS \"t1\" INNER JOIN \"posts\" AS \"t2\" ON \"t1\".\"postid\" = \"t2\".\"id\" WHERE \"t2\".\"answercount\" <= 2 AND EXTRACT(YEAR FROM CAST( \"t1\".\"creationdate\" AS TIMESTAMP )) = '2010'",
+    "result_preview": [
+      {
+        "CAST( COUNT( `t1`.`id` ) AS DOUBLE ) / 12": 8.666666666666666
+      }
+    ]
+  }
+}
