@@ -5,6 +5,7 @@ CASE_ID="PORT_0015"
 CASE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 REPO_ROOT="$(cd "${CASE_DIR}/../../.." && pwd)"
 RUN_DIR="${CASE_DIR}/runs/mysql"
+DB_NAME="${CASE_ID,,}_validation"
 
 # DRAFT-ONLY validation scaffold. Do not treat this as executed evidence.
 # shellcheck disable=SC1091
@@ -22,10 +23,12 @@ mysql_cmd() {
 }
 
 mkdir -p "${RUN_DIR}"
+rm -f "${RUN_DIR}/source.tsv" "${RUN_DIR}/rewrite_pos_01.tsv" "${RUN_DIR}/rewrite_neg_01.tsv"
 
 {
-  printf 'use `%s`;
-' "${MYSQL_DATABASE}"
+  printf 'drop database if exists `%s`;\n' "${DB_NAME}"
+  printf 'create database `%s`;\n' "${DB_NAME}"
+  printf 'use `%s`;\n' "${DB_NAME}"
   cat "${CASE_DIR}/schema/ddl_mysql.sql"
   cat "${CASE_DIR}/validation/mysql_witness_data.sql"
 } | mysql_cmd --batch --raw --skip-column-names >/dev/null
@@ -34,8 +37,7 @@ run_query() {
   local sql_file="$1"
   local out_file="$2"
   {
-    printf 'use `%s`;
-' "${MYSQL_DATABASE}"
+    printf 'use `%s`;\n' "${DB_NAME}"
     cat "${sql_file}"
   } | mysql_cmd --batch --raw --skip-column-names > "${out_file}"
 }
