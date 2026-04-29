@@ -82,8 +82,8 @@ try:
     for stmt in read_statements(case_dir / "validation/spark_witness_data.sql"):
         spark.sql(stmt)
 
-    (plan_dir / "rewrite_pos_01.txt").write_text(collect_plan_text(spark, case_dir / "rewrite_pos_01.sql"))
-    (plan_dir / "rewrite_neg_01.txt").write_text(collect_plan_text(spark, case_dir / "rewrite_neg_01.sql"))
+    (plan_dir / "rewrite_pos_01.txt").write_text(collect_plan_text(spark, case_dir / "rewrite_pos_02_spark.sql"))
+    (plan_dir / "rewrite_neg_01.txt").write_text(collect_plan_text(spark, case_dir / "rewrite_neg_02_spark.sql"))
 finally:
     spark.stop()
 PY2
