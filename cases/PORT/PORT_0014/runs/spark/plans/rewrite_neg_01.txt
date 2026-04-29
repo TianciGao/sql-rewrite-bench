@@ -1,0 +1,48 @@
+== Physical Plan ==
+AdaptiveSparkPlan (7)
++- HashAggregate (6)
+   +- Exchange (5)
+      +- HashAggregate (4)
+         +- Project (3)
+            +- Filter (2)
+               +- Scan parquet spark_catalog.port_0014_spark_plan_collection.customers (1)
+
+
+(1) Scan parquet spark_catalog.port_0014_spark_plan_collection.customers
+Output [2]: [currency#10, segment#11]
+Batched: true
+Location: InMemoryFileIndex [file:/home/tianci_gao/code/sql-rewrite-bench/cases/PORT/PORT_0014/runs/spark/plans/_tmp_spark_plan_collection/warehouse/port_0014_spark_plan_collection.db/customers]
+PushedFilters: [IsNotNull(segment), EqualTo(segment,SME)]
+ReadSchema: struct<currency:string,segment:string>
+
+(2) Filter
+Input [2]: [currency#10, segment#11]
+Condition : (isnotnull(segment#11) AND (segment#11 = SME))
+
+(3) Project
+Output [1]: [currency#10]
+Input [2]: [currency#10, segment#11]
+
+(4) HashAggregate
+Input [1]: [currency#10]
+Keys: []
+Functions [2]: [partial_count(CASE WHEN (currency#10 = EUR) THEN 1 END), partial_count(CASE WHEN (currency#10 = CZK) THEN 1 END)]
+Aggregate Attributes [2]: [count#23L, count#24L]
+Results [2]: [count#25L, count#26L]
+
+(5) Exchange
+Input [2]: [count#25L, count#26L]
+Arguments: SinglePartition, ENSURE_REQUIREMENTS, [plan_id=56]
+
+(6) HashAggregate
+Input [2]: [count#25L, count#26L]
+Keys: []
+Functions [2]: [count(CASE WHEN (currency#10 = EUR) THEN 1 END), count(CASE WHEN (currency#10 = CZK) THEN 1 END)]
+Aggregate Attributes [2]: [count(CASE WHEN (currency#10 = EUR) THEN 1 END)#20L, count(CASE WHEN (currency#10 = CZK) THEN 1 END)#21L]
+Results [1]: [(count(CASE WHEN (currency#10 = EUR) THEN 1 END)#20L - count(CASE WHEN (currency#10 = CZK) THEN 1 END)#21L) AS (count(CASE WHEN (currency = EUR) THEN 1 END) - count(CASE WHEN (currency = CZK) THEN 1 END))#22L]
+
+(7) AdaptiveSparkPlan
+Output [1]: [(count(CASE WHEN (currency = EUR) THEN 1 END) - count(CASE WHEN (currency = CZK) THEN 1 END))#22L]
+Arguments: isFinalPlan=false
+
+
