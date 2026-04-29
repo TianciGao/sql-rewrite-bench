@@ -73,8 +73,8 @@ try:
     for stmt in read_statements(case_dir / "validation/spark_witness_data.sql"):
         spark.sql(stmt)
 
-    positive = spark.sql(read_query(case_dir / "rewrite_pos_01.sql")).collect()
-    negative = spark.sql(read_query(case_dir / "rewrite_neg_01.sql")).collect()
+    positive = spark.sql(read_query(case_dir / "rewrite_pos_02_spark.sql")).collect()
+    negative = spark.sql(read_query(case_dir / "rewrite_neg_02_spark.sql")).collect()
 
     write_rows(run_dir / "rewrite_pos_01.tsv", positive)
     write_rows(run_dir / "rewrite_neg_01.tsv", negative)
