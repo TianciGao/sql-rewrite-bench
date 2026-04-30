@@ -1,0 +1,132 @@
+== Physical Plan ==
+AdaptiveSparkPlan (21)
++- HashAggregate (20)
+   +- Exchange (19)
+      +- HashAggregate (18)
+         +- Project (17)
+            +- BroadcastHashJoin Inner BuildRight (16)
+               :- Project (8)
+               :  +- BroadcastHashJoin Inner BuildLeft (7)
+               :     :- BroadcastExchange (4)
+               :     :  +- Project (3)
+               :     :     +- Filter (2)
+               :     :        +- Scan parquet spark_catalog.default.part (1)
+               :     +- Filter (6)
+               :        +- Scan parquet spark_catalog.default.lineitem (5)
+               +- BroadcastExchange (15)
+                  +- Filter (14)
+                     +- HashAggregate (13)
+                        +- Exchange (12)
+                           +- HashAggregate (11)
+                              +- Filter (10)
+                                 +- Scan parquet spark_catalog.default.lineitem (9)
+
+
+(1) Scan parquet spark_catalog.default.part
+Output [3]: [p_partkey#35, p_brand#36, p_container#37]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/perf_0021_spark_plan_3xpx_785/part]
+PushedFilters: [IsNotNull(p_brand), IsNotNull(p_container), EqualTo(p_brand,Brand#31), EqualTo(p_container,JUMBO BOX), IsNotNull(p_partkey)]
+ReadSchema: struct<p_partkey:int,p_brand:string,p_container:string>
+
+(2) Filter
+Input [3]: [p_partkey#35, p_brand#36, p_container#37]
+Condition : ((((isnotnull(p_brand#36) AND isnotnull(p_container#37)) AND (p_brand#36 = Brand#31)) AND (p_container#37 = JUMBO BOX)) AND isnotnull(p_partkey#35))
+
+(3) Project
+Output [1]: [p_partkey#35]
+Input [3]: [p_partkey#35, p_brand#36, p_container#37]
+
+(4) BroadcastExchange
+Input [1]: [p_partkey#35]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, true] as bigint)),false), [plan_id=259]
+
+(5) Scan parquet spark_catalog.default.lineitem
+Output [3]: [l_partkey#32, l_extendedprice#33, l_quantity#34]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/perf_0021_spark_plan_3xpx_785/lineitem]
+PushedFilters: [IsNotNull(l_partkey), IsNotNull(l_quantity)]
+ReadSchema: struct<l_partkey:int,l_extendedprice:decimal(15,2),l_quantity:decimal(15,2)>
+
+(6) Filter
+Input [3]: [l_partkey#32, l_extendedprice#33, l_quantity#34]
+Condition : (isnotnull(l_partkey#32) AND isnotnull(l_quantity#34))
+
+(7) BroadcastHashJoin
+Left keys [1]: [p_partkey#35]
+Right keys [1]: [l_partkey#32]
+Join type: Inner
+Join condition: None
+
+(8) Project
+Output [3]: [p_partkey#35, l_extendedprice#33, l_quantity#34]
+Input [4]: [p_partkey#35, l_partkey#32, l_extendedprice#33, l_quantity#34]
+
+(9) Scan parquet spark_catalog.default.lineitem
+Output [2]: [l_partkey#72, l_quantity#74]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/perf_0021_spark_plan_3xpx_785/lineitem]
+PushedFilters: [IsNotNull(l_partkey)]
+ReadSchema: struct<l_partkey:int,l_quantity:decimal(15,2)>
+
+(10) Filter
+Input [2]: [l_partkey#72, l_quantity#74]
+Condition : isnotnull(l_partkey#72)
+
+(11) HashAggregate
+Input [2]: [l_partkey#72, l_quantity#74]
+Keys [1]: [l_partkey#72]
+Functions [1]: [partial_avg(l_quantity#74)]
+Aggregate Attributes [2]: [sum#82, count#83L]
+Results [3]: [l_partkey#72, sum#84, count#85L]
+
+(12) Exchange
+Input [3]: [l_partkey#72, sum#84, count#85L]
+Arguments: hashpartitioning(l_partkey#72, 1), ENSURE_REQUIREMENTS, [plan_id=262]
+
+(13) HashAggregate
+Input [3]: [l_partkey#72, sum#84, count#85L]
+Keys [1]: [l_partkey#72]
+Functions [1]: [avg(l_quantity#74)]
+Aggregate Attributes [1]: [avg(l_quantity#74)#75]
+Results [2]: [l_partkey#72, avg(l_quantity#74)#75 AS avg_quantity#70]
+
+(14) Filter
+Input [2]: [l_partkey#72, avg_quantity#70]
+Condition : isnotnull(avg_quantity#70)
+
+(15) BroadcastExchange
+Input [2]: [l_partkey#72, avg_quantity#70]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, true] as bigint)),false), [plan_id=266]
+
+(16) BroadcastHashJoin
+Left keys [1]: [p_partkey#35]
+Right keys [1]: [l_partkey#72]
+Join type: Inner
+Join condition: (cast(l_quantity#34 as decimal(21,7)) < (0.2 * avg_quantity#70))
+
+(17) Project
+Output [1]: [l_extendedprice#33]
+Input [5]: [p_partkey#35, l_extendedprice#33, l_quantity#34, l_partkey#72, avg_quantity#70]
+
+(18) HashAggregate
+Input [1]: [l_extendedprice#33]
+Keys: []
+Functions [1]: [partial_sum(l_extendedprice#33)]
+Aggregate Attributes [2]: [sum#78, isEmpty#79]
+Results [2]: [sum#80, isEmpty#81]
+
+(19) Exchange
+Input [2]: [sum#80, isEmpty#81]
+Arguments: SinglePartition, ENSURE_REQUIREMENTS, [plan_id=271]
+
+(20) HashAggregate
+Input [2]: [sum#80, isEmpty#81]
+Keys: []
+Functions [1]: [sum(l_extendedprice#33)]
+Aggregate Attributes [1]: [sum(l_extendedprice#33)#77]
+Results [1]: [(sum(l_extendedprice#33)#77 / 7.0) AS avg_yearly#71]
+
+(21) AdaptiveSparkPlan
+Output [1]: [avg_yearly#71]
+Arguments: isFinalPlan=false

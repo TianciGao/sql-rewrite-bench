@@ -1,0 +1,200 @@
+== Physical Plan ==
+AdaptiveSparkPlan (33)
++- TakeOrderedAndProject (32)
+   +- HashAggregate (31)
+      +- Exchange (30)
+         +- HashAggregate (29)
+            +- Project (28)
+               +- BroadcastHashJoin Inner BuildRight (27)
+                  :- Project (22)
+                  :  +- BroadcastHashJoin Inner BuildRight (21)
+                  :     :- Project (16)
+                  :     :  +- BroadcastHashJoin Inner BuildRight (15)
+                  :     :     :- Filter (2)
+                  :     :     :  +- Scan parquet spark_catalog.default.supplier (1)
+                  :     :     +- BroadcastExchange (14)
+                  :     :        +- BroadcastHashJoin LeftAnti BuildRight (13)
+                  :     :           :- BroadcastHashJoin LeftSemi BuildRight (8)
+                  :     :           :  :- Project (5)
+                  :     :           :  :  +- Filter (4)
+                  :     :           :  :     +- Scan parquet spark_catalog.default.lineitem (3)
+                  :     :           :  +- BroadcastExchange (7)
+                  :     :           :     +- Scan parquet spark_catalog.default.lineitem (6)
+                  :     :           +- BroadcastExchange (12)
+                  :     :              +- Project (11)
+                  :     :                 +- Filter (10)
+                  :     :                    +- Scan parquet spark_catalog.default.lineitem (9)
+                  :     +- BroadcastExchange (20)
+                  :        +- Project (19)
+                  :           +- Filter (18)
+                  :              +- Scan parquet spark_catalog.default.orders (17)
+                  +- BroadcastExchange (26)
+                     +- Project (25)
+                        +- Filter (24)
+                           +- Scan parquet spark_catalog.default.nation (23)
+
+
+(1) Scan parquet spark_catalog.default.supplier
+Output [3]: [s_suppkey#59, s_name#60, s_nationkey#61]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/perf_0025_spark_plan_zga5p_8_/supplier]
+PushedFilters: [IsNotNull(s_suppkey), IsNotNull(s_nationkey)]
+ReadSchema: struct<s_suppkey:int,s_name:string,s_nationkey:int>
+
+(2) Filter
+Input [3]: [s_suppkey#59, s_name#60, s_nationkey#61]
+Condition : (isnotnull(s_suppkey#59) AND isnotnull(s_nationkey#61))
+
+(3) Scan parquet spark_catalog.default.lineitem
+Output [4]: [l_orderkey#62, l_suppkey#63, l_receiptdate#64, l_commitdate#65]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/perf_0025_spark_plan_zga5p_8_/lineitem]
+PushedFilters: [IsNotNull(l_receiptdate), IsNotNull(l_commitdate), IsNotNull(l_suppkey), IsNotNull(l_orderkey)]
+ReadSchema: struct<l_orderkey:int,l_suppkey:int,l_receiptdate:date,l_commitdate:date>
+
+(4) Filter
+Input [4]: [l_orderkey#62, l_suppkey#63, l_receiptdate#64, l_commitdate#65]
+Condition : ((((isnotnull(l_receiptdate#64) AND isnotnull(l_commitdate#65)) AND (l_receiptdate#64 > l_commitdate#65)) AND isnotnull(l_suppkey#63)) AND isnotnull(l_orderkey#62))
+
+(5) Project
+Output [2]: [l_orderkey#62, l_suppkey#63]
+Input [4]: [l_orderkey#62, l_suppkey#63, l_receiptdate#64, l_commitdate#65]
+
+(6) Scan parquet spark_catalog.default.lineitem
+Output [2]: [l_orderkey#90, l_suppkey#91]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/perf_0025_spark_plan_zga5p_8_/lineitem]
+ReadSchema: struct<l_orderkey:int,l_suppkey:int>
+
+(7) BroadcastExchange
+Input [2]: [l_orderkey#90, l_suppkey#91]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, true] as bigint)),false), [plan_id=280]
+
+(8) BroadcastHashJoin
+Left keys [1]: [l_orderkey#62]
+Right keys [1]: [l_orderkey#90]
+Join type: LeftSemi
+Join condition: NOT (l_suppkey#91 = l_suppkey#63)
+
+(9) Scan parquet spark_catalog.default.lineitem
+Output [4]: [l_orderkey#94, l_suppkey#95, l_receiptdate#96, l_commitdate#97]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/perf_0025_spark_plan_zga5p_8_/lineitem]
+PushedFilters: [IsNotNull(l_receiptdate), IsNotNull(l_commitdate)]
+ReadSchema: struct<l_orderkey:int,l_suppkey:int,l_receiptdate:date,l_commitdate:date>
+
+(10) Filter
+Input [4]: [l_orderkey#94, l_suppkey#95, l_receiptdate#96, l_commitdate#97]
+Condition : ((isnotnull(l_receiptdate#96) AND isnotnull(l_commitdate#97)) AND (l_receiptdate#96 > l_commitdate#97))
+
+(11) Project
+Output [2]: [l_orderkey#94, l_suppkey#95]
+Input [4]: [l_orderkey#94, l_suppkey#95, l_receiptdate#96, l_commitdate#97]
+
+(12) BroadcastExchange
+Input [2]: [l_orderkey#94, l_suppkey#95]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, true] as bigint)),false), [plan_id=283]
+
+(13) BroadcastHashJoin
+Left keys [1]: [l_orderkey#62]
+Right keys [1]: [l_orderkey#94]
+Join type: LeftAnti
+Join condition: NOT (l_suppkey#95 = l_suppkey#63)
+
+(14) BroadcastExchange
+Input [2]: [l_orderkey#62, l_suppkey#63]
+Arguments: HashedRelationBroadcastMode(List(cast(input[1, int, true] as bigint)),false), [plan_id=286]
+
+(15) BroadcastHashJoin
+Left keys [1]: [s_suppkey#59]
+Right keys [1]: [l_suppkey#63]
+Join type: Inner
+Join condition: None
+
+(16) Project
+Output [3]: [s_name#60, s_nationkey#61, l_orderkey#62]
+Input [5]: [s_suppkey#59, s_name#60, s_nationkey#61, l_orderkey#62, l_suppkey#63]
+
+(17) Scan parquet spark_catalog.default.orders
+Output [2]: [o_orderkey#66, o_orderstatus#67]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/perf_0025_spark_plan_zga5p_8_/orders]
+PushedFilters: [IsNotNull(o_orderstatus), EqualTo(o_orderstatus,F), IsNotNull(o_orderkey)]
+ReadSchema: struct<o_orderkey:int,o_orderstatus:string>
+
+(18) Filter
+Input [2]: [o_orderkey#66, o_orderstatus#67]
+Condition : ((isnotnull(o_orderstatus#67) AND (o_orderstatus#67 = F)) AND isnotnull(o_orderkey#66))
+
+(19) Project
+Output [1]: [o_orderkey#66]
+Input [2]: [o_orderkey#66, o_orderstatus#67]
+
+(20) BroadcastExchange
+Input [1]: [o_orderkey#66]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, true] as bigint)),false), [plan_id=290]
+
+(21) BroadcastHashJoin
+Left keys [1]: [l_orderkey#62]
+Right keys [1]: [o_orderkey#66]
+Join type: Inner
+Join condition: None
+
+(22) Project
+Output [2]: [s_name#60, s_nationkey#61]
+Input [4]: [s_name#60, s_nationkey#61, l_orderkey#62, o_orderkey#66]
+
+(23) Scan parquet spark_catalog.default.nation
+Output [2]: [n_nationkey#68, n_name#69]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/perf_0025_spark_plan_zga5p_8_/nation]
+PushedFilters: [IsNotNull(n_name), EqualTo(n_name,IRAQ), IsNotNull(n_nationkey)]
+ReadSchema: struct<n_nationkey:int,n_name:string>
+
+(24) Filter
+Input [2]: [n_nationkey#68, n_name#69]
+Condition : ((isnotnull(n_name#69) AND (n_name#69 = IRAQ)) AND isnotnull(n_nationkey#68))
+
+(25) Project
+Output [1]: [n_nationkey#68]
+Input [2]: [n_nationkey#68, n_name#69]
+
+(26) BroadcastExchange
+Input [1]: [n_nationkey#68]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, true] as bigint)),false), [plan_id=294]
+
+(27) BroadcastHashJoin
+Left keys [1]: [s_nationkey#61]
+Right keys [1]: [n_nationkey#68]
+Join type: Inner
+Join condition: None
+
+(28) Project
+Output [1]: [s_name#60]
+Input [3]: [s_name#60, s_nationkey#61, n_nationkey#68]
+
+(29) HashAggregate
+Input [1]: [s_name#60]
+Keys [1]: [s_name#60]
+Functions [1]: [partial_count(1)]
+Aggregate Attributes [1]: [count#98L]
+Results [2]: [s_name#60, count#99L]
+
+(30) Exchange
+Input [2]: [s_name#60, count#99L]
+Arguments: hashpartitioning(s_name#60, 1), ENSURE_REQUIREMENTS, [plan_id=299]
+
+(31) HashAggregate
+Input [2]: [s_name#60, count#99L]
+Keys [1]: [s_name#60]
+Functions [1]: [count(1)]
+Aggregate Attributes [1]: [count(1)#87L]
+Results [2]: [s_name#60, count(1)#87L AS numwait#84L]
+
+(32) TakeOrderedAndProject
+Input [2]: [s_name#60, numwait#84L]
+Arguments: 100, [numwait#84L DESC NULLS LAST, s_name#60 ASC NULLS FIRST], [s_name#60, numwait#84L]
+
+(33) AdaptiveSparkPlan
+Output [2]: [s_name#60, numwait#84L]
+Arguments: isFinalPlan=false

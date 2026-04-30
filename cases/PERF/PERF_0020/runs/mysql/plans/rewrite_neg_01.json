@@ -1,0 +1,98 @@
+{
+  "query_block": {
+    "select_id": 1,
+    "cost_info": {
+      "query_cost": "1.82"
+    },
+    "ordering_operation": {
+      "using_filesort": true,
+      "grouping_operation": {
+        "using_temporary_table": true,
+        "using_filesort": true,
+        "buffer_result": {
+          "using_temporary_table": true,
+          "nested_loop": [
+            {
+              "table": {
+                "table_name": "part",
+                "access_type": "ALL",
+                "possible_keys": [
+                  "PRIMARY"
+                ],
+                "rows_examined_per_scan": 4,
+                "rows_produced_per_join": 1,
+                "filtered": "28.12",
+                "cost_info": {
+                  "read_cost": "0.54",
+                  "eval_cost": "0.11",
+                  "prefix_cost": "0.65",
+                  "data_read_per_join": "306"
+                },
+                "used_columns": [
+                  "p_partkey",
+                  "p_brand",
+                  "p_type",
+                  "p_size"
+                ],
+                "attached_condition": "((`bench`.`part`.`p_brand` <> 'Brand#23') and (not((`bench`.`part`.`p_type` like 'SMALL POLISHED%'))) and (`bench`.`part`.`p_size` in (42,9,18,29,36,6,24,17)))"
+              }
+            },
+            {
+              "table": {
+                "table_name": "partsupp",
+                "access_type": "ALL",
+                "rows_examined_per_scan": 5,
+                "rows_produced_per_join": 1,
+                "filtered": "20.00",
+                "using_join_buffer": "hash join",
+                "cost_info": {
+                  "read_cost": "0.25",
+                  "eval_cost": "0.11",
+                  "prefix_cost": "1.46",
+                  "data_read_per_join": "18"
+                },
+                "used_columns": [
+                  "ps_partkey",
+                  "ps_suppkey"
+                ],
+                "attached_condition": "(`bench`.`partsupp`.`ps_partkey` = `bench`.`part`.`p_partkey`)"
+              }
+            },
+            {
+              "table": {
+                "table_name": "supplier",
+                "access_type": "eq_ref",
+                "possible_keys": [
+                  "PRIMARY"
+                ],
+                "key": "PRIMARY",
+                "used_key_parts": [
+                  "s_suppkey"
+                ],
+                "key_length": "4",
+                "ref": [
+                  "bench.partsupp.ps_suppkey"
+                ],
+                "rows_examined_per_scan": 1,
+                "rows_produced_per_join": 1,
+                "filtered": "100.00",
+                "not_exists": true,
+                "cost_info": {
+                  "read_cost": "0.25",
+                  "eval_cost": "0.11",
+                  "prefix_cost": "1.83",
+                  "data_read_per_join": "468"
+                },
+                "used_columns": [
+                  "s_suppkey",
+                  "s_comment"
+                ],
+                "attached_condition": "(<if>(is_not_null_compl(supplier), (`bench`.`supplier`.`s_comment` like '%Customer%Complaints%'), true) and <if>(is_not_null_compl(supplier), <if>(found_match(supplier), false, true), true))"
+              }
+            }
+          ]
+        }
+      }
+    }
+  }
+}

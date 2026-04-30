@@ -1,0 +1,76 @@
+== Physical Plan ==
+AdaptiveSparkPlan (12)
++- HashAggregate (11)
+   +- Exchange (10)
+      +- HashAggregate (9)
+         +- Project (8)
+            +- BroadcastHashJoin Inner BuildLeft (7)
+               :- BroadcastExchange (4)
+               :  +- Project (3)
+               :     +- Filter (2)
+               :        +- Scan parquet spark_catalog.default.lineitem (1)
+               +- Filter (6)
+                  +- Scan parquet spark_catalog.default.part (5)
+
+
+(1) Scan parquet spark_catalog.default.lineitem
+Output [6]: [l_partkey#51, l_extendedprice#52, l_discount#53, l_quantity#54, l_shipmode#55, l_shipinstruct#56]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/perf_0023_spark_plan_n2v9ir89/lineitem]
+PushedFilters: [IsNotNull(l_shipinstruct), In(l_shipmode, [AIR,AIR REG]), EqualTo(l_shipinstruct,DELIVER IN PERSON), IsNotNull(l_partkey), Or(Or(And(GreaterThanOrEqual(l_quantity,5.00),LessThanOrEqual(l_quantity,15.00)),And(GreaterThanOrEqual(l_quantity,17.00),LessThanOrEqual(l_quantity,27.00))),And(GreaterThanOrEqual(l_quantity,29.00),LessThanOrEqual(l_quantity,39.00)))]
+ReadSchema: struct<l_partkey:int,l_extendedprice:decimal(15,2),l_discount:decimal(15,2),l_quantity:decimal(15,2),l_shipmode:string,l_shipinstruct:string>
+
+(2) Filter
+Input [6]: [l_partkey#51, l_extendedprice#52, l_discount#53, l_quantity#54, l_shipmode#55, l_shipinstruct#56]
+Condition : ((((isnotnull(l_shipinstruct#56) AND l_shipmode#55 IN (AIR,AIR REG)) AND (l_shipinstruct#56 = DELIVER IN PERSON)) AND isnotnull(l_partkey#51)) AND ((((l_quantity#54 >= 5.00) AND (l_quantity#54 <= 15.00)) OR ((l_quantity#54 >= 17.00) AND (l_quantity#54 <= 27.00))) OR ((l_quantity#54 >= 29.00) AND (l_quantity#54 <= 39.00))))
+
+(3) Project
+Output [4]: [l_partkey#51, l_extendedprice#52, l_discount#53, l_quantity#54]
+Input [6]: [l_partkey#51, l_extendedprice#52, l_discount#53, l_quantity#54, l_shipmode#55, l_shipinstruct#56]
+
+(4) BroadcastExchange
+Input [4]: [l_partkey#51, l_extendedprice#52, l_discount#53, l_quantity#54]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, true] as bigint)),false), [plan_id=149]
+
+(5) Scan parquet spark_catalog.default.part
+Output [4]: [p_partkey#57, p_brand#58, p_container#59, p_size#60]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/perf_0023_spark_plan_n2v9ir89/part]
+PushedFilters: [IsNotNull(p_size), GreaterThanOrEqual(p_size,1), IsNotNull(p_partkey), Or(Or(And(And(EqualTo(p_brand,Brand#15),In(p_container, [SM BOX,SM CASE,SM PACK,SM PKG])),LessThanOrEqual(p_size,5)),And(And(EqualTo(p_brand,Brand#13),In(p_container, [MED BAG,MED BOX,MED PACK,MED PKG])),LessThanOrEqual(p_size,10))),And(And(EqualTo(p_brand,Brand#22),In(p_container, [LG BOX,LG CASE,LG PACK,LG PKG])),LessThanOrEqual(p_size,15)))]
+ReadSchema: struct<p_partkey:int,p_brand:string,p_container:string,p_size:int>
+
+(6) Filter
+Input [4]: [p_partkey#57, p_brand#58, p_container#59, p_size#60]
+Condition : (((isnotnull(p_size#60) AND (p_size#60 >= 1)) AND isnotnull(p_partkey#57)) AND (((((p_brand#58 = Brand#15) AND p_container#59 IN (SM CASE,SM BOX,SM PACK,SM PKG)) AND (p_size#60 <= 5)) OR (((p_brand#58 = Brand#13) AND p_container#59 IN (MED BAG,MED BOX,MED PKG,MED PACK)) AND (p_size#60 <= 10))) OR (((p_brand#58 = Brand#22) AND p_container#59 IN (LG CASE,LG BOX,LG PACK,LG PKG)) AND (p_size#60 <= 15))))
+
+(7) BroadcastHashJoin
+Left keys [1]: [l_partkey#51]
+Right keys [1]: [p_partkey#57]
+Join type: Inner
+Join condition: (((((((p_brand#58 = Brand#15) AND p_container#59 IN (SM CASE,SM BOX,SM PACK,SM PKG)) AND (l_quantity#54 >= 5.00)) AND (l_quantity#54 <= 15.00)) AND (p_size#60 <= 5)) OR (((((p_brand#58 = Brand#13) AND p_container#59 IN (MED BAG,MED BOX,MED PKG,MED PACK)) AND (l_quantity#54 >= 17.00)) AND (l_quantity#54 <= 27.00)) AND (p_size#60 <= 10))) OR (((((p_brand#58 = Brand#22) AND p_container#59 IN (LG CASE,LG BOX,LG PACK,LG PKG)) AND (l_quantity#54 >= 29.00)) AND (l_quantity#54 <= 39.00)) AND (p_size#60 <= 15)))
+
+(8) Project
+Output [2]: [l_extendedprice#52, l_discount#53]
+Input [8]: [l_partkey#51, l_extendedprice#52, l_discount#53, l_quantity#54, p_partkey#57, p_brand#58, p_container#59, p_size#60]
+
+(9) HashAggregate
+Input [2]: [l_extendedprice#52, l_discount#53]
+Keys: []
+Functions [1]: [partial_sum((l_extendedprice#52 * (1 - l_discount#53)))]
+Aggregate Attributes [2]: [sum#76, isEmpty#77]
+Results [2]: [sum#78, isEmpty#79]
+
+(10) Exchange
+Input [2]: [sum#78, isEmpty#79]
+Arguments: SinglePartition, ENSURE_REQUIREMENTS, [plan_id=154]
+
+(11) HashAggregate
+Input [2]: [sum#78, isEmpty#79]
+Keys: []
+Functions [1]: [sum((l_extendedprice#52 * (1 - l_discount#53)))]
+Aggregate Attributes [1]: [sum((l_extendedprice#52 * (1 - l_discount#53)))#75]
+Results [1]: [sum((l_extendedprice#52 * (1 - l_discount#53)))#75 AS revenue#74]
+
+(12) AdaptiveSparkPlan
+Output [1]: [revenue#74]
+Arguments: isFinalPlan=false

@@ -1,0 +1,295 @@
+== Physical Plan ==
+AdaptiveSparkPlan (57)
++- Sort (56)
+   +- Exchange (55)
+      +- HashAggregate (54)
+         +- Exchange (53)
+            +- HashAggregate (52)
+               +- Project (51)
+                  +- BroadcastNestedLoopJoin Cross BuildRight (50)
+                     :- Project (24)
+                     :  +- BroadcastHashJoin Inner BuildRight (23)
+                     :     :- Project (6)
+                     :     :  +- BroadcastHashJoin LeftAnti BuildRight (5)
+                     :     :     :- Filter (2)
+                     :     :     :  +- Scan parquet spark_catalog.default.customer (1)
+                     :     :     +- BroadcastExchange (4)
+                     :     :        +- Scan parquet spark_catalog.default.orders (3)
+                     :     +- BroadcastExchange (22)
+                     :        +- Union (21)
+                     :           :- Project (8)
+                     :           :  +- Scan OneRowRelation (7)
+                     :           :- Project (10)
+                     :           :  +- Scan OneRowRelation (9)
+                     :           :- Project (12)
+                     :           :  +- Scan OneRowRelation (11)
+                     :           :- Project (14)
+                     :           :  +- Scan OneRowRelation (13)
+                     :           :- Project (16)
+                     :           :  +- Scan OneRowRelation (15)
+                     :           :- Project (18)
+                     :           :  +- Scan OneRowRelation (17)
+                     :           +- Project (20)
+                     :              +- Scan OneRowRelation (19)
+                     +- BroadcastExchange (49)
+                        +- Filter (48)
+                           +- HashAggregate (47)
+                              +- Exchange (46)
+                                 +- HashAggregate (45)
+                                    +- Project (44)
+                                       +- BroadcastHashJoin Inner BuildRight (43)
+                                          :- Filter (26)
+                                          :  +- Scan parquet spark_catalog.default.customer (25)
+                                          +- BroadcastExchange (42)
+                                             +- Union (41)
+                                                :- Project (28)
+                                                :  +- Scan OneRowRelation (27)
+                                                :- Project (30)
+                                                :  +- Scan OneRowRelation (29)
+                                                :- Project (32)
+                                                :  +- Scan OneRowRelation (31)
+                                                :- Project (34)
+                                                :  +- Scan OneRowRelation (33)
+                                                :- Project (36)
+                                                :  +- Scan OneRowRelation (35)
+                                                :- Project (38)
+                                                :  +- Scan OneRowRelation (37)
+                                                +- Project (40)
+                                                   +- Scan OneRowRelation (39)
+
+
+(1) Scan parquet spark_catalog.default.customer
+Output [3]: [c_custkey#112, c_phone#113, c_acctbal#114]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/perf_0026_spark_plan_bl3zzsq1/customer]
+PushedFilters: [IsNotNull(c_phone), IsNotNull(c_acctbal)]
+ReadSchema: struct<c_custkey:int,c_phone:string,c_acctbal:decimal(15,2)>
+
+(2) Filter
+Input [3]: [c_custkey#112, c_phone#113, c_acctbal#114]
+Condition : (isnotnull(c_phone#113) AND isnotnull(c_acctbal#114))
+
+(3) Scan parquet spark_catalog.default.orders
+Output [1]: [o_custkey#32]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/perf_0026_spark_plan_bl3zzsq1/orders]
+ReadSchema: struct<o_custkey:int>
+
+(4) BroadcastExchange
+Input [1]: [o_custkey#32]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, true] as bigint)),false), [plan_id=541]
+
+(5) BroadcastHashJoin
+Left keys [1]: [c_custkey#112]
+Right keys [1]: [o_custkey#32]
+Join type: LeftAnti
+Join condition: None
+
+(6) Project
+Output [2]: [c_phone#113, c_acctbal#114]
+Input [3]: [c_custkey#112, c_phone#113, c_acctbal#114]
+
+(7) Scan OneRowRelation
+Output: []
+
+(8) Project
+Output [1]: [18 AS cntrycode#115]
+Input: []
+
+(9) Scan OneRowRelation
+Output: []
+
+(10) Project
+Output [1]: [29 AS cntrycode#134]
+Input: []
+
+(11) Scan OneRowRelation
+Output: []
+
+(12) Project
+Output [1]: [21 AS cntrycode#135]
+Input: []
+
+(13) Scan OneRowRelation
+Output: []
+
+(14) Project
+Output [1]: [25 AS cntrycode#136]
+Input: []
+
+(15) Scan OneRowRelation
+Output: []
+
+(16) Project
+Output [1]: [16 AS cntrycode#137]
+Input: []
+
+(17) Scan OneRowRelation
+Output: []
+
+(18) Project
+Output [1]: [10 AS cntrycode#138]
+Input: []
+
+(19) Scan OneRowRelation
+Output: []
+
+(20) Project
+Output [1]: [14 AS cntrycode#139]
+Input: []
+
+(21) Union
+
+(22) BroadcastExchange
+Input [1]: [cntrycode#115]
+Arguments: HashedRelationBroadcastMode(List(input[0, string, false]),false), [plan_id=545]
+
+(23) BroadcastHashJoin
+Left keys [1]: [substring(c_phone#113, 1, 2)]
+Right keys [1]: [cntrycode#115]
+Join type: Inner
+Join condition: None
+
+(24) Project
+Output [2]: [c_phone#113, c_acctbal#114]
+Input [3]: [c_phone#113, c_acctbal#114, cntrycode#115]
+
+(25) Scan parquet spark_catalog.default.customer
+Output [2]: [c_phone#27, c_acctbal#28]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/perf_0026_spark_plan_bl3zzsq1/customer]
+PushedFilters: [IsNotNull(c_acctbal), GreaterThan(c_acctbal,0.00), IsNotNull(c_phone)]
+ReadSchema: struct<c_phone:string,c_acctbal:decimal(15,2)>
+
+(26) Filter
+Input [2]: [c_phone#27, c_acctbal#28]
+Condition : ((isnotnull(c_acctbal#28) AND (c_acctbal#28 > 0.00)) AND isnotnull(c_phone#27))
+
+(27) Scan OneRowRelation
+Output: []
+
+(28) Project
+Output [1]: [18 AS cntrycode#103]
+Input: []
+
+(29) Scan OneRowRelation
+Output: []
+
+(30) Project
+Output [1]: [29 AS 29#106]
+Input: []
+
+(31) Scan OneRowRelation
+Output: []
+
+(32) Project
+Output [1]: [21 AS 21#107]
+Input: []
+
+(33) Scan OneRowRelation
+Output: []
+
+(34) Project
+Output [1]: [25 AS 25#108]
+Input: []
+
+(35) Scan OneRowRelation
+Output: []
+
+(36) Project
+Output [1]: [16 AS 16#109]
+Input: []
+
+(37) Scan OneRowRelation
+Output: []
+
+(38) Project
+Output [1]: [10 AS 10#110]
+Input: []
+
+(39) Scan OneRowRelation
+Output: []
+
+(40) Project
+Output [1]: [14 AS 14#111]
+Input: []
+
+(41) Union
+
+(42) BroadcastExchange
+Input [1]: [cntrycode#103]
+Arguments: HashedRelationBroadcastMode(List(input[0, string, false]),false), [plan_id=548]
+
+(43) BroadcastHashJoin
+Left keys [1]: [substring(c_phone#27, 1, 2)]
+Right keys [1]: [cntrycode#103]
+Join type: Inner
+Join condition: None
+
+(44) Project
+Output [1]: [c_acctbal#28]
+Input [3]: [c_phone#27, c_acctbal#28, cntrycode#103]
+
+(45) HashAggregate
+Input [1]: [c_acctbal#28]
+Keys: []
+Functions [1]: [partial_avg(c_acctbal#28)]
+Aggregate Attributes [2]: [sum#146, count#147L]
+Results [2]: [sum#148, count#149L]
+
+(46) Exchange
+Input [2]: [sum#148, count#149L]
+Arguments: SinglePartition, ENSURE_REQUIREMENTS, [plan_id=553]
+
+(47) HashAggregate
+Input [2]: [sum#148, count#149L]
+Keys: []
+Functions [1]: [avg(c_acctbal#28)]
+Aggregate Attributes [1]: [avg(c_acctbal#28)#117]
+Results [1]: [avg(c_acctbal#28)#117 AS avg_acctbal#104]
+
+(48) Filter
+Input [1]: [avg_acctbal#104]
+Condition : isnotnull(avg_acctbal#104)
+
+(49) BroadcastExchange
+Input [1]: [avg_acctbal#104]
+Arguments: IdentityBroadcastMode, [plan_id=557]
+
+(50) BroadcastNestedLoopJoin
+Join type: Cross
+Join condition: (cast(c_acctbal#114 as decimal(19,6)) > avg_acctbal#104)
+
+(51) Project
+Output [2]: [substring(c_phone#113, 1, 2) AS cntrycode#99, c_acctbal#114]
+Input [3]: [c_phone#113, c_acctbal#114, avg_acctbal#104]
+
+(52) HashAggregate
+Input [2]: [cntrycode#99, c_acctbal#114]
+Keys [1]: [cntrycode#99]
+Functions [2]: [partial_count(1), partial_sum(c_acctbal#114)]
+Aggregate Attributes [3]: [count#140L, sum#141, isEmpty#142]
+Results [4]: [cntrycode#99, count#143L, sum#144, isEmpty#145]
+
+(53) Exchange
+Input [4]: [cntrycode#99, count#143L, sum#144, isEmpty#145]
+Arguments: hashpartitioning(cntrycode#99, 1), ENSURE_REQUIREMENTS, [plan_id=562]
+
+(54) HashAggregate
+Input [4]: [cntrycode#99, count#143L, sum#144, isEmpty#145]
+Keys [1]: [cntrycode#99]
+Functions [2]: [count(1), sum(c_acctbal#114)]
+Aggregate Attributes [2]: [count(1)#105L, sum(c_acctbal#114)#119]
+Results [3]: [cntrycode#99, count(1)#105L AS numcust#101L, sum(c_acctbal#114)#119 AS totacctbal#102]
+
+(55) Exchange
+Input [3]: [cntrycode#99, numcust#101L, totacctbal#102]
+Arguments: rangepartitioning(cntrycode#99 ASC NULLS FIRST, 1), ENSURE_REQUIREMENTS, [plan_id=565]
+
+(56) Sort
+Input [3]: [cntrycode#99, numcust#101L, totacctbal#102]
+Arguments: [cntrycode#99 ASC NULLS FIRST], true, 0
+
+(57) AdaptiveSparkPlan
+Output [3]: [cntrycode#99, numcust#101L, totacctbal#102]
+Arguments: isFinalPlan=false

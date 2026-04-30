@@ -1,0 +1,248 @@
+{
+  "query_block": {
+    "select_id": 1,
+    "cost_info": {
+      "query_cost": "3.60"
+    },
+    "ordering_operation": {
+      "using_filesort": false,
+      "grouping_operation": {
+        "using_temporary_table": true,
+        "using_filesort": true,
+        "cost_info": {
+          "sort_cost": "2.00"
+        },
+        "nested_loop": [
+          {
+            "table": {
+              "table_name": "eligible_avg",
+              "access_type": "system",
+              "rows_examined_per_scan": 1,
+              "rows_produced_per_join": 1,
+              "filtered": "100.00",
+              "cost_info": {
+                "read_cost": "0.00",
+                "eval_cost": "0.10",
+                "prefix_cost": "0.00",
+                "data_read_per_join": "16"
+              },
+              "used_columns": [
+                "avg_acctbal"
+              ],
+              "materialized_from_subquery": {
+                "using_temporary_table": true,
+                "dependent": false,
+                "cacheable": true,
+                "query_block": {
+                  "select_id": 11,
+                  "cost_info": {
+                    "query_cost": "1.25"
+                  },
+                  "nested_loop": [
+                    {
+                      "table": {
+                        "table_name": "customer",
+                        "access_type": "ALL",
+                        "rows_examined_per_scan": 3,
+                        "rows_produced_per_join": 1,
+                        "filtered": "33.33",
+                        "cost_info": {
+                          "read_cost": "0.45",
+                          "eval_cost": "0.10",
+                          "prefix_cost": "0.55",
+                          "data_read_per_join": "80"
+                        },
+                        "used_columns": [
+                          "c_phone",
+                          "c_acctbal"
+                        ],
+                        "attached_condition": "(`bench`.`customer`.`c_acctbal` > 0.00)"
+                      }
+                    },
+                    {
+                      "table": {
+                        "table_name": "eligible_prefixes",
+                        "access_type": "ref",
+                        "possible_keys": [
+                          "<auto_key0>"
+                        ],
+                        "key": "<auto_key0>",
+                        "used_key_parts": [
+                          "cntrycode"
+                        ],
+                        "key_length": "10",
+                        "ref": [
+                          "func"
+                        ],
+                        "rows_examined_per_scan": 2,
+                        "rows_produced_per_join": 2,
+                        "filtered": "100.00",
+                        "using_index": true,
+                        "cost_info": {
+                          "read_cost": "0.50",
+                          "eval_cost": "0.20",
+                          "prefix_cost": "1.25",
+                          "data_read_per_join": "32"
+                        },
+                        "used_columns": [
+                          "cntrycode"
+                        ],
+                        "attached_condition": "(substr(`bench`.`customer`.`c_phone`,1,2) = `eligible_prefixes`.`cntrycode`)",
+                        "materialized_from_subquery": {
+                          "sharing_temporary_table_with": {
+                            "select_id": 3
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "table": {
+              "table_name": "customer",
+              "access_type": "ALL",
+              "rows_examined_per_scan": 3,
+              "rows_produced_per_join": 1,
+              "filtered": "33.33",
+              "cost_info": {
+                "read_cost": "0.25",
+                "eval_cost": "0.10",
+                "prefix_cost": "0.55",
+                "data_read_per_join": "80"
+              },
+              "used_columns": [
+                "c_custkey",
+                "c_phone",
+                "c_acctbal"
+              ],
+              "attached_condition": "(`bench`.`customer`.`c_acctbal` > '55.000000')"
+            }
+          },
+          {
+            "table": {
+              "table_name": "orders",
+              "access_type": "ALL",
+              "rows_examined_per_scan": 1,
+              "rows_produced_per_join": 1,
+              "filtered": "100.00",
+              "not_exists": true,
+              "using_join_buffer": "hash join",
+              "cost_info": {
+                "read_cost": "0.25",
+                "eval_cost": "0.10",
+                "prefix_cost": "0.90",
+                "data_read_per_join": "8"
+              },
+              "used_columns": [
+                "o_custkey"
+              ],
+              "attached_condition": "(<if>(is_not_null_compl(orders), (`bench`.`orders`.`o_custkey` = `bench`.`customer`.`c_custkey`), true) and <if>(is_not_null_compl(orders), <if>(found_match(orders), false, true), true))"
+            }
+          },
+          {
+            "table": {
+              "table_name": "eligible_prefixes",
+              "access_type": "ref",
+              "possible_keys": [
+                "<auto_key0>"
+              ],
+              "key": "<auto_key0>",
+              "used_key_parts": [
+                "cntrycode"
+              ],
+              "key_length": "10",
+              "ref": [
+                "func"
+              ],
+              "rows_examined_per_scan": 2,
+              "rows_produced_per_join": 2,
+              "filtered": "100.00",
+              "using_index": true,
+              "cost_info": {
+                "read_cost": "0.50",
+                "eval_cost": "0.20",
+                "prefix_cost": "1.60",
+                "data_read_per_join": "32"
+              },
+              "used_columns": [
+                "cntrycode"
+              ],
+              "attached_condition": "(substr(`bench`.`customer`.`c_phone`,1,2) = `eligible_prefixes`.`cntrycode`)",
+              "materialized_from_subquery": {
+                "using_temporary_table": true,
+                "dependent": false,
+                "cacheable": true,
+                "query_block": {
+                  "union_result": {
+                    "using_temporary_table": false,
+                    "query_specifications": [
+                      {
+                        "dependent": false,
+                        "cacheable": true,
+                        "query_block": {
+                          "select_id": 3,
+                          "message": "No tables used"
+                        }
+                      },
+                      {
+                        "dependent": false,
+                        "cacheable": true,
+                        "query_block": {
+                          "select_id": 4,
+                          "message": "No tables used"
+                        }
+                      },
+                      {
+                        "dependent": false,
+                        "cacheable": true,
+                        "query_block": {
+                          "select_id": 5,
+                          "message": "No tables used"
+                        }
+                      },
+                      {
+                        "dependent": false,
+                        "cacheable": true,
+                        "query_block": {
+                          "select_id": 6,
+                          "message": "No tables used"
+                        }
+                      },
+                      {
+                        "dependent": false,
+                        "cacheable": true,
+                        "query_block": {
+                          "select_id": 7,
+                          "message": "No tables used"
+                        }
+                      },
+                      {
+                        "dependent": false,
+                        "cacheable": true,
+                        "query_block": {
+                          "select_id": 8,
+                          "message": "No tables used"
+                        }
+                      },
+                      {
+                        "dependent": false,
+                        "cacheable": true,
+                        "query_block": {
+                          "select_id": 9,
+                          "message": "No tables used"
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}
