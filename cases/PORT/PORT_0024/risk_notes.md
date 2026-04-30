@@ -3,3 +3,4 @@
 - Portability focus: boolean_semantics.
 - Primary draft risk: conditional counting can drift if the spotlight predicate or numerator condition changes.
 - This package is draft-only, not registered, not validated, not admitted, and not under formal review.
+- Static Spark script literal repair only; no validation evidence is implied, and the case remains draft-only, not registered, not validated, and not admitted.
