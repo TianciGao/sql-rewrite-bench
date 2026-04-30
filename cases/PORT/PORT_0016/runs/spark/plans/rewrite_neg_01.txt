@@ -1,0 +1,94 @@
+== Physical Plan ==
+AdaptiveSparkPlan (4)
++- Project (3)
+   +- Filter (2)
+      +- Scan parquet spark_catalog.port_0016_spark_plan_collection.races (1)
+
+
+(1) Scan parquet spark_catalog.port_0016_spark_plan_collection.races
+Output [2]: [name#10, date#11]
+Batched: true
+Location: InMemoryFileIndex [file:/home/tianci_gao/code/sql-rewrite-bench/cases/PORT/PORT_0016/runs/spark/plans/_tmp_spark_plan_collection/warehouse/port_0016_spark_plan_collection.db/races]
+PushedFilters: [IsNotNull(date)]
+ReadSchema: struct<name:string,date:date>
+
+(2) Filter
+Input [2]: [name#10, date#11]
+Condition : ((isnotnull(date#11) AND (year(cast(cast(date#11 as timestamp) as date)) = Subquery subquery#19, [id=#71])) AND (month(cast(cast(date#11 as timestamp) as date)) = Subquery subquery#20, [id=#72]))
+
+(3) Project
+Output [1]: [name#10]
+Input [2]: [name#10, date#11]
+
+(4) AdaptiveSparkPlan
+Output [1]: [name#10]
+Arguments: isFinalPlan=false
+
+===== Subqueries =====
+
+Subquery:1 Hosting operator id = 2 Hosting Expression = Subquery subquery#19, [id=#71]
+AdaptiveSparkPlan (8)
++- TakeOrderedAndProject (7)
+   +- Project (6)
+      +- Scan parquet spark_catalog.port_0016_spark_plan_collection.races (5)
+
+
+(5) Scan parquet spark_catalog.port_0016_spark_plan_collection.races
+Output [1]: [date#24]
+Batched: true
+Location: InMemoryFileIndex [file:/home/tianci_gao/code/sql-rewrite-bench/cases/PORT/PORT_0016/runs/spark/plans/_tmp_spark_plan_collection/warehouse/port_0016_spark_plan_collection.db/races]
+ReadSchema: struct<date:date>
+
+(6) Project
+Output [2]: [year(cast(cast(date#24 as timestamp) as date)) AS extract(YEAR FROM CAST(date AS TIMESTAMP))#21, date#24]
+Input [1]: [date#24]
+
+(7) TakeOrderedAndProject
+Input [2]: [extract(YEAR FROM CAST(date AS TIMESTAMP))#21, date#24]
+Arguments: 1, [date#24 ASC NULLS FIRST], [extract(YEAR FROM CAST(date AS TIMESTAMP))#21]
+
+(8) AdaptiveSparkPlan
+Output [1]: [extract(YEAR FROM CAST(date AS TIMESTAMP))#21]
+Arguments: isFinalPlan=false
+
+Subquery:2 Hosting operator id = 2 Hosting Expression = Subquery subquery#20, [id=#72]
+AdaptiveSparkPlan (12)
++- TakeOrderedAndProject (11)
+   +- Project (10)
+      +- Scan parquet spark_catalog.port_0016_spark_plan_collection.races (9)
+
+
+(9) Scan parquet spark_catalog.port_0016_spark_plan_collection.races
+Output [1]: [date#26]
+Batched: true
+Location: InMemoryFileIndex [file:/home/tianci_gao/code/sql-rewrite-bench/cases/PORT/PORT_0016/runs/spark/plans/_tmp_spark_plan_collection/warehouse/port_0016_spark_plan_collection.db/races]
+ReadSchema: struct<date:date>
+
+(10) Project
+Output [2]: [month(cast(cast(date#26 as timestamp) as date)) AS extract(MONTH FROM CAST(date AS TIMESTAMP))#22, date#26]
+Input [1]: [date#26]
+
+(11) TakeOrderedAndProject
+Input [2]: [extract(MONTH FROM CAST(date AS TIMESTAMP))#22, date#26]
+Arguments: 1, [date#26 DESC NULLS LAST], [extract(MONTH FROM CAST(date AS TIMESTAMP))#22]
+
+(12) AdaptiveSparkPlan
+Output [1]: [extract(MONTH FROM CAST(date AS TIMESTAMP))#22]
+Arguments: isFinalPlan=false
+
+Subquery:3 Hosting operator id = 1 Hosting Expression = Subquery subquery#19, [id=#74]
+AdaptiveSparkPlan (8)
++- TakeOrderedAndProject (7)
+   +- Project (6)
+      +- Scan parquet spark_catalog.port_0016_spark_plan_collection.races (5)
+
+
+Subquery:4 Hosting operator id = 1 Hosting Expression = Subquery subquery#20, [id=#75]
+AdaptiveSparkPlan (12)
++- TakeOrderedAndProject (11)
+   +- Project (10)
+      +- Scan parquet spark_catalog.port_0016_spark_plan_collection.races (9)
+
+
+
+

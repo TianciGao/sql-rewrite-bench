@@ -1,0 +1,86 @@
+{
+  "query_block": {
+    "select_id": 1,
+    "cost_info": {
+      "query_cost": "0.55"
+    },
+    "table": {
+      "table_name": "races",
+      "access_type": "ALL",
+      "rows_examined_per_scan": 3,
+      "rows_produced_per_join": 3,
+      "filtered": "100.00",
+      "cost_info": {
+        "read_cost": "0.25",
+        "eval_cost": "0.30",
+        "prefix_cost": "0.55",
+        "data_read_per_join": "48"
+      },
+      "used_columns": [
+        "name",
+        "date"
+      ],
+      "attached_condition": "((date_format(cast(`bench`.`races`.`date` as datetime),'%Y') = (/* select#2 */ select date_format(cast(`bench`.`races`.`date` as datetime),'%Y') from `bench`.`races` order by `bench`.`races`.`date` limit 1)) and (date_format(cast(`bench`.`races`.`date` as datetime),'%m') = (/* select#3 */ select date_format(cast(`bench`.`races`.`date` as datetime),'%m') from `bench`.`races` order by `bench`.`races`.`date` limit 1)))",
+      "attached_subqueries": [
+        {
+          "dependent": false,
+          "cacheable": true,
+          "query_block": {
+            "select_id": 3,
+            "cost_info": {
+              "query_cost": "0.55"
+            },
+            "ordering_operation": {
+              "using_filesort": true,
+              "table": {
+                "table_name": "races",
+                "access_type": "ALL",
+                "rows_examined_per_scan": 3,
+                "rows_produced_per_join": 3,
+                "filtered": "100.00",
+                "cost_info": {
+                  "read_cost": "0.25",
+                  "eval_cost": "0.30",
+                  "prefix_cost": "0.55",
+                  "data_read_per_join": "48"
+                },
+                "used_columns": [
+                  "date"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "dependent": false,
+          "cacheable": true,
+          "query_block": {
+            "select_id": 2,
+            "cost_info": {
+              "query_cost": "0.55"
+            },
+            "ordering_operation": {
+              "using_filesort": true,
+              "table": {
+                "table_name": "races",
+                "access_type": "ALL",
+                "rows_examined_per_scan": 3,
+                "rows_produced_per_join": 3,
+                "filtered": "100.00",
+                "cost_info": {
+                  "read_cost": "0.25",
+                  "eval_cost": "0.30",
+                  "prefix_cost": "0.55",
+                  "data_read_per_join": "48"
+                },
+                "used_columns": [
+                  "date"
+                ]
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}
