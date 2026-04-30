@@ -1,0 +1,78 @@
+== Physical Plan ==
+AdaptiveSparkPlan (12)
++- HashAggregate (11)
+   +- Exchange (10)
+      +- HashAggregate (9)
+         +- Project (8)
+            +- BroadcastHashJoin Inner BuildLeft (7)
+               :- BroadcastExchange (4)
+               :  +- Project (3)
+               :     +- Filter (2)
+               :        +- Scan parquet spark_catalog.port_0026_spark_plan_collection.races (1)
+               +- Filter (6)
+                  +- Scan parquet spark_catalog.port_0026_spark_plan_collection.results (5)
+
+
+(1) Scan parquet spark_catalog.port_0026_spark_plan_collection.races
+Output [2]: [raceid#20, date#21]
+Batched: true
+Location: InMemoryFileIndex [file:/home/tianci_gao/code/sql-rewrite-bench/cases/PORT/PORT_0026/runs/spark/plans/_tmp_spark_plan_collection/warehouse/port_0026_spark_plan_collection.db/races]
+PushedFilters: [IsNotNull(date), EqualTo(date,1983-07-16), IsNotNull(raceid)]
+ReadSchema: struct<raceid:int,date:date>
+
+(2) Filter
+Input [2]: [raceid#20, date#21]
+Condition : ((isnotnull(date#21) AND (date#21 = 1983-07-16)) AND isnotnull(raceid#20))
+
+(3) Project
+Output [1]: [raceid#20]
+Input [2]: [raceid#20, date#21]
+
+(4) BroadcastExchange
+Input [1]: [raceid#20]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, true] as bigint)),false), [plan_id=116]
+
+(5) Scan parquet spark_catalog.port_0026_spark_plan_collection.results
+Output [3]: [raceid#22, driverid#23, time#24]
+Batched: true
+Location: InMemoryFileIndex [file:/home/tianci_gao/code/sql-rewrite-bench/cases/PORT/PORT_0026/runs/spark/plans/_tmp_spark_plan_collection/warehouse/port_0026_spark_plan_collection.db/results]
+PushedFilters: [IsNotNull(raceid)]
+ReadSchema: struct<raceid:int,driverid:int,time:string>
+
+(6) Filter
+Input [3]: [raceid#22, driverid#23, time#24]
+Condition : isnotnull(raceid#22)
+
+(7) BroadcastHashJoin
+Left keys [1]: [raceid#20]
+Right keys [1]: [raceid#22]
+Join type: Inner
+Join condition: None
+
+(8) Project
+Output [2]: [driverid#23, time#24]
+Input [4]: [raceid#20, raceid#22, driverid#23, time#24]
+
+(9) HashAggregate
+Input [2]: [driverid#23, time#24]
+Keys: []
+Functions [2]: [partial_count(CASE WHEN isnull(time#24) THEN driverid#23 END), partial_count(driverid#23)]
+Aggregate Attributes [2]: [count#37L, count#38L]
+Results [2]: [count#39L, count#40L]
+
+(10) Exchange
+Input [2]: [count#39L, count#40L]
+Arguments: SinglePartition, ENSURE_REQUIREMENTS, [plan_id=121]
+
+(11) HashAggregate
+Input [2]: [count#39L, count#40L]
+Keys: []
+Functions [2]: [count(CASE WHEN isnull(time#24) THEN driverid#23 END), count(driverid#23)]
+Aggregate Attributes [2]: [count(CASE WHEN isnull(time#24) THEN driverid#23 END)#34L, count(driverid#23)#35L]
+Results [1]: [((100.0 * cast(count(CASE WHEN isnull(time#24) THEN driverid#23 END)#34L as decimal(20,0))) / cast(count(driverid#23)#35L as decimal(20,0))) AS ((100.0 * count(CASE WHEN (time IS NULL) THEN driverid END)) / count(driverid))#36]
+
+(12) AdaptiveSparkPlan
+Output [1]: [((100.0 * count(CASE WHEN (time IS NULL) THEN driverid END)) / count(driverid))#36]
+Arguments: isFinalPlan=false
+
+
