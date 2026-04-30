@@ -13,14 +13,17 @@ target_engines:
   - mysql
   - spark
 official_case_status: draft_constructed
-registry_status: not_registered
-validation_status: not_validated
+registry_status: staged_registered
+validation_status: tracked_draft_cross_dialect_result_evidence
 admission_status: not_under_review
-package_engineering_status: draft_package_constructed
+package_engineering_status: draft package with tracked result evidence and tracked draft plan evidence; release hardening incomplete
 draft_origin: PORT_DRAFT_0023
-validated_engines: []
-tri_engine_closure: no
-expected_line: candidate_only
+validated_engines:
+  - pg
+  - mysql
+  - spark
+tri_engine_closure: yes
+expected_line: staged
 required_tables:
   - match_tbl
   - league
@@ -42,5 +45,7 @@ artifacts:
   run_mysql_plan_collection: validation/run_mysql_plan_collection.sh
   run_spark_validation: validation/run_spark_validation.sh
   run_spark_plan_collection: validation/run_spark_plan_collection.sh
-next_gap: human review, witness execution, tri-engine validation, registry writeback if later evidence succeeds, and later plan-semantics review
-artifact_warning: draft-only case-local package; not registered, not validated, not admitted, and not formal-review-complete
+  result_check: runs/result_check.json
+  plan_check: runs/plan_check.json
+next_gap: human review, portability review-prep / later formal review, later admission decision, and plan semantics not formally reviewed
+artifact_warning: tracked draft cross-dialect result evidence and tracked draft plan evidence only; not admitted, not under formal review, and no release-grade claim
