@@ -252,6 +252,8 @@
 
 补充说明：JOB / IMDB 衍生 tri-engine performance drafts 当前已包括 `PERF_0077`、`PERF_0078`、`PERF_0080`、`PERF_0081`、`PERF_0082`、`PERF_0083`、`PERF_0084`、`PERF_0085`、`PERF_0086`、`PERF_0090`、`PERF_0091`、`PERF_0093`、`PERF_0094`、`PERF_0095`、`PERF_0096`、`PERF_0097`、`PERF_0101`、`PERF_0102`、`PERF_0103`、`PERF_0104`、`PERF_0105`、`PERF_0106`、`PERF_0107`、`PERF_0108`、`PERF_0109`；这些 case 均已具备 PostgreSQL / MySQL / Spark witness validation，并形成对应 plan artifacts。`PERF_0079`、`PERF_0087`、`PERF_0092`、`PERF_0100` 仍不计入该已注册集合。该状态仅表示 tri-engine evidence 已形成；live case facts 仍以 `inventory/case_registry.csv` 为准，不意味着 admission、promotion、common-core movement、extended-line movement 或 formal review completion。
 
+补充说明：TPC-H Group A 的 `PERF_0017`、`PERF_0018`、`PERF_0019`、`PERF_0020`、`PERF_0021`、`PERF_0022`、`PERF_0023`、`PERF_0024`、`PERF_0025`、`PERF_0026` 当前均已具备 tracked current-generation governance artifacts：`runs/result_check.json` 均为 `ok=true` 且 `draft_only=true`，`runs/plan_check.json` 均为 `status=complete` 且 `draft_only=true`，并且 registry `notes_link` 已统一指向 `cases/PERF/<CASE>/runs/plan_check.json`。这十个 TPC-H performance cases 当前都应解释为 staged / `staged_not_yet_admitted` draft，而不是 admitted line；plan semantics 也尚未 formally reviewed。该状态只表示 tracked current-generation result / plan governance artifacts 已与 registry 对齐，不意味着 admission、common-core promotion、formal review closure 或 release-grade closure。
+
 ### 7.1.1 Recent TPC-DS selective deepening checkpoint
 
 当前 TPC-DS performance 线的 selective deepening 已形成最新一轮 tri-engine closure checkpoint。  

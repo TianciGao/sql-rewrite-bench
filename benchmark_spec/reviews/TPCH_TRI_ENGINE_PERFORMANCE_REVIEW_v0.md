@@ -64,11 +64,11 @@ The packet therefore answers a narrower question:
 | `PERF_0019` | Query 13 / Customer Distribution | A | representative join/aggregate case | PostgreSQL / MySQL / Spark | PG/MySQL/Spark result checks all `ok=true` | PG/MySQL/Spark plan checks all `ok=true` | full current-generation package and validation bundle present | none |
 | `PERF_0020` | Query 16 / Parts/Supplier Relationship | A | subquery-heavy case | PostgreSQL / MySQL / Spark | PG/MySQL/Spark result checks all `ok=true` | PG/MySQL/Spark plan checks all `ok=true` | full current-generation package and validation bundle present | none |
 | `PERF_0021` | Query 17 / Small-Quantity-Order Revenue | A | coverage extender | PostgreSQL / MySQL / Spark | PG/MySQL/Spark result checks all `ok=true` | PG/MySQL/Spark plan checks all `ok=true` | full current-generation package and validation bundle present | none |
-| `PERF_0022` | Query 18 / Large Volume Customer | A | representative join/aggregate case | PostgreSQL / MySQL / Spark | PG/MySQL/Spark result checks all `ok=true` | PG/MySQL/Spark plan checks all `ok=true` | full current-generation package and validation bundle present | registry status layer is `not_assessed`, not `staged_not_yet_admitted` |
-| `PERF_0023` | Query 19 / Discounted Revenue | A | variant / edge case | PostgreSQL / MySQL / Spark | PG/MySQL/Spark result checks all `ok=true` | PG/MySQL/Spark plan checks all `ok=true` | full current-generation package and validation bundle present | registry status layer is `not_assessed`, not `staged_not_yet_admitted` |
-| `PERF_0024` | Query 20 / Potential Part Promotion | A | subquery-heavy case | PostgreSQL / MySQL / Spark | PG/MySQL/Spark result checks all `ok=true` | PG/MySQL/Spark plan checks all `ok=true` | full current-generation package and validation bundle present | registry status layer is `not_assessed`, not `staged_not_yet_admitted` |
-| `PERF_0025` | Query 21 / Suppliers Who Kept Orders Waiting | A | subquery-heavy case | PostgreSQL / MySQL / Spark | PG/MySQL/Spark result checks all `ok=true` | PG/MySQL/Spark plan checks all `ok=true` | full current-generation package and validation bundle present | registry status layer is `not_assessed`, not `staged_not_yet_admitted` |
-| `PERF_0026` | Query 22 / Global Sales Opportunity | A | coverage extender | PostgreSQL / MySQL / Spark | PG/MySQL/Spark result checks all `ok=true` | PG/MySQL/Spark plan checks all `ok=true` | full current-generation package and validation bundle present | registry status layer is `not_assessed`, not `staged_not_yet_admitted` |
+| `PERF_0022` | Query 18 / Large Volume Customer | A | representative join/aggregate case | PostgreSQL / MySQL / Spark | PG/MySQL/Spark result checks all `ok=true` | PG/MySQL/Spark plan checks all `ok=true` | full current-generation package and validation bundle present | registry is now `staged_not_yet_admitted`; `notes_link` points to `cases/PERF/PERF_0022/runs/plan_check.json`; packet remains review-prep only |
+| `PERF_0023` | Query 19 / Discounted Revenue | A | variant / edge case | PostgreSQL / MySQL / Spark | PG/MySQL/Spark result checks all `ok=true` | PG/MySQL/Spark plan checks all `ok=true` | full current-generation package and validation bundle present | registry is now `staged_not_yet_admitted`; `notes_link` points to `cases/PERF/PERF_0023/runs/plan_check.json`; packet remains review-prep only |
+| `PERF_0024` | Query 20 / Potential Part Promotion | A | subquery-heavy case | PostgreSQL / MySQL / Spark | PG/MySQL/Spark result checks all `ok=true` | PG/MySQL/Spark plan checks all `ok=true` | full current-generation package and validation bundle present | registry is now `staged_not_yet_admitted`; `notes_link` points to `cases/PERF/PERF_0024/runs/plan_check.json`; packet remains review-prep only |
+| `PERF_0025` | Query 21 / Suppliers Who Kept Orders Waiting | A | subquery-heavy case | PostgreSQL / MySQL / Spark | PG/MySQL/Spark result checks all `ok=true` | PG/MySQL/Spark plan checks all `ok=true` | full current-generation package and validation bundle present | registry is now `staged_not_yet_admitted`; `notes_link` points to `cases/PERF/PERF_0025/runs/plan_check.json`; packet remains review-prep only |
+| `PERF_0026` | Query 22 / Global Sales Opportunity | A | coverage extender | PostgreSQL / MySQL / Spark | PG/MySQL/Spark result checks all `ok=true` | PG/MySQL/Spark plan checks all `ok=true` | full current-generation package and validation bundle present | registry is now `staged_not_yet_admitted`; `notes_link` points to `cases/PERF/PERF_0026/runs/plan_check.json`; packet remains review-prep only |
 | `PERF_0006` | Query 1 / Pricing Summary Report | B | representative join/aggregate case | PostgreSQL / MySQL / Spark | PG/MySQL/Spark result checks all `ok=true` | PG/MySQL/Spark plan checks all `ok=true` | tri-engine evidence complete; current case-local Spark validation bundle remains partial | package-layout hardening remains before any later formal review packet, but this is not an engine-closure failure |
 | `PERF_0007` | Query 6 / Forecasting Revenue Change | B | coverage extender | PostgreSQL / MySQL / Spark | PG/MySQL/Spark result checks all `ok=true` | PG/MySQL/Spark plan checks all `ok=true` | tri-engine evidence complete; current case-local Spark validation bundle remains partial | package-layout hardening remains before any later formal review packet, but this is not an engine-closure failure |
 | `PERF_0008` | Query 3 / Shipping Priority | B | representative join/aggregate case | PostgreSQL / MySQL / Spark | PG/MySQL/Spark result checks all `ok=true` | PG/MySQL/Spark plan checks all `ok=true` | tri-engine evidence complete; current case-local Spark validation bundle remains partial | package-layout hardening remains before any later formal review packet, but this is not an engine-closure failure |
@@ -210,7 +210,7 @@ Short rationale:
 - Plan evidence summary: PG/MySQL/Spark plan checks all present and `ok=true`
 - Package completeness summary: all expected scoped package and validation artifacts are present
 - Taxonomy/trial presence: present
-- Human reviewer caveat: registry status layer is `not_assessed`, not `staged_not_yet_admitted`
+- Human reviewer caveat: registry is now `staged_not_yet_admitted`, `notes_link` points to `cases/PERF/PERF_0022/runs/plan_check.json`, and plan semantics are not formally reviewed
 - Packet role: representative join/aggregate case
 
 #### `PERF_0023`
@@ -223,7 +223,7 @@ Short rationale:
 - Plan evidence summary: PG/MySQL/Spark plan checks all present and `ok=true`
 - Package completeness summary: all expected scoped package and validation artifacts are present
 - Taxonomy/trial presence: present
-- Human reviewer caveat: registry status layer is `not_assessed`, not `staged_not_yet_admitted`
+- Human reviewer caveat: registry is now `staged_not_yet_admitted`, `notes_link` points to `cases/PERF/PERF_0023/runs/plan_check.json`, and plan semantics are not formally reviewed
 - Packet role: variant / edge case
 
 #### `PERF_0024`
@@ -236,7 +236,7 @@ Short rationale:
 - Plan evidence summary: PG/MySQL/Spark plan checks all present and `ok=true`
 - Package completeness summary: all expected scoped package and validation artifacts are present
 - Taxonomy/trial presence: present
-- Human reviewer caveat: registry status layer is `not_assessed`, not `staged_not_yet_admitted`
+- Human reviewer caveat: registry is now `staged_not_yet_admitted`, `notes_link` points to `cases/PERF/PERF_0024/runs/plan_check.json`, and plan semantics are not formally reviewed
 - Packet role: subquery-heavy case
 
 #### `PERF_0025`
@@ -249,7 +249,7 @@ Short rationale:
 - Plan evidence summary: PG/MySQL/Spark plan checks all present and `ok=true`
 - Package completeness summary: all expected scoped package and validation artifacts are present
 - Taxonomy/trial presence: present
-- Human reviewer caveat: registry status layer is `not_assessed`, not `staged_not_yet_admitted`
+- Human reviewer caveat: registry is now `staged_not_yet_admitted`, `notes_link` points to `cases/PERF/PERF_0025/runs/plan_check.json`, and plan semantics are not formally reviewed
 - Packet role: subquery-heavy case
 
 #### `PERF_0026`
@@ -262,7 +262,7 @@ Short rationale:
 - Plan evidence summary: PG/MySQL/Spark plan checks all present and `ok=true`
 - Package completeness summary: all expected scoped package and validation artifacts are present
 - Taxonomy/trial presence: present
-- Human reviewer caveat: registry status layer is `not_assessed`, not `staged_not_yet_admitted`
+- Human reviewer caveat: registry is now `staged_not_yet_admitted`, `notes_link` points to `cases/PERF/PERF_0026/runs/plan_check.json`, and plan semantics are not formally reviewed
 - Packet role: coverage extender
 
 ### 5.2 Group B: review-ready with minor package notes
