@@ -30,8 +30,7 @@ from pyspark.sql import SparkSession
 
 
 def strip_comments(text: str) -> str:
-    return "
-".join(line for line in text.splitlines() if not re.match(r"^\s*--", line))
+    return "\n".join(line for line in text.splitlines() if not re.match(r"^\s*--", line))
 
 
 def read_statements(path: pathlib.Path):

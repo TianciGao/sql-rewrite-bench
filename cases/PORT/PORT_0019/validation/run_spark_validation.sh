@@ -28,8 +28,7 @@ from pyspark.sql import SparkSession
 
 
 def strip_comments(text: str) -> str:
-    return "
-".join(line for line in text.splitlines() if not re.match(r"^\s*--", line))
+    return "\n".join(line for line in text.splitlines() if not re.match(r"^\s*--", line))
 
 
 def read_statements(path: pathlib.Path):
@@ -42,10 +41,9 @@ def read_query(path: pathlib.Path) -> str:
 
 
 def write_rows(path: pathlib.Path, rows) -> None:
-    lines = ["	".join("NULL" if value is None else str(value) for value in row) for row in rows]
+    lines = ["\t".join("NULL" if value is None else str(value) for value in row) for row in rows]
     lines.sort()
-    path.write_text("".join(f"{line}
-" for line in lines))
+    path.write_text("".join(f"{line}\n" for line in lines))
 
 
 case_dir = pathlib.Path(os.environ["CASE_DIR"])
