@@ -1,0 +1,113 @@
+== Physical Plan ==
+AdaptiveSparkPlan (18)
++- TakeOrderedAndProject (17)
+   +- HashAggregate (16)
+      +- Exchange (15)
+         +- HashAggregate (14)
+            +- Project (13)
+               +- BroadcastHashJoin Inner BuildRight (12)
+                  :- Project (8)
+                  :  +- BroadcastHashJoin Inner BuildRight (7)
+                  :     :- Filter (2)
+                  :     :  +- Scan parquet spark_catalog.port_0019_spark_plan_collection.results (1)
+                  :     +- BroadcastExchange (6)
+                  :        +- Project (5)
+                  :           +- Filter (4)
+                  :              +- Scan parquet spark_catalog.port_0019_spark_plan_collection.races (3)
+                  +- BroadcastExchange (11)
+                     +- Filter (10)
+                        +- Scan parquet spark_catalog.port_0019_spark_plan_collection.status (9)
+
+
+(1) Scan parquet spark_catalog.port_0019_spark_plan_collection.results
+Output [3]: [driver_id#28, race_id#29, status_id#30]
+Batched: true
+Location: InMemoryFileIndex [file:/home/tianci_gao/code/sql-rewrite-bench/cases/PORT/PORT_0019/runs/spark/plans/_tmp_spark_plan_collection/warehouse/port_0019_spark_plan_collection.db/results]
+PushedFilters: [IsNotNull(race_id), EqualTo(status_id,3), IsNotNull(status_id)]
+ReadSchema: struct<driver_id:int,race_id:int,status_id:int>
+
+(2) Filter
+Input [3]: [driver_id#28, race_id#29, status_id#30]
+Condition : ((isnotnull(race_id#29) AND (status_id#30 = 3)) AND isnotnull(status_id#30))
+
+(3) Scan parquet spark_catalog.port_0019_spark_plan_collection.races
+Output [2]: [race_id#31, name#32]
+Batched: true
+Location: InMemoryFileIndex [file:/home/tianci_gao/code/sql-rewrite-bench/cases/PORT/PORT_0019/runs/spark/plans/_tmp_spark_plan_collection/warehouse/port_0019_spark_plan_collection.db/races]
+PushedFilters: [IsNotNull(name), EqualTo(name,Canadian Grand Prix), IsNotNull(race_id)]
+ReadSchema: struct<race_id:int,name:string>
+
+(4) Filter
+Input [2]: [race_id#31, name#32]
+Condition : ((isnotnull(name#32) AND (name#32 = Canadian Grand Prix)) AND isnotnull(race_id#31))
+
+(5) Project
+Output [1]: [race_id#31]
+Input [2]: [race_id#31, name#32]
+
+(6) BroadcastExchange
+Input [1]: [race_id#31]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, true] as bigint)),false), [plan_id=111]
+
+(7) BroadcastHashJoin
+Left keys [1]: [race_id#29]
+Right keys [1]: [race_id#31]
+Join type: Inner
+Join condition: None
+
+(8) Project
+Output [2]: [driver_id#28, status_id#30]
+Input [4]: [driver_id#28, race_id#29, status_id#30, race_id#31]
+
+(9) Scan parquet spark_catalog.port_0019_spark_plan_collection.status
+Output [1]: [status_id#33]
+Batched: true
+Location: InMemoryFileIndex [file:/home/tianci_gao/code/sql-rewrite-bench/cases/PORT/PORT_0019/runs/spark/plans/_tmp_spark_plan_collection/warehouse/port_0019_spark_plan_collection.db/status]
+PushedFilters: [IsNotNull(status_id), EqualTo(status_id,3)]
+ReadSchema: struct<status_id:int>
+
+(10) Filter
+Input [1]: [status_id#33]
+Condition : (isnotnull(status_id#33) AND (status_id#33 = 3))
+
+(11) BroadcastExchange
+Input [1]: [status_id#33]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, false] as bigint)),false), [plan_id=115]
+
+(12) BroadcastHashJoin
+Left keys [1]: [status_id#30]
+Right keys [1]: [status_id#33]
+Join type: Inner
+Join condition: None
+
+(13) Project
+Output [1]: [driver_id#28]
+Input [3]: [driver_id#28, status_id#30, status_id#33]
+
+(14) HashAggregate
+Input [1]: [driver_id#28]
+Keys [1]: [driver_id#28]
+Functions [1]: [partial_count(driver_id#28)]
+Aggregate Attributes [1]: [count#41L]
+Results [2]: [driver_id#28, count#42L]
+
+(15) Exchange
+Input [2]: [driver_id#28, count#42L]
+Arguments: hashpartitioning(driver_id#28, 1), ENSURE_REQUIREMENTS, [plan_id=120]
+
+(16) HashAggregate
+Input [2]: [driver_id#28, count#42L]
+Keys [1]: [driver_id#28]
+Functions [1]: [count(driver_id#28)]
+Aggregate Attributes [1]: [count(driver_id#28)#35L]
+Results [1]: [count(driver_id#28)#35L AS count(driver_id)#36L]
+
+(17) TakeOrderedAndProject
+Input [1]: [count(driver_id)#36L]
+Arguments: 1, [count(driver_id)#36L DESC NULLS LAST], [count(driver_id)#36L]
+
+(18) AdaptiveSparkPlan
+Output [1]: [count(driver_id)#36L]
+Arguments: isFinalPlan=false
+
+
