@@ -1,0 +1,5 @@
+LONGTAIL_0023 is a manually engineered SQL rewrite anchor.
+It is grounded in the StackExchange / SuperUser XML dump schema under datasets/raw/stack_queries/staged/superuser/.
+It is not a direct SEDE query-derived case.
+It is not derived from SQLStorm.
+SRC_006 Stack Queries is used as schema/data substrate only.
