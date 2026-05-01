@@ -2,7 +2,7 @@
 
 ## 1. Document role and scope
 
-This document is a **review-prep packet** for the current registry-backed LONGTAIL tri-engine draft set, with emphasis on the SQLStorm-derived longtail line.
+This document is a **review-prep packet** for the current registry-backed LONGTAIL tri-engine draft set, with emphasis on the SQLStorm longtail line, plus a small Stack-substrate staged addendum.
 
 Current scope:
 
@@ -24,6 +24,9 @@ Current scope:
 - `LONGTAIL_0019`
 - `LONGTAIL_0020`
 - `LONGTAIL_0021`
+- `LONGTAIL_0022`
+- `LONGTAIL_0023`
+- `LONGTAIL_0024`
 
 These cases are the current registry-backed LONGTAIL tri-engine draft subset. Live case facts remain in:
 
@@ -53,10 +56,11 @@ It summarizes current registry-backed package and evidence status only. The narr
 
 | group | count | notes |
 | --- | --- | --- |
-| all LONGTAIL registry rows | `19` | current registry-backed LONGTAIL population |
-| tri-engine LONGTAIL rows | `18` | `tri_engine_closure=yes` |
-| SQLStorm tri-engine draft rows | `17` | current SQLStorm-derived witness-validated longtail draft set |
+| all LONGTAIL registry rows | `22` | current registry-backed LONGTAIL population |
+| tri-engine LONGTAIL rows | `21` | `tri_engine_closure=yes` |
+| SQLStorm tri-engine draft rows | `17` | current SQLStorm witness-validated longtail draft set |
 | manual / legacy anchor | `1` | `LONGTAIL_0001` |
+| Stack-substrate staged anchors | `3` | `LONGTAIL_0022`, `LONGTAIL_0023`, `LONGTAIL_0024` are manual/hybrid Stack Queries / SuperUser XML dump substrate drafts |
 | PG-only registered backlog | `1` | `LONGTAIL_0002` remains registered but not tri-engine |
 
 ---
@@ -86,7 +90,34 @@ It summarizes current registry-backed package and evidence status only. The narr
 
 ---
 
-## 5. Evidence matrix
+## 5. Stack-substrate staged addendum
+
+These three rows are **not** part of the SQLStorm direct-query cohort.
+
+They are:
+
+- manual/hybrid Stack Queries / SuperUser XML dump substrate anchors
+- not direct sede source-text cases
+- not sqlstorm source cases
+- `staged_not_yet_admitted` / not admitted drafts
+- review-prep only
+- not formally reviewed for plan semantics
+
+| case_id | source basis | derivation | result evidence | plan evidence | registry note | review-prep note |
+| --- | --- | --- | --- | --- | --- | --- |
+| `LONGTAIL_0022` | Stack Queries / SuperUser XML dump substrate (`Posts`, `Comments`, `Users`) | manual/hybrid comments-posts interaction anchor; not direct SEDE source-text; not SQLStorm source | `runs/result_check.json` `ok=true`, `draft_only=true` | `runs/plan_check.json` `status=complete`, `draft_only=true` | `notes_link` points to `cases/LONGTAIL/LONGTAIL_0022/runs/plan_check.json`; `staged_not_yet_admitted` | keep separate from SQLStorm cohort; plan semantics not formally reviewed |
+| `LONGTAIL_0023` | Stack Queries / SuperUser XML dump substrate (`Posts`, `PostLinks`) | manual/hybrid postlinks graph anchor; not direct SEDE source-text; not SQLStorm source | `runs/result_check.json` `ok=true`, `draft_only=true` | `runs/plan_check.json` `status=complete`, `draft_only=true` | `notes_link` points to `cases/LONGTAIL/LONGTAIL_0023/runs/plan_check.json`; `staged_not_yet_admitted` | keep separate from SQLStorm cohort; plan semantics not formally reviewed |
+| `LONGTAIL_0024` | Stack Queries / SuperUser XML dump substrate (`Posts`, `PostHistory`) | manual/hybrid posthistory temporal anchor; not direct SEDE source-text; not SQLStorm source | `runs/result_check.json` `ok=true`, `draft_only=true` | `runs/plan_check.json` `status=complete`, `draft_only=true` | `notes_link` points to `cases/LONGTAIL/LONGTAIL_0024/runs/plan_check.json`; `staged_not_yet_admitted` | keep separate from SQLStorm cohort; plan semantics not formally reviewed |
+
+The current source-diversity interpretation remains:
+
+- SQLStorm is still the main existing LONGTAIL external query corpus
+- Stack Queries now contributes three source-grounded manual/hybrid anchors
+- Stack Queries is still substrate, not a direct query-text corpus
+
+---
+
+## 6. Evidence matrix
 
 | case_id | PG result | PG plan | MySQL result | MySQL plan | Spark result | Spark plan | registry tri_engine_closure |
 | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -108,15 +139,19 @@ It summarizes current registry-backed package and evidence status only. The narr
 | `LONGTAIL_0019` | `ok=true` | `ok=true` | `ok=true` | `ok=true` | `ok=true` | `ok=true` | `yes` |
 | `LONGTAIL_0020` | `ok=true` | `ok=true` | `ok=true` | `ok=true` | `ok=true` | `ok=true` | `yes` |
 | `LONGTAIL_0021` | `ok=true` | `ok=true` | `ok=true` | `ok=true` | `ok=true` | `ok=true` | `yes` |
+| `LONGTAIL_0022` | `ok=true` | `ok=true` | `ok=true` | `ok=true` | `ok=true` | `ok=true` | `yes` |
+| `LONGTAIL_0023` | `ok=true` | `ok=true` | `ok=true` | `ok=true` | `ok=true` | `ok=true` | `yes` |
+| `LONGTAIL_0024` | `ok=true` | `ok=true` | `ok=true` | `ok=true` | `ok=true` | `ok=true` | `yes` |
 
 ---
 
-## 6. Coverage summary
+## 7. Coverage summary
 
 Relative to the current performance-oriented TPC-H, TPC-DS, and JOB / IMDB groups, the LONGTAIL line contributes a different kind of review-prep value:
 
 - more structurally irregular SQL than benchmark-template families
 - more SQLStorm / StackOverflow-style analytical shapes built around outer joins, grouped summaries, CTEs, windows, and nullable attachment patterns
+- a small non-SQLStorm Stack-substrate addendum built from SuperUser XML dump entity structure through manual/hybrid anchors rather than external query-text extraction
 - stronger emphasis on controlled long-tail query shapes that are useful for cross-engine package hardening even when they are not canonical benchmark queries
 - a visible construction history through SQLStorm waves plus targeted repairs, which makes the line useful for workflow and repair-discipline review as well as for query-shape coverage
 
@@ -125,13 +160,14 @@ At a high level, this line broadens:
 - long-tail structural diversity
 - outer-join-preservation and null-sensitive negative design
 - case-local witness engineering over more irregular StackOverflow-style schemas
+- source-grounded Stack substrate coverage without implying a direct SEDE query-text corpus
 - cross-engine repair patterns for parser and artifact-identity issues
 
 This remains useful even without formal review or admission because it strengthens later benchmark characterization and coverage discussion beyond the performance families alone.
 
 ---
 
-## 7. Backlog / excluded cases
+## 8. Backlog / excluded cases
 
 Explicitly excluded from the current tri-engine LONGTAIL packet:
 
@@ -147,31 +183,34 @@ The remaining SQLStorm candidate pool also looks materially thinner than earlier
 
 ---
 
-## 8. Caveats and risks
+## 9. Caveats and risks
 
 - Witness data is small and case-local.
 - Some repaired cases required narrow alias-compatibility changes to keep SQL text executable across engines.
-- SQLStorm-derived cases are evidence-complete drafts, not formally reviewed cases.
+- SQLStorm-source cases are evidence-complete drafts, not formally reviewed cases.
+- The Stack-substrate addendum is also evidence-complete only in the limited engine-local witness / engine-local plan-artifact sense; it does not imply admission, formal review completion, or plan-semantics review.
 - `LONGTAIL_0001` remains a legacy/manual anchor with an older package layout than the later SQLStorm cohort.
 - This packet does not claim release-grade admission or any stronger benchmark-line movement.
 
 ---
 
-## 9. Open questions for human reviewer
+## 10. Open questions for human reviewer
 
 - Which LONGTAIL cases should enter a later formal review pass first?
 - Should `LONGTAIL_0006` and `LONGTAIL_0017` be repaired, or left deferred?
+- Should the Stack-substrate anchors `LONGTAIL_0022`, `LONGTAIL_0023`, `LONGTAIL_0024` be reviewed as a separate manual/hybrid sub-line before any broader Stack-source expansion?
 - Should taxonomy tags be backfilled before the first human review pass on this line?
 - Is additional longtail-source acquisition needed beyond the current SQLStorm candidate pool?
 
 ---
 
-## 10. Bottom line
+## 11. Bottom line
 
 The current LONGTAIL pool now has a substantial registry-backed tri-engine draft subset:
 
-- `18` tri-engine LONGTAIL cases overall
-- `17` SQLStorm-derived tri-engine longtail drafts
+- `21` tri-engine LONGTAIL cases overall
+- `17` SQLStorm tri-engine longtail drafts
+- `3` Stack-substrate manual/hybrid staged drafts
 
 That subset is useful for:
 
