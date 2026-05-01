@@ -264,6 +264,8 @@
 这些变化已经与 `inventory/case_registry.csv` 对齐；case 级 live facts 仍以 `inventory/case_registry.csv` 为准。  
 本 checkpoint 只表示当前 selective closure 进展，不意味着 admission、promotion、common-core movement，或 formal review completion。
 
+补充说明：其中 `PERF_0033`、`PERF_0034`、`PERF_0035`、`PERF_0036`、`PERF_0038`、`PERF_0043`、`PERF_0052`、`PERF_0054`、`PERF_0056`、`PERF_0062`、`PERF_0063`、`PERF_0066`、`PERF_0076` 与 `PERF_0044`、`PERF_0047`、`PERF_0050`、`PERF_0053`、`PERF_0065` 这 18 个 TPC-DS PERF cases 当前已具备 tracked current-generation governance artifacts：`runs/result_check.json` 均为 `ok=true` 且 `draft_only=true`，`runs/plan_check.json` 均为 `status=complete` 且 `draft_only=true`，并且 registry `notes_link` 已统一指向 `cases/PERF/<CASE>/runs/plan_check.json`。其中 `PERF_0044`、`PERF_0047`、`PERF_0050`、`PERF_0053`、`PERF_0065` 的 result check 使用了文档化的 case-specific normalization，但该 normalization 仅用于 engine output formatting 差异，不改变 witness / admission 含义。`PERF_0071`、`PERF_0072`、`PERF_0073`、`PERF_0074`、`PERF_0075` 当前仍保持 deferred，因为 positive outputs 存在 real mismatch，未纳入本轮 current-generation governance backfill。这 18 个已治理 TPC-DS cases 当前都应解释为 staged / `staged_not_yet_admitted` / not admitted drafts；plan semantics 也尚未 formally reviewed。该状态只表示 tracked current-generation result / plan governance artifacts 与 registry 已对齐，不意味着 admission、formal-review completion 或 release-grade closure。
+
 ### 7.2 Long-tail cases
 
 | case_id | 数据集 / 来源 | 当前成熟度 | package engineering 状态 | 已验证引擎 | 下一步缺口 |
