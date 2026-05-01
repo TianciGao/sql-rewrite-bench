@@ -85,6 +85,20 @@ Across both packets, the common evidence pattern is:
 - Spark result checks present
 - Spark plan artifacts present
 
+Additionally, the first CONS current-generation governance batch now covers `8` cases:
+
+- `5` Calcite cases: `CONS_0005`, `CONS_0007`, `CONS_0010`, `CONS_0011`, `CONS_0024`
+- `3` VeriEQL cases: `CONS_0031`, `CONS_0034`, `CONS_0037`
+
+For these `8` cases:
+
+- case-root `runs/result_check.json` is present with `validation_model=engine_local_witness`, `ok=true`, and `draft_only=true`
+- case-root `runs/plan_check.json` is present with `validation_model=engine_local_plan_artifacts`, `status=complete`, and `draft_only=true`
+- registry `notes_link` now points to `cases/CONS/<CASE>/runs/plan_check.json`
+- they remain `staged_not_yet_admitted` / not admitted drafts
+- plan semantics are not formally reviewed
+- this does not imply admission, common-core promotion, formal review closure, or release-grade closure
+
 What that does **not** imply by default:
 
 - admitted status
@@ -109,6 +123,7 @@ Items outside the two current packets:
 Additional scope note:
 
 - no constructed-but-unregistered Calcite or VeriEQL wave backlog remains after the current repair passes
+- broader CONS pool still needs taxonomy tagging and may still need additional governance normalization outside the first 8-case current-generation batch
 
 ---
 
