@@ -11,6 +11,22 @@ targets:
 features: []
 rewrite_opportunities:
   - aggregation_rewrite
+tags:
+  sql_feature:
+    primary: []
+    secondary: []
+  rewrite_opportunity:
+    primary: [aggregation_rewrite]
+    secondary: []
+  plan_operator:
+    present: []
+    delta_relevant: []
+  workload_realism:
+    source_inherited: [manual_gap_fill_realism]
+    case_specific: []
+  portability:
+    confirmed: []
+    suspected: []
 variants:
   positives:
     - rewrite_pos_01.sql

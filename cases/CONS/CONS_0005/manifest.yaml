@@ -32,6 +32,22 @@ validation_scripts:
   mysql_plan_collection: "validation/run_mysql_plan_collection.sh"
   spark_validation: "validation/run_spark_validation.sh"
   spark_plan_collection: "validation/run_spark_plan_collection.sh"
+tags:
+  sql_feature:
+    primary: [correlated_subquery]
+    secondary: []
+  rewrite_opportunity:
+    primary: [subquery_decorrelation]
+    secondary: []
+  plan_operator:
+    present: [join, scan, sort, subquery]
+    delta_relevant: []
+  workload_realism:
+    source_inherited: []
+    case_specific: []
+  portability:
+    confirmed: [null_semantics_gap]
+    suspected: []
 known_caveats:
   - not_yet_validated_as_official_case
   - registry_not_updated
