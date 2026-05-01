@@ -24,6 +24,22 @@ validated_engines:
   - mysql
   - spark
 tri_engine_closure: yes
+tags:
+  sql_feature:
+    primary: [date_time_function]
+    secondary: [expression_complexity]
+  rewrite_opportunity:
+    primary: [dialect_adaptation]
+    secondary: [function_normalization]
+  plan_operator:
+    present: [scan, filter, join]
+    delta_relevant: []
+  workload_realism:
+    source_inherited: [realistic_query_style]
+    case_specific: []
+  portability:
+    confirmed: [identifier_quoting, datetime_semantics_gap, type_semantics_gap]
+    suspected: []
 expected_line: candidate_only
 required_tables:
   - frpm

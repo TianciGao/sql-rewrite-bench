@@ -16,6 +16,22 @@ admission_status: not_under_review
 package_engineering_status: draft_package_constructed
 validated_engines: []
 tri_engine_closure: no
+tags:
+  sql_feature:
+    primary: []
+    secondary: []
+  rewrite_opportunity:
+    primary: [dialect_adaptation]
+    secondary: [order_limit_simplification]
+  plan_operator:
+    present: []
+    delta_relevant: []
+  workload_realism:
+    source_inherited: [realistic_query_style]
+    case_specific: [result_size_sensitivity]
+  portability:
+    confirmed: [identifier_quoting, null_semantics_gap, limit_fetch_gap]
+    suspected: []
 expected_line: candidate_only
 draft_origin: PORT_PARROT_DRAFT_0001
 artifacts:

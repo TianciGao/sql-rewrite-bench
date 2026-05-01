@@ -22,6 +22,22 @@ validated_engines:
   - pg
   - spark
 tri_engine_closure: yes
+tags:
+  sql_feature:
+    primary: [expression_complexity]
+    secondary: []
+  rewrite_opportunity:
+    primary: [dialect_adaptation]
+    secondary: [expression_simplification]
+  plan_operator:
+    present: [scan, aggregate]
+    delta_relevant: []
+  workload_realism:
+    source_inherited: [realistic_query_style]
+    case_specific: [complex_expression_density]
+  portability:
+    confirmed: [identifier_quoting, boolean_semantics_gap, type_semantics_gap]
+    suspected: []
 expected_line: staged
 required_tables:
   - cards
