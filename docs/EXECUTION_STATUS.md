@@ -254,6 +254,8 @@
 
 补充说明：TPC-H Group A 的 `PERF_0017`、`PERF_0018`、`PERF_0019`、`PERF_0020`、`PERF_0021`、`PERF_0022`、`PERF_0023`、`PERF_0024`、`PERF_0025`、`PERF_0026` 当前均已具备 tracked current-generation governance artifacts：`runs/result_check.json` 均为 `ok=true` 且 `draft_only=true`，`runs/plan_check.json` 均为 `status=complete` 且 `draft_only=true`，并且 registry `notes_link` 已统一指向 `cases/PERF/<CASE>/runs/plan_check.json`。这十个 TPC-H performance cases 当前都应解释为 staged / `staged_not_yet_admitted` draft，而不是 admitted line；plan semantics 也尚未 formally reviewed。该状态只表示 tracked current-generation result / plan governance artifacts 已与 registry 对齐，不意味着 admission、common-core promotion、formal review closure 或 release-grade closure。
 
+补充说明：TPC-H Group B 的 `PERF_0006`、`PERF_0007`、`PERF_0008`、`PERF_0009`、`PERF_0010`、`PERF_0011`、`PERF_0012`、`PERF_0013`、`PERF_0014`、`PERF_0015`、`PERF_0016` 当前也已完成 current-generation governance alignment：tracked `runs/result_check.json` 均为 `ok=true` 且 `draft_only=true`，tracked `runs/plan_check.json` 均为 `status=complete` 且 `draft_only=true`，并且 registry `notes_link` 已统一指向 `cases/PERF/<CASE>/runs/plan_check.json`。这十一条 TPC-H performance cases 当前仍都应解释为 staged / `staged_not_yet_admitted` / not admitted drafts；plan semantics 也尚未 formally reviewed。该状态只表示 current-generation result / plan governance artifacts 已与 registry 对齐，不意味着 admission、common-core promotion、formal review completion 或 release-grade closure。
+
 ### 7.1.1 Recent TPC-DS selective deepening checkpoint
 
 当前 TPC-DS performance 线的 selective deepening 已形成最新一轮 tri-engine closure checkpoint。  
