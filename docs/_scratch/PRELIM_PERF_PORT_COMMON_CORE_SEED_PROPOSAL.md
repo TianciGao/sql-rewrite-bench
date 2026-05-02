@@ -155,10 +155,54 @@ This proposal is therefore not trying to absorb all strong cases into one denomi
 - plan semantics not formally reviewed
 - no admission decision yet
 
-## 10. Recommended Next Step
+## 10. Possible Expansion Slate After Health Gate
+
+This section records a possible later expansion slate identified after the health-gated review pass.
+It does not change the current clean health-gated packet.
+It is not admission, not promotion, not registry writeback, and not a final common-core decision.
+
+Current count language:
+
+- current health-gated keep-for-review count: `27`
+- possible later review additions: `8`
+- possible expanded review slate: `35`
+
+Possible additions for later human review:
+
+- PORT possible additions:
+  - `PORT_0014`
+  - `PORT_0018`
+  - `PORT_0023`
+  - `PORT_0028`
+  - `PORT_0017`
+- PERF possible additions:
+  - `PERF_0009`
+  - `PERF_0012`
+  - `PERF_0014`
+- CONS: none
+- LONGTAIL: none
+
+Interpretation notes:
+
+- These are possible additions for later human review only; they are not admitted, not promoted, not registry writeback, and not final common-core.
+- The proposed PORT additions improve portability-risk and query-shape coverage, but all of them remain `PARROT`-derived, so they do not solve source-family concentration.
+- `PORT_0005` remains a backup / possible candidate and is not part of the first 8-case slate.
+- The proposed PERF additions should be interpreted as selective, evidence-strong TPC-H additions rather than a broad PERF expansion.
+- CONS is not expanded because the current 5-case semantic addendum should remain compact for now.
+- LONGTAIL is not actively added to common-core at this stage.
+
+## 11. Recommended Next Step
 
 Do not update registry yet.
 
-If the team wants real-schema bridge cases in the seed, the recommended next action is a small JOB/IMDB governance backfill feasibility-to-execution step focused on current-generation case-root result and plan governance for a narrow bridge batch.
+Do not treat the possible expansion slate as admitted, promoted, or final common-core.
 
-Otherwise, wait for human review of this proposal and keep it as a scratch proposal only.
+The next step is human review of:
+
+1. the `27` health-gated keep-for-review candidates,
+2. the `8` possible additions,
+3. the remaining caveats around `PERF_0038`, `PERF_0076`, `PERF_0022`, `PORT_0003`, and `PORT_0016`.
+
+Only after that human review should the team decide whether to promote this scratch material into a formal review packet.
+
+JOB/IMDB bridge backfill is not the current recommended next action and should remain deferred unless separately decided later.
