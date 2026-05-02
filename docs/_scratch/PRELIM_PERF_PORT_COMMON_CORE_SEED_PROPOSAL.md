@@ -157,17 +157,17 @@ This proposal is therefore not trying to absorb all strong cases into one denomi
 
 ## 10. Possible Expansion Slate After Health Gate
 
-This section records a possible later expansion slate identified after the health-gated review pass.
+This section records a human-screened possible expansion slate for later review after the health-gated review pass.
 It does not change the current clean health-gated packet.
 It is not admission, not promotion, not registry writeback, and not a final common-core decision.
 
 Current count language:
 
 - current health-gated keep-for-review count: `27`
-- possible later review additions: `8`
-- possible expanded review slate: `35`
+- human-screened possible additions for later review: `8`
+- next possible human-review slate: `35`
 
-Possible additions for later human review:
+Human-screened possible additions for later review:
 
 - PORT possible additions:
   - `PORT_0014`
@@ -184,7 +184,17 @@ Possible additions for later human review:
 
 Interpretation notes:
 
-- These are possible additions for later human review only; they are not admitted, not promoted, not registry writeback, and not final common-core.
+- These are human-screened possible additions for later review only; they are not admitted, not promoted, not registry writeback, and not final common-core.
+- Strong candidates within this slate:
+  - `PORT_0014`
+  - `PORT_0023`
+  - `PERF_0009`
+  - `PERF_0012`
+  - `PERF_0014`
+- Caveat candidates within this slate:
+  - `PORT_0018`: `sql_feature.primary` is empty, so a taxonomy exception or tag fix is still needed
+  - `PORT_0028`: expression-heavy; acceptable, but it should carry an explicit caveat
+  - `PORT_0017`: useful for structural diversity, but it should carry an expression / column-normalization caveat
 - The proposed PORT additions improve portability-risk and query-shape coverage, but all of them remain `PARROT`-derived, so they do not solve source-family concentration.
 - `PORT_0005` remains a backup / possible candidate and is not part of the first 8-case slate.
 - The proposed PERF additions should be interpreted as selective, evidence-strong TPC-H additions rather than a broad PERF expansion.
@@ -200,7 +210,7 @@ Do not treat the possible expansion slate as admitted, promoted, or final common
 The next step is human review of:
 
 1. the `27` health-gated keep-for-review candidates,
-2. the `8` possible additions,
+2. the `8` human-screened possible additions for later review,
 3. the remaining caveats around `PERF_0038`, `PERF_0076`, `PERF_0022`, `PORT_0003`, and `PORT_0016`.
 
 Only after that human review should the team decide whether to promote this scratch material into a formal review packet.
