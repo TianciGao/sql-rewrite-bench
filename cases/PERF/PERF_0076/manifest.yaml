@@ -19,6 +19,9 @@ inputs:
     postgres: schema/ddl_pg.sql
   witness_data:
     postgres: validation/pg_witness_data.sql
+artifacts:
+  result_check: runs/result_check.json
+  plan_check: runs/plan_check.json
 provenance:
   dsqgen_command: provenance/dsqgen_command.txt
   raw_record: provenance/raw_record.json
@@ -54,5 +57,7 @@ tags:
       - null_semantics_gap
       - type_semantics_gap
 notes:
-  - Case-local construction and PostgreSQL witness validation only.
-  - PostgreSQL plan collection, MySQL, Spark, registry writeback, admission, promotion, common-core, and extended judgments are out of scope for this step.
+  - Tracked tri-engine draft result and plan evidence exists.
+  - Registry remains staged_not_yet_admitted.
+  - Plan semantics are not formally reviewed.
+  - No admission, common-core promotion, formal-review-complete, or release-grade claim is made.
