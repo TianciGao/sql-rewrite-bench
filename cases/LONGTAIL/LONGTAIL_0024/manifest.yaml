@@ -15,14 +15,14 @@ expected_engines:
   - PostgreSQL
   - MySQL
   - Spark
-official_case_status: case_local_constructed_not_registry_admitted
-registry_status: not_registered
-validation_status: not_validated
-admission_status: not_under_review
-tri_engine_closure: no
-validated_engines: []
-expected_line: candidate_only
-current_maturity: draft_only_not_validated
+official_case_status: staged_registered_draft_not_admitted
+registry_status: staged_registered
+validation_status: tracked_draft_engine_local_result_and_plan_evidence
+admission_status: staged_not_yet_admitted
+tri_engine_closure: yes
+validated_engines: [pg, mysql, spark]
+expected_line: staged
+current_maturity: staged_draft_with_tracked_engine_local_evidence
 source_files:
   source: source.sql
   positive_rewrite: rewrite_pos_01.sql
@@ -42,6 +42,9 @@ validation_scripts:
   mysql_plan_collection: "validation/run_mysql_plan_collection.sh"
   spark_validation: "validation/run_spark_validation.sh"
   spark_plan_collection: "validation/run_spark_plan_collection.sh"
+artifacts:
+  result_check: "runs/result_check.json"
+  plan_check: "runs/plan_check.json"
 tags:
   sql_feature:
     primary: ['cte']
@@ -60,9 +63,12 @@ tags:
     suspected: ['datetime_semantics_gap']
 known_caveats:
   - manually_engineered_stack_substrate_anchor
+  - manual_hybrid_stack_substrate_anchor
   - not_direct_sede_query_derived
   - not_sqlstorm_derived
-  - not_yet_validated_as_official_case
-  - registry_not_updated
   - no_admission_or_promotion_claim
-registry_note: "inventory/case_registry.csv is not updated during construction"
+  - not_admitted
+  - not_formally_reviewed
+  - plan_semantics_not_formally_reviewed
+  - release_grade_incomplete
+registry_note: "inventory/case_registry.csv now points to cases/LONGTAIL/LONGTAIL_0024/runs/plan_check.json; this case remains staged_not_yet_admitted."
