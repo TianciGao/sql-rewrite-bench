@@ -20,6 +20,8 @@ variants:
 targets:
   engines:
     - postgres
+    - mysql
+    - spark
 required_tables:
   - store_sales
   - date_dim
@@ -35,8 +37,8 @@ features:
 status:
   parse_checked: true
   exec_checked_pg: true
-  exec_checked_mysql: false
-  exec_checked_spark: false
+  exec_checked_mysql: true
+  exec_checked_spark: true
   plan_checked: true
   schema_ready: true
   validation_ready: true
@@ -58,6 +60,8 @@ artifacts:
   pg_positive_plan: runs/pg/plans/rewrite_pos_01.json
   pg_negative_plan: runs/pg/plans/rewrite_neg_01.json
   pg_plan_check: runs/pg/plans/plan_check.json
+  result_check: runs/result_check.json
+  plan_check: runs/plan_check.json
 tags:
   sql_feature:
     primary:
@@ -96,4 +100,4 @@ notes:
   - source.sql is PostgreSQL-normalized from the exact generated SQL preserved in provenance.
   - PostgreSQL witness validation passed for source/positive equality and source/negative divergence.
   - PostgreSQL plan artifacts were collected with EXPLAIN (FORMAT JSON) for source, positive rewrite, and negative rewrite.
-  - No MySQL, Spark, admission, promotion, common-core, or registry facts are claimed.
+  - Tracked tri-engine draft result and plan evidence exists; result governance uses documented case-specific normalization where applicable and is limited to formatting differences; registry remains staged_not_yet_admitted; plan semantics are not formally reviewed; no admission, common-core promotion, formal-review-complete, or release-grade claim is made.
