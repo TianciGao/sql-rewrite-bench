@@ -65,4 +65,4 @@ artifacts:
   result_check: runs/result_check.json
   plan_check: runs/plan_check.json
 next_gap: human review, portability review-prep packet / later formal review, later admission decision, and plan semantics not formally reviewed
-artifact_warning: draft-only case-local package with tracked draft cross-dialect result evidence and tracked draft plan evidence; not admitted, not common-core admitted, and not formal-review-complete
+artifact_warning: draft-only case-local package with tracked draft cross-dialect result evidence and tracked draft plan evidence; not admitted; no common-core promotion; no formal-review-complete or release-grade claim
