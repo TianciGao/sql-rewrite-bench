@@ -21,6 +21,11 @@ SOURCE_REGISTRY = ROOT / "inventory" / "source_registry.csv"
 CASE_REGISTRY = ROOT / "inventory" / "case_registry.csv"
 ENGINE_ORDER = ("pg", "mysql", "spark")
 ENGINE_IDS = set(ENGINE_ORDER)
+CONTROL_BASELINE_IDS = {
+    "NATIVE_IDENTITY",
+    "HUMAN_REFERENCE_POSITIVE",
+    "HARD_NEGATIVE_GUARD",
+}
 PERF_CASE_ID_RE = re.compile(r"^PERF_\d{4}$")
 PERF_TEMPLATE_CASE_ID = "PERF_0002"
 PERF_TEMPLATE_DIR = ROOT / "cases" / "PERF" / PERF_TEMPLATE_CASE_ID
@@ -283,6 +288,20 @@ def load_json(path: Path) -> dict[str, Any]:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
+def first_existing_path(paths: list[Path]) -> Path | None:
+    for path in paths:
+        if path.is_file():
+            return path
+    return None
+
+
+def first_existing_dir(paths: list[Path]) -> Path | None:
+    for path in paths:
+        if path.is_dir():
+            return path
+    return None
+
+
 def baseline_smoke_input_paths(case_root: Path, baseline_id: str) -> list[str]:
     if baseline_id == "NATIVE_IDENTITY":
         rel_paths = ["source.sql", "manifest.yaml"]
@@ -327,6 +346,356 @@ def baseline_status_record(spec: dict[str, Any]) -> dict[str, Any]:
         "blocker": blocker,
         "required_adapter": spec["required_adapter"],
     }
+
+
+def load_json_if_present(path: Path | None) -> dict[str, Any] | None:
+    if path is None or not path.is_file():
+        return None
+    try:
+        return load_json(path)
+    except (json.JSONDecodeError, OSError):
+        return None
+
+
+def recognized_check_signals(checks: dict[str, Any]) -> dict[str, bool]:
+    signals = {
+        "positive_equal": False,
+        "negative_differs": False,
+    }
+    for key, value in checks.items():
+        if not isinstance(value, bool) or not value:
+            continue
+        lowered = key.lower()
+        if "positive" in lowered and ("equal" in lowered or "equals" in lowered):
+            signals["positive_equal"] = True
+        if "negative" in lowered and ("differ" in lowered or "differs" in lowered):
+            signals["negative_differs"] = True
+    return signals
+
+
+def summarize_result_check(result_data: dict[str, Any] | None) -> dict[str, Any]:
+    if not result_data:
+        return {
+            "present": False,
+            "ok": None,
+            "status": "",
+            "schema_interpretation": "absent",
+            "signals": {
+                "positive_equal": False,
+                "negative_differs": False,
+            },
+        }
+
+    checks = result_data.get("checks")
+    signals = recognized_check_signals(checks if isinstance(checks, dict) else {})
+    if isinstance(checks, dict):
+        interpretation = "recognized_checks" if any(signals.values()) else "unparsed"
+    else:
+        interpretation = "unparsed"
+    return {
+        "present": True,
+        "ok": result_data.get("ok"),
+        "status": result_data.get("status", ""),
+        "schema_interpretation": interpretation,
+        "signals": signals,
+    }
+
+
+def control_record_result_status(
+    baseline_id: str,
+    sql_file_exists: bool,
+    result_summary: dict[str, Any],
+    output_variant_exists: bool,
+) -> tuple[str, str]:
+    if not sql_file_exists:
+        return "missing_evidence", "expected SQL file missing"
+
+    if baseline_id == "NATIVE_IDENTITY":
+        if result_summary["present"] or output_variant_exists:
+            return "artifact_supported", ""
+        return "missing_evidence", "no source result evidence located"
+
+    if baseline_id == "HUMAN_REFERENCE_POSITIVE":
+        if result_summary["signals"]["positive_equal"] or output_variant_exists:
+            return "artifact_supported", ""
+        return "missing_evidence", "no positive result evidence located"
+
+    return "not_applicable", ""
+
+
+def control_record_negative_status(
+    baseline_id: str,
+    sql_file_exists: bool,
+    result_summary: dict[str, Any],
+    output_variant_exists: bool,
+) -> tuple[str, str]:
+    if baseline_id != "HARD_NEGATIVE_GUARD":
+        return "not_applicable", ""
+    if not sql_file_exists:
+        return "missing_evidence", "expected SQL file missing"
+    if result_summary["signals"]["negative_differs"] or output_variant_exists:
+        return "artifact_supported", ""
+    return "missing_evidence", "no negative rejection evidence located"
+
+
+def control_record_paths(case_root: Path, baseline_id: str) -> dict[str, Any]:
+    result_candidates = [
+        case_root / "runs" / "pg" / "result_check.json",
+        case_root / "runs" / "result_check.json",
+    ]
+    plan_candidates = [
+        case_root / "runs" / "pg" / "plans" / "plan_check.json",
+        case_root / "runs" / "pg" / "plans" / "source.json",
+        case_root / "runs" / "pg" / "plans" / "source.txt",
+        case_root / "runs" / "plan_check.json",
+    ]
+
+    if baseline_id == "NATIVE_IDENTITY":
+        variant_id = "source"
+        expected_sql = case_root / "source.sql"
+        output_candidates = [
+            case_root / "runs" / "pg" / "source.tsv",
+            case_root / "runs" / "source.tsv",
+        ]
+        plan_candidates = [
+            case_root / "runs" / "pg" / "plans" / "source.json",
+            case_root / "runs" / "pg" / "plans" / "source.txt",
+            case_root / "runs" / "plan_check.json",
+        ]
+    elif baseline_id == "HUMAN_REFERENCE_POSITIVE":
+        variant_id = "rewrite_pos_01"
+        expected_sql = case_root / "rewrite_pos_01.sql"
+        output_candidates = [
+            case_root / "runs" / "pg" / "rewrite_pos_01.tsv",
+            case_root / "runs" / "rewrite_pos_01.tsv",
+        ]
+        plan_candidates = [
+            case_root / "runs" / "pg" / "plans" / "rewrite_pos_01.json",
+            case_root / "runs" / "pg" / "plans" / "rewrite_pos_01.txt",
+            case_root / "runs" / "plan_check.json",
+        ]
+    else:
+        variant_id = "rewrite_neg_01"
+        expected_sql = case_root / "rewrite_neg_01.sql"
+        output_candidates = [
+            case_root / "runs" / "pg" / "rewrite_neg_01.tsv",
+            case_root / "runs" / "rewrite_neg_01.tsv",
+        ]
+        plan_candidates = [
+            case_root / "runs" / "pg" / "plans" / "rewrite_neg_01.json",
+            case_root / "runs" / "pg" / "plans" / "rewrite_neg_01.txt",
+            case_root / "runs" / "plan_check.json",
+        ]
+
+    result_path = first_existing_path(result_candidates)
+    plan_path = first_existing_path(plan_candidates)
+    output_path = first_existing_path(output_candidates)
+
+    if result_path == result_candidates[0]:
+        result_scope = "pg_specific"
+    elif result_path == result_candidates[1]:
+        result_scope = "case_root"
+    else:
+        result_scope = "none"
+
+    if plan_path and "runs/pg/plans" in str(plan_path):
+        plan_scope = "pg_specific"
+    elif plan_path:
+        plan_scope = "case_root"
+    else:
+        plan_scope = "none"
+
+    return {
+        "variant_id": variant_id,
+        "expected_sql_file": expected_sql.name,
+        "expected_sql_path": expected_sql,
+        "result_evidence_path": result_path,
+        "result_evidence_scope": result_scope,
+        "plan_evidence_path": plan_path,
+        "plan_evidence_scope": plan_scope,
+        "output_artifact_path": output_path,
+    }
+
+
+def build_control_record(case_spec: dict[str, Any], baseline_id: str) -> tuple[dict[str, Any], list[str]]:
+    case_root = pool_case_root(case_spec["pool"]) / case_spec["case_id"]
+    path_info = control_record_paths(case_root, baseline_id)
+    sql_path = path_info["expected_sql_path"]
+    sql_exists = sql_path.is_file()
+    result_data = load_json_if_present(path_info["result_evidence_path"])
+    result_summary = summarize_result_check(result_data)
+    output_variant_exists = path_info["output_artifact_path"] is not None
+
+    result_status, result_blocker = control_record_result_status(
+        baseline_id,
+        sql_exists,
+        result_summary,
+        output_variant_exists,
+    )
+    negative_status, negative_blocker = control_record_negative_status(
+        baseline_id,
+        sql_exists,
+        result_summary,
+        output_variant_exists,
+    )
+    plan_status = "artifact_supported" if path_info["plan_evidence_path"] else "missing_evidence"
+
+    blocker = result_blocker or negative_blocker
+    failure_category = "none"
+    if not sql_exists:
+        failure_category = "missing_required_sql"
+    elif result_status == "missing_evidence" or negative_status == "missing_evidence":
+        failure_category = "missing_evidence"
+
+    notes: list[str] = [
+        f"case caveat: {case_spec['caveat']}",
+        f"result_check_schema_interpretation: {result_summary['schema_interpretation']}",
+    ]
+    if result_summary["present"]:
+        if result_summary["status"]:
+            notes.append(f"result_check_status: {result_summary['status']}")
+        if result_summary["ok"] is not None:
+            notes.append(f"result_check_ok: {result_summary['ok']}")
+    if path_info["output_artifact_path"] is not None:
+        notes.append(f"variant_output_artifact: {relative_to_root(path_info['output_artifact_path'])}")
+    if path_info["plan_evidence_path"] is None:
+        notes.append("no plan evidence artifact located")
+    if path_info["result_evidence_path"] is None:
+        notes.append("no result_check artifact located")
+
+    record = {
+        "baseline_id": baseline_id,
+        "case_id": case_spec["case_id"],
+        "pool": case_spec["pool"],
+        "planned_engine": "postgres",
+        "execution_mode": "artifact_record_only",
+        "variant_id": path_info["variant_id"],
+        "expected_sql_file": path_info["expected_sql_file"],
+        "expected_sql_path": relative_to_root(sql_path),
+        "sql_file_exists": sql_exists,
+        "result_evidence_path": (
+            relative_to_root(path_info["result_evidence_path"]) if path_info["result_evidence_path"] else ""
+        ),
+        "result_evidence_scope": path_info["result_evidence_scope"],
+        "plan_evidence_path": (
+            relative_to_root(path_info["plan_evidence_path"]) if path_info["plan_evidence_path"] else ""
+        ),
+        "plan_evidence_scope": path_info["plan_evidence_scope"],
+        "result_consistency_status": result_status,
+        "negative_rejection_status": negative_status,
+        "plan_collection_status": plan_status,
+        "failure_category": failure_category,
+        "blocker": blocker,
+        "notes": notes,
+        "artifact_claim_boundary": "existing_artifact_only_no_execution",
+    }
+    warnings = []
+    if result_status == "missing_evidence" or negative_status == "missing_evidence" or plan_status == "missing_evidence":
+        warnings.append(f"{baseline_id}/{case_spec['case_id']}: artifact evidence incomplete")
+    return record, warnings
+
+
+def cmd_baseline_smoke_control_records(args: argparse.Namespace) -> int:
+    if args.execute:
+        payload = {
+            "command": "baseline-smoke-control-records",
+            "cwd": str(ROOT),
+            "ok": False,
+            "ran_at_utc": utc_now(),
+            "execution_mode": "execute_requested_but_blocked",
+            "message": "Non-dry-run execution is intentionally not implemented yet. Use artifact-only control record generation.",
+            "errors": [
+                {
+                    "type": "execution_not_implemented",
+                    "message": "control baseline record scaffold currently supports artifact_record_only mode",
+                }
+            ],
+        }
+        write_baseline_smoke_report("control_records_execute_refused_common_core_v0.json", payload)
+        return print_and_exit(payload, 1)
+
+    config_path = resolve_repo_path(args.config)
+    config = load_json(config_path)
+    selected_baselines = list(dict.fromkeys(args.baseline_id or sorted(CONTROL_BASELINE_IDS)))
+
+    unsupported_requested = [baseline_id for baseline_id in selected_baselines if baseline_id not in CONTROL_BASELINE_IDS]
+    if unsupported_requested:
+        payload = {
+            "command": "baseline-smoke-control-records",
+            "cwd": str(ROOT),
+            "ok": False,
+            "ran_at_utc": utc_now(),
+            "execution_mode": "artifact_record_only",
+            "config_path": relative_to_root(config_path),
+            "message": "Unsupported baselines were requested for control-record generation.",
+            "errors": [
+                {
+                    "type": "unsupported_baseline_ids",
+                    "baseline_ids": unsupported_requested,
+                    "supported_baseline_ids": sorted(CONTROL_BASELINE_IDS),
+                }
+            ],
+        }
+        write_baseline_smoke_report("control_records_common_core_v0.json", payload)
+        return print_and_exit(payload, 1)
+
+    config_baselines = {item["baseline_id"] for item in config["baselines"]}
+    missing_from_config = [baseline_id for baseline_id in selected_baselines if baseline_id not in config_baselines]
+    if missing_from_config:
+        payload = {
+            "command": "baseline-smoke-control-records",
+            "cwd": str(ROOT),
+            "ok": False,
+            "ran_at_utc": utc_now(),
+            "execution_mode": "artifact_record_only",
+            "config_path": relative_to_root(config_path),
+            "message": "Required control baselines are missing from the smoke config.",
+            "errors": [
+                {
+                    "type": "missing_config_baseline_ids",
+                    "baseline_ids": missing_from_config,
+                }
+            ],
+        }
+        write_baseline_smoke_report("control_records_common_core_v0.json", payload)
+        return print_and_exit(payload, 1)
+
+    warnings: list[str] = []
+    skipped_config_baselines = sorted(config_baselines - CONTROL_BASELINE_IDS)
+    if skipped_config_baselines:
+        warnings.append(
+            "skipped non-control baselines from config: " + ", ".join(skipped_config_baselines)
+        )
+
+    selected_cases = config["cases"]
+    records: list[dict[str, Any]] = []
+    for case_spec in selected_cases:
+        for baseline_id in selected_baselines:
+            record, record_warnings = build_control_record(case_spec, baseline_id)
+            records.append(record)
+            warnings.extend(record_warnings)
+
+    payload = {
+        "command": "baseline-smoke-control-records",
+        "cwd": str(ROOT),
+        "ok": True,
+        "ran_at_utc": utc_now(),
+        "config_path": relative_to_root(config_path),
+        "engine_scope": config["engine_scope"],
+        "execution_mode": "artifact_record_only",
+        "case_count": len(selected_cases),
+        "baseline_count": len(selected_baselines),
+        "record_count": len(records),
+        "baseline_ids": selected_baselines,
+        "cases": [case["case_id"] for case in selected_cases],
+        "counts_by_result_consistency_status": count_values(records, "result_consistency_status"),
+        "counts_by_negative_rejection_status": count_values(records, "negative_rejection_status"),
+        "counts_by_plan_collection_status": count_values(records, "plan_collection_status"),
+        "warnings": warnings,
+        "records": records,
+    }
+    write_baseline_smoke_report("control_records_common_core_v0.json", payload)
+    return print_and_exit(payload, 0)
 
 
 def cmd_baseline_smoke_preflight(args: argparse.Namespace) -> int:
@@ -1475,6 +1844,19 @@ def build_parser() -> argparse.ArgumentParser:
     )
     baseline_smoke_parser.add_argument("--execute", action="store_true", default=False)
     baseline_smoke_parser.set_defaults(func=cmd_baseline_smoke_preflight)
+
+    control_records_parser = subparsers.add_parser("baseline-smoke-control-records")
+    control_records_parser.add_argument(
+        "--config",
+        default="docs/_scratch/baseline_smoke_common_core_v0.json",
+    )
+    control_records_parser.add_argument(
+        "--baseline-id",
+        action="append",
+        default=[],
+    )
+    control_records_parser.add_argument("--execute", action="store_true", default=False)
+    control_records_parser.set_defaults(func=cmd_baseline_smoke_control_records)
 
     return parser
 
