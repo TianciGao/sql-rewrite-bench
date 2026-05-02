@@ -12,7 +12,13 @@ expected_engines:
   - PostgreSQL
   - MySQL
   - Spark
-official_case_status: case_local_constructed_not_registry_admitted
+registry_status: staged_registered
+validation_status: tracked_draft_engine_local_result_and_plan_evidence
+admission_status: staged_not_yet_admitted
+validated_engines: [pg, mysql, spark]
+tri_engine_closure: yes
+expected_line: staged
+official_case_status: staged_registered_draft_not_admitted
 source_files:
   source: source.sql
   positive_rewrite: rewrite_pos_01.sql
@@ -32,6 +38,9 @@ validation_scripts:
   mysql_plan_collection: "validation/run_mysql_plan_collection.sh"
   spark_validation: "validation/run_spark_validation.sh"
   spark_plan_collection: "validation/run_spark_plan_collection.sh"
+artifacts:
+  result_check: runs/result_check.json
+  plan_check: runs/plan_check.json
 tags:
   sql_feature:
     primary: [correlated_subquery]
@@ -49,8 +58,12 @@ tags:
     confirmed: [null_semantics_gap]
     suspected: []
 known_caveats:
-  - not_yet_validated_as_official_case
-  - registry_not_updated
   - no_admission_or_promotion_claim
   - witness_data_is_small_and_case_local
-registry_note: "inventory/case_registry.csv is not updated during construction"
+  - not_admitted
+  - not_formally_reviewed
+  - plan_semantics_not_formally_reviewed
+  - release_grade_incomplete
+registry_note: "inventory/case_registry.csv now points to cases/CONS/CONS_0005/runs/plan_check.json; this case remains staged_not_yet_admitted."
+next_gap: "human review, later formal review, plan semantics not formally reviewed, later admission decision"
+artifact_warning: "tracked draft engine-local result and plan evidence only; not admitted; no common-core promotion, formal-review-complete, or release-grade claim"
