@@ -16,7 +16,7 @@ target_engines:
 official_case_status: draft_constructed
 registry_status: staged_registered
 validation_status: draft_cross_dialect_evidence_tracked
-admission_status: not_under_review
+admission_status: staged_not_yet_admitted
 package_engineering_status: draft_package_constructed_with_tracked_result_evidence_and_tracked_draft_plan_evidence
 draft_origin: PORT_DRAFT_0002
 validated_engines:
@@ -40,7 +40,7 @@ tags:
   portability:
     confirmed: [identifier_quoting, datetime_semantics_gap, type_semantics_gap]
     suspected: []
-expected_line: candidate_only
+expected_line: staged
 required_tables:
   - frpm
   - schools
