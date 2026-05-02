@@ -32,8 +32,8 @@ features: []
 status:
   parse_checked: true
   exec_checked_pg: true
-  exec_checked_mysql: false
-  exec_checked_spark: false
+  exec_checked_mysql: true
+  exec_checked_spark: true
   plan_checked: true
   schema_ready: true
   validation_ready: true
@@ -46,6 +46,9 @@ data_profile:
   file: data_profile.json
 metadata:
   engine_metadata: metadata/engine_metadata.yaml
+artifacts:
+  result_check: runs/result_check.json
+  plan_check: runs/plan_check.json
 validation:
   checker: validation/checker.yaml
   witness_dataset: validation/witness_dataset.yaml
@@ -88,8 +91,7 @@ tags:
       - datetime_semantics_gap
 notes:
   - Source/provenance layer manually frozen from TPC-H Query 8 using checked reference substitutions.
-  - PostgreSQL-only witness validation passed for source, positive rewrite, and negative rewrite.
-  - PostgreSQL-only EXPLAIN FORMAT JSON plan artifacts are collected for source, positive rewrite, and negative rewrite.
+  - Tracked tri-engine draft result and plan evidence exists; registry remains staged_not_yet_admitted; plan semantics are not formally reviewed; no admission, common-core promotion, formal-review-complete, or release-grade claim is made.
+  - Existing engine-local plan artifacts remain collected for source, positive rewrite, and negative rewrite.
   - Minimal DDL/data_profile/checker layer is populated for referenced tables and columns only.
-  - No MySQL/Spark validation, registry writeback, admission claim, or promotion claim is made.
   - TODO: Human must fill MySQL/Spark validation, taxonomy tags, registry row, and review status.
