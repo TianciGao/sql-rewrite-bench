@@ -29,6 +29,22 @@ validation_scripts:
   mysql_plan_collection: "validation/run_mysql_plan_collection.sh"
   spark_validation: "validation/run_spark_validation.sh"
   spark_plan_collection: "validation/run_spark_plan_collection.sh"
+tags:
+  sql_feature:
+    primary: ['cte', 'window_function']
+    secondary: ['outer_join']
+  rewrite_opportunity:
+    primary: ['cte_strategy']
+    secondary: ['aggregation_rewrite']
+  plan_operator:
+    present: ['scan', 'join', 'aggregate', 'sort', 'window', 'subquery']
+    delta_relevant: []
+  workload_realism:
+    source_inherited: ['realistic_query_style']
+    case_specific: ['result_size_sensitivity']
+  portability:
+    confirmed: []
+    suspected: []
 known_caveats:
   - not_yet_validated_as_official_case
   - registry_not_updated

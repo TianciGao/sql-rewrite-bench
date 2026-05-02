@@ -42,6 +42,22 @@ validation_scripts:
   mysql_plan_collection: "validation/run_mysql_plan_collection.sh"
   spark_validation: "validation/run_spark_validation.sh"
   spark_plan_collection: "validation/run_spark_plan_collection.sh"
+tags:
+  sql_feature:
+    primary: ['cte']
+    secondary: []
+  rewrite_opportunity:
+    primary: ['cte_strategy']
+    secondary: ['aggregation_rewrite']
+  plan_operator:
+    present: ['scan', 'join', 'aggregate', 'sort', 'subquery']
+    delta_relevant: []
+  workload_realism:
+    source_inherited: ['realistic_query_style', 'manual_gap_fill_realism']
+    case_specific: ['long_tail_structure']
+  portability:
+    confirmed: []
+    suspected: ['datetime_semantics_gap']
 known_caveats:
   - manually_engineered_stack_substrate_anchor
   - not_direct_sede_query_derived
