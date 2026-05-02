@@ -41,19 +41,30 @@ The governed subset spans both current consistency source families:
 
 This proposal treats that governed subset as a bounded semantic addendum only. It does not fold CONS into the existing PERF+PORT seed at this stage.
 
-## 4. Proposed 7-Case CONS Add-On Seed Table
+## 4. Proposed 5-Case CONS Add-On Seed Table
 
 | case_id | source_family | proposed role | evidence/governance status | key semantic pattern | why included | blocker before final adoption | risk |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | `CONS_0007` | Calcite | semantic_baseline | staged; tri-engine; case-root result and plan governance present | compact correlated `EXISTS` decorrelation baseline | clean, compact, and easy to explain in a fair semantic comparison | ordinary human review only | low |
 | `CONS_0012` | Calcite | decorrelation_baseline | staged; tri-engine; case-root result and plan governance present | `LIMIT` / `OFFSET` threshold rewrite | adds a governed threshold-style decorrelation case with a very clear hard negative | explicit framing around `OFFSET` semantics | low |
 | `CONS_0024` | Calcite | outer_join_baseline | staged; tri-engine; case-root result and plan governance present | outer join guarded by grouped correlated `EXISTS` | adds compact outer-join and grouped-subquery coverage without moving into the most pathological stress cases | explanation is slightly more involved than the simplest baselines | medium |
-| `CONS_0005` | Calcite | null_semantics_baseline | staged; tri-engine; case-root result and plan governance present | null-sensitive anti-join | strongest governed null-sensitive anti-join denominator candidate | may move to extended if null-sensitive anti-join is judged too stress-heavy for the denominator | medium |
 | `CONS_0031` | VeriEQL | semantic_baseline | staged; tri-engine; case-root result and plan governance present | compact `EXISTS` and `NOT EXISTS` decorrelation | strongest compact VeriEQL semantic baseline and good source-family counterweight to Calcite | ordinary human review only | low |
 | `CONS_0034` | VeriEQL | aggregation_baseline | staged; tri-engine; case-root result and plan governance present | CASE expression aggregation rewrite | adds governed VeriEQL aggregation coverage with a clear positive rewrite | expression-heavy structure may make it feel less compact than a pure baseline | medium |
-| `CONS_0037` | VeriEQL | outer_join_baseline | staged; tri-engine; case-root result and plan governance present | duplicate-sensitive `COUNT(DISTINCT)` under `LEFT JOIN` | strongest governed duplicate-sensitive outer-join aggregate case | may move to extended if the final seed must avoid duplicate-sensitive stress | medium |
+
+This 5-case add-on seed is recommended for human review only. It is not admitted, not registry writeback, and not merged into the main PERF+PORT seed.
+
+Additional seed caveats:
+
+- `CONS_0034` remains in the add-on seed because its aggregation rewrite value is strong, but it is expression-heavy and should carry a medium-risk caveat.
+- `CONS_0005` is valuable, but it should be treated as null-sensitive anti-join stress unless human review decides otherwise.
+- `CONS_0037` is valuable, but it should be treated as duplicate-sensitive outer-join aggregate stress unless human review decides otherwise.
+- CONS remains a separate addendum and is not merged into the main PERF+PORT seed yet.
 
 ## 5. Extended CONS Set
+
+- Null / anti-join / null-semantics stress:
+  - `CONS_0005`
+  - Expected use: null-sensitive anti-join stress and semantic robustness where `NOT IN` / null behavior is the main point rather than a compact denominator baseline.
 
 - Null / boolean semantic stress:
   - `CONS_0011`, `CONS_0017`, `CONS_0032`, `CONS_0040`
@@ -75,7 +86,7 @@ This proposal treats that governed subset as a bounded semantic addendum only. I
   - `CONS_0036`
   - Expected use: aggregation stress and plan-observability discussion around grouped-filter scope.
 
-- Duplicate-sensitive outer join:
+- Duplicate-sensitive outer-join aggregate stress:
   - `CONS_0010`, `CONS_0037`
   - Expected use: duplicate sensitivity and semantic robustness under left-join aggregate rewrites.
 
@@ -93,7 +104,6 @@ This proposal treats that governed subset as a bounded semantic addendum only. I
 ## 7. Open Blockers
 
 - human review
-- manifest stale-status cleanup
 - plan semantics not formally reviewed
 - broader CONS governance normalization
 - final common-core / extended decision still pending
@@ -106,7 +116,7 @@ Keep CONS as a separate addendum for human review rather than merging it into th
 
 Reasonable next actions are:
 
-- manifest-only cleanup for the `17` governed CONS cases
-- human review of the proposed `7`-case CONS add-on seed
+- human review of the proposed `5`-case CONS add-on seed
+- a later decision on whether `CONS_0005` and `CONS_0037` should remain extended-only stress cases
 
 This document should remain a scratch proposal only until that review occurs.

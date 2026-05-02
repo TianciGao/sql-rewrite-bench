@@ -1,19 +1,19 @@
 # Preliminary PERF+PORT Common-Core Seed Proposal
 
-- Status: scratch proposal / not admitted / not registry-backed decision
+- Status: scratch proposal / human-review packet / not admitted / not registry-backed decision / not registry writeback
 - Date: 2026-05-01
 
 ## 1. Purpose
 
 This proposal combines governed performance cases and tagged portability cases into a preliminary fair-horizontal-comparison seed.
 
-The intent is to identify a conservative starting set for later human review across:
+The intent is to identify a conservative preliminary candidate seed for later human review across:
 
 - performance baselines
 - portability baselines
-- a small number of provisional real-schema bridge cases
+- governed cross-engine comparison stock
 
-This is a proposal only. It is not admitted, not registry writeback, not a common-core promotion, and not a final benchmark-line decision.
+This is a proposal only. It is not admitted, not registry writeback, not a common-core promotion, and not a final benchmark-line decision. CONS remains a separate addendum and is not merged into this PERF+PORT proposal. LONGTAIL remains outside this common-core seed discussion.
 
 ## 2. Selection Principles
 
@@ -27,7 +27,7 @@ This is a proposal only. It is not admitted, not registry writeback, not a commo
 - portability-risk coverage
 - avoid heavy case-specific normalization in the seed
 
-## 3. Proposed 26-Case Seed Table
+## 3. Proposed 24-Case Preliminary Candidate Seed Table
 
 | case_id | pool | source_family | proposed role | evidence/governance status | why included | blocker before final adoption | risk |
 | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -46,8 +46,6 @@ This is a proposal only. It is not admitted, not registry writeback, not a commo
 | `PERF_0062` | performance | TPC-DS | performance_baseline | staged; tri-engine; case-root result and plan governance present | straightforward governed analytical case | human review only | low |
 | `PERF_0063` | performance | TPC-DS | performance_baseline | staged; tri-engine; case-root result and plan governance present | string-function feature coverage inside governed TPC-DS | human review only | low |
 | `PERF_0076` | performance | TPC-DS | complexity_endpoint | staged; tri-engine; case-root result and plan governance present | complexity ceiling without known mismatch | complexity makes final fairness review harder | medium |
-| `PERF_0077` | performance | JOB/IMDB | real_schema_bridge | tri-engine evidence in review-prep and registry; no current-generation case-root governance | strongest early real-schema bridge candidate | current-generation governance backfill still needed | medium |
-| `PERF_0082` | performance | JOB/IMDB | real_schema_bridge | tri-engine evidence in review-prep and registry; no current-generation case-root governance | second real-schema bridge with join/materialize value | current-generation governance backfill still needed | medium |
 | `PORT_0003` | portability | PARROT | portability_baseline | staged; registry-backed; case-root `result_check` and `plan_check` present | strongest null/limit portability representative | empty `sql_feature.primary` due taxonomy gap | medium |
 | `PORT_0004` | portability | PARROT | portability_baseline | staged; registry-backed; case-root `result_check` and `plan_check` present | clean MySQL-reference datetime/type case | human review only | low |
 | `PORT_0006` | portability | PARROT | portability_baseline | staged; registry-backed; case-root `result_check` and `plan_check` present | clean boolean/type portability denominator | human review only | low |
@@ -68,9 +66,18 @@ The proposed PERF side is intentionally dominated by:
 - governed TPC-DS baselines
 - a small number of complexity endpoints
 
-`PERF_0077` and `PERF_0082` are included only as provisional JOB/IMDB real-schema bridge cases. They strengthen realism and source-family diversity, but they still lack current-generation case-root governance. They should not be treated as final common-core seed stock until a small JOB/IMDB governance backfill is completed.
+This preliminary candidate seed is intentionally limited to governed PERF cases only. Real-schema bridge value from JOB/IMDB is preserved below as provisional follow-on material rather than being folded into the main 24-case seed now.
 
-## 5. PORT Side Rationale
+## 5. Provisional JOB/IMDB Bridge Candidates
+
+These cases have real-schema bridge value and should remain visible in the human-review packet, but they should stay outside the main seed until JOB/IMDB current-generation governance is backfilled.
+
+| case_id | source_family | provisional role | current evidence status | why not in main seed yet | risk |
+| --- | --- | --- | --- | --- | --- |
+| `PERF_0077` | JOB/IMDB | real_schema_bridge | tri-engine evidence in review-prep and registry; no current-generation case-root governance | strongest early real-schema bridge candidate, but current registry facts remain `benchmark_line=not_assessed` and `admission_status=not_assessed` | medium |
+| `PERF_0082` | JOB/IMDB | real_schema_bridge | tri-engine evidence in review-prep and registry; no current-generation case-root governance | useful second bridge case with join/materialize value, but still outside the governed current-generation PERF set | medium |
+
+## 6. PORT Side Rationale
 
 PORT contributes the portability denominator that PERF alone cannot provide. The proposed PORT rows are chosen to keep the set interpretable, registry-backed, and evidence-complete while still covering both PostgreSQL-reference and MySQL-reference directions.
 
@@ -85,26 +92,35 @@ The selected PORT cases jointly cover:
 
 `PORT_0003` should be kept with an explicit caveat. It remains a strong null/limit portability representative, but its `sql_feature.primary` list is empty because the current taxonomy does not provide a clean tag for that flat top-k portability shape. That is a taxonomy gap, not a reason to overwrite the case with a weak substitute tag.
 
-## 6. Explicit Exclusions
+## 7. Explicit Exclusions
 
 - `PERF_0071`–`PERF_0075`: excluded because real positive-output mismatch is still unresolved
 - `PORT_0007`: excluded because it is not registry-backed and lacks current evidence closure
 - LONGTAIL: excluded because it is extended-oriented for now
-- CONS: excluded because taxonomy calibration and broader governance normalization are still pending
+- CONS: kept as a separate addendum and not merged into this PERF+PORT proposal
 - unregistered failed packages: excluded from this proposal
 
-## 7. Extended Set Pointer
+Additional caveats for human review:
+
+- `PERF_0077` and `PERF_0082` have real-schema bridge value, but they should remain provisional until JOB/IMDB current-generation governance is backfilled.
+- `PORT_0003` remains in the seed despite empty `sql_feature.primary`; this is treated as a taxonomy gap, not a case defect.
+- `PERF_0071`–`PERF_0075` remain excluded due real positive-output mismatch.
+- `PORT_0007` remains excluded due lack of registry-backed current evidence.
+- LONGTAIL remains excluded from the common-core seed.
+- CONS remains a separate addendum and is not merged into the main seed here.
+
+## 8. Extended Set Pointer
 
 The following groups should remain outside this preliminary seed and instead be treated as extended-oriented material:
 
 - PERF normalization-heavy TPC-DS cases
-- older-governance JOB/IMDB realism-stress cases
+- provisional JOB/IMDB realism-stress and bridge cases pending governance backfill
 - PORT portability-stress cases that are valuable but not clean enough for the seed
 - LONGTAIL and CONS later as extended characterization lines after taxonomy and governance normalization
 
 This proposal is therefore not trying to absorb all strong cases into one denominator. It is intentionally conservative.
 
-## 8. Open Blockers
+## 9. Open Blockers
 
 - JOB/IMDB current-generation governance backfill
 - PORT taxonomy gaps for flat top-k / grouped-order cases
@@ -112,7 +128,7 @@ This proposal is therefore not trying to absorb all strong cases into one denomi
 - plan semantics not formally reviewed
 - no admission decision yet
 
-## 9. Recommended Next Step
+## 10. Recommended Next Step
 
 Do not update registry yet.
 
