@@ -15,7 +15,7 @@ target_engines:
 official_case_status: draft_constructed
 registry_status: staged_registered
 validation_status: tracked_draft_cross_dialect_result_evidence
-admission_status: not_under_review
+admission_status: staged_not_yet_admitted
 package_engineering_status: draft package with tracked result evidence and tracked draft plan evidence; release hardening incomplete
 draft_origin: PORT_DRAFT_0030
 validated_engines:
