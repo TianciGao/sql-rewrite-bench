@@ -20,6 +20,8 @@ variants:
 targets:
   engines:
     - postgres
+    - mysql
+    - spark
 required_tables:
   - catalog_sales
   - customer
@@ -34,9 +36,9 @@ features:
 status:
   parse_checked: true
   exec_checked_pg: true
-  exec_checked_mysql: false
-  exec_checked_spark: false
-  plan_checked: false
+  exec_checked_mysql: true
+  exec_checked_spark: true
+  plan_checked: true
   schema_ready: true
   validation_ready: true
   release_grade: false
@@ -53,6 +55,8 @@ artifacts:
   pg_positive_result: runs/pg/rewrite_pos_01.tsv
   pg_negative_result: runs/pg/rewrite_neg_01.tsv
   pg_result_check: runs/pg/result_check.json
+  result_check: runs/result_check.json
+  plan_check: runs/plan_check.json
 tags:
   sql_feature:
     primary:
@@ -82,5 +86,4 @@ tags:
 notes:
   - Materialized from human-frozen TPC-DS standard query_templates source with repaired repo-local dsqgen.
   - source.sql is PostgreSQL-normalized from the exact generated SQL preserved in provenance.
-  - PostgreSQL witness validation is the only validation layer claimed by this case-local package.
-  - PostgreSQL plan artifacts, MySQL, Spark, admission, promotion, common-core, registry facts, and review facts are not claimed.
+  - Tracked tri-engine draft result and plan evidence exists; registry remains staged_not_yet_admitted; plan semantics are not formally reviewed; no admission, common-core promotion, formal-review-complete, or release-grade claim is made.
