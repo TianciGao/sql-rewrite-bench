@@ -15,6 +15,7 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parent.parent
 REPORT_DIR = ROOT / "reports" / "cli"
+BASELINE_SMOKE_REPORT_DIR = ROOT / "reports" / "baseline_smoke"
 ENV_VARS = ["PGHOST", "MYSQL_HOST", "SPARK_LOCAL_IP"]
 SOURCE_REGISTRY = ROOT / "inventory" / "source_registry.csv"
 CASE_REGISTRY = ROOT / "inventory" / "case_registry.csv"
@@ -28,6 +29,7 @@ PORT_CASE_ID_RE = re.compile(r"^PORT_\d{4}$")
 PORT_TEMPLATE_CASE_ID = "PORT_0002"
 PORT_TEMPLATE_DIR = ROOT / "cases" / "PORT" / PORT_TEMPLATE_CASE_ID
 PORT_CASE_ROOT = ROOT / "cases" / "PORT"
+CONS_CASE_ROOT = ROOT / "cases" / "CONS"
 
 SOURCE_REQUIRED_FIELDS = [
     "source_id",
@@ -130,6 +132,17 @@ def ensure_report_dir() -> None:
 def write_report(command: str, payload: dict[str, Any]) -> Path:
     ensure_report_dir()
     report_path = REPORT_DIR / f"{command}.json"
+    payload["report_path"] = str(report_path.relative_to(ROOT))
+    report_path.write_text(
+        json.dumps(payload, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    return report_path
+
+
+def write_baseline_smoke_report(report_name: str, payload: dict[str, Any]) -> Path:
+    BASELINE_SMOKE_REPORT_DIR.mkdir(parents=True, exist_ok=True)
+    report_path = BASELINE_SMOKE_REPORT_DIR / report_name
     payload["report_path"] = str(report_path.relative_to(ROOT))
     report_path.write_text(
         json.dumps(payload, indent=2, sort_keys=True) + "\n",
@@ -254,6 +267,240 @@ def resolve_repo_path(value: str) -> Path:
     if not path.is_absolute():
         path = ROOT / path
     return path.resolve()
+
+
+def pool_case_root(pool: str) -> Path:
+    if pool == "performance":
+        return PERF_CASE_ROOT
+    if pool == "portability":
+        return PORT_CASE_ROOT
+    if pool == "consistency":
+        return CONS_CASE_ROOT
+    raise ValueError(f"unsupported pool for baseline smoke preflight: {pool}")
+
+
+def load_json(path: Path) -> dict[str, Any]:
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+def baseline_smoke_input_paths(case_root: Path, baseline_id: str) -> list[str]:
+    if baseline_id == "NATIVE_IDENTITY":
+        rel_paths = ["source.sql", "manifest.yaml"]
+    elif baseline_id == "HUMAN_REFERENCE_POSITIVE":
+        rel_paths = ["source.sql", "rewrite_pos_01.sql", "manifest.yaml"]
+    elif baseline_id == "HARD_NEGATIVE_GUARD":
+        rel_paths = ["source.sql", "rewrite_neg_01.sql", "manifest.yaml"]
+    elif baseline_id in {"SQLGLOT_OPT_SAME_DIALECT", "LLM_DIRECT_REWRITE_STRONG"}:
+        rel_paths = ["source.sql", "manifest.yaml"]
+    else:
+        rel_paths = ["manifest.yaml"]
+    return [relative_to_root(case_root / rel_path) for rel_path in rel_paths]
+
+
+def baseline_smoke_output_paths(case_id: str, baseline_id: str) -> dict[str, str]:
+    base = ROOT / "reports" / "baseline_smoke" / "planned_outputs" / case_id / baseline_id
+    return {
+        "generated_sql_path": relative_to_root(base / "generated.sql"),
+        "record_path": relative_to_root(base / "record.json"),
+    }
+
+
+def baseline_status_record(spec: dict[str, Any]) -> dict[str, Any]:
+    baseline_id = spec["baseline_id"]
+    status = "ready_for_dry_run"
+    blocker = ""
+    if baseline_id == "SQLGLOT_OPT_SAME_DIALECT":
+        status = "scaffold_only"
+        blocker = "SQLGlot adapter command and SQL acceptance policy are not frozen"
+    elif baseline_id == "LLM_DIRECT_REWRITE_STRONG":
+        status = "scaffold_only"
+        blocker = "LLM prompt freeze, model/version freeze, and token/cost logging are not frozen"
+
+    return {
+        "baseline_id": baseline_id,
+        "smoke_role": spec["smoke_role"],
+        "enabled_by_default": bool(spec["enabled_by_default"]),
+        "requires_database": bool(spec["requires_database"]),
+        "requires_llm": bool(spec["requires_llm"]),
+        "requires_sqlglot": bool(spec["requires_sqlglot"]),
+        "current_status": status,
+        "blocker": blocker,
+        "required_adapter": spec["required_adapter"],
+    }
+
+
+def cmd_baseline_smoke_preflight(args: argparse.Namespace) -> int:
+    if args.execute:
+        payload = {
+            "command": "baseline-smoke-preflight",
+            "cwd": str(ROOT),
+            "ok": False,
+            "ran_at_utc": utc_now(),
+            "execution_mode": "execute_requested_but_blocked",
+            "message": "Non-dry-run execution is intentionally not implemented yet. Use dry-run preflight only.",
+            "errors": [
+                {
+                    "type": "execution_not_implemented",
+                    "message": "baseline smoke scaffold currently supports dry-run planning only",
+                }
+            ],
+        }
+        write_baseline_smoke_report("preflight_execute_refused_common_core_v0.json", payload)
+        return print_and_exit(payload, 1)
+
+    config_path = resolve_repo_path(args.config)
+    config = load_json(config_path)
+    _, case_rows = read_registry(CASE_REGISTRY)
+    case_index = {row["case_id"]: row for row in case_rows}
+
+    case_records: list[dict[str, Any]] = []
+    matrix_records: list[dict[str, Any]] = []
+    errors: list[dict[str, Any]] = []
+
+    baseline_records = [baseline_status_record(spec) for spec in config["baselines"]]
+    baseline_index = {record["baseline_id"]: record for record in baseline_records}
+
+    for case_spec in config["cases"]:
+        case_id = case_spec["case_id"]
+        pool = case_spec["pool"]
+        case_root = pool_case_root(pool) / case_id
+        registry_row = case_index.get(case_id)
+        case_errors: list[dict[str, Any]] = []
+        if registry_row is None:
+            case_errors.append(
+                {
+                    "type": "missing_registry_row",
+                    "message": "case_id not found in inventory/case_registry.csv",
+                    "case_id": case_id,
+                }
+            )
+
+        presence_checks = []
+        expected_paths = {
+            "case_dir": case_root,
+            "manifest": case_root / "manifest.yaml",
+            "source_sql": case_root / "source.sql",
+            "rewrite_pos_01": case_root / "rewrite_pos_01.sql",
+            "rewrite_neg_01": case_root / "rewrite_neg_01.sql",
+            "pg_result_check": case_root / "runs" / "pg" / "result_check.json",
+            "pg_plan_dir": case_root / "runs" / "pg" / "plans",
+            "case_result_check": case_root / "runs" / "result_check.json",
+            "case_plan_check": case_root / "runs" / "plan_check.json",
+        }
+        for label, path in expected_paths.items():
+            exists = path.is_dir() if label in {"case_dir", "pg_plan_dir"} else path.is_file()
+            presence_checks.append(
+                {
+                    "label": label,
+                    "path": relative_to_root(path),
+                    "exists": exists,
+                    "required": label in {"case_dir", "manifest", "source_sql"},
+                }
+            )
+            if label in {"case_dir", "manifest", "source_sql"} and not exists:
+                case_errors.append(
+                    {
+                        "type": "missing_required_case_path",
+                        "case_id": case_id,
+                        "label": label,
+                        "path": relative_to_root(path),
+                    }
+                )
+
+        case_record = {
+            "case_id": case_id,
+            "pool": pool,
+            "registry_found": registry_row is not None,
+            "registry_validated_engines": registry_row.get("validated_engines", "") if registry_row else "",
+            "registry_admission_status": registry_row.get("admission_status", "") if registry_row else "",
+            "smoke_role": case_spec["smoke_role"],
+            "why_selected": case_spec["why_selected"],
+            "caveat": case_spec["caveat"],
+            "presence_checks": presence_checks,
+            "ok": not case_errors,
+            "errors": case_errors,
+        }
+        case_records.append(case_record)
+        errors.extend(case_errors)
+
+        file_exists = {item["label"]: item["exists"] for item in presence_checks}
+        for baseline_spec in config["baselines"]:
+            baseline_id = baseline_spec["baseline_id"]
+            baseline_state = baseline_index[baseline_id]
+            eligibility_status = "eligible_for_dry_run"
+            blocker = ""
+            notes = []
+
+            if not case_record["ok"]:
+                eligibility_status = "blocked"
+                blocker = "required case package files missing"
+            elif baseline_id == "HUMAN_REFERENCE_POSITIVE" and not file_exists.get("rewrite_pos_01", False):
+                eligibility_status = "blocked"
+                blocker = "rewrite_pos_01.sql missing"
+            elif baseline_id == "HARD_NEGATIVE_GUARD" and not file_exists.get("rewrite_neg_01", False):
+                eligibility_status = "blocked"
+                blocker = "rewrite_neg_01.sql missing"
+            elif baseline_state["current_status"] == "scaffold_only":
+                eligibility_status = "planned_but_blocked"
+                blocker = baseline_state["blocker"]
+
+            if not file_exists.get("pg_result_check", False):
+                notes.append("PG result_check.json not present under runs/pg")
+            if not file_exists.get("pg_plan_dir", False):
+                notes.append("PG plan directory not present under runs/pg/plans")
+            if baseline_id in {"SQLGLOT_OPT_SAME_DIALECT", "LLM_DIRECT_REWRITE_STRONG"}:
+                notes.append("dry-run only; no generation will occur")
+
+            if baseline_id == "NATIVE_IDENTITY":
+                planned_variant = "source"
+            elif baseline_id == "HUMAN_REFERENCE_POSITIVE":
+                planned_variant = "rewrite_pos_01"
+            elif baseline_id == "HARD_NEGATIVE_GUARD":
+                planned_variant = "rewrite_neg_01"
+            elif baseline_id == "SQLGLOT_OPT_SAME_DIALECT":
+                planned_variant = "generated_same_dialect_candidate"
+            else:
+                planned_variant = "generated_llm_candidate"
+
+            matrix_records.append(
+                {
+                    "baseline_id": baseline_id,
+                    "case_id": case_id,
+                    "pool": pool,
+                    "planned_engine": "postgres",
+                    "planned_variant": planned_variant,
+                    "execution_mode": "dry_run",
+                    "expected_input_files": baseline_smoke_input_paths(case_root, baseline_id),
+                    "expected_output_paths": baseline_smoke_output_paths(case_id, baseline_id),
+                    "eligibility_status": eligibility_status,
+                    "blocker": blocker,
+                    "notes": notes,
+                }
+            )
+
+    payload = {
+        "command": "baseline-smoke-preflight",
+        "cwd": str(ROOT),
+        "ok": not any(record["eligibility_status"] == "blocked" for record in matrix_records),
+        "ran_at_utc": utc_now(),
+        "execution_mode": "dry_run",
+        "config_path": relative_to_root(config_path),
+        "engine_scope": config["engine_scope"],
+        "case_count": len(case_records),
+        "baseline_count": len(baseline_records),
+        "matrix_record_count": len(matrix_records),
+        "baseline_roster": baseline_records,
+        "case_roster_validation": case_records,
+        "planned_matrix": matrix_records,
+        "errors": errors,
+        "guardrails": {
+            "database_execution": "disabled",
+            "llm_execution": "disabled",
+            "non_dry_run_execution": "not_implemented",
+        },
+    }
+    write_baseline_smoke_report("preflight_common_core_v0.json", payload)
+    return print_and_exit(payload, 0 if payload["ok"] else 1)
 
 
 def validate_scaffold_request(
@@ -1220,6 +1467,14 @@ def build_parser() -> argparse.ArgumentParser:
     port_scaffold_parser.add_argument("--out", required=True)
     port_scaffold_parser.add_argument("--dry-run", action="store_true", default=True)
     port_scaffold_parser.set_defaults(func=cmd_scaffold_port_case)
+
+    baseline_smoke_parser = subparsers.add_parser("baseline-smoke-preflight")
+    baseline_smoke_parser.add_argument(
+        "--config",
+        default="docs/_scratch/baseline_smoke_common_core_v0.json",
+    )
+    baseline_smoke_parser.add_argument("--execute", action="store_true", default=False)
+    baseline_smoke_parser.set_defaults(func=cmd_baseline_smoke_preflight)
 
     return parser
 
