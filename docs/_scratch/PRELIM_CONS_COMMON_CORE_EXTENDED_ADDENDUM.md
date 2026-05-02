@@ -49,13 +49,13 @@ This proposal treats that governed subset as a bounded semantic addendum only. I
 | `CONS_0012` | Calcite | decorrelation_baseline | staged; tri-engine; case-root result and plan governance present | `LIMIT` / `OFFSET` threshold rewrite | adds a governed threshold-style decorrelation case with a very clear hard negative | explicit framing around `OFFSET` semantics | low |
 | `CONS_0024` | Calcite | outer_join_baseline | staged; tri-engine; case-root result and plan governance present | outer join guarded by grouped correlated `EXISTS` | adds compact outer-join and grouped-subquery coverage without moving into the most pathological stress cases | explanation is slightly more involved than the simplest baselines | medium |
 | `CONS_0031` | VeriEQL | semantic_baseline | staged; tri-engine; case-root result and plan governance present | compact `EXISTS` and `NOT EXISTS` decorrelation | strongest compact VeriEQL semantic baseline and good source-family counterweight to Calcite | ordinary human review only | low |
-| `CONS_0034` | VeriEQL | aggregation_baseline | staged; tri-engine; case-root result and plan governance present | CASE expression aggregation rewrite | adds governed VeriEQL aggregation coverage with a clear positive rewrite | expression-heavy structure may make it feel less compact than a pure baseline | medium |
+| `CONS_0034` | VeriEQL | aggregation_baseline | staged; tri-engine; case-root result and plan governance present | CASE expression aggregation rewrite | adds governed VeriEQL aggregation coverage with a clear positive rewrite | expression-heavy aggregation semantics should be noted during human review, but the case remains a good semantic addendum candidate | medium |
 
 This 5-case add-on seed is recommended for human review only. It is not admitted, not registry writeback, and not merged into the main PERF+PORT seed.
 
 Additional seed caveats:
 
-- `CONS_0034` remains in the add-on seed because its aggregation rewrite value is strong, but it is expression-heavy and should carry a medium-risk caveat.
+- `CONS_0034` remains in the add-on seed because its aggregation rewrite value is strong, but its expression-heavy aggregation semantics should be noted during human review.
 - `CONS_0005` is valuable, but it should be treated as null-sensitive anti-join stress unless human review decides otherwise.
 - `CONS_0037` is valuable, but it should be treated as duplicate-sensitive outer-join aggregate stress unless human review decides otherwise.
 - CONS remains a separate addendum and is not merged into the main PERF+PORT seed yet.
