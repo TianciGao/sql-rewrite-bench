@@ -46,30 +46,43 @@ Interpretation:
 
 ## 4. PG Metadata-Check Result
 
-Metadata-check result from `reports/formal_common_core/control_exec_preflight_pg_env_blocked_v0.json`:
+Current successful metadata-check result from `reports/formal_common_core/control_exec_preflight_v0.json`:
 
 - `pg_metadata_check_requested=true`
+- `pg_env_visible=true`
 - `pg_client_available=true`
-- `pg_env_visible=false`
-- `pg_metadata_ready=false`
-- `formal_control_execution_ready=false`
-- `blocked_record_count=27`
-- `route_readiness_counts={"blocked_pg_env": 27}`
+- `pg_metadata_ready=true`
+- `formal_control_execution_ready=true`
+- `total_records=27`
+- `ready_for_execution_count=27`
+- `ready_artifact_only_metadata_not_checked_count=0`
+- `partial_record_count=0`
+- `blocked_record_count=0`
+- `validation_schema_exists_count=27`
+- `validation_schema_missing_count=0`
+- `validation_schema_not_checked_count=0`
+- `route_readiness_counts={"ready_for_execution": 27}`
 
-Interpretation:
+Historical note:
 
-- metadata-check mode did not establish validation-schema readiness
-- the current blocker is PostgreSQL environment visibility in the shell used for the check
+- `reports/formal_common_core/control_exec_preflight_pg_env_blocked_v0.json` still exists
+- it is now historical / superseded by the successful metadata-ready result above
 
 ## 5. Interpretation
 
 The artifact layer is ready for formal common-core control execution/scoring.
 
-The PostgreSQL metadata validation step must be rerun from a shell with PostgreSQL environment variables loaded before actual formal execution/scoring starts.
+PostgreSQL metadata validation has now passed.
 
-This is an environment visibility blocker, not an artifact blocker.
+The current ready state is:
 
-No case SQL execution occurred. No benchmark workload occurred. No scoring occurred. No plan collection occurred.
+- `27 / 27` formal control route-case records are `ready_for_execution`
+- all `27 / 27` validation schema metadata checks resolved as `exists`
+- `formal_control_execution_ready=true`
+
+The older env-blocked result was a shell-environment visibility issue and is now superseded by the successful metadata-ready run.
+
+No case SQL execution occurred in the preflight. No benchmark workload occurred. No scoring occurred. No plan collection occurred.
 
 ## 6. Claim Boundaries
 
@@ -83,7 +96,7 @@ No case SQL execution occurred. No benchmark workload occurred. No scoring occur
 
 ## 7. Recommended Next Action
 
-- rerun `formal-common-core-control-exec-preflight --check-pg-metadata` from a shell with PostgreSQL env loaded
+- implement the formal common-core control execution/scoring command for `NATIVE_IDENTITY`, `HUMAN_REFERENCE_POSITIVE`, and `HARD_NEGATIVE_GUARD`
 
 ## 8. Verification / Non-Modification Note
 
