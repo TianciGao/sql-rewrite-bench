@@ -5231,6 +5231,209 @@ def cmd_baseline_smoke_llm_rollup(args: argparse.Namespace) -> int:
     return print_and_exit(payload, 0 if payload["ok"] else 1)
 
 
+def cmd_baseline_smoke_llm_translate_rollup(args: argparse.Namespace) -> int:
+    default_inputs = [
+        "reports/baseline_smoke/llm_direct_translate_summary_port_0004_v0.json",
+        "reports/baseline_smoke/llm_direct_translate_summary_port_0022_v0.json",
+    ]
+    output_name = normalize_baseline_smoke_output_name(args.output)
+    input_values = args.summary_report or default_inputs
+    input_paths = [resolve_repo_path(path) for path in input_values]
+    input_report_refs = [relative_to_root(path) for path in input_paths]
+
+    if args.execute:
+        payload = {
+            "command": "baseline-smoke-llm-translate-rollup",
+            "cwd": str(ROOT),
+            "ok": False,
+            "ran_at_utc": utc_now(),
+            "input_reports": input_report_refs,
+            "output_path": (
+                "reports/baseline_smoke/"
+                f"{normalize_baseline_smoke_output_name('llm_direct_translate_rollup_execute_refused_v0.json')}"
+            ),
+            "claim_boundary": "llm_translate_rollup_only_not_translation_correctness_or_speedup_scoring",
+            "message": "Execution is not supported for the LLM translate rollup. This command only summarizes existing reports.",
+            "issues": [
+                {
+                    "type": "execution_not_supported",
+                    "message": "baseline-smoke-llm-translate-rollup is read-only and never executes baselines",
+                }
+            ],
+        }
+        write_baseline_smoke_report("llm_direct_translate_rollup_execute_refused_v0.json", payload)
+        return print_and_exit(payload, 1)
+
+    issues: list[dict[str, Any]] = []
+    case_summaries: list[dict[str, Any]] = []
+    model_labels: set[str] = set()
+    provider_modes: set[str] = set()
+    token_usage_by_case: dict[str, int | None] = {}
+
+    required_report_fields = [
+        "ok",
+        "case_id",
+        "source_dialect",
+        "target_dialect",
+        "model_label",
+        "provider_mode",
+        "call_status",
+        "extracted_sql_status",
+        "pg_execution_status",
+        "canary_layer_status",
+        "token_usage_total",
+    ]
+
+    for path in input_paths:
+        path_ref = relative_to_root(path)
+        if not path.is_file():
+            issues.append({"type": "missing_input", "path": path_ref})
+            continue
+        try:
+            report = load_json(path)
+        except (json.JSONDecodeError, OSError) as exc:
+            issues.append({"type": "malformed_input", "path": path_ref, "detail": str(exc)})
+            continue
+        missing_report_fields = [field for field in required_report_fields if field not in report]
+        if missing_report_fields:
+            issues.append(
+                {
+                    "type": "missing_required_fields",
+                    "path": path_ref,
+                    "fields": missing_report_fields,
+                }
+            )
+            continue
+        if report.get("ok") is not True:
+            issues.append({"type": "report_not_ok", "path": path_ref, "actual": report.get("ok")})
+        case_id = report.get("case_id", "")
+        if any(existing.get("case_id") == case_id for existing in case_summaries):
+            issues.append({"type": "duplicate_case_id", "case_id": case_id, "path": path_ref})
+            continue
+        case_summaries.append(
+            {
+                "case_id": case_id,
+                "source_dialect": report.get("source_dialect", ""),
+                "target_dialect": report.get("target_dialect", ""),
+                "model_label": report.get("model_label", ""),
+                "provider_mode": report.get("provider_mode", ""),
+                "call_status": report.get("call_status", ""),
+                "extracted_sql_status": report.get("extracted_sql_status", ""),
+                "pg_execution_status": report.get("pg_execution_status", ""),
+                "canary_layer_status": report.get("canary_layer_status", ""),
+                "token_usage_total": report.get("token_usage_total"),
+                "pg_row_count": report.get("pg_row_count"),
+            }
+        )
+        if report.get("model_label"):
+            model_labels.add(str(report["model_label"]))
+        if report.get("provider_mode"):
+            provider_modes.add(str(report["provider_mode"]))
+        token_usage_by_case[case_id] = report.get("token_usage_total")
+
+    case_summaries.sort(key=lambda row: row.get("case_id", ""))
+
+    for row in case_summaries:
+        if row.get("call_status") != "success":
+            issues.append(
+                {
+                    "type": "unexpected_call_status",
+                    "case_id": row.get("case_id"),
+                    "actual": row.get("call_status"),
+                }
+            )
+        if row.get("extracted_sql_status") != "extracted":
+            issues.append(
+                {
+                    "type": "unexpected_extracted_sql_status",
+                    "case_id": row.get("case_id"),
+                    "actual": row.get("extracted_sql_status"),
+                }
+            )
+        if row.get("pg_execution_status") != "success":
+            issues.append(
+                {
+                    "type": "unexpected_pg_execution_status",
+                    "case_id": row.get("case_id"),
+                    "actual": row.get("pg_execution_status"),
+                }
+            )
+        if row.get("canary_layer_status") != "call_and_pg_execution_succeeded":
+            issues.append(
+                {
+                    "type": "unexpected_canary_layer_status",
+                    "case_id": row.get("case_id"),
+                    "actual": row.get("canary_layer_status"),
+                }
+            )
+
+    case_count = len(case_summaries)
+    ok_count = sum(1 for row in case_summaries if row.get("canary_layer_status") == "call_and_pg_execution_succeeded")
+    failed_count = case_count - ok_count
+    call_success_count = sum(1 for row in case_summaries if row.get("call_status") == "success")
+    extracted_sql_count = sum(1 for row in case_summaries if row.get("extracted_sql_status") == "extracted")
+    pg_execution_success_count = sum(1 for row in case_summaries if row.get("pg_execution_status") == "success")
+    call_and_pg_execution_succeeded_count = ok_count
+    total_token_usage = sum(
+        row["token_usage_total"]
+        for row in case_summaries
+        if isinstance(row.get("token_usage_total"), int)
+    )
+
+    payload = {
+        "command": "baseline-smoke-llm-translate-rollup",
+        "ok": (
+            not issues
+            and case_count == len(input_paths)
+            and ok_count == len(input_paths)
+            and call_success_count == len(input_paths)
+            and extracted_sql_count == len(input_paths)
+            and pg_execution_success_count == len(input_paths)
+        ),
+        "ran_at_utc": utc_now(),
+        "input_reports": input_report_refs,
+        "output_path": f"reports/baseline_smoke/{output_name}",
+        "baseline_id": "LLM_DIRECT_TRANSLATE",
+        "case_count": case_count,
+        "ok_count": ok_count,
+        "failed_count": failed_count,
+        "call_success_count": call_success_count,
+        "extracted_sql_count": extracted_sql_count,
+        "pg_execution_success_count": pg_execution_success_count,
+        "call_and_pg_execution_succeeded_count": call_and_pg_execution_succeeded_count,
+        "total_token_usage": total_token_usage,
+        "token_usage_by_case": token_usage_by_case,
+        "counts_by_source_dialect": count_plain_values(
+            [str(row.get("source_dialect") or "missing") for row in case_summaries]
+        ),
+        "counts_by_target_dialect": count_plain_values(
+            [str(row.get("target_dialect") or "missing") for row in case_summaries]
+        ),
+        "counts_by_canary_layer_status": count_plain_values(
+            [str(row.get("canary_layer_status") or "missing") for row in case_summaries]
+        ),
+        "counts_by_pg_execution_status": count_plain_values(
+            [str(row.get("pg_execution_status") or "missing") for row in case_summaries]
+        ),
+        "model_labels": sorted(model_labels),
+        "provider_modes": sorted(provider_modes),
+        "case_summaries": case_summaries,
+        "issues": issues,
+        "guardrails": {
+            "model_api_call": "disabled_for_rollup",
+            "database_execution": "disabled_for_rollup",
+            "mysql_execution": "disabled",
+            "spark_execution": "disabled",
+            "sqlglot_generation": "disabled",
+            "generated_sql_execution": "disabled_for_rollup",
+            "case_artifact_write": "disabled",
+        },
+        "claim_boundary": "llm_translate_rollup_only_not_translation_correctness_or_speedup_scoring",
+    }
+    write_baseline_smoke_report(output_name, payload)
+    return print_and_exit(payload, 0 if payload["ok"] else 1)
+
+
 def cmd_baseline_smoke_calcite_readiness(args: argparse.Namespace) -> int:
     output_name = normalize_baseline_smoke_output_name(args.output)
     config_path = resolve_repo_path(args.config)
@@ -11938,6 +12141,15 @@ def build_parser() -> argparse.ArgumentParser:
     )
     llm_rollup_parser.add_argument("--execute", action="store_true", default=False)
     llm_rollup_parser.set_defaults(func=cmd_baseline_smoke_llm_rollup)
+
+    llm_translate_rollup_parser = subparsers.add_parser("baseline-smoke-llm-translate-rollup")
+    llm_translate_rollup_parser.add_argument("--summary-report", action="append", default=[])
+    llm_translate_rollup_parser.add_argument(
+        "--output",
+        default="llm_direct_translate_2case_rollup_v0.json",
+    )
+    llm_translate_rollup_parser.add_argument("--execute", action="store_true", default=False)
+    llm_translate_rollup_parser.set_defaults(func=cmd_baseline_smoke_llm_translate_rollup)
 
     calcite_readiness_parser = subparsers.add_parser("baseline-smoke-calcite-readiness")
     calcite_readiness_parser.add_argument(
