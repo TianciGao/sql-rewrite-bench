@@ -21,6 +21,7 @@ ROOT = Path(__file__).resolve().parent.parent
 REPORT_DIR = ROOT / "reports" / "cli"
 BASELINE_SMOKE_REPORT_DIR = ROOT / "reports" / "baseline_smoke"
 FORMAL_COMMON_CORE_REPORT_DIR = ROOT / "reports" / "formal_common_core"
+FORMAL_PORT_REPORT_DIR = ROOT / "reports" / "formal_port"
 ENV_VARS = ["PGHOST", "MYSQL_HOST", "SPARK_LOCAL_IP"]
 SOURCE_REGISTRY = ROOT / "inventory" / "source_registry.csv"
 CASE_REGISTRY = ROOT / "inventory" / "case_registry.csv"
@@ -137,6 +138,8 @@ FORMAL_COMMON_CORE_CASES = [
     "CONS_0007",
     "CONS_0012",
 ]
+FORMAL_PORT_CLEAN_CASES = ["PORT_0004", "PORT_0022"]
+FORMAL_PORT_HOLDOUT_CASES = ["PORT_0012"]
 HUMAN_POSITIVE_PG_DEFAULT_CASES = [
     "PERF_0006",
     "PERF_0008",
@@ -294,6 +297,17 @@ def write_formal_common_core_report(report_name: str, payload: dict[str, Any]) -
     return report_path
 
 
+def write_formal_port_report(report_name: str, payload: dict[str, Any]) -> Path:
+    FORMAL_PORT_REPORT_DIR.mkdir(parents=True, exist_ok=True)
+    report_path = FORMAL_PORT_REPORT_DIR / report_name
+    payload["report_path"] = str(report_path.relative_to(ROOT))
+    report_path.write_text(
+        json.dumps(payload, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    return report_path
+
+
 def write_json_report_to_dir(output_dir: Path, report_name: str, payload: dict[str, Any]) -> Path:
     output_dir.mkdir(parents=True, exist_ok=True)
     report_path = output_dir / report_name
@@ -347,6 +361,13 @@ def normalize_baseline_smoke_output_name(value: str) -> str:
 def normalize_formal_common_core_output_name(value: str) -> str:
     path = Path(value)
     if path.parts[:2] == ("reports", "formal_common_core"):
+        return path.name
+    return value
+
+
+def normalize_formal_port_output_name(value: str) -> str:
+    path = Path(value)
+    if path.parts[:2] == ("reports", "formal_port"):
         return path.name
     return value
 
@@ -9755,6 +9776,239 @@ def cmd_formal_common_core_llm_rewrite_scoring(args: argparse.Namespace) -> int:
     return print_and_exit(payload, 0 if payload["ok"] else 1)
 
 
+def cmd_formal_port_results_snapshot(args: argparse.Namespace) -> int:
+    output_name = normalize_formal_port_output_name(args.output)
+    if args.execute:
+        payload = {
+            "command": "formal-port-results-snapshot",
+            "ok": False,
+            "ran_at_utc": utc_now(),
+            "output_path": "reports/formal_port/port_current_results_snapshot_execute_refused_v0.json",
+            "claim_boundary": "formal_port_snapshot_from_existing_reports_only_not_translation_correctness_or_speedup",
+            "message": "This command is read-existing-reports-only and does not support --execute.",
+            "issues": [
+                {
+                    "type": "invalid_execute_flag",
+                    "message": "formal-port-results-snapshot does not support --execute",
+                }
+            ],
+            "guardrails": {
+                "database_execution": "disabled",
+                "sql_execution": "disabled",
+                "model_api_call": "disabled",
+                "sqlglot_generation": "disabled",
+                "llm_translate_generation": "disabled",
+                "checker_execution": "disabled",
+                "plan_collection": "disabled",
+                "speedup_scoring": "disabled",
+                "case_artifact_write": "disabled",
+                "registry_writeback": "disabled",
+            },
+        }
+        write_formal_port_report("port_current_results_snapshot_execute_refused_v0.json", payload)
+        return print_and_exit(payload, 1)
+
+    issues: list[dict[str, Any]] = []
+    records: list[dict[str, Any]] = []
+
+    sqlglot_preflight_path = BASELINE_SMOKE_REPORT_DIR / "sqlglot_transpile_preflight_v0.json"
+    sqlglot_pg_canary_path = BASELINE_SMOKE_REPORT_DIR / "sqlglot_transpile_pg_canary_v0.json"
+    sqlglot_pg_summary_path = BASELINE_SMOKE_REPORT_DIR / "sqlglot_transpile_pg_summary_v0.json"
+    llm_prompt_path = BASELINE_SMOKE_REPORT_DIR / "llm_direct_translate_prompt_packages_v0.json"
+    llm_rollup_path = BASELINE_SMOKE_REPORT_DIR / "llm_direct_translate_2case_rollup_v0.json"
+
+    sqlglot_preflight_report = load_json_if_present(sqlglot_preflight_path)
+    sqlglot_pg_canary_report = load_json_if_present(sqlglot_pg_canary_path)
+    sqlglot_pg_summary_report = load_json_if_present(sqlglot_pg_summary_path)
+    llm_prompt_report = load_json_if_present(llm_prompt_path)
+    llm_rollup_report = load_json_if_present(llm_rollup_path)
+
+    for path, issue_type in [
+        (sqlglot_preflight_path, "missing_sqlglot_preflight_report"),
+        (sqlglot_pg_canary_path, "missing_sqlglot_pg_canary_report"),
+        (sqlglot_pg_summary_path, "missing_sqlglot_pg_summary_report"),
+        (llm_prompt_path, "missing_llm_prompt_report"),
+        (llm_rollup_path, "missing_llm_rollup_report"),
+    ]:
+        if not path.is_file():
+            issues.append({"type": issue_type, "path": relative_to_root(path)})
+
+    sqlglot_preflight_map = {
+        str(record.get("case_id", "")).strip(): record
+        for record in (sqlglot_preflight_report or {}).get("records", [])
+        if record.get("case_id")
+    }
+    sqlglot_pg_map = {
+        str(record.get("case_id", "")).strip(): record
+        for record in (sqlglot_pg_canary_report or {}).get("records", [])
+        if record.get("case_id")
+    }
+    sqlglot_summary_map = {
+        str(record.get("case_id", "")).strip(): record
+        for record in (sqlglot_pg_summary_report or {}).get("case_summaries", [])
+        if record.get("case_id")
+    }
+    llm_prompt_map = {
+        str(record.get("case_id", "")).strip(): record
+        for record in (llm_prompt_report or {}).get("records", [])
+        if record.get("case_id")
+    }
+    llm_rollup_map = {
+        str(record.get("case_id", "")).strip(): record
+        for record in (llm_rollup_report or {}).get("case_summaries", [])
+        if record.get("case_id")
+    }
+
+    for case_id in [*FORMAL_PORT_CLEAN_CASES, *FORMAL_PORT_HOLDOUT_CASES]:
+        sqlglot_preflight_record = sqlglot_preflight_map.get(case_id)
+        sqlglot_pg_record = sqlglot_pg_map.get(case_id)
+        sqlglot_summary_record = sqlglot_summary_map.get(case_id)
+        llm_prompt_record = llm_prompt_map.get(case_id)
+        llm_rollup_record = llm_rollup_map.get(case_id)
+        llm_case_summary_record: dict[str, Any] = {}
+        llm_case_pg_record: dict[str, Any] = {}
+        if case_id in FORMAL_PORT_CLEAN_CASES:
+            llm_case_summary_path = BASELINE_SMOKE_REPORT_DIR / f"llm_direct_translate_summary_{case_id.lower()}_v0.json"
+            llm_case_pg_path = BASELINE_SMOKE_REPORT_DIR / llm_translate_report_name("pg", case_id)
+            llm_case_summary_record = load_json_if_present(llm_case_summary_path) or {}
+            llm_case_pg_record = ((load_json_if_present(llm_case_pg_path) or {}).get("records") or [{}])[0]
+
+        if case_id in FORMAL_PORT_CLEAN_CASES:
+            records.append(
+                {
+                    "case_id": case_id,
+                    "denominator_role": "clean_port_denominator",
+                    "sqlglot_preflight_status": (
+                        "success"
+                        if (
+                            (sqlglot_preflight_record or {}).get("parse_status") == "success"
+                            and (sqlglot_preflight_record or {}).get("transpile_status") == "success"
+                        )
+                        else (sqlglot_summary_record or {}).get("preflight_parse_status", "missing")
+                    ),
+                    "sqlglot_pg_execution_status": (
+                        (sqlglot_summary_record or {}).get("execution_status")
+                        or (sqlglot_pg_record or {}).get("execution_status")
+                        or "missing"
+                    ),
+                    "llm_prompt_status": (llm_prompt_record or {}).get("prompt_package_status", "missing"),
+                    "llm_call_status": (llm_rollup_record or {}).get("call_status", "missing"),
+                    "llm_extracted_sql_status": (llm_rollup_record or {}).get("extracted_sql_status", "missing"),
+                    "llm_pg_execution_status": (llm_rollup_record or {}).get("pg_execution_status", "missing"),
+                    "llm_row_count": (
+                        llm_rollup_record.get("pg_row_count")
+                        if llm_rollup_record
+                        else llm_case_summary_record.get("pg_row_count")
+                    ),
+                    "llm_runtime_ms": llm_case_summary_record.get("pg_runtime_ms") or llm_case_pg_record.get("runtime_ms"),
+                    "token_usage_total": llm_rollup_record.get("token_usage_total") if llm_rollup_record else None,
+                    "failure_category": (
+                        (sqlglot_summary_record or {}).get("execution_failure_category")
+                        or None
+                    ),
+                    "interpretation": "clean PORT denominator case with SQLGlot preflight success and clean LLM translate canary execution",
+                    "artifact_claim_boundary": "formal_port_snapshot_from_existing_reports_only_not_translation_correctness_or_speedup",
+                }
+            )
+        else:
+            records.append(
+                {
+                    "case_id": case_id,
+                    "denominator_role": "holdout_failure_analysis",
+                    "sqlglot_preflight_status": (
+                        "success"
+                        if (
+                            (sqlglot_preflight_record or {}).get("parse_status") == "success"
+                            and (sqlglot_preflight_record or {}).get("transpile_status") == "success"
+                        )
+                        else (sqlglot_summary_record or {}).get("preflight_parse_status", "missing")
+                    ),
+                    "sqlglot_pg_execution_status": (
+                        (sqlglot_summary_record or {}).get("execution_status")
+                        or (sqlglot_pg_record or {}).get("execution_status")
+                        or "missing"
+                    ),
+                    "failure_category": (
+                        (sqlglot_summary_record or {}).get("execution_failure_category")
+                        or (sqlglot_pg_record or {}).get("failure_category")
+                        or None
+                    ),
+                    "failure_bucket": [
+                        "quoted_identifier_vs_string_literal_confusion",
+                        "datetime_timestamp_formatting",
+                        "dialect_normalization_failure",
+                        "portability_translation_failure",
+                    ],
+                    "llm_prompt_status": (llm_prompt_record or {}).get("prompt_package_status", "missing"),
+                    "llm_clean_subset_inclusion": False,
+                    "interpretation": "held out of clean denominator; failure-analysis / stress case",
+                    "artifact_claim_boundary": "formal_port_snapshot_from_existing_reports_only_not_translation_correctness_or_speedup",
+                }
+            )
+
+    sqlglot_preflight_case_count = int((sqlglot_preflight_report or {}).get("case_count", len(sqlglot_preflight_map)))
+    sqlglot_transpile_parse_success_count = int((sqlglot_preflight_report or {}).get("parse_success_count", 0))
+    sqlglot_transpile_generation_success_count = int((sqlglot_preflight_report or {}).get("transpile_success_count", 0))
+    sqlglot_transpile_pg_execution_success_count = int((sqlglot_pg_summary_report or {}).get("execution_success_count", 0))
+    sqlglot_transpile_pg_execution_failed_count = int((sqlglot_pg_summary_report or {}).get("execution_failed_count", 0))
+    sqlglot_transpile_failure_cases = list((sqlglot_pg_summary_report or {}).get("failed_case_ids", []))
+
+    llm_translate_prompt_ready_count = int((llm_prompt_report or {}).get("ready_count", 0))
+    llm_translate_clean_subset_case_count = int((llm_rollup_report or {}).get("case_count", len(llm_rollup_map)))
+    llm_translate_call_success_count = int((llm_rollup_report or {}).get("call_success_count", 0))
+    llm_translate_extracted_sql_count = int((llm_rollup_report or {}).get("extracted_sql_count", 0))
+    llm_translate_pg_execution_success_count = int((llm_rollup_report or {}).get("pg_execution_success_count", 0))
+    llm_translate_pg_execution_failed_count = int((llm_rollup_report or {}).get("pg_execution_failed_count", 0))
+    llm_translate_total_token_usage = int((llm_rollup_report or {}).get("total_token_usage", 0))
+
+    payload = {
+        "command": "formal-port-results-snapshot",
+        "ok": bool(sqlglot_pg_summary_report or sqlglot_preflight_report) and bool(llm_prompt_report or llm_rollup_report),
+        "ran_at_utc": utc_now(),
+        "output_path": f"reports/formal_port/{output_name}",
+        "port_clean_denominator_cases": FORMAL_PORT_CLEAN_CASES,
+        "port_holdout_cases": FORMAL_PORT_HOLDOUT_CASES,
+        "sqlglot_transpile_preflight_case_count": sqlglot_preflight_case_count,
+        "sqlglot_transpile_parse_success_count": sqlglot_transpile_parse_success_count,
+        "sqlglot_transpile_generation_success_count": sqlglot_transpile_generation_success_count,
+        "sqlglot_transpile_pg_execution_success_count": sqlglot_transpile_pg_execution_success_count,
+        "sqlglot_transpile_pg_execution_failed_count": sqlglot_transpile_pg_execution_failed_count,
+        "sqlglot_transpile_failure_cases": sqlglot_transpile_failure_cases,
+        "llm_translate_prompt_ready_count": llm_translate_prompt_ready_count,
+        "llm_translate_clean_subset_case_count": llm_translate_clean_subset_case_count,
+        "llm_translate_call_success_count": llm_translate_call_success_count,
+        "llm_translate_extracted_sql_count": llm_translate_extracted_sql_count,
+        "llm_translate_pg_execution_success_count": llm_translate_pg_execution_success_count,
+        "llm_translate_pg_execution_failed_count": llm_translate_pg_execution_failed_count,
+        "llm_translate_total_token_usage": llm_translate_total_token_usage,
+        "port_0012_status": "holdout_failure_analysis",
+        "port_0012_failure_category": "InvalidDatetimeFormat",
+        "port_0012_failure_bucket": [
+            "quoted_identifier_vs_string_literal_confusion",
+            "datetime_timestamp_formatting",
+            "dialect_normalization_failure",
+            "portability_translation_failure",
+        ],
+        "records": records,
+        "issues": issues,
+        "guardrails": {
+            "database_execution": "disabled",
+            "sql_execution": "disabled",
+            "model_api_call": "disabled",
+            "sqlglot_generation": "disabled",
+            "llm_translate_generation": "disabled",
+            "checker_execution": "disabled",
+            "plan_collection": "disabled",
+            "speedup_scoring": "disabled",
+            "case_artifact_write": "disabled",
+            "registry_writeback": "disabled",
+        },
+        "claim_boundary": "formal_port_snapshot_from_existing_reports_only_not_translation_correctness_or_speedup",
+    }
+    write_formal_port_report(output_name, payload)
+    return print_and_exit(payload, 0 if payload["ok"] else 1)
+
+
 def cmd_baseline_smoke_llm_call_canary(args: argparse.Namespace) -> int:
     default_output_name = "llm_direct_rewrite_call_canary_v0.json"
     output_name = normalize_baseline_smoke_output_name(default_output_name)
@@ -16460,6 +16714,14 @@ def build_parser() -> argparse.ArgumentParser:
     )
     formal_common_core_llm_rewrite_scoring_parser.add_argument("--execute", action="store_true", default=False)
     formal_common_core_llm_rewrite_scoring_parser.set_defaults(func=cmd_formal_common_core_llm_rewrite_scoring)
+
+    formal_port_results_snapshot_parser = subparsers.add_parser("formal-port-results-snapshot")
+    formal_port_results_snapshot_parser.add_argument(
+        "--output",
+        default="port_current_results_snapshot_v0.json",
+    )
+    formal_port_results_snapshot_parser.add_argument("--execute", action="store_true", default=False)
+    formal_port_results_snapshot_parser.set_defaults(func=cmd_formal_port_results_snapshot)
 
     sqlglot_transpile_summary_parser = subparsers.add_parser("baseline-smoke-sqlglot-transpile-summary")
     sqlglot_transpile_summary_parser.add_argument(
