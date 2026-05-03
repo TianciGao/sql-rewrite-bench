@@ -10009,6 +10009,224 @@ def cmd_formal_port_results_snapshot(args: argparse.Namespace) -> int:
     return print_and_exit(payload, 0 if payload["ok"] else 1)
 
 
+def cmd_formal_common_core_method_consistency_scoring(args: argparse.Namespace) -> int:
+    output_name = normalize_formal_common_core_output_name(args.output)
+    if args.execute:
+        payload = {
+            "command": "formal-common-core-method-consistency-scoring",
+            "ok": False,
+            "ran_at_utc": utc_now(),
+            "output_path": "reports/formal_common_core/method_consistency_scoring_execute_refused_v0.json",
+            "claim_boundary": "formal_method_consistency_scoring_from_existing_reports_only_not_speedup_or_leaderboard",
+            "message": "This command is read-existing-reports-only and does not support --execute.",
+            "issues": [
+                {
+                    "type": "invalid_execute_flag",
+                    "message": "formal-common-core-method-consistency-scoring does not support --execute",
+                }
+            ],
+            "guardrails": {
+                "database_execution": "disabled",
+                "sql_execution": "disabled",
+                "checker_execution": "disabled",
+                "model_api_call": "disabled",
+                "sqlglot_generation": "disabled",
+                "plan_collection": "disabled",
+                "speedup_scoring": "disabled",
+                "case_artifact_write": "disabled",
+                "registry_writeback": "disabled",
+            },
+        }
+        write_formal_common_core_report("method_consistency_scoring_execute_refused_v0.json", payload)
+        return print_and_exit(payload, 1)
+
+    issues: list[dict[str, Any]] = []
+    case_ids = formal_common_core_case_ids()
+    denominator_case_count = len(case_ids)
+
+    native_execution_report = load_json_if_present(FORMAL_COMMON_CORE_REPORT_DIR / "native_identity_execution_v0.json")
+    control_scoring_report = load_json_if_present(FORMAL_COMMON_CORE_REPORT_DIR / "control_scoring_v0.json")
+    sqlglot_execution_report = load_json_if_present(FORMAL_COMMON_CORE_REPORT_DIR / "sqlglot_opt_same_dialect_execution_v0.json")
+    sqlglot_scoring_report = load_json_if_present(FORMAL_COMMON_CORE_REPORT_DIR / "sqlglot_opt_same_dialect_scoring_v0.json")
+    llm_execution_report = load_json_if_present(FORMAL_COMMON_CORE_REPORT_DIR / "llm_direct_rewrite_execution_v0.json")
+    llm_scoring_report = load_json_if_present(FORMAL_COMMON_CORE_REPORT_DIR / "llm_direct_rewrite_scoring_v0.json")
+    control_execution_summary_report = load_json_if_present(FORMAL_COMMON_CORE_REPORT_DIR / "control_execution_summary_v0.json")
+
+    required_reports = [
+        ("missing_native_execution_report", FORMAL_COMMON_CORE_REPORT_DIR / "native_identity_execution_v0.json", native_execution_report),
+        ("missing_control_scoring_report", FORMAL_COMMON_CORE_REPORT_DIR / "control_scoring_v0.json", control_scoring_report),
+        ("missing_sqlglot_execution_report", FORMAL_COMMON_CORE_REPORT_DIR / "sqlglot_opt_same_dialect_execution_v0.json", sqlglot_execution_report),
+        ("missing_sqlglot_scoring_report", FORMAL_COMMON_CORE_REPORT_DIR / "sqlglot_opt_same_dialect_scoring_v0.json", sqlglot_scoring_report),
+        ("missing_llm_execution_report", FORMAL_COMMON_CORE_REPORT_DIR / "llm_direct_rewrite_execution_v0.json", llm_execution_report),
+        ("missing_llm_scoring_report", FORMAL_COMMON_CORE_REPORT_DIR / "llm_direct_rewrite_scoring_v0.json", llm_scoring_report),
+        ("missing_control_execution_summary_report", FORMAL_COMMON_CORE_REPORT_DIR / "control_execution_summary_v0.json", control_execution_summary_report),
+    ]
+    for issue_type, path, report in required_reports:
+        if report is None:
+            issues.append({"type": issue_type, "path": relative_to_root(path)})
+
+    native_record_map = {
+        str(record.get("case_id", "")).strip(): record
+        for record in (native_execution_report or {}).get("records", [])
+        if record.get("case_id")
+    }
+    sqlglot_execution_record_map = {
+        str(record.get("case_id", "")).strip(): record
+        for record in (sqlglot_execution_report or {}).get("records", [])
+        if record.get("case_id")
+    }
+    llm_execution_record_map = {
+        str(record.get("case_id", "")).strip(): record
+        for record in (llm_execution_report or {}).get("records", [])
+        if record.get("case_id")
+    }
+
+    def build_method_route_summary(baseline_id: str, route: str) -> dict[str, Any]:
+        if baseline_id == "SQLGLOT_OPT_SAME_DIALECT":
+            execution_record_map = sqlglot_execution_record_map
+            executable_rate = float((sqlglot_scoring_report or {}).get("executable_rate", 0.0))
+            method_row_field = "row_count"
+            method_exec_field = "execution_status"
+            method_runtime_field = "runtime_ms"
+        else:
+            execution_record_map = llm_execution_record_map
+            executable_rate = float((llm_scoring_report or {}).get("executable_rate", 0.0))
+            method_row_field = "pg_row_count"
+            method_exec_field = "pg_execution_status"
+            method_runtime_field = "pg_runtime_ms"
+
+        records: list[dict[str, Any]] = []
+        row_count_match_count = 0
+        row_count_mismatch_count = 0
+        row_count_unknown_count = 0
+        checker_backed_consistency_count = 0
+        checker_backed_inconsistency_count = 0
+        checker_backed_unknown_count = 0
+
+        for case_id in case_ids:
+            inferred = case_root_for_case_id(case_id)
+            pool = inferred[0] if inferred else "unknown"
+            native_record = native_record_map.get(case_id)
+            method_record = execution_record_map.get(case_id)
+            warnings: list[str] = []
+
+            if native_record is None or method_record is None:
+                scoring_status = "blocked_missing_execution_record"
+            else:
+                scoring_status = "row_count_observation_only"
+
+            native_row_count = native_record.get("row_count") if native_record else None
+            method_row_count = method_record.get(method_row_field) if method_record else None
+            if native_row_count is None or method_row_count is None:
+                row_count_matches_native: bool | str = "unknown"
+                row_count_unknown_count += 1
+            else:
+                row_count_matches_native = bool(native_row_count == method_row_count)
+                if row_count_matches_native:
+                    row_count_match_count += 1
+                else:
+                    row_count_mismatch_count += 1
+
+            checker_artifact_paths: list[Path] = []
+            if inferred:
+                _, case_root = inferred
+                checker_artifact_paths = [
+                    case_root / "runs" / "pg" / "result_check.json",
+                    case_root / "runs" / "result_check.json",
+                    case_root / "validation" / "checker.yaml",
+                ]
+            existing_checker_artifacts_read = [
+                relative_to_root(path)
+                for path in checker_artifact_paths
+                if path.is_file()
+            ]
+
+            # Existing checker artifacts are source/positive/negative witness checks.
+            # They do not explicitly name SQLGlot-generated or LLM-generated candidates.
+            checker_backed_consistency_status = "unknown_not_computable_from_existing_artifacts"
+            consistency_source = "row_count_observation_only" if scoring_status != "blocked_missing_execution_record" else "unavailable"
+            checker_backed_unknown_count += 1
+
+            records.append(
+                {
+                    "case_id": case_id,
+                    "pool": pool,
+                    "baseline_id": baseline_id,
+                    "route": route,
+                    "native_row_count": native_row_count,
+                    "method_row_count": method_row_count,
+                    "method_execution_status": (method_record or {}).get(method_exec_field, "missing"),
+                    "method_runtime_ms": (method_record or {}).get(method_runtime_field),
+                    "row_count_matches_native": row_count_matches_native,
+                    "existing_checker_artifacts_read": existing_checker_artifacts_read,
+                    "checker_artifact_count": len(existing_checker_artifacts_read),
+                    "checker_backed_consistency_status": checker_backed_consistency_status,
+                    "consistency_source": consistency_source,
+                    "scoring_status": scoring_status,
+                    "warnings": warnings,
+                    "artifact_claim_boundary": "formal_method_consistency_scoring_read_existing_reports_only_no_execution",
+                }
+            )
+
+        return {
+            "baseline_id": baseline_id,
+            "route": route,
+            "case_count": denominator_case_count,
+            "executable_rate": executable_rate,
+            "row_count_match_count": row_count_match_count,
+            "row_count_mismatch_count": row_count_mismatch_count,
+            "row_count_unknown_count": row_count_unknown_count,
+            "checker_backed_consistency_count": checker_backed_consistency_count,
+            "checker_backed_inconsistency_count": checker_backed_inconsistency_count,
+            "checker_backed_unknown_count": checker_backed_unknown_count,
+            "result_consistency_rate_observed_existing_artifacts": None,
+            "result_consistency_rate_status": "not_computed_checker_required",
+            "formal_correctness_scoring_complete": False,
+            "records": records,
+        }
+
+    route_summaries = [
+        build_method_route_summary("SQLGLOT_OPT_SAME_DIALECT", "sqlglot_opt_same_dialect"),
+        build_method_route_summary("LLM_DIRECT_REWRITE_STRONG", "llm_direct_rewrite"),
+    ]
+
+    payload = {
+        "command": "formal-common-core-method-consistency-scoring",
+        "ok": (
+            native_execution_report is not None
+            and sqlglot_execution_report is not None
+            and llm_execution_report is not None
+            and len(native_record_map) == denominator_case_count
+            and len(sqlglot_execution_record_map) == denominator_case_count
+            and len(llm_execution_record_map) == denominator_case_count
+        ),
+        "ran_at_utc": utc_now(),
+        "output_path": f"reports/formal_common_core/{output_name}",
+        "denominator_case_count": denominator_case_count,
+        "routes_scored": [summary["baseline_id"] for summary in route_summaries],
+        "route_summaries": route_summaries,
+        "formal_method_consistency_scoring_complete": all(
+            bool(summary.get("formal_correctness_scoring_complete")) for summary in route_summaries
+        ),
+        "speedup_scoring_complete": False,
+        "issues": issues,
+        "guardrails": {
+            "database_execution": "disabled",
+            "sql_execution": "disabled",
+            "checker_execution": "disabled",
+            "model_api_call": "disabled",
+            "sqlglot_generation": "disabled",
+            "plan_collection": "disabled",
+            "speedup_scoring": "disabled",
+            "case_artifact_write": "disabled",
+            "registry_writeback": "disabled",
+        },
+        "claim_boundary": "formal_method_consistency_scoring_from_existing_reports_only_not_speedup_or_leaderboard",
+    }
+    write_formal_common_core_report(output_name, payload)
+    return print_and_exit(payload, 0 if payload["ok"] else 1)
+
+
 def cmd_baseline_smoke_llm_call_canary(args: argparse.Namespace) -> int:
     default_output_name = "llm_direct_rewrite_call_canary_v0.json"
     output_name = normalize_baseline_smoke_output_name(default_output_name)
@@ -16722,6 +16940,14 @@ def build_parser() -> argparse.ArgumentParser:
     )
     formal_port_results_snapshot_parser.add_argument("--execute", action="store_true", default=False)
     formal_port_results_snapshot_parser.set_defaults(func=cmd_formal_port_results_snapshot)
+
+    formal_common_core_method_consistency_scoring_parser = subparsers.add_parser("formal-common-core-method-consistency-scoring")
+    formal_common_core_method_consistency_scoring_parser.add_argument(
+        "--output",
+        default="method_consistency_scoring_v0.json",
+    )
+    formal_common_core_method_consistency_scoring_parser.add_argument("--execute", action="store_true", default=False)
+    formal_common_core_method_consistency_scoring_parser.set_defaults(func=cmd_formal_common_core_method_consistency_scoring)
 
     sqlglot_transpile_summary_parser = subparsers.add_parser("baseline-smoke-sqlglot-transpile-summary")
     sqlglot_transpile_summary_parser.add_argument(
