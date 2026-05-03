@@ -3114,6 +3114,213 @@ def cmd_baseline_smoke_sqlglot_summary(args: argparse.Namespace) -> int:
     return print_and_exit(payload, 0 if ok else 1)
 
 
+def cmd_baseline_smoke_sqlglot_transpile_summary(args: argparse.Namespace) -> int:
+    output_name = normalize_baseline_smoke_output_name(args.output)
+    input_paths = {
+        "preflight": resolve_repo_path(args.preflight_report),
+        "execution": resolve_repo_path(args.execution_report),
+    }
+    input_report_refs = {name: relative_to_root(path) for name, path in input_paths.items()}
+
+    if args.execute:
+        payload = {
+            "command": "baseline-smoke-sqlglot-transpile-summary",
+            "cwd": str(ROOT),
+            "ok": False,
+            "ran_at_utc": utc_now(),
+            "input_reports": input_report_refs,
+            "output_path": f"reports/baseline_smoke/{normalize_baseline_smoke_output_name('sqlglot_transpile_pg_summary_execute_refused_v0.json')}",
+            "claim_boundary": "execution_layer_summary_only_not_translation_correctness",
+            "message": "Execution is not supported for the SQLGlot transpile summary. This command only summarizes existing reports.",
+            "issues": [
+                {
+                    "type": "execution_not_supported",
+                    "message": "baseline-smoke-sqlglot-transpile-summary is read-only and never executes baselines",
+                }
+            ],
+        }
+        write_baseline_smoke_report("sqlglot_transpile_pg_summary_execute_refused_v0.json", payload)
+        return print_and_exit(payload, 1)
+
+    reports: dict[str, dict[str, Any]] = {}
+    issues: list[dict[str, Any]] = []
+    expected = {
+        "preflight": {"baseline_id": "SQLGLOT_TRANSPILE"},
+        "execution": {"baseline_id": "SQLGLOT_TRANSPILE"},
+    }
+    required_fields = ["baseline_id", "records"]
+
+    for name, path in input_paths.items():
+        if not path.is_file():
+            issues.append(
+                {
+                    "type": "missing_input",
+                    "report": name,
+                    "path": relative_to_root(path),
+                }
+            )
+            continue
+        try:
+            report = load_json(path)
+        except (json.JSONDecodeError, OSError) as exc:
+            issues.append(
+                {
+                    "type": "malformed_input",
+                    "report": name,
+                    "path": relative_to_root(path),
+                    "detail": str(exc),
+                }
+            )
+            continue
+
+        missing_fields = [field for field in required_fields if field not in report]
+        if missing_fields:
+            issues.append(
+                {
+                    "type": "missing_required_fields",
+                    "report": name,
+                    "path": relative_to_root(path),
+                    "fields": missing_fields,
+                }
+            )
+            continue
+
+        if not isinstance(report.get("records"), list):
+            issues.append(
+                {
+                    "type": "malformed_input",
+                    "report": name,
+                    "path": relative_to_root(path),
+                    "detail": "records field is not a list",
+                }
+            )
+            continue
+
+        reports[name] = report
+        if report.get("baseline_id") != expected[name]["baseline_id"]:
+            issues.append(
+                {
+                    "type": "unexpected_baseline_id",
+                    "report": name,
+                    "expected": expected[name]["baseline_id"],
+                    "actual": report.get("baseline_id"),
+                }
+            )
+
+    def index_records(report: dict[str, Any] | None) -> dict[str, dict[str, Any]]:
+        if not report:
+            return {}
+        return {
+            record.get("case_id", ""): record
+            for record in report.get("records", [])
+            if isinstance(record, dict) and record.get("case_id")
+        }
+
+    preflight_records = index_records(reports.get("preflight"))
+    execution_records = index_records(reports.get("execution"))
+    all_case_ids = sorted(set(preflight_records) | set(execution_records))
+
+    case_summaries: list[dict[str, Any]] = []
+    source_dialect_map: dict[str, str] = {}
+    generated_sql_issue_notes: list[dict[str, Any]] = []
+
+    for case_id in all_case_ids:
+        preflight = preflight_records.get(case_id)
+        execution = execution_records.get(case_id)
+        pool = ((preflight or {}).get("pool") or (execution or {}).get("pool") or "")
+        source_dialect_used = ((execution or {}).get("source_dialect_used") or (preflight or {}).get("source_dialect_used") or "")
+        source_dialect_map[case_id] = source_dialect_used
+        failure_category = (execution or {}).get("failure_category", "")
+        execution_status = (execution or {}).get("execution_status", "")
+        anomaly_notes: list[str] = []
+        generated_sql_issue_note = ""
+
+        preview = ((execution or {}).get("transpiled_sql_preview") or (preflight or {}).get("transpiled_sql_preview") or "")
+        if case_id == "PORT_0012":
+            if "'birthday'" in preview and "TIMESTAMPTZ" in preview:
+                generated_sql_issue_note = "transpiled SQL appears to cast quoted identifier literal 'birthday' as timestamp; needs followup"
+                anomaly_notes.append(generated_sql_issue_note)
+            elif "'sex'" in preview or "'diagnosis'" in preview:
+                generated_sql_issue_note = "transpiled SQL appears to use quoted identifier-like string literals in predicate/output expressions; needs followup"
+                anomaly_notes.append(generated_sql_issue_note)
+
+        row = {
+            "case_id": case_id,
+            "pool": pool,
+            "source_dialect_used": source_dialect_used,
+            "preflight_parse_status": (preflight or {}).get("parse_status", ""),
+            "preflight_transpile_status": (preflight or {}).get("transpile_status", ""),
+            "execution_status": execution_status,
+            "execution_failure_category": failure_category,
+            "execution_error_message": (execution or {}).get("error_message", ""),
+            "execution_row_count": (execution or {}).get("row_count"),
+            "execution_runtime_ms": (execution or {}).get("runtime_ms"),
+            "validation_schema": (execution or {}).get("validation_schema", ""),
+            "search_path_after_set": (execution or {}).get("search_path_after_set", ""),
+            "transpiled_sql_same_as_source_normalized": ((execution or {}).get("transpiled_sql_same_as_source_normalized")
+                if "transpiled_sql_same_as_source_normalized" in (execution or {})
+                else (preflight or {}).get("transpiled_sql_same_as_source_normalized")),
+            "generated_sql_issue_note": generated_sql_issue_note,
+            "anomaly_notes": anomaly_notes,
+        }
+        case_summaries.append(row)
+
+        if generated_sql_issue_note:
+            generated_sql_issue_notes.append(
+                {
+                    "case_id": case_id,
+                    "issue_note": generated_sql_issue_note,
+                    "failure_category": failure_category,
+                }
+            )
+
+    parse_success_count = int((reports.get("preflight") or {}).get("parse_success_count", 0))
+    parse_failed_count = int((reports.get("preflight") or {}).get("parse_failed_count", 0))
+    transpile_success_count = int((reports.get("preflight") or {}).get("transpile_success_count", 0))
+    transpile_failed_count = int((reports.get("preflight") or {}).get("transpile_failed_count", 0))
+    execution_success_count = int((reports.get("execution") or {}).get("success_count", 0))
+    execution_failed_count = int((reports.get("execution") or {}).get("failed_count", 0))
+
+    ok = (
+        len(reports) == 2
+        and not issues
+        and len(case_summaries) == 3
+    )
+
+    payload = {
+        "command": "baseline-smoke-sqlglot-transpile-summary",
+        "ok": ok,
+        "ran_at_utc": utc_now(),
+        "input_reports": input_report_refs,
+        "output_path": f"reports/baseline_smoke/{output_name}",
+        "case_count": len(case_summaries),
+        "preflight_parse_success_count": parse_success_count,
+        "preflight_parse_failed_count": parse_failed_count,
+        "preflight_transpile_success_count": transpile_success_count,
+        "preflight_transpile_failed_count": transpile_failed_count,
+        "execution_success_count": execution_success_count,
+        "execution_failed_count": execution_failed_count,
+        "failed_case_ids": [
+            row["case_id"] for row in case_summaries if row["execution_status"] == "failed"
+        ],
+        "source_dialect_used_by_case": source_dialect_map,
+        "generated_sql_issue_notes": generated_sql_issue_notes,
+        "case_summaries": case_summaries,
+        "issues": issues,
+        "guardrails": {
+            "database_execution": "disabled_for_summary",
+            "mysql_execution": "disabled",
+            "spark_execution": "disabled",
+            "sqlglot_generation": "disabled_for_summary",
+            "llm_execution": "disabled",
+            "case_artifact_write": "disabled",
+        },
+        "claim_boundary": "execution_layer_summary_only_not_translation_correctness",
+    }
+    write_baseline_smoke_report(output_name, payload)
+    return print_and_exit(payload, 0 if ok else 1)
+
+
 def cmd_baseline_smoke_llm_prompt_dry_run(args: argparse.Namespace) -> int:
     output_name = normalize_baseline_smoke_output_name("llm_direct_rewrite_prompt_packages_v0.json")
 
@@ -6835,6 +7042,22 @@ def build_parser() -> argparse.ArgumentParser:
     )
     sqlglot_summary_parser.add_argument("--execute", action="store_true", default=False)
     sqlglot_summary_parser.set_defaults(func=cmd_baseline_smoke_sqlglot_summary)
+
+    sqlglot_transpile_summary_parser = subparsers.add_parser("baseline-smoke-sqlglot-transpile-summary")
+    sqlglot_transpile_summary_parser.add_argument(
+        "--preflight-report",
+        default="reports/baseline_smoke/sqlglot_transpile_preflight_v0.json",
+    )
+    sqlglot_transpile_summary_parser.add_argument(
+        "--execution-report",
+        default="reports/baseline_smoke/sqlglot_transpile_pg_canary_v0.json",
+    )
+    sqlglot_transpile_summary_parser.add_argument(
+        "--output",
+        default="sqlglot_transpile_pg_summary_v0.json",
+    )
+    sqlglot_transpile_summary_parser.add_argument("--execute", action="store_true", default=False)
+    sqlglot_transpile_summary_parser.set_defaults(func=cmd_baseline_smoke_sqlglot_transpile_summary)
 
     llm_prompt_dry_run_parser = subparsers.add_parser("baseline-smoke-llm-prompt-dry-run")
     llm_prompt_dry_run_parser.add_argument(
