@@ -2,11 +2,13 @@ from __future__ import annotations
 
 import argparse
 import csv
+import importlib
 import json
 import os
 import re
 import subprocess
 import sys
+import time
 from collections import Counter
 from datetime import datetime, timezone
 from pathlib import Path
@@ -26,6 +28,7 @@ CONTROL_BASELINE_IDS = {
     "HUMAN_REFERENCE_POSITIVE",
     "HARD_NEGATIVE_GUARD",
 }
+NATIVE_IDENTITY_CANARY_DEFAULT_CASES = ["PERF_0006", "PERF_0008"]
 PERF_CASE_ID_RE = re.compile(r"^PERF_\d{4}$")
 PERF_TEMPLATE_CASE_ID = "PERF_0002"
 PERF_TEMPLATE_DIR = ROOT / "cases" / "PERF" / PERF_TEMPLATE_CASE_ID
@@ -609,6 +612,425 @@ def issue_view(record: dict[str, Any]) -> dict[str, Any]:
         "execution_mode": record.get("execution_mode", ""),
         "artifact_claim_boundary": record.get("artifact_claim_boundary", ""),
     }
+
+
+def pg_env_visibility() -> dict[str, bool]:
+    required = ["PGHOST", "PGPORT", "PGDATABASE", "PGUSER"]
+    visibility = {name: bool(os.environ.get(name)) for name in required}
+    visibility["PGPASSWORD"] = bool(os.environ.get("PGPASSWORD"))
+    return visibility
+
+
+def build_native_identity_record(
+    case_id: str,
+    pool: str,
+    source_sql_path: Path | None,
+    statement_timeout_ms: int,
+    execution_mode: str,
+    execution_status: str,
+    pg_env_visible: bool,
+    pg_password_present: bool | str,
+    failure_category: str,
+    blocker: str,
+    notes: list[str],
+    row_count: int | None = None,
+    runtime_ms: int | None = None,
+    error_message: str = "",
+) -> dict[str, Any]:
+    return {
+        "baseline_id": "NATIVE_IDENTITY",
+        "case_id": case_id,
+        "pool": pool,
+        "planned_engine": "postgres",
+        "execution_mode": execution_mode,
+        "source_sql_path": (
+            relative_to_root(source_sql_path)
+            if source_sql_path and source_sql_path.is_absolute() and source_sql_path.is_relative_to(ROOT)
+            else ""
+        ),
+        "source_sql_exists": bool(source_sql_path and source_sql_path.is_file()),
+        "pg_env_visible": pg_env_visible,
+        "pg_password_present": pg_password_present,
+        "statement_timeout_ms": statement_timeout_ms,
+        "execution_status": execution_status,
+        "row_count": row_count,
+        "runtime_ms": runtime_ms,
+        "result_materialization": "not_persisted",
+        "output_scope": "reports_only_no_case_artifact_write",
+        "failure_category": failure_category,
+        "error_message": error_message,
+        "artifact_claim_boundary": (
+            "pg_canary_execution_not_benchmark_claim"
+            if execution_mode == "pg_execute_canary"
+            else "dry_run_no_execution"
+        ),
+        "notes": notes,
+    }
+
+
+def cmd_baseline_smoke_native_identity_pg(args: argparse.Namespace) -> int:
+    if args.execute:
+        payload = {
+            "command": "baseline-smoke-native-identity-pg",
+            "cwd": str(ROOT),
+            "ok": False,
+            "ran_at_utc": utc_now(),
+            "message": "Use --execute-native-identity for the PG canary. --execute is intentionally not supported here.",
+            "errors": [
+                {
+                    "type": "invalid_execute_flag",
+                    "message": "only --execute-native-identity can enable the PG native-identity canary",
+                }
+            ],
+        }
+        write_baseline_smoke_report("native_identity_pg_execute_refused_v0.json", payload)
+        return print_and_exit(payload, 1)
+
+    config_path = resolve_repo_path(args.config)
+    config = load_json(config_path)
+    case_index = {case["case_id"]: case for case in config.get("cases", [])}
+
+    selected_case_ids = args.case_id or list(NATIVE_IDENTITY_CANARY_DEFAULT_CASES)
+    records: list[dict[str, Any]] = []
+    errors: list[dict[str, Any]] = []
+    invalid_cases = [case_id for case_id in selected_case_ids if case_id not in case_index]
+    if invalid_cases:
+        for case_id in invalid_cases:
+            records.append(
+                build_native_identity_record(
+                    case_id=case_id,
+                    pool="",
+                    source_sql_path=None,
+                    statement_timeout_ms=args.statement_timeout_ms,
+                    execution_mode="dry_run" if not args.execute_native_identity else "pg_execute_canary",
+                    execution_status="skipped",
+                    pg_env_visible=False,
+                    pg_password_present="unknown",
+                    failure_category="case_not_in_smoke_config",
+                    blocker="case_id not found in docs/_scratch/baseline_smoke_common_core_v0.json",
+                    notes=["selection refused: case is outside the current smoke config"],
+                )
+            )
+            errors.append(
+                {
+                    "type": "case_not_in_smoke_config",
+                    "case_id": case_id,
+                }
+            )
+
+    valid_case_ids = [case_id for case_id in selected_case_ids if case_id in case_index]
+    selected_specs = [case_index[case_id] for case_id in valid_case_ids]
+
+    env_visibility = pg_env_visibility()
+    required_env_visible = all(env_visibility[name] for name in ["PGHOST", "PGPORT", "PGDATABASE", "PGUSER"])
+    pg_password_present = env_visibility["PGPASSWORD"]
+
+    if not args.execute_native_identity:
+        for case_spec in selected_specs:
+            case_id = case_spec["case_id"]
+            pool = case_spec["pool"]
+            source_sql_path = pool_case_root(pool) / case_id / "source.sql"
+            if pool == "portability":
+                records.append(
+                    build_native_identity_record(
+                        case_id=case_id,
+                        pool=pool,
+                        source_sql_path=source_sql_path,
+                        statement_timeout_ms=args.statement_timeout_ms,
+                        execution_mode="dry_run",
+                        execution_status="skipped",
+                        pg_env_visible=required_env_visible,
+                        pg_password_present="unknown",
+                        failure_category="port_case_not_enabled",
+                        blocker="PORT cases are intentionally skipped for the first PG native-identity canary",
+                        notes=["dry-run skip: source-dialect portability cases are not enabled in this first PG canary"],
+                    )
+                )
+                continue
+
+            records.append(
+                build_native_identity_record(
+                    case_id=case_id,
+                    pool=pool,
+                    source_sql_path=source_sql_path,
+                    statement_timeout_ms=args.statement_timeout_ms,
+                    execution_mode="dry_run",
+                    execution_status="planned",
+                    pg_env_visible=required_env_visible,
+                    pg_password_present="unknown",
+                    failure_category="none",
+                    blocker="",
+                    notes=["dry-run only; no PostgreSQL connection attempted"],
+                )
+            )
+
+        payload = {
+            "command": "baseline-smoke-native-identity-pg",
+            "ok": not errors,
+            "ran_at_utc": utc_now(),
+            "config_path": relative_to_root(config_path),
+            "engine_scope": "postgres",
+            "baseline_id": "NATIVE_IDENTITY",
+            "case_count": len(records),
+            "executed_count": 0,
+            "success_count": 0,
+            "failed_count": 0,
+            "skipped_count": sum(1 for record in records if record["execution_status"] == "skipped"),
+            "env_blocked_count": 0,
+            "records": records,
+            "errors": errors,
+            "guardrails": {
+                "mysql_execution": "disabled",
+                "spark_execution": "disabled",
+                "llm_execution": "disabled",
+                "sqlglot_generation": "disabled",
+                "case_artifact_write": "disabled",
+            },
+        }
+        write_baseline_smoke_report("native_identity_pg_canary_v0.json", payload)
+        return print_and_exit(payload, 0 if payload["ok"] else 1)
+
+    if not required_env_visible:
+        for case_spec in selected_specs:
+            case_id = case_spec["case_id"]
+            pool = case_spec["pool"]
+            source_sql_path = pool_case_root(pool) / case_id / "source.sql"
+            records.append(
+                build_native_identity_record(
+                    case_id=case_id,
+                    pool=pool,
+                    source_sql_path=source_sql_path,
+                    statement_timeout_ms=args.statement_timeout_ms,
+                    execution_mode="pg_execute_canary",
+                    execution_status="env_blocked",
+                    pg_env_visible=False,
+                    pg_password_present=pg_password_present,
+                    failure_category="missing_pg_env",
+                    blocker="required PostgreSQL environment variables are not fully visible",
+                    notes=[
+                        "execution not attempted",
+                        "required env: PGHOST, PGPORT, PGDATABASE, PGUSER",
+                    ],
+                )
+            )
+        payload = {
+            "command": "baseline-smoke-native-identity-pg",
+            "ok": False,
+            "ran_at_utc": utc_now(),
+            "config_path": relative_to_root(config_path),
+            "engine_scope": "postgres",
+            "baseline_id": "NATIVE_IDENTITY",
+            "case_count": len(records),
+            "executed_count": 0,
+            "success_count": 0,
+            "failed_count": 0,
+            "skipped_count": 0,
+            "env_blocked_count": len(records),
+            "records": records,
+            "errors": errors,
+            "env_visibility": env_visibility,
+            "guardrails": {
+                "mysql_execution": "disabled",
+                "spark_execution": "disabled",
+                "llm_execution": "disabled",
+                "sqlglot_generation": "disabled",
+                "case_artifact_write": "disabled",
+            },
+        }
+        write_baseline_smoke_report("native_identity_pg_env_blocked_v0.json", payload)
+        return print_and_exit(payload, 1)
+
+    try:
+        psycopg = importlib.import_module("psycopg")
+    except ModuleNotFoundError:
+        for case_spec in selected_specs:
+            case_id = case_spec["case_id"]
+            pool = case_spec["pool"]
+            source_sql_path = pool_case_root(pool) / case_id / "source.sql"
+            if pool == "portability":
+                records.append(
+                    build_native_identity_record(
+                        case_id=case_id,
+                        pool=pool,
+                        source_sql_path=source_sql_path,
+                        statement_timeout_ms=args.statement_timeout_ms,
+                        execution_mode="pg_execute_canary",
+                        execution_status="skipped",
+                        pg_env_visible=True,
+                        pg_password_present=pg_password_present,
+                        failure_category="port_case_not_enabled",
+                        blocker="PORT cases are intentionally skipped for the first PG native-identity canary",
+                        notes=["execution skip: portability source SQL is not enabled in this canary"],
+                    )
+                )
+            else:
+                records.append(
+                    build_native_identity_record(
+                        case_id=case_id,
+                        pool=pool,
+                        source_sql_path=source_sql_path,
+                        statement_timeout_ms=args.statement_timeout_ms,
+                        execution_mode="pg_execute_canary",
+                        execution_status="failed",
+                        pg_env_visible=True,
+                        pg_password_present=pg_password_present,
+                        failure_category="psycopg_unavailable",
+                        blocker="psycopg is not installed in the current environment",
+                        notes=["execution not attempted because no PostgreSQL client library is available"],
+                    )
+                )
+        payload = {
+            "command": "baseline-smoke-native-identity-pg",
+            "ok": False,
+            "ran_at_utc": utc_now(),
+            "config_path": relative_to_root(config_path),
+            "engine_scope": "postgres",
+            "baseline_id": "NATIVE_IDENTITY",
+            "case_count": len(records),
+            "executed_count": 0,
+            "success_count": 0,
+            "failed_count": sum(1 for record in records if record["execution_status"] == "failed"),
+            "skipped_count": sum(1 for record in records if record["execution_status"] == "skipped"),
+            "env_blocked_count": 0,
+            "records": records,
+            "errors": errors,
+            "guardrails": {
+                "mysql_execution": "disabled",
+                "spark_execution": "disabled",
+                "llm_execution": "disabled",
+                "sqlglot_generation": "disabled",
+                "case_artifact_write": "disabled",
+            },
+        }
+        write_baseline_smoke_report("native_identity_pg_canary_v0.json", payload)
+        return print_and_exit(payload, 1)
+
+    for case_spec in selected_specs:
+        case_id = case_spec["case_id"]
+        pool = case_spec["pool"]
+        source_sql_path = pool_case_root(pool) / case_id / "source.sql"
+
+        if pool == "portability":
+            records.append(
+                build_native_identity_record(
+                    case_id=case_id,
+                    pool=pool,
+                    source_sql_path=source_sql_path,
+                    statement_timeout_ms=args.statement_timeout_ms,
+                    execution_mode="pg_execute_canary",
+                    execution_status="skipped",
+                    pg_env_visible=True,
+                    pg_password_present=pg_password_present,
+                    failure_category="port_case_not_enabled",
+                    blocker="PORT cases are intentionally skipped for the first PG native-identity canary",
+                    notes=["execution skip: portability source SQL is not enabled in this canary"],
+                )
+            )
+            continue
+
+        if not source_sql_path.is_file():
+            records.append(
+                build_native_identity_record(
+                    case_id=case_id,
+                    pool=pool,
+                    source_sql_path=source_sql_path,
+                    statement_timeout_ms=args.statement_timeout_ms,
+                    execution_mode="pg_execute_canary",
+                    execution_status="failed",
+                    pg_env_visible=True,
+                    pg_password_present=pg_password_present,
+                    failure_category="missing_source_sql",
+                    blocker="source.sql is missing",
+                    notes=["execution not attempted because source.sql is absent"],
+                )
+            )
+            continue
+
+        sql_text = source_sql_path.read_text(encoding="utf-8")
+        start = time.perf_counter()
+        try:
+            with psycopg.connect(
+                host=os.environ["PGHOST"],
+                port=os.environ["PGPORT"],
+                dbname=os.environ["PGDATABASE"],
+                user=os.environ["PGUSER"],
+                password=os.environ.get("PGPASSWORD"),
+                options=(
+                    f"-c statement_timeout={args.statement_timeout_ms} "
+                    "-c default_transaction_read_only=on"
+                ),
+            ) as conn:
+                with conn.cursor() as cur:
+                    cur.execute(sql_text)
+                    if cur.description is not None:
+                        rows = cur.fetchall()
+                        row_count = len(rows)
+                    else:
+                        row_count = cur.rowcount if cur.rowcount >= 0 else None
+            runtime_ms = int((time.perf_counter() - start) * 1000)
+            records.append(
+                build_native_identity_record(
+                    case_id=case_id,
+                    pool=pool,
+                    source_sql_path=source_sql_path,
+                    statement_timeout_ms=args.statement_timeout_ms,
+                    execution_mode="pg_execute_canary",
+                    execution_status="success",
+                    pg_env_visible=True,
+                    pg_password_present=pg_password_present,
+                    failure_category="none",
+                    blocker="",
+                    notes=["source.sql executed under read-only PG canary mode"],
+                    row_count=row_count,
+                    runtime_ms=runtime_ms,
+                )
+            )
+        except Exception as exc:
+            runtime_ms = int((time.perf_counter() - start) * 1000)
+            records.append(
+                build_native_identity_record(
+                    case_id=case_id,
+                    pool=pool,
+                    source_sql_path=source_sql_path,
+                    statement_timeout_ms=args.statement_timeout_ms,
+                    execution_mode="pg_execute_canary",
+                    execution_status="failed",
+                    pg_env_visible=True,
+                    pg_password_present=pg_password_present,
+                    failure_category=type(exc).__name__,
+                    blocker="PostgreSQL canary execution failed",
+                    notes=["execution attempted", "no case-local artifacts were written"],
+                    runtime_ms=runtime_ms,
+                    error_message=str(exc),
+                )
+            )
+
+    payload = {
+        "command": "baseline-smoke-native-identity-pg",
+        "ok": not errors and not any(record["execution_status"] == "failed" for record in records),
+        "ran_at_utc": utc_now(),
+        "config_path": relative_to_root(config_path),
+        "engine_scope": "postgres",
+        "baseline_id": "NATIVE_IDENTITY",
+        "case_count": len(records),
+        "executed_count": sum(1 for record in records if record["execution_status"] in {"success", "failed"}),
+        "success_count": sum(1 for record in records if record["execution_status"] == "success"),
+        "failed_count": sum(1 for record in records if record["execution_status"] == "failed"),
+        "skipped_count": sum(1 for record in records if record["execution_status"] == "skipped"),
+        "env_blocked_count": 0,
+        "records": records,
+        "errors": errors,
+        "env_visibility": env_visibility,
+        "guardrails": {
+            "mysql_execution": "disabled",
+            "spark_execution": "disabled",
+            "llm_execution": "disabled",
+            "sqlglot_generation": "disabled",
+            "case_artifact_write": "disabled",
+        },
+    }
+    write_baseline_smoke_report("native_identity_pg_canary_v0.json", payload)
+    return print_and_exit(payload, 0 if payload["ok"] else 1)
 
 
 def cmd_baseline_smoke_control_records(args: argparse.Namespace) -> int:
@@ -2085,6 +2507,21 @@ def build_parser() -> argparse.ArgumentParser:
     )
     control_summary_parser.add_argument("--execute", action="store_true", default=False)
     control_summary_parser.set_defaults(func=cmd_baseline_smoke_control_summary)
+
+    native_identity_pg_parser = subparsers.add_parser("baseline-smoke-native-identity-pg")
+    native_identity_pg_parser.add_argument(
+        "--config",
+        default="docs/_scratch/baseline_smoke_common_core_v0.json",
+    )
+    native_identity_pg_parser.add_argument("--case-id", action="append", default=[])
+    native_identity_pg_parser.add_argument("--statement-timeout-ms", type=int, default=30000)
+    native_identity_pg_parser.add_argument("--execute", action="store_true", default=False)
+    native_identity_pg_parser.add_argument(
+        "--execute-native-identity",
+        action="store_true",
+        default=False,
+    )
+    native_identity_pg_parser.set_defaults(func=cmd_baseline_smoke_native_identity_pg)
 
     return parser
 
