@@ -10928,6 +10928,172 @@ def cmd_formal_common_core_plan_operator_delta_preflight(args: argparse.Namespac
     return print_and_exit(payload, 0 if payload["ok"] else 1)
 
 
+def cmd_formal_common_core_runtime_observation_snapshot(args: argparse.Namespace) -> int:
+    output_name = normalize_formal_common_core_output_name(args.output)
+    if args.execute:
+        payload = {
+            "command": "formal-common-core-runtime-observation-snapshot",
+            "ok": False,
+            "ran_at_utc": utc_now(),
+            "output_path": "reports/formal_common_core/runtime_observation_snapshot_execute_refused_v0.json",
+            "claim_boundary": "runtime_observation_snapshot_only_not_formal_speedup",
+            "message": "This command is read-existing-reports-only and does not support --execute.",
+            "issues": [
+                {
+                    "type": "invalid_execute_flag",
+                    "message": "formal-common-core-runtime-observation-snapshot does not support --execute",
+                }
+            ],
+            "guardrails": {
+                "database_execution": "disabled",
+                "sql_execution": "disabled",
+                "explain_execution": "disabled",
+                "plan_collection": "disabled",
+                "model_api_call": "disabled",
+                "sqlglot_generation": "disabled",
+                "checker_execution": "disabled",
+                "speedup_scoring": "disabled",
+                "attribution_scoring": "disabled",
+                "case_artifact_write": "disabled",
+                "registry_writeback": "disabled",
+            },
+        }
+        write_formal_common_core_report("runtime_observation_snapshot_execute_refused_v0.json", payload)
+        return print_and_exit(payload, 1)
+
+    case_ids = formal_common_core_case_ids()
+    issues: list[dict[str, Any]] = []
+
+    report_specs = {
+        "native": (FORMAL_COMMON_CORE_REPORT_DIR / "native_identity_execution_v0.json", "runtime_ms"),
+        "human_positive": (FORMAL_COMMON_CORE_REPORT_DIR / "human_reference_positive_execution_v0.json", "runtime_ms"),
+        "hard_negative": (FORMAL_COMMON_CORE_REPORT_DIR / "hard_negative_guard_execution_v0.json", "runtime_ms"),
+        "sqlglot": (FORMAL_COMMON_CORE_REPORT_DIR / "sqlglot_opt_same_dialect_execution_v0.json", "runtime_ms"),
+        "llm": (FORMAL_COMMON_CORE_REPORT_DIR / "llm_direct_rewrite_execution_v0.json", "pg_runtime_ms"),
+    }
+
+    record_maps: dict[str, dict[str, dict[str, Any]]] = {}
+    for label, (path, _) in report_specs.items():
+        report = load_json_if_present(path)
+        if report is None:
+            issues.append({"type": f"missing_{label}_report", "path": relative_to_root(path)})
+            record_maps[label] = {}
+            continue
+        record_maps[label] = {
+            str(record.get("case_id", "")).strip(): record
+            for record in report.get("records", [])
+            if record.get("case_id")
+        }
+
+    def safe_ratio(numerator: Any, denominator: Any) -> float | None:
+        if isinstance(numerator, (int, float)) and isinstance(denominator, (int, float)) and denominator not in (0, 0.0):
+            return float(numerator) / float(denominator)
+        return None
+
+    records: list[dict[str, Any]] = []
+    availability_counts = {
+        "native": 0,
+        "human_positive": 0,
+        "hard_negative": 0,
+        "sqlglot": 0,
+        "llm": 0,
+    }
+    ratio_counts = {
+        "human_positive_vs_native": 0,
+        "hard_negative_vs_native": 0,
+        "sqlglot_vs_native": 0,
+        "llm_vs_native": 0,
+    }
+
+    for case_id in case_ids:
+        inferred = case_root_for_case_id(case_id)
+        pool = inferred[0] if inferred else "unknown"
+
+        native_runtime_ms = (record_maps["native"].get(case_id) or {}).get("runtime_ms")
+        human_positive_runtime_ms = (record_maps["human_positive"].get(case_id) or {}).get("runtime_ms")
+        hard_negative_runtime_ms = (record_maps["hard_negative"].get(case_id) or {}).get("runtime_ms")
+        sqlglot_runtime_ms = (record_maps["sqlglot"].get(case_id) or {}).get("runtime_ms")
+        llm_runtime_ms = (record_maps["llm"].get(case_id) or {}).get("pg_runtime_ms")
+
+        if isinstance(native_runtime_ms, (int, float)):
+            availability_counts["native"] += 1
+        if isinstance(human_positive_runtime_ms, (int, float)):
+            availability_counts["human_positive"] += 1
+        if isinstance(hard_negative_runtime_ms, (int, float)):
+            availability_counts["hard_negative"] += 1
+        if isinstance(sqlglot_runtime_ms, (int, float)):
+            availability_counts["sqlglot"] += 1
+        if isinstance(llm_runtime_ms, (int, float)):
+            availability_counts["llm"] += 1
+
+        human_positive_vs_native_runtime_ratio_observed = safe_ratio(human_positive_runtime_ms, native_runtime_ms)
+        hard_negative_vs_native_runtime_ratio_observed = safe_ratio(hard_negative_runtime_ms, native_runtime_ms)
+        sqlglot_vs_native_runtime_ratio_observed = safe_ratio(sqlglot_runtime_ms, native_runtime_ms)
+        llm_vs_native_runtime_ratio_observed = safe_ratio(llm_runtime_ms, native_runtime_ms)
+
+        if human_positive_vs_native_runtime_ratio_observed is not None:
+            ratio_counts["human_positive_vs_native"] += 1
+        if hard_negative_vs_native_runtime_ratio_observed is not None:
+            ratio_counts["hard_negative_vs_native"] += 1
+        if sqlglot_vs_native_runtime_ratio_observed is not None:
+            ratio_counts["sqlglot_vs_native"] += 1
+        if llm_vs_native_runtime_ratio_observed is not None:
+            ratio_counts["llm_vs_native"] += 1
+
+        records.append(
+            {
+                "case_id": case_id,
+                "pool": pool,
+                "native_runtime_ms": native_runtime_ms,
+                "human_positive_runtime_ms": human_positive_runtime_ms,
+                "hard_negative_runtime_ms": hard_negative_runtime_ms,
+                "sqlglot_runtime_ms": sqlglot_runtime_ms,
+                "llm_runtime_ms": llm_runtime_ms,
+                "sqlglot_vs_native_runtime_ratio_observed_single_run": sqlglot_vs_native_runtime_ratio_observed,
+                "llm_vs_native_runtime_ratio_observed_single_run": llm_vs_native_runtime_ratio_observed,
+                "human_positive_vs_native_runtime_ratio_observed_single_run": human_positive_vs_native_runtime_ratio_observed,
+                "hard_negative_vs_native_runtime_ratio_observed_single_run": hard_negative_vs_native_runtime_ratio_observed,
+                "artifact_claim_boundary": "runtime_observation_snapshot_only_not_formal_speedup",
+            }
+        )
+
+    payload = {
+        "command": "formal-common-core-runtime-observation-snapshot",
+        "ok": True,
+        "ran_at_utc": utc_now(),
+        "output_path": f"reports/formal_common_core/{output_name}",
+        "denominator_case_count": len(case_ids),
+        "native_runtime_available_count": availability_counts["native"],
+        "human_positive_runtime_available_count": availability_counts["human_positive"],
+        "hard_negative_runtime_available_count": availability_counts["hard_negative"],
+        "sqlglot_runtime_available_count": availability_counts["sqlglot"],
+        "llm_runtime_available_count": availability_counts["llm"],
+        "observed_ratio_available_count_by_route": ratio_counts,
+        "repeat_count_policy": "not_frozen",
+        "warmup_policy": "not_frozen",
+        "runtime_measurement_policy": "not_frozen",
+        "formal_speedup_scoring_complete": False,
+        "records": records,
+        "issues": issues,
+        "guardrails": {
+            "database_execution": "disabled",
+            "sql_execution": "disabled",
+            "explain_execution": "disabled",
+            "plan_collection": "disabled",
+            "model_api_call": "disabled",
+            "sqlglot_generation": "disabled",
+            "checker_execution": "disabled",
+            "speedup_scoring": "disabled",
+            "attribution_scoring": "disabled",
+            "case_artifact_write": "disabled",
+            "registry_writeback": "disabled",
+        },
+        "claim_boundary": "runtime_observation_snapshot_only_not_formal_speedup",
+    }
+    write_formal_common_core_report(output_name, payload)
+    return print_and_exit(payload, 0 if payload["ok"] else 1)
+
+
 def cmd_formal_common_core_method_plan_collection_preflight(args: argparse.Namespace) -> int:
     output_name = normalize_formal_common_core_output_name(args.output)
     if args.execute:
@@ -18299,6 +18465,14 @@ def build_parser() -> argparse.ArgumentParser:
     )
     formal_common_core_plan_operator_delta_preflight_parser.add_argument("--execute", action="store_true", default=False)
     formal_common_core_plan_operator_delta_preflight_parser.set_defaults(func=cmd_formal_common_core_plan_operator_delta_preflight)
+
+    formal_common_core_runtime_observation_snapshot_parser = subparsers.add_parser("formal-common-core-runtime-observation-snapshot")
+    formal_common_core_runtime_observation_snapshot_parser.add_argument(
+        "--output",
+        default="runtime_observation_snapshot_v0.json",
+    )
+    formal_common_core_runtime_observation_snapshot_parser.add_argument("--execute", action="store_true", default=False)
+    formal_common_core_runtime_observation_snapshot_parser.set_defaults(func=cmd_formal_common_core_runtime_observation_snapshot)
 
     formal_common_core_method_plan_collection_preflight_parser = subparsers.add_parser("formal-common-core-method-plan-collection-preflight")
     formal_common_core_method_plan_collection_preflight_parser.add_argument(
