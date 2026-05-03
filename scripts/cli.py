@@ -9352,6 +9352,221 @@ def cmd_formal_common_core_sqlglot_scoring(args: argparse.Namespace) -> int:
     return print_and_exit(payload, 0 if payload["ok"] else 1)
 
 
+def cmd_formal_common_core_llm_rewrite_execution(args: argparse.Namespace) -> int:
+    output_name = normalize_formal_common_core_output_name(args.output)
+    if args.execute:
+        payload = {
+            "command": "formal-common-core-llm-rewrite-execution",
+            "ok": False,
+            "ran_at_utc": utc_now(),
+            "output_path": "reports/formal_common_core/llm_direct_rewrite_execution_execute_refused_v0.json",
+            "claim_boundary": "formal_llm_direct_rewrite_execution_from_existing_reports_only_not_correctness_or_speedup",
+            "message": "This command is read-existing-reports-only and does not support --execute.",
+            "issues": [
+                {
+                    "type": "invalid_execute_flag",
+                    "message": "formal-common-core-llm-rewrite-execution does not support --execute",
+                }
+            ],
+            "guardrails": {
+                "model_api_call": "disabled",
+                "database_execution": "disabled",
+                "sql_execution": "disabled",
+                "sqlglot_generation": "disabled",
+                "plan_collection": "disabled",
+                "result_scoring": "disabled",
+                "speedup_scoring": "disabled",
+                "case_artifact_write": "disabled",
+                "registry_writeback": "disabled",
+            },
+        }
+        write_formal_common_core_report("llm_direct_rewrite_execution_execute_refused_v0.json", payload)
+        return print_and_exit(payload, 1)
+
+    case_ids = [str(case_id).strip() for case_id in (args.case_id or [])] or formal_common_core_case_ids()
+    issues: list[dict[str, Any]] = []
+    records: list[dict[str, Any]] = []
+    total_token_usage = 0
+    model_labels: set[str] = set()
+    provider_modes: set[str] = set()
+    pricing_snapshots: set[str] = set()
+
+    rollup_path = BASELINE_SMOKE_REPORT_DIR / "llm_direct_rewrite_9case_rollup_v0.json"
+    rollup_report = load_json_if_present(rollup_path)
+    if rollup_report is None:
+        issues.append(
+            {
+                "type": "missing_rollup_report",
+                "path": relative_to_root(rollup_path),
+            }
+        )
+
+    for case_id in case_ids:
+        inferred = case_root_for_case_id(case_id)
+        pool = inferred[0] if inferred else "unknown"
+        case_root = inferred[1] if inferred else None
+        source_sql_path = case_root / "source.sql" if case_root else Path("")
+        source_sql_exists = source_sql_path.is_file() if case_root else False
+        case_slug = case_id.lower()
+        call_report_path = BASELINE_SMOKE_REPORT_DIR / f"llm_direct_rewrite_call_{case_slug}_v0.json"
+        pg_report_path = BASELINE_SMOKE_REPORT_DIR / f"llm_direct_rewrite_pg_{case_slug}_v0.json"
+        summary_report_path = BASELINE_SMOKE_REPORT_DIR / f"llm_direct_rewrite_summary_{case_slug}_v0.json"
+        call_report = load_json_if_present(call_report_path)
+        pg_report = load_json_if_present(pg_report_path)
+        summary_report = load_json_if_present(summary_report_path)
+        blockers: list[str] = []
+        warnings: list[str] = []
+
+        if call_report is None:
+            blockers.append("call report missing")
+            issues.append({"type": "missing_call_report", "case_id": case_id, "path": relative_to_root(call_report_path)})
+        if pg_report is None:
+            blockers.append("pg report missing")
+            issues.append({"type": "missing_pg_report", "case_id": case_id, "path": relative_to_root(pg_report_path)})
+        if summary_report is None:
+            blockers.append("summary report missing")
+            issues.append({"type": "missing_summary_report", "case_id": case_id, "path": relative_to_root(summary_report_path)})
+
+        call_record = ((call_report or {}).get("records") or [{}])[0]
+        pg_record = ((pg_report or {}).get("records") or [{}])[0]
+        summary_record = ((summary_report or {}).get("case_summaries") or [{}])[0]
+
+        call_status = call_record.get("call_status", "missing")
+        extracted_sql_status = call_record.get("extracted_sql_status", pg_record.get("extracted_sql_status", "missing"))
+        extracted_sql_text = call_record.get("extracted_sql_preview", "")
+        extracted_sql_character_count = len(extracted_sql_text) if extracted_sql_text else None
+        pg_execution_status = pg_record.get("execution_status", summary_record.get("pg_execution_status", "missing"))
+        pg_failure_category = pg_record.get("failure_category", summary_record.get("pg_failure_category", "unknown"))
+        pg_row_count = pg_record.get("row_count", summary_record.get("pg_row_count"))
+        pg_runtime_ms = pg_record.get("runtime_ms", summary_record.get("pg_runtime_ms"))
+        validation_schema = pg_record.get("validation_schema", summary_record.get("validation_schema", ""))
+        search_path_after_set = pg_record.get("search_path_after_set", summary_record.get("search_path_after_set", ""))
+        model_label = call_record.get("model_label", summary_record.get("model_label", ""))
+        provider_mode = call_record.get("provider_mode", summary_record.get("provider_mode", ""))
+        token_usage_input = call_record.get("token_usage_input", summary_record.get("token_usage_input"))
+        token_usage_output = call_record.get("token_usage_output", summary_record.get("token_usage_output"))
+        token_usage_total = call_record.get("token_usage_total", summary_record.get("token_usage_total"))
+        prompt_hash_sha256 = call_record.get("prompt_hash_sha256", "")
+        pricing_snapshot = call_record.get("pricing_snapshot", "unknown")
+
+        if model_label:
+            model_labels.add(str(model_label))
+        if provider_mode:
+            provider_modes.add(str(provider_mode))
+        if pricing_snapshot:
+            pricing_snapshots.add(str(pricing_snapshot))
+        if isinstance(token_usage_total, int):
+            total_token_usage += token_usage_total
+
+        if call_report is None:
+            execution_observation_status = "call_missing"
+        elif pg_report is None:
+            execution_observation_status = "pg_report_missing"
+        elif call_status == "success" and pg_execution_status == "success":
+            execution_observation_status = "call_and_pg_execution_succeeded"
+        elif call_status == "success" and pg_execution_status != "success":
+            execution_observation_status = "call_succeeded_pg_failed"
+        else:
+            execution_observation_status = "incomplete_existing_reports"
+
+        records.append(
+            {
+                "case_id": case_id,
+                "pool": pool,
+                "baseline_id": "LLM_DIRECT_REWRITE_STRONG",
+                "route": "llm_direct_rewrite",
+                "source_sql_path": relative_to_root(source_sql_path) if str(source_sql_path) else "",
+                "source_sql_exists": source_sql_exists,
+                "call_report_path": relative_to_root(call_report_path),
+                "call_report_exists": call_report is not None,
+                "pg_report_path": relative_to_root(pg_report_path),
+                "pg_report_exists": pg_report is not None,
+                "summary_report_path": relative_to_root(summary_report_path),
+                "summary_report_exists": summary_report is not None,
+                "call_status": call_status,
+                "extracted_sql_status": extracted_sql_status,
+                "extracted_sql_text": extracted_sql_text,
+                "extracted_sql_character_count": extracted_sql_character_count,
+                "pg_execution_status": pg_execution_status,
+                "pg_failure_category": pg_failure_category,
+                "pg_row_count": pg_row_count,
+                "pg_runtime_ms": pg_runtime_ms,
+                "validation_schema": validation_schema,
+                "search_path_after_set": search_path_after_set,
+                "model_label": model_label,
+                "provider_mode": provider_mode,
+                "token_usage_input": token_usage_input,
+                "token_usage_output": token_usage_output,
+                "token_usage_total": token_usage_total,
+                "prompt_hash_sha256": prompt_hash_sha256,
+                "pricing_snapshot": pricing_snapshot,
+                "execution_observation_status": execution_observation_status,
+                "blockers": blockers,
+                "warnings": warnings,
+                "artifact_claim_boundary": "formal_llm_direct_rewrite_execution_from_existing_reports_only_no_model_no_sql_execution",
+            }
+        )
+
+    call_success_count = sum(1 for r in records if r.get("call_status") == "success")
+    call_failed_count = sum(1 for r in records if r.get("call_status") not in {"success", "missing"})
+    extracted_sql_count = sum(1 for r in records if r.get("extracted_sql_status") == "extracted")
+    pg_execution_success_count = sum(1 for r in records if r.get("pg_execution_status") == "success")
+    pg_execution_failed_count = sum(1 for r in records if r.get("pg_execution_status") not in {"success", "missing"})
+    execution_success_count = sum(1 for r in records if r.get("execution_observation_status") == "call_and_pg_execution_succeeded")
+    execution_failed_count = len(records) - execution_success_count
+
+    if len(pricing_snapshots) == 1:
+        pricing_snapshot_status = next(iter(pricing_snapshots))
+    elif not pricing_snapshots:
+        pricing_snapshot_status = "unknown"
+    else:
+        pricing_snapshot_status = "mixed"
+
+    payload = {
+        "command": "formal-common-core-llm-rewrite-execution",
+        "ok": (
+            len(records) == len(case_ids)
+            and all(r.get("call_report_exists") for r in records)
+            and all(r.get("pg_report_exists") for r in records)
+            and all(r.get("summary_report_exists") for r in records)
+        ),
+        "ran_at_utc": utc_now(),
+        "output_path": f"reports/formal_common_core/{output_name}",
+        "denominator_case_count": len(formal_common_core_case_ids()),
+        "case_count": len(records),
+        "baseline_id": "LLM_DIRECT_REWRITE_STRONG",
+        "route": "llm_direct_rewrite",
+        "call_success_count": call_success_count,
+        "call_failed_count": call_failed_count,
+        "extracted_sql_count": extracted_sql_count,
+        "pg_execution_success_count": pg_execution_success_count,
+        "pg_execution_failed_count": pg_execution_failed_count,
+        "execution_success_count": execution_success_count,
+        "execution_failed_count": execution_failed_count,
+        "executable_rate": execution_success_count / len(records) if records else 0.0,
+        "total_token_usage": total_token_usage,
+        "model_labels": sorted(model_labels),
+        "provider_modes": sorted(provider_modes),
+        "pricing_snapshot_status": pricing_snapshot_status,
+        "records": records,
+        "issues": issues,
+        "guardrails": {
+            "model_api_call": "disabled",
+            "database_execution": "disabled",
+            "sql_execution": "disabled",
+            "sqlglot_generation": "disabled",
+            "plan_collection": "disabled",
+            "result_scoring": "disabled",
+            "speedup_scoring": "disabled",
+            "case_artifact_write": "disabled",
+            "registry_writeback": "disabled",
+        },
+        "claim_boundary": "formal_llm_direct_rewrite_execution_from_existing_reports_only_not_correctness_or_speedup",
+    }
+    write_formal_common_core_report(output_name, payload)
+    return print_and_exit(payload, 0 if payload["ok"] else 1)
+
+
 def cmd_baseline_smoke_llm_call_canary(args: argparse.Namespace) -> int:
     default_output_name = "llm_direct_rewrite_call_canary_v0.json"
     output_name = normalize_baseline_smoke_output_name(default_output_name)
@@ -16040,6 +16255,15 @@ def build_parser() -> argparse.ArgumentParser:
     )
     formal_common_core_sqlglot_scoring_parser.add_argument("--execute", action="store_true", default=False)
     formal_common_core_sqlglot_scoring_parser.set_defaults(func=cmd_formal_common_core_sqlglot_scoring)
+
+    formal_common_core_llm_rewrite_execution_parser = subparsers.add_parser("formal-common-core-llm-rewrite-execution")
+    formal_common_core_llm_rewrite_execution_parser.add_argument("--case-id", action="append", default=[])
+    formal_common_core_llm_rewrite_execution_parser.add_argument(
+        "--output",
+        default="llm_direct_rewrite_execution_v0.json",
+    )
+    formal_common_core_llm_rewrite_execution_parser.add_argument("--execute", action="store_true", default=False)
+    formal_common_core_llm_rewrite_execution_parser.set_defaults(func=cmd_formal_common_core_llm_rewrite_execution)
 
     sqlglot_transpile_summary_parser = subparsers.add_parser("baseline-smoke-sqlglot-transpile-summary")
     sqlglot_transpile_summary_parser.add_argument(
