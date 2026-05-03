@@ -258,6 +258,7 @@ def llm_translate_report_name(kind: str, case_id: str) -> str:
     case_slug = normalize_case_id_for_filename(case_id)
     name_map = {
         "call": f"llm_direct_translate_call_{case_slug}_v0.json",
+        "pg": f"llm_direct_translate_pg_{case_slug}_v0.json",
     }
     if kind not in name_map:
         raise ValueError(f"unsupported llm translate report kind: {kind}")
@@ -1406,6 +1407,54 @@ def build_llm_generated_pg_record(
             if execution_mode == "pg_execute_llm_generated_canary"
             else "dry_run_no_execution"
         ),
+        "notes": notes,
+    }
+
+
+def build_llm_translate_pg_record(
+    case_id: str,
+    pool: str,
+    source_dialect: str,
+    target_dialect: str,
+    input_report_path: str,
+    model_label: str,
+    provider_mode: str,
+    token_usage_total: int | None,
+    candidate_sql_source: str,
+    execution_mode: str,
+    execution_status: str,
+    validation_schema: str,
+    search_path_after_set: str,
+    artifact_claim_boundary: str,
+    notes: list[str],
+    row_count: int | None = None,
+    runtime_ms: int | None = None,
+    failure_category: str = "none",
+    error_message: str = "",
+) -> dict[str, Any]:
+    return {
+        "baseline_id": "LLM_DIRECT_TRANSLATE",
+        "case_id": case_id,
+        "pool": pool,
+        "source_dialect": source_dialect,
+        "target_dialect": target_dialect,
+        "planned_engine": "postgres",
+        "execution_mode": execution_mode,
+        "input_report_path": input_report_path,
+        "model_label": model_label,
+        "provider_mode": provider_mode,
+        "candidate_sql_source": candidate_sql_source,
+        "execution_status": execution_status,
+        "row_count": row_count,
+        "runtime_ms": runtime_ms,
+        "validation_schema": validation_schema,
+        "search_path_after_set": search_path_after_set,
+        "token_usage_total": token_usage_total,
+        "result_materialization": "not_persisted",
+        "output_scope": "reports_only_no_case_artifact_write",
+        "failure_category": failure_category,
+        "error_message": error_message,
+        "artifact_claim_boundary": artifact_claim_boundary,
         "notes": notes,
     }
 
@@ -7421,6 +7470,669 @@ def cmd_baseline_smoke_llm_generated_pg_canary(args: argparse.Namespace) -> int:
     return print_and_exit(payload, 0 if payload["ok"] else 1)
 
 
+def cmd_baseline_smoke_llm_translate_pg_canary(args: argparse.Namespace) -> int:
+    input_path = resolve_repo_path(args.input)
+    selected_case_ids = args.case_id or ["PORT_0004"]
+    output_case_id = selected_case_ids[0] if len(selected_case_ids) == 1 else ""
+    output_name = llm_translate_report_name("pg", output_case_id) if output_case_id else "llm_direct_translate_pg_port_0004_v0.json"
+    output_mode = "per_case"
+    records: list[dict[str, Any]] = []
+    issues: list[dict[str, Any]] = []
+
+    if args.execute:
+        payload = {
+            "command": "baseline-smoke-llm-translate-pg-canary",
+            "cwd": str(ROOT),
+            "ok": False,
+            "ran_at_utc": utc_now(),
+            "input_report_path": relative_to_root(input_path),
+            "baseline_id": "LLM_DIRECT_TRANSLATE",
+            "output_path": "reports/baseline_smoke/llm_direct_translate_pg_execute_refused_v0.json",
+            "claim_boundary": "llm_translate_pg_canary_execution_not_translation_correctness",
+            "message": "This is not a generic execution command. Use --execute-llm-translate-sql for the PG canary.",
+            "issues": [
+                {
+                    "type": "invalid_execute_flag",
+                    "message": "baseline-smoke-llm-translate-pg-canary does not support --execute; use --execute-llm-translate-sql",
+                }
+            ],
+            "guardrails": {
+                "model_api_call": "disabled",
+                "mysql_execution": "disabled",
+                "spark_execution": "disabled",
+                "sqlglot_generation": "disabled",
+                "case_artifact_write": "disabled",
+                "generated_sql_case_write": "disabled",
+            },
+        }
+        write_baseline_smoke_report("llm_direct_translate_pg_execute_refused_v0.json", payload)
+        return print_and_exit(payload, 1)
+
+    if len(selected_case_ids) != 1:
+        for case_id in selected_case_ids:
+            records.append(
+                build_llm_translate_pg_record(
+                    case_id=case_id,
+                    pool="",
+                    source_dialect="unknown",
+                    target_dialect="postgres",
+                    input_report_path=relative_to_root(input_path),
+                    model_label="",
+                    provider_mode="",
+                    token_usage_total=None,
+                    candidate_sql_source="not_available",
+                    execution_mode="pg_execute_llm_translate_canary" if args.execute_llm_translate_sql else "dry_run",
+                    execution_status="failed",
+                    validation_schema="",
+                    search_path_after_set="",
+                    artifact_claim_boundary="dry_run_no_execution",
+                    notes=["first LLM translate PG canary is limited to exactly one case"],
+                    failure_category="multiple_case_execution_not_allowed",
+                )
+            )
+        payload = {
+            "command": "baseline-smoke-llm-translate-pg-canary",
+            "ok": False,
+            "ran_at_utc": utc_now(),
+            "input_report_path": relative_to_root(input_path),
+            "engine_scope": "postgres",
+            "baseline_id": "LLM_DIRECT_TRANSLATE",
+            "output_mode": output_mode,
+            "output_case_id": output_case_id,
+            "output_path": f"reports/baseline_smoke/{output_name}",
+            "case_count": len(records),
+            "executed_count": 0,
+            "success_count": 0,
+            "failed_count": len(records),
+            "skipped_count": 0,
+            "env_blocked_count": 0,
+            "records": records,
+            "issues": [{"type": "multiple_case_execution_not_allowed", "message": "only one case is supported in this canary"}],
+            "guardrails": {
+                "model_api_call": "disabled",
+                "mysql_execution": "disabled",
+                "spark_execution": "disabled",
+                "sqlglot_generation": "disabled",
+                "case_artifact_write": "disabled",
+                "generated_sql_case_write": "disabled",
+            },
+            "claim_boundary": "llm_translate_pg_canary_execution_not_translation_correctness",
+        }
+        write_baseline_smoke_report(output_name, payload)
+        return print_and_exit(payload, 1)
+
+    report = load_json(input_path)
+    case_id = selected_case_ids[0]
+    report_record = None
+    for row in report.get("records", []):
+        if row.get("case_id") == case_id:
+            report_record = row
+            break
+
+    if report_record is None:
+        records.append(
+            build_llm_translate_pg_record(
+                case_id=case_id,
+                pool="",
+                source_dialect="unknown",
+                target_dialect="postgres",
+                input_report_path=relative_to_root(input_path),
+                model_label="",
+                provider_mode="",
+                token_usage_total=None,
+                candidate_sql_source="not_available",
+                execution_mode="pg_execute_llm_translate_canary" if args.execute_llm_translate_sql else "dry_run",
+                execution_status="failed",
+                validation_schema="",
+                search_path_after_set="",
+                artifact_claim_boundary="dry_run_no_execution",
+                notes=["selected case was not present in the LLM translate call report"],
+                failure_category="case_missing_from_input_report",
+            )
+        )
+        payload = {
+            "command": "baseline-smoke-llm-translate-pg-canary",
+            "ok": False,
+            "ran_at_utc": utc_now(),
+            "input_report_path": relative_to_root(input_path),
+            "engine_scope": "postgres",
+            "baseline_id": "LLM_DIRECT_TRANSLATE",
+            "output_mode": output_mode,
+            "output_case_id": case_id,
+            "output_path": f"reports/baseline_smoke/{output_name}",
+            "case_count": 1,
+            "executed_count": 0,
+            "success_count": 0,
+            "failed_count": 1,
+            "skipped_count": 0,
+            "env_blocked_count": 0,
+            "records": records,
+            "issues": [{"type": "case_missing_from_input_report", "case_id": case_id}],
+            "guardrails": {
+                "model_api_call": "disabled",
+                "mysql_execution": "disabled",
+                "spark_execution": "disabled",
+                "sqlglot_generation": "disabled",
+                "case_artifact_write": "disabled",
+                "generated_sql_case_write": "disabled",
+            },
+            "claim_boundary": "llm_translate_pg_canary_execution_not_translation_correctness",
+        }
+        write_baseline_smoke_report(output_name, payload)
+        return print_and_exit(payload, 1)
+
+    pool = report_record.get("pool", "")
+    source_dialect = report_record.get("source_dialect", "unknown")
+    target_dialect = report_record.get("target_dialect", "postgres")
+    model_label = report_record.get("model_label", "")
+    provider_mode = report_record.get("provider_mode", "")
+    extracted_sql_status = report_record.get("extracted_sql_status", "not_available")
+    candidate_sql, candidate_sql_source, candidate_sql_truncated_preview_only = resolve_llm_candidate_sql(report_record)
+    validation_schema = "port_0004_validation"
+    env_visibility = pg_env_visibility()
+    required_env_visible = all(env_visibility[name] for name in ["PGHOST", "PGPORT", "PGDATABASE", "PGUSER"])
+    pg_password_present = env_visibility["PGPASSWORD"]
+
+    if not args.execute_llm_translate_sql:
+        failure_category = "none"
+        execution_status = "planned"
+        notes = ["dry-run only; no PostgreSQL connection attempted", "no model call performed"]
+        if extracted_sql_status != "extracted":
+            failure_category = "extracted_sql_not_ready"
+            execution_status = "failed"
+            notes = ["dry-run blocked: extracted_sql_status is not extracted", "no model call performed"]
+        elif candidate_sql_truncated_preview_only:
+            failure_category = "truncated_preview_only"
+            execution_status = "failed"
+            notes = [
+                "dry-run blocked: only extracted_sql_preview is available and it appears truncated",
+                "rerun from a full-text LLM translate call report before PG execution",
+            ]
+        elif not candidate_sql.strip():
+            failure_category = "empty_candidate_sql"
+            execution_status = "failed"
+            notes = ["dry-run blocked: candidate SQL is empty", "no model call performed"]
+
+        records.append(
+            build_llm_translate_pg_record(
+                case_id=case_id,
+                pool=pool,
+                source_dialect=source_dialect,
+                target_dialect=target_dialect,
+                input_report_path=relative_to_root(input_path),
+                model_label=model_label,
+                provider_mode=provider_mode,
+                token_usage_total=report_record.get("token_usage_total"),
+                candidate_sql_source=candidate_sql_source,
+                execution_mode="dry_run",
+                execution_status=execution_status,
+                validation_schema=validation_schema,
+                search_path_after_set="",
+                artifact_claim_boundary="dry_run_no_execution",
+                notes=notes,
+                failure_category=failure_category,
+            )
+        )
+        payload = {
+            "command": "baseline-smoke-llm-translate-pg-canary",
+            "ok": execution_status == "planned",
+            "ran_at_utc": utc_now(),
+            "input_report_path": relative_to_root(input_path),
+            "engine_scope": "postgres",
+            "baseline_id": "LLM_DIRECT_TRANSLATE",
+            "output_mode": output_mode,
+            "output_case_id": case_id,
+            "output_path": f"reports/baseline_smoke/{output_name}",
+            "case_count": 1,
+            "executed_count": 0,
+            "success_count": 0,
+            "failed_count": 1 if execution_status == "failed" else 0,
+            "skipped_count": 0,
+            "env_blocked_count": 0,
+            "records": records,
+            "issues": issues,
+            "guardrails": {
+                "model_api_call": "disabled",
+                "mysql_execution": "disabled",
+                "spark_execution": "disabled",
+                "sqlglot_generation": "disabled",
+                "case_artifact_write": "disabled",
+                "generated_sql_case_write": "disabled",
+            },
+            "claim_boundary": "llm_translate_pg_canary_execution_not_translation_correctness",
+        }
+        write_baseline_smoke_report(output_name, payload)
+        return print_and_exit(payload, 0 if payload["ok"] else 1)
+
+    if extracted_sql_status != "extracted":
+        records.append(
+            build_llm_translate_pg_record(
+                case_id=case_id,
+                pool=pool,
+                source_dialect=source_dialect,
+                target_dialect=target_dialect,
+                input_report_path=relative_to_root(input_path),
+                model_label=model_label,
+                provider_mode=provider_mode,
+                token_usage_total=report_record.get("token_usage_total"),
+                candidate_sql_source=candidate_sql_source,
+                execution_mode="pg_execute_llm_translate_canary",
+                execution_status="failed",
+                validation_schema=validation_schema,
+                search_path_after_set="",
+                artifact_claim_boundary="llm_translate_pg_canary_execution_not_translation_correctness",
+                notes=["execution not attempted because extracted_sql_status is not extracted"],
+                failure_category="extracted_sql_not_ready",
+            )
+        )
+        payload = {
+            "command": "baseline-smoke-llm-translate-pg-canary",
+            "ok": False,
+            "ran_at_utc": utc_now(),
+            "input_report_path": relative_to_root(input_path),
+            "engine_scope": "postgres",
+            "baseline_id": "LLM_DIRECT_TRANSLATE",
+            "output_mode": output_mode,
+            "output_case_id": case_id,
+            "output_path": f"reports/baseline_smoke/{output_name}",
+            "case_count": 1,
+            "executed_count": 0,
+            "success_count": 0,
+            "failed_count": 1,
+            "skipped_count": 0,
+            "env_blocked_count": 0,
+            "records": records,
+            "issues": issues,
+            "guardrails": {
+                "model_api_call": "disabled",
+                "mysql_execution": "disabled",
+                "spark_execution": "disabled",
+                "sqlglot_generation": "disabled",
+                "case_artifact_write": "disabled",
+                "generated_sql_case_write": "disabled",
+            },
+            "claim_boundary": "llm_translate_pg_canary_execution_not_translation_correctness",
+        }
+        write_baseline_smoke_report(output_name, payload)
+        return print_and_exit(payload, 1)
+
+    if candidate_sql_truncated_preview_only:
+        records.append(
+            build_llm_translate_pg_record(
+                case_id=case_id,
+                pool=pool,
+                source_dialect=source_dialect,
+                target_dialect=target_dialect,
+                input_report_path=relative_to_root(input_path),
+                model_label=model_label,
+                provider_mode=provider_mode,
+                token_usage_total=report_record.get("token_usage_total"),
+                candidate_sql_source=candidate_sql_source,
+                execution_mode="pg_execute_llm_translate_canary",
+                execution_status="failed",
+                validation_schema=validation_schema,
+                search_path_after_set="",
+                artifact_claim_boundary="llm_translate_pg_canary_execution_not_translation_correctness",
+                notes=[
+                    "execution not attempted because only extracted_sql_preview is available",
+                    "the preview appears truncated relative to the full model output",
+                ],
+                failure_category="truncated_preview_only",
+            )
+        )
+        payload = {
+            "command": "baseline-smoke-llm-translate-pg-canary",
+            "ok": False,
+            "ran_at_utc": utc_now(),
+            "input_report_path": relative_to_root(input_path),
+            "engine_scope": "postgres",
+            "baseline_id": "LLM_DIRECT_TRANSLATE",
+            "output_mode": output_mode,
+            "output_case_id": case_id,
+            "output_path": f"reports/baseline_smoke/{output_name}",
+            "case_count": 1,
+            "executed_count": 0,
+            "success_count": 0,
+            "failed_count": 1,
+            "skipped_count": 0,
+            "env_blocked_count": 0,
+            "records": records,
+            "issues": issues,
+            "guardrails": {
+                "model_api_call": "disabled",
+                "mysql_execution": "disabled",
+                "spark_execution": "disabled",
+                "sqlglot_generation": "disabled",
+                "case_artifact_write": "disabled",
+                "generated_sql_case_write": "disabled",
+            },
+            "claim_boundary": "llm_translate_pg_canary_execution_not_translation_correctness",
+        }
+        write_baseline_smoke_report(output_name, payload)
+        return print_and_exit(payload, 1)
+
+    if not candidate_sql.strip():
+        records.append(
+            build_llm_translate_pg_record(
+                case_id=case_id,
+                pool=pool,
+                source_dialect=source_dialect,
+                target_dialect=target_dialect,
+                input_report_path=relative_to_root(input_path),
+                model_label=model_label,
+                provider_mode=provider_mode,
+                token_usage_total=report_record.get("token_usage_total"),
+                candidate_sql_source=candidate_sql_source,
+                execution_mode="pg_execute_llm_translate_canary",
+                execution_status="failed",
+                validation_schema=validation_schema,
+                search_path_after_set="",
+                artifact_claim_boundary="llm_translate_pg_canary_execution_not_translation_correctness",
+                notes=["execution not attempted because candidate SQL is empty"],
+                failure_category="empty_candidate_sql",
+            )
+        )
+        payload = {
+            "command": "baseline-smoke-llm-translate-pg-canary",
+            "ok": False,
+            "ran_at_utc": utc_now(),
+            "input_report_path": relative_to_root(input_path),
+            "engine_scope": "postgres",
+            "baseline_id": "LLM_DIRECT_TRANSLATE",
+            "output_mode": output_mode,
+            "output_case_id": case_id,
+            "output_path": f"reports/baseline_smoke/{output_name}",
+            "case_count": 1,
+            "executed_count": 0,
+            "success_count": 0,
+            "failed_count": 1,
+            "skipped_count": 0,
+            "env_blocked_count": 0,
+            "records": records,
+            "issues": issues,
+            "guardrails": {
+                "model_api_call": "disabled",
+                "mysql_execution": "disabled",
+                "spark_execution": "disabled",
+                "sqlglot_generation": "disabled",
+                "case_artifact_write": "disabled",
+                "generated_sql_case_write": "disabled",
+            },
+            "claim_boundary": "llm_translate_pg_canary_execution_not_translation_correctness",
+        }
+        write_baseline_smoke_report(output_name, payload)
+        return print_and_exit(payload, 1)
+
+    if not required_env_visible:
+        records.append(
+            build_llm_translate_pg_record(
+                case_id=case_id,
+                pool=pool,
+                source_dialect=source_dialect,
+                target_dialect=target_dialect,
+                input_report_path=relative_to_root(input_path),
+                model_label=model_label,
+                provider_mode=provider_mode,
+                token_usage_total=report_record.get("token_usage_total"),
+                candidate_sql_source=candidate_sql_source,
+                execution_mode="pg_execute_llm_translate_canary",
+                execution_status="env_blocked",
+                validation_schema=validation_schema,
+                search_path_after_set="",
+                artifact_claim_boundary="llm_translate_pg_canary_execution_not_translation_correctness",
+                notes=["execution not attempted", "required env: PGHOST, PGPORT, PGDATABASE, PGUSER"],
+                failure_category="missing_pg_env",
+            )
+        )
+        payload = {
+            "command": "baseline-smoke-llm-translate-pg-canary",
+            "ok": False,
+            "ran_at_utc": utc_now(),
+            "input_report_path": relative_to_root(input_path),
+            "engine_scope": "postgres",
+            "baseline_id": "LLM_DIRECT_TRANSLATE",
+            "output_mode": output_mode,
+            "output_case_id": case_id,
+            "output_path": f"reports/baseline_smoke/{output_name}",
+            "case_count": 1,
+            "executed_count": 0,
+            "success_count": 0,
+            "failed_count": 0,
+            "skipped_count": 0,
+            "env_blocked_count": 1,
+            "records": records,
+            "issues": issues,
+            "guardrails": {
+                "model_api_call": "disabled",
+                "mysql_execution": "disabled",
+                "spark_execution": "disabled",
+                "sqlglot_generation": "disabled",
+                "case_artifact_write": "disabled",
+                "generated_sql_case_write": "disabled",
+            },
+            "claim_boundary": "llm_translate_pg_canary_execution_not_translation_correctness",
+        }
+        write_baseline_smoke_report("llm_direct_translate_pg_env_blocked_v0.json", payload)
+        return print_and_exit(payload, 1)
+
+    try:
+        psycopg = importlib.import_module("psycopg")
+    except ModuleNotFoundError:
+        records.append(
+            build_llm_translate_pg_record(
+                case_id=case_id,
+                pool=pool,
+                source_dialect=source_dialect,
+                target_dialect=target_dialect,
+                input_report_path=relative_to_root(input_path),
+                model_label=model_label,
+                provider_mode=provider_mode,
+                token_usage_total=report_record.get("token_usage_total"),
+                candidate_sql_source=candidate_sql_source,
+                execution_mode="pg_execute_llm_translate_canary",
+                execution_status="failed",
+                validation_schema=validation_schema,
+                search_path_after_set="",
+                artifact_claim_boundary="llm_translate_pg_canary_execution_not_translation_correctness",
+                notes=["execution not attempted because psycopg is unavailable"],
+                failure_category="psycopg_unavailable",
+            )
+        )
+        payload = {
+            "command": "baseline-smoke-llm-translate-pg-canary",
+            "ok": False,
+            "ran_at_utc": utc_now(),
+            "input_report_path": relative_to_root(input_path),
+            "engine_scope": "postgres",
+            "baseline_id": "LLM_DIRECT_TRANSLATE",
+            "output_mode": output_mode,
+            "output_case_id": case_id,
+            "output_path": f"reports/baseline_smoke/{output_name}",
+            "case_count": 1,
+            "executed_count": 0,
+            "success_count": 0,
+            "failed_count": 1,
+            "skipped_count": 0,
+            "env_blocked_count": 0,
+            "records": records,
+            "issues": issues,
+            "guardrails": {
+                "model_api_call": "disabled",
+                "mysql_execution": "disabled",
+                "spark_execution": "disabled",
+                "sqlglot_generation": "disabled",
+                "case_artifact_write": "disabled",
+                "generated_sql_case_write": "disabled",
+            },
+            "claim_boundary": "llm_translate_pg_canary_execution_not_translation_correctness",
+        }
+        write_baseline_smoke_report(output_name, payload)
+        return print_and_exit(payload, 1)
+
+    search_path_after_set = ""
+    start = time.perf_counter()
+    try:
+        with psycopg.connect(
+            host=os.environ["PGHOST"],
+            port=os.environ["PGPORT"],
+            dbname=os.environ["PGDATABASE"],
+            user=os.environ["PGUSER"],
+            password=os.environ.get("PGPASSWORD"),
+            options=(
+                f"-c statement_timeout={args.statement_timeout_ms} "
+                "-c default_transaction_read_only=on"
+            ),
+        ) as conn:
+            with conn.cursor() as cur:
+                cur.execute("SELECT to_regnamespace(%s)", (validation_schema,))
+                schema_name = cur.fetchone()[0]
+                if not schema_name:
+                    runtime_ms = int((time.perf_counter() - start) * 1000)
+                    records.append(
+                        build_llm_translate_pg_record(
+                            case_id=case_id,
+                            pool=pool,
+                            source_dialect=source_dialect,
+                            target_dialect=target_dialect,
+                            input_report_path=relative_to_root(input_path),
+                            model_label=model_label,
+                            provider_mode=provider_mode,
+                            token_usage_total=report_record.get("token_usage_total"),
+                            candidate_sql_source=candidate_sql_source,
+                            execution_mode="pg_execute_llm_translate_canary",
+                            execution_status="failed",
+                            validation_schema=validation_schema,
+                            search_path_after_set="",
+                            artifact_claim_boundary="llm_translate_pg_canary_execution_not_translation_correctness",
+                            notes=["execution attempted", "search_path not set because validation schema was missing"],
+                            runtime_ms=runtime_ms,
+                            failure_category="missing_validation_schema",
+                            error_message=f"validation schema not found: {validation_schema}",
+                        )
+                    )
+                    payload = {
+                        "command": "baseline-smoke-llm-translate-pg-canary",
+                        "ok": False,
+                        "ran_at_utc": utc_now(),
+                        "input_report_path": relative_to_root(input_path),
+                        "engine_scope": "postgres",
+                        "baseline_id": "LLM_DIRECT_TRANSLATE",
+                        "output_mode": output_mode,
+                        "output_case_id": case_id,
+                        "output_path": f"reports/baseline_smoke/{output_name}",
+                        "case_count": 1,
+                        "executed_count": 1,
+                        "success_count": 0,
+                        "failed_count": 1,
+                        "skipped_count": 0,
+                        "env_blocked_count": 0,
+                        "records": records,
+                        "issues": issues,
+                        "guardrails": {
+                            "model_api_call": "disabled",
+                            "mysql_execution": "disabled",
+                            "spark_execution": "disabled",
+                            "sqlglot_generation": "disabled",
+                            "case_artifact_write": "disabled",
+                            "generated_sql_case_write": "disabled",
+                        },
+                        "claim_boundary": "llm_translate_pg_canary_execution_not_translation_correctness",
+                    }
+                    write_baseline_smoke_report(output_name, payload)
+                    return print_and_exit(payload, 1)
+                cur.execute(
+                    psycopg.sql.SQL("SET search_path TO {}, public").format(
+                        psycopg.sql.Identifier(validation_schema)
+                    )
+                )
+                cur.execute("SHOW search_path")
+                search_path_row = cur.fetchone()
+                search_path_after_set = str(search_path_row[0]) if search_path_row else ""
+                cur.execute(candidate_sql)
+                if cur.description is not None:
+                    rows = cur.fetchall()
+                    row_count = len(rows)
+                else:
+                    row_count = cur.rowcount if cur.rowcount >= 0 else None
+        runtime_ms = int((time.perf_counter() - start) * 1000)
+        records.append(
+            build_llm_translate_pg_record(
+                case_id=case_id,
+                pool=pool,
+                source_dialect=source_dialect,
+                target_dialect=target_dialect,
+                input_report_path=relative_to_root(input_path),
+                model_label=model_label,
+                provider_mode=provider_mode,
+                token_usage_total=report_record.get("token_usage_total"),
+                candidate_sql_source=candidate_sql_source,
+                execution_mode="pg_execute_llm_translate_canary",
+                execution_status="success",
+                validation_schema=validation_schema,
+                search_path_after_set=search_path_after_set,
+                artifact_claim_boundary="llm_translate_pg_canary_execution_not_translation_correctness",
+                notes=["LLM-translated SQL executed under read-only PG canary mode", "no model call performed"],
+                row_count=row_count,
+                runtime_ms=runtime_ms,
+            )
+        )
+    except Exception as exc:
+        runtime_ms = int((time.perf_counter() - start) * 1000)
+        records.append(
+            build_llm_translate_pg_record(
+                case_id=case_id,
+                pool=pool,
+                source_dialect=source_dialect,
+                target_dialect=target_dialect,
+                input_report_path=relative_to_root(input_path),
+                model_label=model_label,
+                provider_mode=provider_mode,
+                token_usage_total=report_record.get("token_usage_total"),
+                candidate_sql_source=candidate_sql_source,
+                execution_mode="pg_execute_llm_translate_canary",
+                execution_status="failed",
+                validation_schema=validation_schema,
+                search_path_after_set=search_path_after_set,
+                artifact_claim_boundary="llm_translate_pg_canary_execution_not_translation_correctness",
+                notes=["execution attempted", "no model call performed", "no case-local artifacts were written"],
+                runtime_ms=runtime_ms,
+                failure_category=type(exc).__name__,
+                error_message=str(exc),
+            )
+        )
+
+    payload = {
+        "command": "baseline-smoke-llm-translate-pg-canary",
+        "ok": not any(record["execution_status"] == "failed" for record in records),
+        "ran_at_utc": utc_now(),
+        "input_report_path": relative_to_root(input_path),
+        "engine_scope": "postgres",
+        "baseline_id": "LLM_DIRECT_TRANSLATE",
+        "output_mode": output_mode,
+        "output_case_id": case_id,
+        "output_path": f"reports/baseline_smoke/{output_name}",
+        "case_count": 1,
+        "executed_count": sum(1 for record in records if record["execution_status"] in {"success", "failed"}),
+        "success_count": sum(1 for record in records if record["execution_status"] == "success"),
+        "failed_count": sum(1 for record in records if record["execution_status"] == "failed"),
+        "skipped_count": sum(1 for record in records if record["execution_status"] == "skipped"),
+        "env_blocked_count": sum(1 for record in records if record["execution_status"] == "env_blocked"),
+        "records": records,
+        "issues": issues,
+        "guardrails": {
+            "model_api_call": "disabled",
+            "mysql_execution": "disabled",
+            "spark_execution": "disabled",
+            "sqlglot_generation": "disabled",
+            "case_artifact_write": "disabled",
+            "generated_sql_case_write": "disabled",
+        },
+        "claim_boundary": "llm_translate_pg_canary_execution_not_translation_correctness",
+    }
+    write_baseline_smoke_report(output_name, payload)
+    return print_and_exit(payload, 0 if payload["ok"] else 1)
+
+
 def cmd_baseline_smoke_sqlglot_transpile_preflight(args: argparse.Namespace) -> int:
     output_name = normalize_baseline_smoke_output_name("sqlglot_transpile_preflight_v0.json")
 
@@ -11039,6 +11751,18 @@ def build_parser() -> argparse.ArgumentParser:
     llm_generated_pg_parser.add_argument("--execute", action="store_true", default=False)
     llm_generated_pg_parser.add_argument("--execute-llm-sql", action="store_true", default=False)
     llm_generated_pg_parser.set_defaults(func=cmd_baseline_smoke_llm_generated_pg_canary)
+
+    llm_translate_pg_parser = subparsers.add_parser("baseline-smoke-llm-translate-pg-canary")
+    llm_translate_pg_parser.add_argument(
+        "--input",
+        default="reports/baseline_smoke/llm_direct_translate_call_port_0004_v0.json",
+    )
+    llm_translate_pg_parser.add_argument("--case-id", action="append", default=[])
+    llm_translate_pg_parser.add_argument("--per-case-output", action="store_true", default=False)
+    llm_translate_pg_parser.add_argument("--statement-timeout-ms", type=int, default=30000)
+    llm_translate_pg_parser.add_argument("--execute", action="store_true", default=False)
+    llm_translate_pg_parser.add_argument("--execute-llm-translate-sql", action="store_true", default=False)
+    llm_translate_pg_parser.set_defaults(func=cmd_baseline_smoke_llm_translate_pg_canary)
 
     sqlglot_transpile_preflight_parser = subparsers.add_parser("baseline-smoke-sqlglot-transpile-preflight")
     sqlglot_transpile_preflight_parser.add_argument(
