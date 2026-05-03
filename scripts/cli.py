@@ -32,6 +32,7 @@ CONTROL_BASELINE_IDS = {
 NATIVE_IDENTITY_CANARY_DEFAULT_CASES = ["PERF_0006", "PERF_0008"]
 SQLGLOT_PG_CANARY_DEFAULT_CASES = ["PERF_0006", "PERF_0008"]
 SQLGLOT_TRANSPILE_DEFAULT_CASES = ["PORT_0004", "PORT_0012", "PORT_0022"]
+SQLGLOT_TRANSPILE_PG_CANARY_DEFAULT_CASES = ["PORT_0004", "PORT_0022"]
 HUMAN_POSITIVE_PG_DEFAULT_CASES = [
     "PERF_0006",
     "PERF_0008",
@@ -685,7 +686,7 @@ def pg_env_visibility() -> dict[str, bool]:
 
 
 def native_identity_validation_schema(case_id: str, pool: str) -> str:
-    if pool in {"performance", "consistency"}:
+    if pool in {"performance", "consistency", "portability"}:
         return f"{case_id.lower()}_validation"
     return ""
 
@@ -3583,6 +3584,926 @@ def cmd_baseline_smoke_sqlglot_transpile_preflight(args: argparse.Namespace) -> 
     return print_and_exit(payload, 0 if ok else 1)
 
 
+def cmd_baseline_smoke_sqlglot_transpile_pg_canary(args: argparse.Namespace) -> int:
+    output_name = normalize_baseline_smoke_output_name("sqlglot_transpile_pg_canary_v0.json")
+
+    if args.execute:
+        payload = {
+            "command": "baseline-smoke-sqlglot-transpile-pg-canary",
+            "cwd": str(ROOT),
+            "ok": False,
+            "ran_at_utc": utc_now(),
+            "config_path": relative_to_root(resolve_repo_path(args.config)),
+            "engine_scope": args.target_dialect,
+            "baseline_id": "SQLGLOT_TRANSPILE",
+            "output_path": "reports/baseline_smoke/sqlglot_transpile_pg_execute_refused_v0.json",
+            "message": "Use --execute-transpile for the PG SQLGlot transpile canary. --execute is intentionally not supported here.",
+            "issues": [
+                {
+                    "type": "invalid_execute_flag",
+                    "message": "only --execute-transpile can enable the PG SQLGlot transpile canary",
+                }
+            ],
+            "guardrails": {
+                "mysql_execution": "disabled",
+                "spark_execution": "disabled",
+                "llm_execution": "disabled",
+                "case_artifact_write": "disabled",
+                "transpiled_sql_case_write": "disabled",
+            },
+        }
+        write_baseline_smoke_report("sqlglot_transpile_pg_execute_refused_v0.json", payload)
+        return print_and_exit(payload, 1)
+
+    config_path = resolve_repo_path(args.config)
+    config = load_json(config_path)
+    case_index = {case["case_id"]: case for case in config.get("cases", [])}
+    selected_case_ids = args.case_id or list(SQLGLOT_TRANSPILE_PG_CANARY_DEFAULT_CASES)
+    records: list[dict[str, Any]] = []
+    issues: list[dict[str, Any]] = []
+
+    invalid_cases = [case_id for case_id in selected_case_ids if case_id not in case_index]
+    for case_id in invalid_cases:
+        records.append(
+            {
+                "baseline_id": "SQLGLOT_TRANSPILE",
+                "case_id": case_id,
+                "pool": "",
+                "target_dialect": args.target_dialect,
+                "execution_mode": "dry_run" if not args.execute_transpile else "pg_execute_transpile_canary",
+                "source_sql_path": "",
+                "source_sql_exists": False,
+                "sqlglot_available": False,
+                "source_dialect_used": "",
+                "source_dialect_candidates_tried": [],
+                "source_dialect_successes": [],
+                "parse_status": "skipped",
+                "transpile_status": "skipped",
+                "transpiled_sql_empty": "unknown",
+                "transpiled_sql_same_as_source_normalized": "unknown",
+                "transpiled_sql_preview": "",
+                "pg_env_visible": False,
+                "pg_password_present": "unknown",
+                "validation_schema": "",
+                "search_path_after_set": "",
+                "statement_timeout_ms": args.statement_timeout_ms,
+                "execution_status": "skipped",
+                "row_count": None,
+                "runtime_ms": None,
+                "result_materialization": "not_persisted",
+                "output_scope": "reports_only_no_case_artifact_write",
+                "failure_category": "case_not_in_smoke_config",
+                "error_message": "",
+                "artifact_claim_boundary": (
+                    "sqlglot_transpile_pg_canary_execution_not_benchmark_claim"
+                    if args.execute_transpile
+                    else "dry_run_no_execution"
+                ),
+                "notes": ["selection refused: case is outside the current smoke config"],
+            }
+        )
+        issues.append({"type": "case_not_in_smoke_config", "case_id": case_id})
+
+    selected_specs = [case_index[case_id] for case_id in selected_case_ids if case_id in case_index]
+    env_visibility = pg_env_visibility()
+    required_env_visible = all(env_visibility[name] for name in ["PGHOST", "PGPORT", "PGDATABASE", "PGUSER"])
+    pg_password_present = env_visibility["PGPASSWORD"]
+
+    sqlglot_available = True
+    sqlglot_error = ""
+    try:
+        sqlglot = importlib.import_module("sqlglot")
+    except ModuleNotFoundError as exc:
+        sqlglot_available = False
+        sqlglot_error = str(exc)
+        sqlglot = None
+        issues.append({"type": "missing_sqlglot", "detail": str(exc)})
+
+    if not args.execute_transpile:
+        for case_spec in selected_specs:
+            case_id = case_spec["case_id"]
+            pool = case_spec["pool"]
+            case_root = pool_case_root(pool) / case_id
+            source_sql_path = case_root / "source.sql"
+            manifest_path = case_root / "manifest.yaml"
+            source_sql_exists = source_sql_path.is_file()
+            source_dialect_hint = ""
+            if manifest_path.is_file():
+                source_dialect_hint = manifest_source_dialect_hint(manifest_path.read_text(encoding="utf-8"))
+            candidates_tried = source_dialect_candidate_order(source_dialect_hint, args.source_dialect)
+            validation_schema = native_identity_validation_schema(case_id, pool)
+            source_dialect_used = ""
+            source_dialect_successes: list[str] = []
+            parse_status = "skipped"
+            transpile_status = "skipped"
+            transpiled_sql_empty: bool | str = "unknown"
+            transpiled_sql_same: bool | str = "unknown"
+            transpiled_sql_preview = ""
+            failure_category = "none"
+            error_message = ""
+            notes: list[str] = []
+
+            if pool != "portability":
+                failure_category = "non_port_case_not_enabled"
+                notes.append("dry-run skip: only portability cases are enabled in this PG SQLGlot transpile canary")
+                records.append(
+                    {
+                        "baseline_id": "SQLGLOT_TRANSPILE",
+                        "case_id": case_id,
+                        "pool": pool,
+                        "target_dialect": args.target_dialect,
+                        "execution_mode": "dry_run",
+                        "source_sql_path": relative_to_root(source_sql_path),
+                        "source_sql_exists": source_sql_exists,
+                        "sqlglot_available": sqlglot_available,
+                        "source_dialect_used": "",
+                        "source_dialect_candidates_tried": candidates_tried,
+                        "source_dialect_successes": [],
+                        "parse_status": "skipped",
+                        "transpile_status": "skipped",
+                        "transpiled_sql_empty": "unknown",
+                        "transpiled_sql_same_as_source_normalized": "unknown",
+                        "transpiled_sql_preview": "",
+                        "pg_env_visible": required_env_visible,
+                        "pg_password_present": "unknown",
+                        "validation_schema": validation_schema,
+                        "search_path_after_set": "",
+                        "statement_timeout_ms": args.statement_timeout_ms,
+                        "execution_status": "skipped",
+                        "row_count": None,
+                        "runtime_ms": None,
+                        "result_materialization": "not_persisted",
+                        "output_scope": "reports_only_no_case_artifact_write",
+                        "failure_category": failure_category,
+                        "error_message": "",
+                        "artifact_claim_boundary": "dry_run_no_execution",
+                        "notes": notes,
+                    }
+                )
+                continue
+
+            if not source_sql_exists:
+                failure_category = "missing_source_sql"
+                notes.append("source.sql is missing")
+            elif not sqlglot_available:
+                failure_category = "sqlglot_unavailable"
+                error_message = sqlglot_error
+                notes.append("sqlglot is not importable in the current environment")
+            else:
+                source_sql = source_sql_path.read_text(encoding="utf-8")
+                parsed = None
+                last_exc: Exception | None = None
+                for candidate in candidates_tried:
+                    try:
+                        parsed = sqlglot.parse_one(source_sql, dialect=candidate)
+                        source_dialect_successes.append(candidate)
+                        if not source_dialect_used:
+                            source_dialect_used = candidate
+                    except Exception as exc:
+                        last_exc = exc
+                if source_dialect_successes:
+                    parse_status = "success"
+                    if len(source_dialect_successes) > 1:
+                        notes.append("multiple dialects parsed successfully: " + ", ".join(source_dialect_successes))
+                    if source_dialect_hint:
+                        notes.append(f"manifest_source_dialect_hint={source_dialect_hint}")
+                else:
+                    parse_status = "failed"
+                    failure_category = type(last_exc).__name__ if last_exc else "parse_failed"
+                    error_message = str(last_exc) if last_exc else "no source dialect candidate parsed"
+                    notes.append("sqlglot parse failed for all source dialect candidates")
+                if parse_status == "success" and parsed is not None:
+                    try:
+                        transpiled_sql = parsed.sql(dialect=args.target_dialect)
+                        transpile_status = "success"
+                        transpiled_sql_empty = len(transpiled_sql.strip()) == 0
+                        transpiled_sql_preview = transpiled_sql[:500]
+                        if transpiled_sql_empty:
+                            failure_category = "empty_transpiled_sql"
+                            notes.append("transpiled SQL string was empty")
+                        else:
+                            transpiled_sql_same = (
+                                normalize_sql_for_compare(source_sql)
+                                == normalize_sql_for_compare(transpiled_sql)
+                            )
+                            notes.append(f"transpiled_to={args.target_dialect}")
+                    except Exception as exc:
+                        transpile_status = "failed"
+                        failure_category = type(exc).__name__
+                        error_message = str(exc)
+                        notes.append("sqlglot transpile failed")
+
+            records.append(
+                {
+                    "baseline_id": "SQLGLOT_TRANSPILE",
+                    "case_id": case_id,
+                    "pool": pool,
+                    "target_dialect": args.target_dialect,
+                    "execution_mode": "dry_run",
+                    "source_sql_path": relative_to_root(source_sql_path),
+                    "source_sql_exists": source_sql_exists,
+                    "sqlglot_available": sqlglot_available,
+                    "source_dialect_used": source_dialect_used,
+                    "source_dialect_candidates_tried": candidates_tried,
+                    "source_dialect_successes": source_dialect_successes,
+                    "parse_status": parse_status,
+                    "transpile_status": transpile_status,
+                    "transpiled_sql_empty": transpiled_sql_empty,
+                    "transpiled_sql_same_as_source_normalized": transpiled_sql_same,
+                    "transpiled_sql_preview": transpiled_sql_preview,
+                    "pg_env_visible": required_env_visible,
+                    "pg_password_present": "unknown",
+                    "validation_schema": validation_schema,
+                    "search_path_after_set": "",
+                    "statement_timeout_ms": args.statement_timeout_ms,
+                    "execution_status": "planned",
+                    "row_count": None,
+                    "runtime_ms": None,
+                    "result_materialization": "not_persisted",
+                    "output_scope": "reports_only_no_case_artifact_write",
+                    "failure_category": failure_category,
+                    "error_message": error_message,
+                    "artifact_claim_boundary": "dry_run_no_execution",
+                    "notes": notes or ["dry-run only; no PostgreSQL connection attempted"],
+                }
+            )
+
+        payload = {
+            "command": "baseline-smoke-sqlglot-transpile-pg-canary",
+            "ok": (
+                sqlglot_available
+                and not issues
+                and all(record["source_sql_exists"] for record in records if record["execution_status"] != "skipped")
+                and all(record["parse_status"] == "success" for record in records if record["execution_status"] != "skipped")
+                and all(record["transpile_status"] == "success" for record in records if record["execution_status"] != "skipped")
+                and all(record["transpiled_sql_empty"] is False for record in records if record["execution_status"] != "skipped")
+            ),
+            "ran_at_utc": utc_now(),
+            "config_path": relative_to_root(config_path),
+            "engine_scope": args.target_dialect,
+            "baseline_id": "SQLGLOT_TRANSPILE",
+            "case_count": len(records),
+            "sqlglot_available": sqlglot_available,
+            "parse_success_count": sum(1 for r in records if r["parse_status"] == "success"),
+            "parse_failed_count": sum(1 for r in records if r["parse_status"] == "failed"),
+            "transpile_success_count": sum(1 for r in records if r["transpile_status"] == "success"),
+            "transpile_failed_count": sum(1 for r in records if r["transpile_status"] == "failed"),
+            "identical_to_source_count": sum(1 for r in records if r["transpiled_sql_same_as_source_normalized"] is True),
+            "different_from_source_count": sum(1 for r in records if r["transpiled_sql_same_as_source_normalized"] is False),
+            "executed_count": 0,
+            "success_count": 0,
+            "failed_count": 0,
+            "skipped_count": sum(1 for r in records if r["execution_status"] == "skipped"),
+            "env_blocked_count": 0,
+            "records": records,
+            "issues": issues,
+            "guardrails": {
+                "mysql_execution": "disabled",
+                "spark_execution": "disabled",
+                "llm_execution": "disabled",
+                "case_artifact_write": "disabled",
+                "transpiled_sql_case_write": "disabled",
+            },
+        }
+        write_baseline_smoke_report(output_name, payload)
+        return print_and_exit(payload, 0 if payload["ok"] else 1)
+
+    if not sqlglot_available:
+        for case_spec in selected_specs:
+            case_id = case_spec["case_id"]
+            pool = case_spec["pool"]
+            source_sql_path = pool_case_root(pool) / case_id / "source.sql"
+            records.append(
+                {
+                    "baseline_id": "SQLGLOT_TRANSPILE",
+                    "case_id": case_id,
+                    "pool": pool,
+                    "target_dialect": args.target_dialect,
+                    "execution_mode": "pg_execute_transpile_canary",
+                    "source_sql_path": relative_to_root(source_sql_path),
+                    "source_sql_exists": source_sql_path.is_file(),
+                    "sqlglot_available": False,
+                    "source_dialect_used": "",
+                    "source_dialect_candidates_tried": [],
+                    "source_dialect_successes": [],
+                    "parse_status": "skipped",
+                    "transpile_status": "skipped",
+                    "transpiled_sql_empty": "unknown",
+                    "transpiled_sql_same_as_source_normalized": "unknown",
+                    "transpiled_sql_preview": "",
+                    "pg_env_visible": required_env_visible,
+                    "pg_password_present": pg_password_present,
+                    "validation_schema": native_identity_validation_schema(case_id, pool),
+                    "search_path_after_set": "",
+                    "statement_timeout_ms": args.statement_timeout_ms,
+                    "execution_status": "failed",
+                    "row_count": None,
+                    "runtime_ms": None,
+                    "result_materialization": "not_persisted",
+                    "output_scope": "reports_only_no_case_artifact_write",
+                    "failure_category": "sqlglot_unavailable",
+                    "error_message": sqlglot_error,
+                    "artifact_claim_boundary": "sqlglot_transpile_pg_canary_execution_not_benchmark_claim",
+                    "notes": ["execution not attempted because sqlglot is unavailable"],
+                }
+            )
+        payload = {
+            "command": "baseline-smoke-sqlglot-transpile-pg-canary",
+            "ok": False,
+            "ran_at_utc": utc_now(),
+            "config_path": relative_to_root(config_path),
+            "engine_scope": args.target_dialect,
+            "baseline_id": "SQLGLOT_TRANSPILE",
+            "case_count": len(records),
+            "sqlglot_available": False,
+            "parse_success_count": 0,
+            "parse_failed_count": 0,
+            "transpile_success_count": 0,
+            "transpile_failed_count": 0,
+            "identical_to_source_count": 0,
+            "different_from_source_count": 0,
+            "executed_count": 0,
+            "success_count": 0,
+            "failed_count": len(records),
+            "skipped_count": 0,
+            "env_blocked_count": 0,
+            "records": records,
+            "issues": issues,
+            "guardrails": {
+                "mysql_execution": "disabled",
+                "spark_execution": "disabled",
+                "llm_execution": "disabled",
+                "case_artifact_write": "disabled",
+                "transpiled_sql_case_write": "disabled",
+            },
+        }
+        write_baseline_smoke_report(output_name, payload)
+        return print_and_exit(payload, 1)
+
+    try:
+        psycopg = importlib.import_module("psycopg")
+    except ModuleNotFoundError as exc:
+        issues.append({"type": "missing_psycopg", "detail": str(exc)})
+        for case_spec in selected_specs:
+            case_id = case_spec["case_id"]
+            pool = case_spec["pool"]
+            source_sql_path = pool_case_root(pool) / case_id / "source.sql"
+            records.append(
+                {
+                    "baseline_id": "SQLGLOT_TRANSPILE",
+                    "case_id": case_id,
+                    "pool": pool,
+                    "target_dialect": args.target_dialect,
+                    "execution_mode": "pg_execute_transpile_canary",
+                    "source_sql_path": relative_to_root(source_sql_path),
+                    "source_sql_exists": source_sql_path.is_file(),
+                    "sqlglot_available": True,
+                    "source_dialect_used": "",
+                    "source_dialect_candidates_tried": [],
+                    "source_dialect_successes": [],
+                    "parse_status": "skipped",
+                    "transpile_status": "skipped",
+                    "transpiled_sql_empty": "unknown",
+                    "transpiled_sql_same_as_source_normalized": "unknown",
+                    "transpiled_sql_preview": "",
+                    "pg_env_visible": required_env_visible,
+                    "pg_password_present": pg_password_present,
+                    "validation_schema": native_identity_validation_schema(case_id, pool),
+                    "search_path_after_set": "",
+                    "statement_timeout_ms": args.statement_timeout_ms,
+                    "execution_status": "failed",
+                    "row_count": None,
+                    "runtime_ms": None,
+                    "result_materialization": "not_persisted",
+                    "output_scope": "reports_only_no_case_artifact_write",
+                    "failure_category": "psycopg_unavailable",
+                    "error_message": str(exc),
+                    "artifact_claim_boundary": "sqlglot_transpile_pg_canary_execution_not_benchmark_claim",
+                    "notes": ["execution not attempted because psycopg is unavailable"],
+                }
+            )
+        payload = {
+            "command": "baseline-smoke-sqlglot-transpile-pg-canary",
+            "ok": False,
+            "ran_at_utc": utc_now(),
+            "config_path": relative_to_root(config_path),
+            "engine_scope": args.target_dialect,
+            "baseline_id": "SQLGLOT_TRANSPILE",
+            "case_count": len(records),
+            "sqlglot_available": True,
+            "parse_success_count": 0,
+            "parse_failed_count": 0,
+            "transpile_success_count": 0,
+            "transpile_failed_count": 0,
+            "identical_to_source_count": 0,
+            "different_from_source_count": 0,
+            "executed_count": 0,
+            "success_count": 0,
+            "failed_count": len(records),
+            "skipped_count": 0,
+            "env_blocked_count": 0,
+            "records": records,
+            "issues": issues,
+            "guardrails": {
+                "mysql_execution": "disabled",
+                "spark_execution": "disabled",
+                "llm_execution": "disabled",
+                "case_artifact_write": "disabled",
+                "transpiled_sql_case_write": "disabled",
+            },
+        }
+        write_baseline_smoke_report(output_name, payload)
+        return print_and_exit(payload, 1)
+
+    if not required_env_visible:
+        for case_spec in selected_specs:
+            case_id = case_spec["case_id"]
+            pool = case_spec["pool"]
+            source_sql_path = pool_case_root(pool) / case_id / "source.sql"
+            records.append(
+                {
+                    "baseline_id": "SQLGLOT_TRANSPILE",
+                    "case_id": case_id,
+                    "pool": pool,
+                    "target_dialect": args.target_dialect,
+                    "execution_mode": "pg_execute_transpile_canary",
+                    "source_sql_path": relative_to_root(source_sql_path),
+                    "source_sql_exists": source_sql_path.is_file(),
+                    "sqlglot_available": True,
+                    "source_dialect_used": "",
+                    "source_dialect_candidates_tried": [],
+                    "source_dialect_successes": [],
+                    "parse_status": "skipped",
+                    "transpile_status": "skipped",
+                    "transpiled_sql_empty": "unknown",
+                    "transpiled_sql_same_as_source_normalized": "unknown",
+                    "transpiled_sql_preview": "",
+                    "pg_env_visible": False,
+                    "pg_password_present": pg_password_present,
+                    "validation_schema": native_identity_validation_schema(case_id, pool),
+                    "search_path_after_set": "",
+                    "statement_timeout_ms": args.statement_timeout_ms,
+                    "execution_status": "env_blocked",
+                    "row_count": None,
+                    "runtime_ms": None,
+                    "result_materialization": "not_persisted",
+                    "output_scope": "reports_only_no_case_artifact_write",
+                    "failure_category": "missing_pg_env",
+                    "error_message": "",
+                    "artifact_claim_boundary": "sqlglot_transpile_pg_canary_execution_not_benchmark_claim",
+                    "notes": ["execution not attempted", "required env: PGHOST, PGPORT, PGDATABASE, PGUSER"],
+                }
+            )
+        payload = {
+            "command": "baseline-smoke-sqlglot-transpile-pg-canary",
+            "ok": False,
+            "ran_at_utc": utc_now(),
+            "config_path": relative_to_root(config_path),
+            "engine_scope": args.target_dialect,
+            "baseline_id": "SQLGLOT_TRANSPILE",
+            "case_count": len(records),
+            "sqlglot_available": True,
+            "parse_success_count": 0,
+            "parse_failed_count": 0,
+            "transpile_success_count": 0,
+            "transpile_failed_count": 0,
+            "identical_to_source_count": 0,
+            "different_from_source_count": 0,
+            "executed_count": 0,
+            "success_count": 0,
+            "failed_count": 0,
+            "skipped_count": 0,
+            "env_blocked_count": len(records),
+            "records": records,
+            "issues": issues,
+            "guardrails": {
+                "mysql_execution": "disabled",
+                "spark_execution": "disabled",
+                "llm_execution": "disabled",
+                "case_artifact_write": "disabled",
+                "transpiled_sql_case_write": "disabled",
+            },
+        }
+        write_baseline_smoke_report("sqlglot_transpile_pg_env_blocked_v0.json", payload)
+        return print_and_exit(payload, 1)
+
+    for case_spec in selected_specs:
+        case_id = case_spec["case_id"]
+        pool = case_spec["pool"]
+        case_root = pool_case_root(pool) / case_id
+        source_sql_path = case_root / "source.sql"
+        manifest_path = case_root / "manifest.yaml"
+        source_sql_exists = source_sql_path.is_file()
+        source_dialect_hint = ""
+        if manifest_path.is_file():
+            source_dialect_hint = manifest_source_dialect_hint(manifest_path.read_text(encoding="utf-8"))
+        candidates_tried = source_dialect_candidate_order(source_dialect_hint, args.source_dialect)
+        validation_schema = native_identity_validation_schema(case_id, pool)
+        source_dialect_used = ""
+        source_dialect_successes: list[str] = []
+        search_path_after_set = ""
+        transpiled_sql_preview = ""
+        parse_status = "skipped"
+        transpile_status = "skipped"
+        transpiled_sql_empty: bool | str = "unknown"
+        transpiled_sql_same: bool | str = "unknown"
+        failure_category = "none"
+        error_message = ""
+        notes: list[str] = []
+        row_count = None
+        runtime_ms = None
+
+        if pool != "portability":
+            records.append(
+                {
+                    "baseline_id": "SQLGLOT_TRANSPILE",
+                    "case_id": case_id,
+                    "pool": pool,
+                    "target_dialect": args.target_dialect,
+                    "execution_mode": "pg_execute_transpile_canary",
+                    "source_sql_path": relative_to_root(source_sql_path),
+                    "source_sql_exists": source_sql_exists,
+                    "sqlglot_available": True,
+                    "source_dialect_used": "",
+                    "source_dialect_candidates_tried": candidates_tried,
+                    "source_dialect_successes": [],
+                    "parse_status": "skipped",
+                    "transpile_status": "skipped",
+                    "transpiled_sql_empty": "unknown",
+                    "transpiled_sql_same_as_source_normalized": "unknown",
+                    "transpiled_sql_preview": "",
+                    "pg_env_visible": True,
+                    "pg_password_present": pg_password_present,
+                    "validation_schema": validation_schema,
+                    "search_path_after_set": "",
+                    "statement_timeout_ms": args.statement_timeout_ms,
+                    "execution_status": "skipped",
+                    "row_count": None,
+                    "runtime_ms": None,
+                    "result_materialization": "not_persisted",
+                    "output_scope": "reports_only_no_case_artifact_write",
+                    "failure_category": "non_port_case_not_enabled",
+                    "error_message": "",
+                    "artifact_claim_boundary": "sqlglot_transpile_pg_canary_execution_not_benchmark_claim",
+                    "notes": ["execution skip: only portability cases are enabled in this PG SQLGlot transpile canary"],
+                }
+            )
+            continue
+
+        if not source_sql_exists:
+            records.append(
+                {
+                    "baseline_id": "SQLGLOT_TRANSPILE",
+                    "case_id": case_id,
+                    "pool": pool,
+                    "target_dialect": args.target_dialect,
+                    "execution_mode": "pg_execute_transpile_canary",
+                    "source_sql_path": relative_to_root(source_sql_path),
+                    "source_sql_exists": False,
+                    "sqlglot_available": True,
+                    "source_dialect_used": "",
+                    "source_dialect_candidates_tried": candidates_tried,
+                    "source_dialect_successes": [],
+                    "parse_status": "skipped",
+                    "transpile_status": "skipped",
+                    "transpiled_sql_empty": "unknown",
+                    "transpiled_sql_same_as_source_normalized": "unknown",
+                    "transpiled_sql_preview": "",
+                    "pg_env_visible": True,
+                    "pg_password_present": pg_password_present,
+                    "validation_schema": validation_schema,
+                    "search_path_after_set": "",
+                    "statement_timeout_ms": args.statement_timeout_ms,
+                    "execution_status": "failed",
+                    "row_count": None,
+                    "runtime_ms": None,
+                    "result_materialization": "not_persisted",
+                    "output_scope": "reports_only_no_case_artifact_write",
+                    "failure_category": "missing_source_sql",
+                    "error_message": "",
+                    "artifact_claim_boundary": "sqlglot_transpile_pg_canary_execution_not_benchmark_claim",
+                    "notes": ["execution not attempted because source.sql is absent"],
+                }
+            )
+            continue
+
+        source_sql = source_sql_path.read_text(encoding="utf-8")
+        parsed = None
+        last_exc: Exception | None = None
+        for candidate in candidates_tried:
+            try:
+                parsed = sqlglot.parse_one(source_sql, dialect=candidate)
+                source_dialect_successes.append(candidate)
+                if not source_dialect_used:
+                    source_dialect_used = candidate
+            except Exception as exc:
+                last_exc = exc
+
+        if source_dialect_successes:
+            parse_status = "success"
+            if len(source_dialect_successes) > 1:
+                notes.append("multiple dialects parsed successfully: " + ", ".join(source_dialect_successes))
+            if source_dialect_hint:
+                notes.append(f"manifest_source_dialect_hint={source_dialect_hint}")
+        else:
+            records.append(
+                {
+                    "baseline_id": "SQLGLOT_TRANSPILE",
+                    "case_id": case_id,
+                    "pool": pool,
+                    "target_dialect": args.target_dialect,
+                    "execution_mode": "pg_execute_transpile_canary",
+                    "source_sql_path": relative_to_root(source_sql_path),
+                    "source_sql_exists": True,
+                    "sqlglot_available": True,
+                    "source_dialect_used": "",
+                    "source_dialect_candidates_tried": candidates_tried,
+                    "source_dialect_successes": [],
+                    "parse_status": "failed",
+                    "transpile_status": "skipped",
+                    "transpiled_sql_empty": "unknown",
+                    "transpiled_sql_same_as_source_normalized": "unknown",
+                    "transpiled_sql_preview": "",
+                    "pg_env_visible": True,
+                    "pg_password_present": pg_password_present,
+                    "validation_schema": validation_schema,
+                    "search_path_after_set": "",
+                    "statement_timeout_ms": args.statement_timeout_ms,
+                    "execution_status": "failed",
+                    "row_count": None,
+                    "runtime_ms": None,
+                    "result_materialization": "not_persisted",
+                    "output_scope": "reports_only_no_case_artifact_write",
+                    "failure_category": type(last_exc).__name__ if last_exc else "parse_failed",
+                    "error_message": str(last_exc) if last_exc else "no source dialect candidate parsed",
+                    "artifact_claim_boundary": "sqlglot_transpile_pg_canary_execution_not_benchmark_claim",
+                    "notes": ["sqlglot parse failed for all source dialect candidates"],
+                }
+            )
+            continue
+
+        try:
+            transpiled_sql = parsed.sql(dialect=args.target_dialect)
+            transpile_status = "success"
+            transpiled_sql_empty = len(transpiled_sql.strip()) == 0
+            transpiled_sql_preview = transpiled_sql[:500]
+            if transpiled_sql_empty:
+                records.append(
+                    {
+                        "baseline_id": "SQLGLOT_TRANSPILE",
+                        "case_id": case_id,
+                        "pool": pool,
+                        "target_dialect": args.target_dialect,
+                        "execution_mode": "pg_execute_transpile_canary",
+                        "source_sql_path": relative_to_root(source_sql_path),
+                        "source_sql_exists": True,
+                        "sqlglot_available": True,
+                        "source_dialect_used": source_dialect_used,
+                        "source_dialect_candidates_tried": candidates_tried,
+                        "source_dialect_successes": source_dialect_successes,
+                        "parse_status": "success",
+                        "transpile_status": "success",
+                        "transpiled_sql_empty": True,
+                        "transpiled_sql_same_as_source_normalized": "unknown",
+                        "transpiled_sql_preview": transpiled_sql_preview,
+                        "pg_env_visible": True,
+                        "pg_password_present": pg_password_present,
+                        "validation_schema": validation_schema,
+                        "search_path_after_set": "",
+                        "statement_timeout_ms": args.statement_timeout_ms,
+                        "execution_status": "failed",
+                        "row_count": None,
+                        "runtime_ms": None,
+                        "result_materialization": "not_persisted",
+                        "output_scope": "reports_only_no_case_artifact_write",
+                        "failure_category": "empty_transpiled_sql",
+                        "error_message": "",
+                        "artifact_claim_boundary": "sqlglot_transpile_pg_canary_execution_not_benchmark_claim",
+                        "notes": notes + [f"transpiled_to={args.target_dialect}", "transpiled SQL string was empty"],
+                    }
+                )
+                continue
+            transpiled_sql_same = (
+                normalize_sql_for_compare(source_sql)
+                == normalize_sql_for_compare(transpiled_sql)
+            )
+            notes.append(f"transpiled_to={args.target_dialect}")
+        except Exception as exc:
+            records.append(
+                {
+                    "baseline_id": "SQLGLOT_TRANSPILE",
+                    "case_id": case_id,
+                    "pool": pool,
+                    "target_dialect": args.target_dialect,
+                    "execution_mode": "pg_execute_transpile_canary",
+                    "source_sql_path": relative_to_root(source_sql_path),
+                    "source_sql_exists": True,
+                    "sqlglot_available": True,
+                    "source_dialect_used": source_dialect_used,
+                    "source_dialect_candidates_tried": candidates_tried,
+                    "source_dialect_successes": source_dialect_successes,
+                    "parse_status": "success",
+                    "transpile_status": "failed",
+                    "transpiled_sql_empty": "unknown",
+                    "transpiled_sql_same_as_source_normalized": "unknown",
+                    "transpiled_sql_preview": "",
+                    "pg_env_visible": True,
+                    "pg_password_present": pg_password_present,
+                    "validation_schema": validation_schema,
+                    "search_path_after_set": "",
+                    "statement_timeout_ms": args.statement_timeout_ms,
+                    "execution_status": "failed",
+                    "row_count": None,
+                    "runtime_ms": None,
+                    "result_materialization": "not_persisted",
+                    "output_scope": "reports_only_no_case_artifact_write",
+                    "failure_category": type(exc).__name__,
+                    "error_message": str(exc),
+                    "artifact_claim_boundary": "sqlglot_transpile_pg_canary_execution_not_benchmark_claim",
+                    "notes": notes + ["sqlglot transpile failed"],
+                }
+            )
+            continue
+
+        started = time.perf_counter()
+        try:
+            with psycopg.connect(
+                host=os.environ.get("PGHOST"),
+                port=os.environ.get("PGPORT"),
+                dbname=os.environ.get("PGDATABASE"),
+                user=os.environ.get("PGUSER"),
+                password=os.environ.get("PGPASSWORD"),
+                autocommit=False,
+            ) as conn:
+                with conn.cursor() as cur:
+                    cur.execute("SET SESSION CHARACTERISTICS AS TRANSACTION READ ONLY")
+                    cur.execute(
+                        "SELECT set_config('statement_timeout', %s, false)",
+                        (str(args.statement_timeout_ms),),
+                    )
+                    cur.execute("SELECT to_regnamespace(%s)", (validation_schema,))
+                    schema_row = cur.fetchone()
+                    if not schema_row or schema_row[0] is None:
+                        records.append(
+                            {
+                                "baseline_id": "SQLGLOT_TRANSPILE",
+                                "case_id": case_id,
+                                "pool": pool,
+                                "target_dialect": args.target_dialect,
+                                "execution_mode": "pg_execute_transpile_canary",
+                                "source_sql_path": relative_to_root(source_sql_path),
+                                "source_sql_exists": True,
+                                "sqlglot_available": True,
+                                "source_dialect_used": source_dialect_used,
+                                "source_dialect_candidates_tried": candidates_tried,
+                                "source_dialect_successes": source_dialect_successes,
+                                "parse_status": "success",
+                                "transpile_status": "success",
+                                "transpiled_sql_empty": False,
+                                "transpiled_sql_same_as_source_normalized": transpiled_sql_same,
+                                "transpiled_sql_preview": transpiled_sql_preview,
+                                "pg_env_visible": True,
+                                "pg_password_present": pg_password_present,
+                                "validation_schema": validation_schema,
+                                "search_path_after_set": "",
+                                "statement_timeout_ms": args.statement_timeout_ms,
+                                "execution_status": "failed",
+                                "row_count": None,
+                                "runtime_ms": int((time.perf_counter() - started) * 1000),
+                                "result_materialization": "not_persisted",
+                                "output_scope": "reports_only_no_case_artifact_write",
+                                "failure_category": "missing_validation_schema",
+                                "error_message": "",
+                                "artifact_claim_boundary": "sqlglot_transpile_pg_canary_execution_not_benchmark_claim",
+                                "notes": notes + ["validation schema is not visible to PostgreSQL"],
+                            }
+                        )
+                        continue
+                    cur.execute(
+                        psycopg.sql.SQL("SET search_path TO {}, public").format(
+                            psycopg.sql.Identifier(validation_schema)
+                        )
+                    )
+                    cur.execute("SHOW search_path")
+                    search_path_row = cur.fetchone()
+                    search_path_after_set = str(search_path_row[0]) if search_path_row else ""
+                    cur.execute(transpiled_sql)
+                    rows = cur.fetchall()
+                    row_count = len(rows)
+                    runtime_ms = int((time.perf_counter() - started) * 1000)
+                    conn.rollback()
+        except Exception as exc:
+            records.append(
+                {
+                    "baseline_id": "SQLGLOT_TRANSPILE",
+                    "case_id": case_id,
+                    "pool": pool,
+                    "target_dialect": args.target_dialect,
+                    "execution_mode": "pg_execute_transpile_canary",
+                    "source_sql_path": relative_to_root(source_sql_path),
+                    "source_sql_exists": True,
+                    "sqlglot_available": True,
+                    "source_dialect_used": source_dialect_used,
+                    "source_dialect_candidates_tried": candidates_tried,
+                    "source_dialect_successes": source_dialect_successes,
+                    "parse_status": "success",
+                    "transpile_status": "success",
+                    "transpiled_sql_empty": False,
+                    "transpiled_sql_same_as_source_normalized": transpiled_sql_same,
+                    "transpiled_sql_preview": transpiled_sql_preview,
+                    "pg_env_visible": True,
+                    "pg_password_present": pg_password_present,
+                    "validation_schema": validation_schema,
+                    "search_path_after_set": search_path_after_set,
+                    "statement_timeout_ms": args.statement_timeout_ms,
+                    "execution_status": "failed",
+                    "row_count": None,
+                    "runtime_ms": int((time.perf_counter() - started) * 1000),
+                    "result_materialization": "not_persisted",
+                    "output_scope": "reports_only_no_case_artifact_write",
+                    "failure_category": type(exc).__name__,
+                    "error_message": str(exc),
+                    "artifact_claim_boundary": "sqlglot_transpile_pg_canary_execution_not_benchmark_claim",
+                    "notes": notes + ["PostgreSQL execution failed for transpiled SQL"],
+                }
+            )
+            continue
+
+        records.append(
+            {
+                "baseline_id": "SQLGLOT_TRANSPILE",
+                "case_id": case_id,
+                "pool": pool,
+                "target_dialect": args.target_dialect,
+                "execution_mode": "pg_execute_transpile_canary",
+                "source_sql_path": relative_to_root(source_sql_path),
+                "source_sql_exists": True,
+                "sqlglot_available": True,
+                "source_dialect_used": source_dialect_used,
+                "source_dialect_candidates_tried": candidates_tried,
+                "source_dialect_successes": source_dialect_successes,
+                "parse_status": "success",
+                "transpile_status": "success",
+                "transpiled_sql_empty": False,
+                "transpiled_sql_same_as_source_normalized": transpiled_sql_same,
+                "transpiled_sql_preview": transpiled_sql_preview,
+                "pg_env_visible": True,
+                "pg_password_present": pg_password_present,
+                "validation_schema": validation_schema,
+                "search_path_after_set": search_path_after_set,
+                "statement_timeout_ms": args.statement_timeout_ms,
+                "execution_status": "success",
+                "row_count": row_count,
+                "runtime_ms": runtime_ms,
+                "result_materialization": "not_persisted",
+                "output_scope": "reports_only_no_case_artifact_write",
+                "failure_category": "none",
+                "error_message": "",
+                "artifact_claim_boundary": "sqlglot_transpile_pg_canary_execution_not_benchmark_claim",
+                "notes": notes + ["PostgreSQL executed transpiled SQL successfully"],
+            }
+        )
+
+    payload = {
+        "command": "baseline-smoke-sqlglot-transpile-pg-canary",
+        "ok": (
+            sqlglot_available
+            and not issues
+            and all(record["parse_status"] == "success" for record in records if record["execution_status"] != "skipped")
+            and all(record["transpile_status"] == "success" for record in records if record["execution_status"] != "skipped")
+            and all(record["execution_status"] == "success" for record in records if record["execution_status"] != "skipped")
+        ),
+        "ran_at_utc": utc_now(),
+        "config_path": relative_to_root(config_path),
+        "engine_scope": args.target_dialect,
+        "baseline_id": "SQLGLOT_TRANSPILE",
+        "case_count": len(records),
+        "sqlglot_available": sqlglot_available,
+        "parse_success_count": sum(1 for r in records if r["parse_status"] == "success"),
+        "parse_failed_count": sum(1 for r in records if r["parse_status"] == "failed"),
+        "transpile_success_count": sum(1 for r in records if r["transpile_status"] == "success"),
+        "transpile_failed_count": sum(1 for r in records if r["transpile_status"] == "failed"),
+        "identical_to_source_count": sum(1 for r in records if r["transpiled_sql_same_as_source_normalized"] is True),
+        "different_from_source_count": sum(1 for r in records if r["transpiled_sql_same_as_source_normalized"] is False),
+        "executed_count": sum(1 for r in records if r["execution_status"] in {"success", "failed"}),
+        "success_count": sum(1 for r in records if r["execution_status"] == "success"),
+        "failed_count": sum(1 for r in records if r["execution_status"] == "failed"),
+        "skipped_count": sum(1 for r in records if r["execution_status"] == "skipped"),
+        "env_blocked_count": sum(1 for r in records if r["execution_status"] == "env_blocked"),
+        "records": records,
+        "issues": issues,
+        "guardrails": {
+            "mysql_execution": "disabled",
+            "spark_execution": "disabled",
+            "llm_execution": "disabled",
+            "case_artifact_write": "disabled",
+            "transpiled_sql_case_write": "disabled",
+        },
+    }
+    write_baseline_smoke_report(output_name, payload)
+    return print_and_exit(payload, 0 if payload["ok"] else 1)
+
+
 def cmd_baseline_smoke_sqlglot_preflight(args: argparse.Namespace) -> int:
     output_name = normalize_baseline_smoke_output_name("sqlglot_same_dialect_preflight_v0.json")
 
@@ -5939,6 +6860,19 @@ def build_parser() -> argparse.ArgumentParser:
     sqlglot_transpile_preflight_parser.add_argument("--write-generated", action="store_true", default=False)
     sqlglot_transpile_preflight_parser.add_argument("--execute", action="store_true", default=False)
     sqlglot_transpile_preflight_parser.set_defaults(func=cmd_baseline_smoke_sqlglot_transpile_preflight)
+
+    sqlglot_transpile_pg_canary_parser = subparsers.add_parser("baseline-smoke-sqlglot-transpile-pg-canary")
+    sqlglot_transpile_pg_canary_parser.add_argument(
+        "--config",
+        default="docs/_scratch/baseline_smoke_common_core_v0.json",
+    )
+    sqlglot_transpile_pg_canary_parser.add_argument("--case-id", action="append", default=[])
+    sqlglot_transpile_pg_canary_parser.add_argument("--target-dialect", default="postgres")
+    sqlglot_transpile_pg_canary_parser.add_argument("--source-dialect", default="auto")
+    sqlglot_transpile_pg_canary_parser.add_argument("--statement-timeout-ms", type=int, default=30000)
+    sqlglot_transpile_pg_canary_parser.add_argument("--execute", action="store_true", default=False)
+    sqlglot_transpile_pg_canary_parser.add_argument("--execute-transpile", action="store_true", default=False)
+    sqlglot_transpile_pg_canary_parser.set_defaults(func=cmd_baseline_smoke_sqlglot_transpile_pg_canary)
 
     sqlglot_preflight_parser = subparsers.add_parser("baseline-smoke-sqlglot-preflight")
     sqlglot_preflight_parser.add_argument(
