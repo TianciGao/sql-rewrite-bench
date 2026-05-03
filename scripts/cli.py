@@ -376,26 +376,26 @@ def extract_sql_like_output(raw_output: str) -> tuple[str, str]:
     compact = text.strip()
     upper = compact.upper()
     if not re.match(r"^(SELECT|WITH)\b", upper):
-        return "needs_manual_review", text[:700]
+        return "needs_manual_review", text
     if "EXPLANATION" in upper or "HERE IS" in upper or "SQL QUERY" in upper:
-        return "needs_manual_review", text[:700]
+        return "needs_manual_review", text
     if re.search(r"\n\s*\n", compact):
-        return "needs_manual_review", text[:700]
+        return "needs_manual_review", text
     semicolon_count = compact.count(";")
     if semicolon_count > 1:
-        return "needs_manual_review", text[:700]
+        return "needs_manual_review", text
     if semicolon_count == 1 and not compact.endswith(";"):
-        return "needs_manual_review", text[:700]
+        return "needs_manual_review", text
     trailing = compact[:-1].rstrip() if compact.endswith(";") else compact
     if ";" in trailing:
-        return "needs_manual_review", text[:700]
+        return "needs_manual_review", text
     if re.search(r"\b(SELECT|WITH)\b.*\b(SELECT|WITH)\b", upper, flags=re.DOTALL):
         first = re.match(r"^(SELECT|WITH)\b", upper)
         if first:
             remainder = upper[first.end():]
             if re.search(r"\n\s*(SELECT|WITH)\b", remainder):
-                return "needs_manual_review", text[:700]
-    return "extracted", text[:700]
+                return "needs_manual_review", text
+    return "extracted", text
 
 
 def resolve_llm_endpoint_config(
@@ -1116,6 +1116,33 @@ def build_llm_generated_pg_record(
         ),
         "notes": notes,
     }
+
+
+def resolve_llm_candidate_sql(report_record: dict[str, Any]) -> tuple[str, str, bool]:
+    extracted_sql_text = (report_record.get("extracted_sql_text") or report_record.get("extracted_sql") or "").strip()
+    if extracted_sql_text:
+        return extracted_sql_text, "extracted_sql_text", False
+
+    extracted_sql_preview = (report_record.get("extracted_sql_preview") or "").strip()
+    if not extracted_sql_preview:
+        return "", "not_available", False
+
+    extracted_sql_character_count = report_record.get("extracted_sql_character_count")
+    raw_output_character_count = report_record.get("raw_output_character_count")
+    raw_output_preview = report_record.get("raw_output_preview") or ""
+    truncated_preview_only = bool(
+        report_record.get("extracted_sql_truncated_in_preview")
+        or (
+            isinstance(extracted_sql_character_count, int)
+            and extracted_sql_character_count > len(extracted_sql_preview)
+        )
+        or bool(report_record.get("raw_output_truncated_in_preview"))
+        or (
+            isinstance(raw_output_character_count, int)
+            and raw_output_character_count > len(raw_output_preview)
+        )
+    )
+    return extracted_sql_preview, "extracted_sql_preview_fallback", truncated_preview_only
 
 
 def cmd_baseline_smoke_native_identity_pg(args: argparse.Namespace) -> int:
@@ -4276,9 +4303,14 @@ def cmd_baseline_smoke_llm_call_canary(args: argparse.Namespace) -> int:
                 "call_attempted": False,
                 "call_status": "not_requested",
                 "raw_output_character_count": 0,
+                "raw_output_text": "",
                 "raw_output_preview": "",
+                "raw_output_truncated_in_preview": False,
                 "extracted_sql_status": "not_available",
+                "extracted_sql_text": "",
                 "extracted_sql_preview": "",
+                "extracted_sql_truncated_in_preview": False,
+                "extracted_sql_character_count": 0,
                 "failure_category": "case_not_in_smoke_config",
                 "error_message": "",
                 "token_usage_input": None,
@@ -4323,9 +4355,14 @@ def cmd_baseline_smoke_llm_call_canary(args: argparse.Namespace) -> int:
                     "call_attempted": False,
                     "call_status": "not_requested",
                     "raw_output_character_count": 0,
+                    "raw_output_text": "",
                     "raw_output_preview": "",
+                    "raw_output_truncated_in_preview": False,
                     "extracted_sql_status": "not_available",
+                    "extracted_sql_text": "",
                     "extracted_sql_preview": "",
+                    "extracted_sql_truncated_in_preview": False,
+                    "extracted_sql_character_count": 0,
                     "failure_category": "none" if row["prompt_package_status"] == "ready" else row["prompt_package_status"],
                     "error_message": "",
                     "token_usage_input": None,
@@ -4418,9 +4455,14 @@ def cmd_baseline_smoke_llm_call_canary(args: argparse.Namespace) -> int:
                     "call_attempted": False,
                     "call_status": "failed",
                     "raw_output_character_count": 0,
+                    "raw_output_text": "",
                     "raw_output_preview": "",
+                    "raw_output_truncated_in_preview": False,
                     "extracted_sql_status": "not_available",
+                    "extracted_sql_text": "",
                     "extracted_sql_preview": "",
+                    "extracted_sql_truncated_in_preview": False,
+                    "extracted_sql_character_count": 0,
                     "failure_category": "multiple_case_call_not_allowed",
                     "error_message": "",
                     "token_usage_input": None,
@@ -4505,9 +4547,14 @@ def cmd_baseline_smoke_llm_call_canary(args: argparse.Namespace) -> int:
                     "call_attempted": False,
                     "call_status": "env_blocked",
                     "raw_output_character_count": 0,
+                    "raw_output_text": "",
                     "raw_output_preview": "",
+                    "raw_output_truncated_in_preview": False,
                     "extracted_sql_status": "not_available",
+                    "extracted_sql_text": "",
                     "extracted_sql_preview": "",
+                    "extracted_sql_truncated_in_preview": False,
+                    "extracted_sql_character_count": 0,
                     "failure_category": "missing_api_key",
                     "error_message": "",
                     "token_usage_input": None,
@@ -4595,9 +4642,14 @@ def cmd_baseline_smoke_llm_call_canary(args: argparse.Namespace) -> int:
                     "call_attempted": False,
                     "call_status": "client_unavailable",
                     "raw_output_character_count": 0,
+                    "raw_output_text": "",
                     "raw_output_preview": "",
+                    "raw_output_truncated_in_preview": False,
                     "extracted_sql_status": "not_available",
+                    "extracted_sql_text": "",
                     "extracted_sql_preview": "",
+                    "extracted_sql_truncated_in_preview": False,
+                    "extracted_sql_character_count": 0,
                     "failure_category": "client_unavailable",
                     "error_message": "openai client package is unavailable",
                     "token_usage_input": None,
@@ -4686,9 +4738,14 @@ def cmd_baseline_smoke_llm_call_canary(args: argparse.Namespace) -> int:
                     "call_attempted": False,
                     "call_status": "client_unavailable",
                     "raw_output_character_count": 0,
+                    "raw_output_text": "",
                     "raw_output_preview": "",
+                    "raw_output_truncated_in_preview": False,
                     "extracted_sql_status": "not_available",
+                    "extracted_sql_text": "",
                     "extracted_sql_preview": "",
+                    "extracted_sql_truncated_in_preview": False,
+                    "extracted_sql_character_count": 0,
                     "failure_category": "client_unavailable",
                     "error_message": "openai.OpenAI client is unavailable",
                     "token_usage_input": None,
@@ -4760,6 +4817,7 @@ def cmd_baseline_smoke_llm_call_canary(args: argparse.Namespace) -> int:
         token_usage_output = None
         token_usage_total = None
         extracted_sql_status = "not_available"
+        extracted_sql_text = ""
         extracted_sql_preview = ""
         call_status = "failed"
         failure_category = "none"
@@ -4780,7 +4838,8 @@ def cmd_baseline_smoke_llm_call_canary(args: argparse.Namespace) -> int:
             message = response.choices[0].message.content if response.choices else ""
             raw_text = (message or "").strip()
             raw_preview = raw_text[:700]
-            extracted_sql_status, extracted_sql_preview = extract_sql_like_output(raw_text)
+            extracted_sql_status, extracted_sql_text = extract_sql_like_output(raw_text)
+            extracted_sql_preview = extracted_sql_text[:700]
             call_status = "success"
             usage = getattr(response, "usage", None)
             if usage is not None:
@@ -4817,9 +4876,14 @@ def cmd_baseline_smoke_llm_call_canary(args: argparse.Namespace) -> int:
                 "call_attempted": True,
                 "call_status": call_status,
                 "raw_output_character_count": len(raw_text),
+                "raw_output_text": raw_text,
                 "raw_output_preview": raw_preview,
+                "raw_output_truncated_in_preview": len(raw_text) > len(raw_preview),
                 "extracted_sql_status": extracted_sql_status,
+                "extracted_sql_text": extracted_sql_text,
                 "extracted_sql_preview": extracted_sql_preview,
+                "extracted_sql_truncated_in_preview": len(extracted_sql_text) > len(extracted_sql_preview),
+                "extracted_sql_character_count": len(extracted_sql_text),
                 "failure_category": failure_category,
                 "error_message": error_message,
                 "token_usage_input": token_usage_input,
@@ -5074,10 +5138,7 @@ def cmd_baseline_smoke_llm_generated_pg_canary(args: argparse.Namespace) -> int:
     model_label = report_record.get("model_label", "")
     provider_mode = report_record.get("provider_mode", "")
     extracted_sql_status = report_record.get("extracted_sql_status", "not_available")
-    candidate_sql = report_record.get("extracted_sql") or report_record.get("extracted_sql_preview") or ""
-    candidate_sql_source = "extracted_sql" if report_record.get("extracted_sql") else (
-        "extracted_sql_preview" if report_record.get("extracted_sql_preview") else "not_available"
-    )
+    candidate_sql, candidate_sql_source, candidate_sql_truncated_preview_only = resolve_llm_candidate_sql(report_record)
     validation_schema = native_identity_validation_schema(case_id, pool)
     env_visibility = pg_env_visibility()
     required_env_visible = all(env_visibility[name] for name in ["PGHOST", "PGPORT", "PGDATABASE", "PGUSER"])
@@ -5091,6 +5152,13 @@ def cmd_baseline_smoke_llm_generated_pg_canary(args: argparse.Namespace) -> int:
             failure_category = "extracted_sql_not_ready"
             execution_status = "failed"
             notes = ["dry-run blocked: extracted_sql_status is not extracted", "no model call performed"]
+        elif candidate_sql_truncated_preview_only:
+            failure_category = "truncated_preview_only"
+            execution_status = "failed"
+            notes = [
+                "dry-run blocked: only extracted_sql_preview is available and it appears truncated",
+                "rerun from a full-text LLM call report before PG execution",
+            ]
         elif not candidate_sql.strip():
             failure_category = "empty_candidate_sql"
             execution_status = "failed"
@@ -5177,6 +5245,63 @@ def cmd_baseline_smoke_llm_generated_pg_canary(args: argparse.Namespace) -> int:
                 pg_password_present=pg_password_present,
                 failure_category="extracted_sql_not_ready",
                 notes=["execution not attempted because extracted_sql_status is not extracted"],
+            )
+        )
+        payload = {
+            "command": "baseline-smoke-llm-generated-pg-canary",
+            "ok": False,
+            "ran_at_utc": utc_now(),
+            "input_report_path": relative_to_root(input_path),
+            "engine_scope": "postgres",
+            "baseline_id": "LLM_DIRECT_REWRITE_STRONG",
+            "output_mode": output_mode,
+            "output_case_id": output_case_id or case_id,
+            "case_count": 1,
+            "executed_count": 0,
+            "success_count": 0,
+            "failed_count": 1,
+            "skipped_count": 0,
+            "env_blocked_count": 0,
+            "records": records,
+            "issues": issues,
+            "guardrails": {
+                "model_api_call": "disabled",
+                "mysql_execution": "disabled",
+                "spark_execution": "disabled",
+                "sqlglot_generation": "disabled",
+                "case_artifact_write": "disabled",
+                "generated_sql_case_write": "disabled",
+            },
+            "claim_boundary": "llm_generated_sql_execution_layer_only_not_correctness_or_speedup_scoring",
+        }
+        write_baseline_smoke_report(output_name, payload)
+        return print_and_exit(payload, 1)
+    if candidate_sql_truncated_preview_only:
+        records.append(
+            build_llm_generated_pg_record(
+                case_id=case_id,
+                pool=pool,
+                input_report_path=relative_to_root(input_path),
+                model_label=model_label,
+                provider_mode=provider_mode,
+                token_usage_input=report_record.get("token_usage_input"),
+                token_usage_output=report_record.get("token_usage_output"),
+                token_usage_total=report_record.get("token_usage_total"),
+                extracted_sql_status=extracted_sql_status,
+                candidate_sql_source=candidate_sql_source,
+                candidate_sql_preview=candidate_sql,
+                validation_schema=validation_schema,
+                search_path_after_set="",
+                statement_timeout_ms=args.statement_timeout_ms,
+                execution_mode="pg_execute_llm_generated_canary",
+                execution_status="failed",
+                pg_env_visible=required_env_visible,
+                pg_password_present=pg_password_present,
+                failure_category="truncated_preview_only",
+                notes=[
+                    "execution not attempted because only extracted_sql_preview is available",
+                    "the preview appears truncated relative to the full model output",
+                ],
             )
         )
         payload = {
