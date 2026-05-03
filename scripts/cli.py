@@ -185,6 +185,27 @@ def count_values(rows: list[dict[str, str]], field: str) -> dict[str, int]:
     return dict(sorted(Counter(row.get(field, "") for row in rows).items()))
 
 
+def count_plain_values(values: list[str]) -> dict[str, int]:
+    return dict(sorted(Counter(values).items()))
+
+
+def median_int(values: list[int]) -> int | None:
+    if not values:
+        return None
+    ordered = sorted(values)
+    mid = len(ordered) // 2
+    if len(ordered) % 2 == 1:
+        return ordered[mid]
+    return (ordered[mid - 1] + ordered[mid]) // 2
+
+
+def normalize_baseline_smoke_output_name(value: str) -> str:
+    path = Path(value)
+    if path.parts[:2] == ("reports", "baseline_smoke"):
+        return path.name
+    return value
+
+
 def check_status(errors: list[dict[str, Any]], registry_name: str, *error_types: str) -> str:
     return "fail" if any(
         error.get("registry") == registry_name and error.get("type") in error_types
@@ -2357,6 +2378,346 @@ def cmd_baseline_smoke_control_summary(args: argparse.Namespace) -> int:
     return print_and_exit(payload, 0 if ok else 1)
 
 
+def cmd_baseline_smoke_pg_control_summary(args: argparse.Namespace) -> int:
+    output_name = normalize_baseline_smoke_output_name(args.output)
+    input_paths = {
+        "native": resolve_repo_path(args.native_report),
+        "positive": resolve_repo_path(args.positive_report),
+        "negative": resolve_repo_path(args.negative_report),
+    }
+    input_report_refs = {name: relative_to_root(path) for name, path in input_paths.items()}
+
+    if args.execute:
+        payload = {
+            "command": "baseline-smoke-pg-control-summary",
+            "cwd": str(ROOT),
+            "ok": False,
+            "ran_at_utc": utc_now(),
+            "input_reports": input_report_refs,
+            "output_path": f"reports/baseline_smoke/{normalize_baseline_smoke_output_name('pg_control_smoke_summary_execute_refused_v0.json')}",
+            "claim_boundary": "execution_summary_only_not_correctness_scoring",
+            "message": "Execution is not supported for PG control smoke summary. Use the existing PG control execution commands if new execution is needed.",
+            "issues": [
+                {
+                    "type": "execution_not_supported",
+                    "message": "baseline-smoke-pg-control-summary is read-only and does not execute baselines",
+                }
+            ],
+        }
+        write_baseline_smoke_report("pg_control_smoke_summary_execute_refused_v0.json", payload)
+        return print_and_exit(payload, 1)
+
+    reports: dict[str, dict[str, Any]] = {}
+    issues: list[dict[str, Any]] = []
+    expected = {
+        "native": {"baseline_id": "NATIVE_IDENTITY", "execution_mode": "pg_execute_canary"},
+        "positive": {"baseline_id": "HUMAN_REFERENCE_POSITIVE", "execution_mode": "pg_execute_positive"},
+        "negative": {"baseline_id": "HARD_NEGATIVE_GUARD", "execution_mode": "pg_execute_negative"},
+    }
+    required_fields = ["baseline_id", "records", "success_count", "failed_count", "executed_count"]
+
+    for name, path in input_paths.items():
+        if not path.is_file():
+            issues.append(
+                {
+                    "type": "missing_input",
+                    "report": name,
+                    "path": relative_to_root(path),
+                }
+            )
+            continue
+        try:
+            report = load_json(path)
+        except (json.JSONDecodeError, OSError) as exc:
+            issues.append(
+                {
+                    "type": "malformed_input",
+                    "report": name,
+                    "path": relative_to_root(path),
+                    "detail": str(exc),
+                }
+            )
+            continue
+
+        missing_fields = [field for field in required_fields if field not in report]
+        if missing_fields:
+            issues.append(
+                {
+                    "type": "missing_required_fields",
+                    "report": name,
+                    "path": relative_to_root(path),
+                    "fields": missing_fields,
+                }
+            )
+            continue
+
+        if not isinstance(report.get("records"), list):
+            issues.append(
+                {
+                    "type": "malformed_input",
+                    "report": name,
+                    "path": relative_to_root(path),
+                    "detail": "records field is not a list",
+                }
+            )
+            continue
+
+        reports[name] = report
+        if report.get("baseline_id") != expected[name]["baseline_id"]:
+            issues.append(
+                {
+                    "type": "unexpected_baseline_id",
+                    "report": name,
+                    "expected": expected[name]["baseline_id"],
+                    "actual": report.get("baseline_id"),
+                }
+            )
+
+    native_report = reports.get("native")
+    positive_report = reports.get("positive")
+    negative_report = reports.get("negative")
+
+    def index_records(report: dict[str, Any] | None) -> dict[str, dict[str, Any]]:
+        if not report:
+            return {}
+        return {
+            record.get("case_id", ""): record
+            for record in report.get("records", [])
+            if isinstance(record, dict) and record.get("case_id")
+        }
+
+    native_records = index_records(native_report)
+    positive_records = index_records(positive_report)
+    negative_records = index_records(negative_report)
+    all_case_ids = sorted(set(native_records) | set(positive_records) | set(negative_records))
+
+    case_summaries: list[dict[str, Any]] = []
+    execution_status_values: list[str] = []
+    row_count_observation_values: list[str] = []
+    negative_row_count_observation_values: list[str] = []
+
+    for case_id in all_case_ids:
+        native = native_records.get(case_id)
+        positive = positive_records.get(case_id)
+        negative = negative_records.get(case_id)
+        pool = (
+            (native or {}).get("pool")
+            or (positive or {}).get("pool")
+            or (negative or {}).get("pool")
+            or ""
+        )
+
+        missing_parts: list[str] = []
+        anomaly_notes: list[str] = []
+        if native is None:
+            missing_parts.append("native")
+        if positive is None:
+            missing_parts.append("positive")
+        if negative is None:
+            missing_parts.append("negative")
+
+        native_status = (native or {}).get("execution_status", "")
+        positive_status = (positive or {}).get("execution_status", "")
+        negative_status = (negative or {}).get("execution_status", "")
+
+        if missing_parts:
+            execution_layer_status = "missing_record"
+            anomaly_notes.append(f"missing records: {', '.join(missing_parts)}")
+        elif native_status != "success":
+            execution_layer_status = "source_failed"
+        elif positive_status != "success":
+            execution_layer_status = "positive_failed"
+        elif negative_status != "success":
+            execution_layer_status = "negative_failed"
+        elif all(status == "success" for status in [native_status, positive_status, negative_status]):
+            execution_layer_status = "all_three_succeeded"
+        else:
+            execution_layer_status = "mixed"
+
+        native_row_count = (native or {}).get("row_count")
+        positive_row_count = (positive or {}).get("row_count")
+        negative_row_count = (negative or {}).get("row_count")
+
+        if execution_layer_status != "all_three_succeeded":
+            row_count_observation = "not_scored"
+            negative_row_count_observation = "not_scored"
+        elif native_row_count is None or positive_row_count is None:
+            row_count_observation = "missing_row_count"
+            negative_row_count_observation = (
+                "missing_row_count" if native_row_count is None or negative_row_count is None else "not_scored"
+            )
+        else:
+            if native_row_count == positive_row_count:
+                row_count_observation = "source_positive_same_row_count"
+            else:
+                row_count_observation = "source_positive_different_row_count"
+                anomaly_notes.append("source and positive row counts differ; needs_followup_if_unexpected")
+
+            if native_row_count is None or negative_row_count is None:
+                negative_row_count_observation = "missing_row_count"
+            elif native_row_count == negative_row_count:
+                negative_row_count_observation = "negative_same_row_count_as_source"
+            else:
+                negative_row_count_observation = "negative_different_row_count_from_source"
+                anomaly_notes.append("negative and source row counts differ; needs_followup_if_unexpected")
+
+        if native and not native.get("validation_schema"):
+            anomaly_notes.append("native missing validation_schema")
+        if positive and not positive.get("validation_schema"):
+            anomaly_notes.append("positive missing validation_schema")
+        if negative and not negative.get("validation_schema"):
+            anomaly_notes.append("negative missing validation_schema")
+        if native and not native.get("search_path_after_set"):
+            anomaly_notes.append("native missing search_path_after_set")
+        if positive and not positive.get("search_path_after_set"):
+            anomaly_notes.append("positive missing search_path_after_set")
+        if negative and not negative.get("search_path_after_set"):
+            anomaly_notes.append("negative missing search_path_after_set")
+
+        row = {
+            "case_id": case_id,
+            "pool": pool,
+            "native_execution_status": native_status,
+            "positive_execution_status": positive_status,
+            "negative_execution_status": negative_status,
+            "native_row_count": native_row_count,
+            "positive_row_count": positive_row_count,
+            "negative_row_count": negative_row_count,
+            "native_runtime_ms": (native or {}).get("runtime_ms"),
+            "positive_runtime_ms": (positive or {}).get("runtime_ms"),
+            "negative_runtime_ms": (negative or {}).get("runtime_ms"),
+            "native_validation_schema": (native or {}).get("validation_schema", ""),
+            "positive_validation_schema": (positive or {}).get("validation_schema", ""),
+            "negative_validation_schema": (negative or {}).get("validation_schema", ""),
+            "native_search_path_after_set": (native or {}).get("search_path_after_set", ""),
+            "positive_search_path_after_set": (positive or {}).get("search_path_after_set", ""),
+            "negative_search_path_after_set": (negative or {}).get("search_path_after_set", ""),
+            "execution_layer_status": execution_layer_status,
+            "row_count_observation": row_count_observation,
+            "negative_row_count_observation": negative_row_count_observation,
+            "anomaly_notes": anomaly_notes,
+        }
+        case_summaries.append(row)
+        execution_status_values.append(execution_layer_status)
+        row_count_observation_values.append(row_count_observation)
+        negative_row_count_observation_values.append(negative_row_count_observation)
+
+    def total_runtime(report: dict[str, Any] | None) -> int:
+        if not report:
+            return 0
+        return sum(
+            runtime
+            for runtime in (
+                record.get("runtime_ms")
+                for record in report.get("records", [])
+                if isinstance(record, dict)
+            )
+            if isinstance(runtime, int)
+        )
+
+    def median_runtime(report: dict[str, Any] | None) -> int | None:
+        if not report:
+            return None
+        values = [
+            runtime
+            for runtime in (
+                record.get("runtime_ms")
+                for record in report.get("records", [])
+                if isinstance(record, dict)
+            )
+            if isinstance(runtime, int)
+        ]
+        return median_int(values)
+
+    native_success_count = int((native_report or {}).get("success_count", 0))
+    positive_success_count = int((positive_report or {}).get("success_count", 0))
+    negative_success_count = int((negative_report or {}).get("success_count", 0))
+
+    all_three_succeeded_count = sum(1 for row in case_summaries if row["execution_layer_status"] == "all_three_succeeded")
+    source_failed_count = sum(1 for row in case_summaries if row["execution_layer_status"] == "source_failed")
+    positive_failed_count = sum(1 for row in case_summaries if row["execution_layer_status"] == "positive_failed")
+    negative_failed_count = sum(1 for row in case_summaries if row["execution_layer_status"] == "negative_failed")
+    missing_record_count = sum(1 for row in case_summaries if row["execution_layer_status"] == "missing_record")
+
+    for row in case_summaries:
+        if row["execution_layer_status"] == "missing_record":
+            issues.append(
+                {
+                    "type": "missing_record",
+                    "case_id": row["case_id"],
+                    "detail": row["anomaly_notes"],
+                }
+            )
+        if not row["native_validation_schema"] or not row["positive_validation_schema"] or not row["negative_validation_schema"]:
+            issues.append(
+                {
+                    "type": "missing_validation_schema",
+                    "case_id": row["case_id"],
+                }
+            )
+        if (
+            not row["native_search_path_after_set"]
+            or not row["positive_search_path_after_set"]
+            or not row["negative_search_path_after_set"]
+        ):
+            issues.append(
+                {
+                    "type": "missing_search_path_after_set",
+                    "case_id": row["case_id"],
+                }
+            )
+
+    ok = (
+        len(reports) == 3
+        and not issues
+        and all_three_succeeded_count == len(case_summaries)
+        and len(case_summaries) > 0
+    )
+
+    payload = {
+        "command": "baseline-smoke-pg-control-summary",
+        "ok": ok,
+        "ran_at_utc": utc_now(),
+        "input_reports": input_report_refs,
+        "output_path": f"reports/baseline_smoke/{output_name}",
+        "case_count": len(case_summaries),
+        "native_success_count": native_success_count,
+        "positive_success_count": positive_success_count,
+        "negative_success_count": negative_success_count,
+        "all_three_succeeded_count": all_three_succeeded_count,
+        "source_failed_count": source_failed_count,
+        "positive_failed_count": positive_failed_count,
+        "negative_failed_count": negative_failed_count,
+        "missing_record_count": missing_record_count,
+        "counts_by_execution_layer_status": count_plain_values(execution_status_values),
+        "counts_by_row_count_observation": count_plain_values(row_count_observation_values),
+        "counts_by_negative_row_count_observation": count_plain_values(negative_row_count_observation_values),
+        "total_runtime_ms_by_baseline": {
+            "NATIVE_IDENTITY": total_runtime(native_report),
+            "HUMAN_REFERENCE_POSITIVE": total_runtime(positive_report),
+            "HARD_NEGATIVE_GUARD": total_runtime(negative_report),
+        },
+        "median_runtime_ms_by_baseline": {
+            "NATIVE_IDENTITY": median_runtime(native_report),
+            "HUMAN_REFERENCE_POSITIVE": median_runtime(positive_report),
+            "HARD_NEGATIVE_GUARD": median_runtime(negative_report),
+        },
+        "case_summaries": case_summaries,
+        "issues": issues,
+        "guardrails": {
+            "database_execution": "disabled_for_summary",
+            "mysql_execution": "disabled",
+            "spark_execution": "disabled",
+            "sqlglot_generation": "disabled",
+            "llm_execution": "disabled",
+            "case_artifact_write": "disabled",
+        },
+        "claim_boundary": "execution_summary_only_not_correctness_scoring",
+    }
+    write_baseline_smoke_report(output_name, payload)
+    return print_and_exit(payload, 0 if ok else 1)
+
+
 def cmd_baseline_smoke_preflight(args: argparse.Namespace) -> int:
     if args.execute:
         payload = {
@@ -3573,6 +3934,26 @@ def build_parser() -> argparse.ArgumentParser:
         default=False,
     )
     hard_negative_pg_parser.set_defaults(func=cmd_baseline_smoke_hard_negative_pg)
+
+    pg_control_summary_parser = subparsers.add_parser("baseline-smoke-pg-control-summary")
+    pg_control_summary_parser.add_argument(
+        "--native-report",
+        default="reports/baseline_smoke/native_identity_pg_canary_v0.json",
+    )
+    pg_control_summary_parser.add_argument(
+        "--positive-report",
+        default="reports/baseline_smoke/human_reference_positive_pg_v0.json",
+    )
+    pg_control_summary_parser.add_argument(
+        "--negative-report",
+        default="reports/baseline_smoke/hard_negative_guard_pg_v0.json",
+    )
+    pg_control_summary_parser.add_argument(
+        "--output",
+        default="pg_control_smoke_summary_v0.json",
+    )
+    pg_control_summary_parser.add_argument("--execute", action="store_true", default=False)
+    pg_control_summary_parser.set_defaults(func=cmd_baseline_smoke_pg_control_summary)
 
     return parser
 
