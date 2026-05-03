@@ -28,7 +28,7 @@ This document is not:
 | Step 5 | LearnedRewrite | readiness-only complete | first-subset and PG-native-9 audit scope | readiness audit complete; input-readiness scaffold complete; first-subset `4`, maybe_later `5`; no inference/rewrite/execution attempted | subset-only candidate, artifact stack missing, not execution-ready | execution deferred; use as subset-only candidate after artifact/adapter path exists |
 | Step 6 | GenRewrite | readiness-only complete | first-subset and PG-native-9 audit scope | readiness audit complete; input/cost-readiness scaffold complete; first-subset `4`, maybe_later `5`; likely_cost_risk `medium: 6`, `high: 3`; no model/correction/verifier/executor-feedback attempted | frontier appendix / subset-only candidate, control stack missing, not execution-ready | execution deferred until correction-loop, verifier, retry, cost, and prompt/rule policies are frozen |
 | Step 7 | R-Bot / LLM-R2 | readiness-only complete | first-subset and PG-native-9 audit scope | readiness audit complete; retrieval-readiness scaffold complete; first-subset `4`, maybe_later `5`; likely_retrieval_cost_risk `medium: 6`, `high: 3`; no execution/model/retrieval/demo-selection/rerank attempted | retrieval-dependent appendix / subset-only candidate, retrieval/demo/rule-pool stack missing, not execution-ready | execution deferred until retrieval corpus, demo/rule pool, contamination policy, rerank policy, and fair comparison contract exist |
-| Step 8 | SlabCity | not started | frontier exception line | no readiness audit yet | frontier exception, not near-term baseline route | defer |
+| Step 8 | SlabCity | readiness-only complete | frontier exception audit scope | readiness audit complete; conclusion: defer; frontier exception only; no local runner / adapter / CLI / API wrapper; no synthesis engine; no verifier / solver integration; no reproducible service/runtime contract | frontier exception only, not execution-ready | keep deferred until runnable local adapter or reproducible service/runtime contract exists |
 | Step 9 | SQLSolver / VeriEQL support | not started | support / analysis line | no readiness audit yet | support analysis, not main leaderboard route | defer behind main-route audits |
 
 ## 3. Completed Smoke Milestones
@@ -143,6 +143,16 @@ This document is not:
   - `rerank_attempted_count: 0`
   - retrieval/demo/rule-pool stack missing.
   - not runnable as a baseline yet.
+- Step 8 SlabCity:
+  - readiness audit complete.
+  - tracked audit note exists:
+    - `docs/_scratch/SLABCITY_READINESS_AUDIT_v0.md`
+  - recommendation: defer.
+  - no execution attempted.
+  - no synthesis engine available.
+  - no verifier / solver integration available.
+  - no local adapter / service contract available.
+  - not runnable as a baseline yet.
 
 ## 4. Claim Boundaries
 
@@ -166,7 +176,7 @@ This document is not:
 - LearnedRewrite readiness audit and input-readiness scaffold are complete, but execution is blocked by missing adapter/checkpoints/inference path/dependency file/artifact path.
 - GenRewrite readiness audit and input/cost-readiness scaffold are complete, but execution is blocked by missing correction-loop implementation, verifier/executor-feedback loop, n-best/rerank path, retry/correction-round budget, frozen prompt/rule library, and cost policy.
 - R-Bot / LLM-R2 readiness audit and retrieval-readiness scaffold are complete, but execution is blocked by missing retrieval corpus/index, demo pool, rule pool, rerank policy, embedding/vector path, demo/retrieval count policy, contamination policy, and fair comparison contract.
-- SlabCity remains a frontier exception line, not a near-term baseline route.
+- SlabCity readiness audit is complete, but it remains deferred because there is no local runner, adapter, CLI/API wrapper, synthesis engine, verifier/solver integration, or reproducible service/runtime contract.
 - SQLSolver / VeriEQL support remains a support-analysis line, not a main leaderboard route.
 
 ## 6. Remaining Baseline Backlog
@@ -190,15 +200,17 @@ This document is not:
   - retrieval-dependent appendix / subset-only candidate
   - future work requires retrieval corpus, demo/rule pool, contamination policy, rerank policy, and fair comparison contract
 - Step 8 SlabCity:
-  - not started
-  - frontier exception
+  - readiness audit complete
+  - deferred
+  - frontier exception only
+  - future work requires runnable local adapter or reproducible service/runtime contract
 - Step 9 SQLSolver / VeriEQL support:
   - not started
   - support analysis, not main leaderboard
 
 ## 7. Recommended Next Action
 
-- Run a SlabCity readiness audit.
+- Run SQLSolver / VeriEQL support readiness audit.
 
 ## 8. Non-Goals
 
