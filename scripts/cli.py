@@ -740,6 +740,57 @@ def build_human_positive_record(
     }
 
 
+def build_hard_negative_record(
+    case_id: str,
+    pool: str,
+    negative_sql_path: Path | None,
+    validation_schema: str,
+    search_path_after_set: str,
+    statement_timeout_ms: int,
+    execution_mode: str,
+    execution_status: str,
+    pg_env_visible: bool,
+    pg_password_present: bool | str,
+    failure_category: str,
+    blocker: str,
+    notes: list[str],
+    row_count: int | None = None,
+    runtime_ms: int | None = None,
+    error_message: str = "",
+) -> dict[str, Any]:
+    return {
+        "baseline_id": "HARD_NEGATIVE_GUARD",
+        "case_id": case_id,
+        "pool": pool,
+        "planned_engine": "postgres",
+        "execution_mode": execution_mode,
+        "negative_sql_path": (
+            relative_to_root(negative_sql_path)
+            if negative_sql_path and negative_sql_path.is_absolute() and negative_sql_path.is_relative_to(ROOT)
+            else ""
+        ),
+        "negative_sql_exists": bool(negative_sql_path and negative_sql_path.is_file()),
+        "validation_schema": validation_schema,
+        "search_path_after_set": search_path_after_set,
+        "pg_env_visible": pg_env_visible,
+        "pg_password_present": pg_password_present,
+        "statement_timeout_ms": statement_timeout_ms,
+        "execution_status": execution_status,
+        "row_count": row_count,
+        "runtime_ms": runtime_ms,
+        "result_materialization": "not_persisted",
+        "output_scope": "reports_only_no_case_artifact_write",
+        "failure_category": failure_category,
+        "error_message": error_message,
+        "artifact_claim_boundary": (
+            "pg_negative_execution_not_benchmark_claim"
+            if execution_mode == "pg_execute_negative"
+            else "dry_run_no_execution"
+        ),
+        "notes": notes,
+    }
+
+
 def cmd_baseline_smoke_native_identity_pg(args: argparse.Namespace) -> int:
     if args.execute:
         payload = {
@@ -1582,6 +1633,424 @@ def cmd_baseline_smoke_human_positive_pg(args: argparse.Namespace) -> int:
         },
     }
     write_baseline_smoke_report("human_reference_positive_pg_v0.json", payload)
+    return print_and_exit(payload, 0 if payload["ok"] else 1)
+
+
+def cmd_baseline_smoke_hard_negative_pg(args: argparse.Namespace) -> int:
+    if args.execute:
+        payload = {
+            "command": "baseline-smoke-hard-negative-pg",
+            "cwd": str(ROOT),
+            "ok": False,
+            "ran_at_utc": utc_now(),
+            "message": "Use --execute-hard-negative for the PG hard-negative canary. --execute is intentionally not supported here.",
+            "errors": [
+                {
+                    "type": "invalid_execute_flag",
+                    "message": "only --execute-hard-negative can enable the PG hard-negative canary",
+                }
+            ],
+        }
+        write_baseline_smoke_report("hard_negative_guard_pg_execute_refused_v0.json", payload)
+        return print_and_exit(payload, 1)
+
+    config_path = resolve_repo_path(args.config)
+    config = load_json(config_path)
+    case_index = {case["case_id"]: case for case in config.get("cases", [])}
+
+    selected_case_ids = args.case_id or list(HUMAN_POSITIVE_PG_DEFAULT_CASES)
+    records: list[dict[str, Any]] = []
+    errors: list[dict[str, Any]] = []
+    invalid_cases = [case_id for case_id in selected_case_ids if case_id not in case_index]
+    if invalid_cases:
+        for case_id in invalid_cases:
+            records.append(
+                build_hard_negative_record(
+                    case_id=case_id,
+                    pool="",
+                    negative_sql_path=None,
+                    validation_schema="",
+                    search_path_after_set="",
+                    statement_timeout_ms=args.statement_timeout_ms,
+                    execution_mode="dry_run" if not args.execute_hard_negative else "pg_execute_negative",
+                    execution_status="skipped",
+                    pg_env_visible=False,
+                    pg_password_present="unknown",
+                    failure_category="case_not_in_smoke_config",
+                    blocker="case_id not found in docs/_scratch/baseline_smoke_common_core_v0.json",
+                    notes=["selection refused: case is outside the current smoke config"],
+                )
+            )
+            errors.append(
+                {
+                    "type": "case_not_in_smoke_config",
+                    "case_id": case_id,
+                }
+            )
+
+    valid_case_ids = [case_id for case_id in selected_case_ids if case_id in case_index]
+    selected_specs = [case_index[case_id] for case_id in valid_case_ids]
+
+    env_visibility = pg_env_visibility()
+    required_env_visible = all(env_visibility[name] for name in ["PGHOST", "PGPORT", "PGDATABASE", "PGUSER"])
+    pg_password_present = env_visibility["PGPASSWORD"]
+
+    if not args.execute_hard_negative:
+        for case_spec in selected_specs:
+            case_id = case_spec["case_id"]
+            pool = case_spec["pool"]
+            negative_sql_path = pool_case_root(pool) / case_id / "rewrite_neg_01.sql"
+            validation_schema = native_identity_validation_schema(case_id, pool)
+            if pool == "portability":
+                records.append(
+                    build_hard_negative_record(
+                        case_id=case_id,
+                        pool=pool,
+                        negative_sql_path=negative_sql_path,
+                        validation_schema=validation_schema,
+                        search_path_after_set="",
+                        statement_timeout_ms=args.statement_timeout_ms,
+                        execution_mode="dry_run",
+                        execution_status="skipped",
+                        pg_env_visible=required_env_visible,
+                        pg_password_present="unknown",
+                        failure_category="port_case_not_enabled",
+                        blocker="PORT cases are intentionally skipped for the first PG hard-negative canary",
+                        notes=["dry-run skip: portability negative rewrites are not enabled in this first PG canary"],
+                    )
+                )
+                continue
+
+            records.append(
+                build_hard_negative_record(
+                    case_id=case_id,
+                    pool=pool,
+                    negative_sql_path=negative_sql_path,
+                    validation_schema=validation_schema,
+                    search_path_after_set="",
+                    statement_timeout_ms=args.statement_timeout_ms,
+                    execution_mode="dry_run",
+                    execution_status="planned",
+                    pg_env_visible=required_env_visible,
+                    pg_password_present="unknown",
+                    failure_category="none",
+                    blocker="",
+                    notes=["dry-run only; no PostgreSQL connection attempted"],
+                )
+            )
+
+        payload = {
+            "command": "baseline-smoke-hard-negative-pg",
+            "ok": not errors,
+            "ran_at_utc": utc_now(),
+            "config_path": relative_to_root(config_path),
+            "engine_scope": "postgres",
+            "baseline_id": "HARD_NEGATIVE_GUARD",
+            "case_count": len(records),
+            "executed_count": 0,
+            "success_count": 0,
+            "failed_count": 0,
+            "skipped_count": sum(1 for record in records if record["execution_status"] == "skipped"),
+            "env_blocked_count": 0,
+            "records": records,
+            "errors": errors,
+            "guardrails": {
+                "mysql_execution": "disabled",
+                "spark_execution": "disabled",
+                "llm_execution": "disabled",
+                "sqlglot_generation": "disabled",
+                "case_artifact_write": "disabled",
+            },
+        }
+        write_baseline_smoke_report("hard_negative_guard_pg_v0.json", payload)
+        return print_and_exit(payload, 0 if payload["ok"] else 1)
+
+    if not required_env_visible:
+        for case_spec in selected_specs:
+            case_id = case_spec["case_id"]
+            pool = case_spec["pool"]
+            negative_sql_path = pool_case_root(pool) / case_id / "rewrite_neg_01.sql"
+            validation_schema = native_identity_validation_schema(case_id, pool)
+            records.append(
+                build_hard_negative_record(
+                    case_id=case_id,
+                    pool=pool,
+                    negative_sql_path=negative_sql_path,
+                    validation_schema=validation_schema,
+                    search_path_after_set="",
+                    statement_timeout_ms=args.statement_timeout_ms,
+                    execution_mode="pg_execute_negative",
+                    execution_status="env_blocked",
+                    pg_env_visible=False,
+                    pg_password_present=pg_password_present,
+                    failure_category="missing_pg_env",
+                    blocker="required PostgreSQL environment variables are not fully visible",
+                    notes=["execution not attempted", "required env: PGHOST, PGPORT, PGDATABASE, PGUSER"],
+                )
+            )
+        payload = {
+            "command": "baseline-smoke-hard-negative-pg",
+            "ok": False,
+            "ran_at_utc": utc_now(),
+            "config_path": relative_to_root(config_path),
+            "engine_scope": "postgres",
+            "baseline_id": "HARD_NEGATIVE_GUARD",
+            "case_count": len(records),
+            "executed_count": 0,
+            "success_count": 0,
+            "failed_count": 0,
+            "skipped_count": 0,
+            "env_blocked_count": len(records),
+            "records": records,
+            "errors": errors,
+            "env_visibility": env_visibility,
+            "guardrails": {
+                "mysql_execution": "disabled",
+                "spark_execution": "disabled",
+                "llm_execution": "disabled",
+                "sqlglot_generation": "disabled",
+                "case_artifact_write": "disabled",
+            },
+        }
+        write_baseline_smoke_report("hard_negative_guard_pg_env_blocked_v0.json", payload)
+        return print_and_exit(payload, 1)
+
+    try:
+        psycopg = importlib.import_module("psycopg")
+    except ModuleNotFoundError:
+        for case_spec in selected_specs:
+            case_id = case_spec["case_id"]
+            pool = case_spec["pool"]
+            negative_sql_path = pool_case_root(pool) / case_id / "rewrite_neg_01.sql"
+            validation_schema = native_identity_validation_schema(case_id, pool)
+            if pool == "portability":
+                records.append(
+                    build_hard_negative_record(
+                        case_id=case_id,
+                        pool=pool,
+                        negative_sql_path=negative_sql_path,
+                        validation_schema=validation_schema,
+                        search_path_after_set="",
+                        statement_timeout_ms=args.statement_timeout_ms,
+                        execution_mode="pg_execute_negative",
+                        execution_status="skipped",
+                        pg_env_visible=True,
+                        pg_password_present=pg_password_present,
+                        failure_category="port_case_not_enabled",
+                        blocker="PORT cases are intentionally skipped for the first PG hard-negative canary",
+                        notes=["execution skip: portability negative rewrites are not enabled in this canary"],
+                    )
+                )
+            else:
+                records.append(
+                    build_hard_negative_record(
+                        case_id=case_id,
+                        pool=pool,
+                        negative_sql_path=negative_sql_path,
+                        validation_schema=validation_schema,
+                        search_path_after_set="",
+                        statement_timeout_ms=args.statement_timeout_ms,
+                        execution_mode="pg_execute_negative",
+                        execution_status="failed",
+                        pg_env_visible=True,
+                        pg_password_present=pg_password_present,
+                        failure_category="psycopg_unavailable",
+                        blocker="psycopg is not installed in the current environment",
+                        notes=["execution not attempted because no PostgreSQL client library is available"],
+                    )
+                )
+        payload = {
+            "command": "baseline-smoke-hard-negative-pg",
+            "ok": False,
+            "ran_at_utc": utc_now(),
+            "config_path": relative_to_root(config_path),
+            "engine_scope": "postgres",
+            "baseline_id": "HARD_NEGATIVE_GUARD",
+            "case_count": len(records),
+            "executed_count": 0,
+            "success_count": 0,
+            "failed_count": sum(1 for record in records if record["execution_status"] == "failed"),
+            "skipped_count": sum(1 for record in records if record["execution_status"] == "skipped"),
+            "env_blocked_count": 0,
+            "records": records,
+            "errors": errors,
+            "guardrails": {
+                "mysql_execution": "disabled",
+                "spark_execution": "disabled",
+                "llm_execution": "disabled",
+                "sqlglot_generation": "disabled",
+                "case_artifact_write": "disabled",
+            },
+        }
+        write_baseline_smoke_report("hard_negative_guard_pg_v0.json", payload)
+        return print_and_exit(payload, 1)
+
+    for case_spec in selected_specs:
+        case_id = case_spec["case_id"]
+        pool = case_spec["pool"]
+        negative_sql_path = pool_case_root(pool) / case_id / "rewrite_neg_01.sql"
+        validation_schema = native_identity_validation_schema(case_id, pool)
+
+        if pool == "portability":
+            records.append(
+                build_hard_negative_record(
+                    case_id=case_id,
+                    pool=pool,
+                    negative_sql_path=negative_sql_path,
+                    validation_schema=validation_schema,
+                    search_path_after_set="",
+                    statement_timeout_ms=args.statement_timeout_ms,
+                    execution_mode="pg_execute_negative",
+                    execution_status="skipped",
+                    pg_env_visible=True,
+                    pg_password_present=pg_password_present,
+                    failure_category="port_case_not_enabled",
+                    blocker="PORT cases are intentionally skipped for the first PG hard-negative canary",
+                    notes=["execution skip: portability negative rewrites are not enabled in this canary"],
+                )
+            )
+            continue
+
+        if not negative_sql_path.is_file():
+            records.append(
+                build_hard_negative_record(
+                    case_id=case_id,
+                    pool=pool,
+                    negative_sql_path=negative_sql_path,
+                    validation_schema=validation_schema,
+                    search_path_after_set="",
+                    statement_timeout_ms=args.statement_timeout_ms,
+                    execution_mode="pg_execute_negative",
+                    execution_status="failed",
+                    pg_env_visible=True,
+                    pg_password_present=pg_password_present,
+                    failure_category="missing_negative_sql",
+                    blocker="rewrite_neg_01.sql is missing",
+                    notes=["execution not attempted because rewrite_neg_01.sql is absent"],
+                )
+            )
+            continue
+
+        sql_text = negative_sql_path.read_text(encoding="utf-8")
+        start = time.perf_counter()
+        search_path_after_set = ""
+        try:
+            with psycopg.connect(
+                host=os.environ["PGHOST"],
+                port=os.environ["PGPORT"],
+                dbname=os.environ["PGDATABASE"],
+                user=os.environ["PGUSER"],
+                password=os.environ.get("PGPASSWORD"),
+                options=(
+                    f"-c statement_timeout={args.statement_timeout_ms} "
+                    "-c default_transaction_read_only=on"
+                ),
+            ) as conn:
+                with conn.cursor() as cur:
+                    if validation_schema:
+                        cur.execute("SELECT to_regnamespace(%s)", (validation_schema,))
+                        schema_name = cur.fetchone()[0]
+                        if not schema_name:
+                            records.append(
+                                build_hard_negative_record(
+                                    case_id=case_id,
+                                    pool=pool,
+                                    negative_sql_path=negative_sql_path,
+                                    validation_schema=validation_schema,
+                                    search_path_after_set="",
+                                    statement_timeout_ms=args.statement_timeout_ms,
+                                    execution_mode="pg_execute_negative",
+                                    execution_status="failed",
+                                    pg_env_visible=True,
+                                    pg_password_present=pg_password_present,
+                                    failure_category="missing_validation_schema",
+                                    blocker="derived validation schema does not exist in PostgreSQL",
+                                    notes=["execution attempted", "search_path not set because validation schema was missing"],
+                                    runtime_ms=int((time.perf_counter() - start) * 1000),
+                                    error_message=f"validation schema not found: {validation_schema}",
+                                )
+                            )
+                            continue
+                        cur.execute(
+                            psycopg.sql.SQL("SET search_path TO {}, public").format(
+                                psycopg.sql.Identifier(validation_schema)
+                            )
+                        )
+                        cur.execute("SHOW search_path")
+                        search_path_after_set = str(cur.fetchone()[0])
+                    cur.execute(sql_text)
+                    if cur.description is not None:
+                        rows = cur.fetchall()
+                        row_count = len(rows)
+                    else:
+                        row_count = cur.rowcount if cur.rowcount >= 0 else None
+            runtime_ms = int((time.perf_counter() - start) * 1000)
+            records.append(
+                build_hard_negative_record(
+                    case_id=case_id,
+                    pool=pool,
+                    negative_sql_path=negative_sql_path,
+                    validation_schema=validation_schema,
+                    search_path_after_set=search_path_after_set,
+                    statement_timeout_ms=args.statement_timeout_ms,
+                    execution_mode="pg_execute_negative",
+                    execution_status="success",
+                    pg_env_visible=True,
+                    pg_password_present=pg_password_present,
+                    failure_category="none",
+                    blocker="",
+                    notes=["rewrite_neg_01.sql executed under read-only PG hard-negative mode"],
+                    row_count=row_count,
+                    runtime_ms=runtime_ms,
+                )
+            )
+        except Exception as exc:
+            runtime_ms = int((time.perf_counter() - start) * 1000)
+            records.append(
+                build_hard_negative_record(
+                    case_id=case_id,
+                    pool=pool,
+                    negative_sql_path=negative_sql_path,
+                    validation_schema=validation_schema,
+                    search_path_after_set=search_path_after_set,
+                    statement_timeout_ms=args.statement_timeout_ms,
+                    execution_mode="pg_execute_negative",
+                    execution_status="failed",
+                    pg_env_visible=True,
+                    pg_password_present=pg_password_present,
+                    failure_category=type(exc).__name__,
+                    blocker="PostgreSQL hard-negative canary execution failed",
+                    notes=["execution attempted", "no case-local artifacts were written"],
+                    runtime_ms=runtime_ms,
+                    error_message=str(exc),
+                )
+            )
+
+    payload = {
+        "command": "baseline-smoke-hard-negative-pg",
+        "ok": not errors and not any(record["execution_status"] == "failed" for record in records),
+        "ran_at_utc": utc_now(),
+        "config_path": relative_to_root(config_path),
+        "engine_scope": "postgres",
+        "baseline_id": "HARD_NEGATIVE_GUARD",
+        "case_count": len(records),
+        "executed_count": sum(1 for record in records if record["execution_status"] in {"success", "failed"}),
+        "success_count": sum(1 for record in records if record["execution_status"] == "success"),
+        "failed_count": sum(1 for record in records if record["execution_status"] == "failed"),
+        "skipped_count": sum(1 for record in records if record["execution_status"] == "skipped"),
+        "env_blocked_count": 0,
+        "records": records,
+        "errors": errors,
+        "env_visibility": env_visibility,
+        "guardrails": {
+            "mysql_execution": "disabled",
+            "spark_execution": "disabled",
+            "llm_execution": "disabled",
+            "sqlglot_generation": "disabled",
+            "case_artifact_write": "disabled",
+        },
+    }
+    write_baseline_smoke_report("hard_negative_guard_pg_v0.json", payload)
     return print_and_exit(payload, 0 if payload["ok"] else 1)
 
 
@@ -3089,6 +3558,21 @@ def build_parser() -> argparse.ArgumentParser:
         default=False,
     )
     human_positive_pg_parser.set_defaults(func=cmd_baseline_smoke_human_positive_pg)
+
+    hard_negative_pg_parser = subparsers.add_parser("baseline-smoke-hard-negative-pg")
+    hard_negative_pg_parser.add_argument(
+        "--config",
+        default="docs/_scratch/baseline_smoke_common_core_v0.json",
+    )
+    hard_negative_pg_parser.add_argument("--case-id", action="append", default=[])
+    hard_negative_pg_parser.add_argument("--statement-timeout-ms", type=int, default=30000)
+    hard_negative_pg_parser.add_argument("--execute", action="store_true", default=False)
+    hard_negative_pg_parser.add_argument(
+        "--execute-hard-negative",
+        action="store_true",
+        default=False,
+    )
+    hard_negative_pg_parser.set_defaults(func=cmd_baseline_smoke_hard_negative_pg)
 
     return parser
 
