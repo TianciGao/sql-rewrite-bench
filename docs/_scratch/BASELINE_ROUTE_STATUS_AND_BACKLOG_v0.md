@@ -27,7 +27,7 @@ This document is not:
 | Step 4b | LLM translate | partial but clean subset passed | PORT smoke route | prompt dry-run 3 / 3; clean PORT canary subset 2 / 2 passed for `PORT_0004` and `PORT_0022`; `total_token_usage=912` | clean subset established; `PORT_0012` held for separate comparison | continue only with bounded failure analysis |
 | Step 5 | LearnedRewrite | readiness-only complete | first-subset and PG-native-9 audit scope | readiness audit complete; input-readiness scaffold complete; first-subset `4`, maybe_later `5`; no inference/rewrite/execution attempted | subset-only candidate, artifact stack missing, not execution-ready | execution deferred; use as subset-only candidate after artifact/adapter path exists |
 | Step 6 | GenRewrite | readiness-only complete | first-subset and PG-native-9 audit scope | readiness audit complete; input/cost-readiness scaffold complete; first-subset `4`, maybe_later `5`; likely_cost_risk `medium: 6`, `high: 3`; no model/correction/verifier/executor-feedback attempted | frontier appendix / subset-only candidate, control stack missing, not execution-ready | execution deferred until correction-loop, verifier, retry, cost, and prompt/rule policies are frozen |
-| Step 7 | R-Bot / LLM-R2 | not started | future baseline family | no readiness audit yet | retrieval/demo/rule-pool assumptions untested | defer until audit scope is defined |
+| Step 7 | R-Bot / LLM-R2 | readiness-only complete | first-subset and PG-native-9 audit scope | readiness audit complete; retrieval-readiness scaffold complete; first-subset `4`, maybe_later `5`; likely_retrieval_cost_risk `medium: 6`, `high: 3`; no execution/model/retrieval/demo-selection/rerank attempted | retrieval-dependent appendix / subset-only candidate, retrieval/demo/rule-pool stack missing, not execution-ready | execution deferred until retrieval corpus, demo/rule pool, contamination policy, rerank policy, and fair comparison contract exist |
 | Step 8 | SlabCity | not started | frontier exception line | no readiness audit yet | frontier exception, not near-term baseline route | defer |
 | Step 9 | SQLSolver / VeriEQL support | not started | support / analysis line | no readiness audit yet | support analysis, not main leaderboard route | defer behind main-route audits |
 
@@ -113,6 +113,36 @@ This document is not:
   - `executor_feedback_attempted_count: 0`
   - control stack missing.
   - not runnable as a baseline yet.
+- Step 7 R-Bot / LLM-R2:
+  - readiness audit complete.
+  - retrieval-readiness scaffold complete.
+  - command added:
+    - `python -m scripts.cli baseline-smoke-rbot-llmr2-readiness`
+  - first-subset candidate count: `4`
+  - PG-native-9 result:
+    - `first_subset_candidate: 4`
+    - `maybe_later: 5`
+  - likely_retrieval_cost_risk:
+    - `medium: 6`
+    - `high: 3`
+  - first-subset candidate cases:
+    - `PERF_0006`
+    - `PERF_0008`
+    - `PERF_0033`
+    - `PERF_0054`
+  - `maybe_later` cases:
+    - `PERF_0013`
+    - `PERF_0017`
+    - `PERF_0024`
+    - `CONS_0007`
+    - `CONS_0012`
+  - `execution_attempted_count: 0`
+  - `model_call_attempted_count: 0`
+  - `retrieval_attempted_count: 0`
+  - `demo_selection_attempted_count: 0`
+  - `rerank_attempted_count: 0`
+  - retrieval/demo/rule-pool stack missing.
+  - not runnable as a baseline yet.
 
 ## 4. Claim Boundaries
 
@@ -135,7 +165,7 @@ This document is not:
 - `PORT_0012` remains held out of the clean LLM translate subset pending failure-analysis comparison.
 - LearnedRewrite readiness audit and input-readiness scaffold are complete, but execution is blocked by missing adapter/checkpoints/inference path/dependency file/artifact path.
 - GenRewrite readiness audit and input/cost-readiness scaffold are complete, but execution is blocked by missing correction-loop implementation, verifier/executor-feedback loop, n-best/rerank path, retry/correction-round budget, frozen prompt/rule library, and cost policy.
-- R-Bot / LLM-R2 still requires retrieval/demo/rule-pool readiness audit.
+- R-Bot / LLM-R2 readiness audit and retrieval-readiness scaffold are complete, but execution is blocked by missing retrieval corpus/index, demo pool, rule pool, rerank policy, embedding/vector path, demo/retrieval count policy, contamination policy, and fair comparison contract.
 - SlabCity remains a frontier exception line, not a near-term baseline route.
 - SQLSolver / VeriEQL support remains a support-analysis line, not a main leaderboard route.
 
@@ -154,9 +184,11 @@ This document is not:
   - frontier appendix / subset-only candidate
   - future work requires correction-loop, verifier, retry, cost, and prompt/rule policies
 - Step 7 R-Bot / LLM-R2:
-  - not started
-  - later
-  - requires retrieval/demo/rule pool audit
+  - readiness audit complete
+  - retrieval-readiness scaffold complete
+  - execution deferred
+  - retrieval-dependent appendix / subset-only candidate
+  - future work requires retrieval corpus, demo/rule pool, contamination policy, rerank policy, and fair comparison contract
 - Step 8 SlabCity:
   - not started
   - frontier exception
@@ -166,7 +198,7 @@ This document is not:
 
 ## 7. Recommended Next Action
 
-- Run an R-Bot / LLM-R2 readiness audit.
+- Run a SlabCity readiness audit.
 
 ## 8. Non-Goals
 
