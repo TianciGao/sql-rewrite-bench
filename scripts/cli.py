@@ -595,6 +595,22 @@ def build_control_record(case_spec: dict[str, Any], baseline_id: str) -> tuple[d
     return record, warnings
 
 
+def issue_view(record: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "baseline_id": record.get("baseline_id", ""),
+        "case_id": record.get("case_id", ""),
+        "pool": record.get("pool", ""),
+        "variant_id": record.get("variant_id", ""),
+        "failure_category": record.get("failure_category", ""),
+        "blocker": record.get("blocker", ""),
+        "result_consistency_status": record.get("result_consistency_status", ""),
+        "negative_rejection_status": record.get("negative_rejection_status", ""),
+        "plan_collection_status": record.get("plan_collection_status", ""),
+        "execution_mode": record.get("execution_mode", ""),
+        "artifact_claim_boundary": record.get("artifact_claim_boundary", ""),
+    }
+
+
 def cmd_baseline_smoke_control_records(args: argparse.Namespace) -> int:
     if args.execute:
         payload = {
@@ -696,6 +712,206 @@ def cmd_baseline_smoke_control_records(args: argparse.Namespace) -> int:
     }
     write_baseline_smoke_report("control_records_common_core_v0.json", payload)
     return print_and_exit(payload, 0)
+
+
+def cmd_baseline_smoke_control_summary(args: argparse.Namespace) -> int:
+    if args.execute:
+        payload = {
+            "command": "baseline-smoke-control-summary",
+            "cwd": str(ROOT),
+            "ok": False,
+            "ran_at_utc": utc_now(),
+            "input_path": relative_to_root(resolve_repo_path(args.input)),
+            "execution_mode": "execute_requested_but_blocked",
+            "message": "Execution is not supported for control summary. This command only summarizes an existing artifact report.",
+            "errors": [
+                {
+                    "type": "execution_not_supported",
+                    "message": "baseline-smoke-control-summary is read-only and does not support execution mode",
+                }
+            ],
+        }
+        write_baseline_smoke_report("control_records_summary_execute_refused_common_core_v0.json", payload)
+        return print_and_exit(payload, 1)
+
+    input_path = resolve_repo_path(args.input)
+    output_name = args.output
+    errors: list[dict[str, Any]] = []
+
+    if not input_path.is_file():
+        payload = {
+            "command": "baseline-smoke-control-summary",
+            "cwd": str(ROOT),
+            "ok": False,
+            "ran_at_utc": utc_now(),
+            "input_path": relative_to_root(input_path),
+            "output_path": f"reports/baseline_smoke/{output_name}",
+            "message": "Input control-record report does not exist.",
+            "errors": [
+                {
+                    "type": "missing_input_report",
+                    "path": relative_to_root(input_path),
+                }
+            ],
+        }
+        write_baseline_smoke_report(output_name, payload)
+        return print_and_exit(payload, 1)
+
+    try:
+        source_report = load_json(input_path)
+    except (json.JSONDecodeError, OSError) as exc:
+        payload = {
+            "command": "baseline-smoke-control-summary",
+            "cwd": str(ROOT),
+            "ok": False,
+            "ran_at_utc": utc_now(),
+            "input_path": relative_to_root(input_path),
+            "output_path": f"reports/baseline_smoke/{output_name}",
+            "message": "Input control-record report could not be parsed.",
+            "errors": [
+                {
+                    "type": "invalid_input_report",
+                    "detail": str(exc),
+                }
+            ],
+        }
+        write_baseline_smoke_report(output_name, payload)
+        return print_and_exit(payload, 1)
+
+    required_fields = ["records", "case_count", "baseline_count", "record_count", "execution_mode"]
+    missing_fields = [field for field in required_fields if field not in source_report]
+    if missing_fields:
+        payload = {
+            "command": "baseline-smoke-control-summary",
+            "cwd": str(ROOT),
+            "ok": False,
+            "ran_at_utc": utc_now(),
+            "input_path": relative_to_root(input_path),
+            "output_path": f"reports/baseline_smoke/{output_name}",
+            "message": "Input control-record report is missing required fields.",
+            "errors": [
+                {
+                    "type": "missing_required_fields",
+                    "fields": missing_fields,
+                }
+            ],
+        }
+        write_baseline_smoke_report(output_name, payload)
+        return print_and_exit(payload, 1)
+
+    records = source_report.get("records")
+    if not isinstance(records, list):
+        payload = {
+            "command": "baseline-smoke-control-summary",
+            "cwd": str(ROOT),
+            "ok": False,
+            "ran_at_utc": utc_now(),
+            "input_path": relative_to_root(input_path),
+            "output_path": f"reports/baseline_smoke/{output_name}",
+            "message": "Input control-record report has a non-list records field.",
+            "errors": [
+                {
+                    "type": "invalid_records_field",
+                    "actual_type": type(records).__name__,
+                }
+            ],
+        }
+        write_baseline_smoke_report(output_name, payload)
+        return print_and_exit(payload, 1)
+
+    missing_result_evidence_records = [
+        issue_view(record)
+        for record in records
+        if record.get("baseline_id") in {"NATIVE_IDENTITY", "HUMAN_REFERENCE_POSITIVE"}
+        and record.get("result_consistency_status") == "missing_evidence"
+    ]
+    missing_negative_evidence_records = [
+        issue_view(record)
+        for record in records
+        if record.get("baseline_id") == "HARD_NEGATIVE_GUARD"
+        and record.get("negative_rejection_status") == "missing_evidence"
+    ]
+    missing_plan_evidence_records = [
+        issue_view(record)
+        for record in records
+        if record.get("plan_collection_status") == "missing_evidence"
+    ]
+    blocked_records = [
+        issue_view(record)
+        for record in records
+        if record.get("blocker")
+    ]
+    non_none_failure_records = [
+        issue_view(record)
+        for record in records
+        if record.get("failure_category") not in {"", "none"}
+    ]
+    unexpected_execution_mode_records = [
+        issue_view(record)
+        for record in records
+        if record.get("execution_mode") != "artifact_record_only"
+    ]
+    unexpected_artifact_boundary_records = [
+        issue_view(record)
+        for record in records
+        if record.get("artifact_claim_boundary") != "existing_artifact_only_no_execution"
+    ]
+
+    if source_report.get("record_count") != len(records):
+        errors.append(
+            {
+                "type": "record_count_mismatch",
+                "expected": source_report.get("record_count"),
+                "actual": len(records),
+            }
+        )
+
+    ok = not any(
+        [
+            errors,
+            non_none_failure_records,
+            unexpected_execution_mode_records,
+            unexpected_artifact_boundary_records,
+            missing_plan_evidence_records,
+            missing_result_evidence_records,
+            missing_negative_evidence_records,
+        ]
+    )
+
+    payload = {
+        "command": "baseline-smoke-control-summary",
+        "ok": ok,
+        "ran_at_utc": utc_now(),
+        "input_path": relative_to_root(input_path),
+        "output_path": f"reports/baseline_smoke/{output_name}",
+        "source_report_execution_mode": source_report.get("execution_mode", ""),
+        "case_count": source_report.get("case_count", 0),
+        "baseline_count": source_report.get("baseline_count", 0),
+        "record_count": source_report.get("record_count", 0),
+        "baseline_ids": source_report.get("baseline_ids", []),
+        "case_ids": source_report.get("cases", []),
+        "counts_by_baseline_id": count_values(records, "baseline_id"),
+        "counts_by_case_id": count_values(records, "case_id"),
+        "counts_by_pool": count_values(records, "pool"),
+        "counts_by_result_consistency_status": count_values(records, "result_consistency_status"),
+        "counts_by_negative_rejection_status": count_values(records, "negative_rejection_status"),
+        "counts_by_plan_collection_status": count_values(records, "plan_collection_status"),
+        "counts_by_failure_category": count_values(records, "failure_category"),
+        "counts_by_result_evidence_scope": count_values(records, "result_evidence_scope"),
+        "counts_by_plan_evidence_scope": count_values(records, "plan_evidence_scope"),
+        "counts_by_artifact_claim_boundary": count_values(records, "artifact_claim_boundary"),
+        "missing_result_evidence_records": missing_result_evidence_records,
+        "missing_negative_evidence_records": missing_negative_evidence_records,
+        "missing_plan_evidence_records": missing_plan_evidence_records,
+        "blocked_records": blocked_records,
+        "non_none_failure_records": non_none_failure_records,
+        "unexpected_execution_mode_records": unexpected_execution_mode_records,
+        "unexpected_artifact_boundary_records": unexpected_artifact_boundary_records,
+        "warnings": source_report.get("warnings", []),
+        "errors": errors,
+    }
+    write_baseline_smoke_report(output_name, payload)
+    return print_and_exit(payload, 0 if ok else 1)
 
 
 def cmd_baseline_smoke_preflight(args: argparse.Namespace) -> int:
@@ -1857,6 +2073,18 @@ def build_parser() -> argparse.ArgumentParser:
     )
     control_records_parser.add_argument("--execute", action="store_true", default=False)
     control_records_parser.set_defaults(func=cmd_baseline_smoke_control_records)
+
+    control_summary_parser = subparsers.add_parser("baseline-smoke-control-summary")
+    control_summary_parser.add_argument(
+        "--input",
+        default="reports/baseline_smoke/control_records_common_core_v0.json",
+    )
+    control_summary_parser.add_argument(
+        "--output",
+        default="control_records_summary_common_core_v0.json",
+    )
+    control_summary_parser.add_argument("--execute", action="store_true", default=False)
+    control_summary_parser.set_defaults(func=cmd_baseline_smoke_control_summary)
 
     return parser
 
