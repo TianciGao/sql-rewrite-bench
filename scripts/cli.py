@@ -357,13 +357,29 @@ def extract_sql_like_output(raw_output: str) -> tuple[str, str]:
     if text.startswith("```"):
         text = re.sub(r"^```[A-Za-z0-9_-]*\n?", "", text)
         text = re.sub(r"\n?```$", "", text).strip()
-    compact = text.lstrip()
+    compact = text.strip()
     upper = compact.upper()
-    if upper.startswith("SELECT ") or upper.startswith("WITH "):
-        if "\n\n" in text or "EXPLANATION" in upper or "HERE IS" in upper:
-            return "needs_manual_review", text[:700]
-        return "extracted", text[:700]
-    return "needs_manual_review", text[:700]
+    if not re.match(r"^(SELECT|WITH)\b", upper):
+        return "needs_manual_review", text[:700]
+    if "EXPLANATION" in upper or "HERE IS" in upper or "SQL QUERY" in upper:
+        return "needs_manual_review", text[:700]
+    if re.search(r"\n\s*\n", compact):
+        return "needs_manual_review", text[:700]
+    semicolon_count = compact.count(";")
+    if semicolon_count > 1:
+        return "needs_manual_review", text[:700]
+    if semicolon_count == 1 and not compact.endswith(";"):
+        return "needs_manual_review", text[:700]
+    trailing = compact[:-1].rstrip() if compact.endswith(";") else compact
+    if ";" in trailing:
+        return "needs_manual_review", text[:700]
+    if re.search(r"\b(SELECT|WITH)\b.*\b(SELECT|WITH)\b", upper, flags=re.DOTALL):
+        first = re.match(r"^(SELECT|WITH)\b", upper)
+        if first:
+            remainder = upper[first.end():]
+            if re.search(r"\n\s*(SELECT|WITH)\b", remainder):
+                return "needs_manual_review", text[:700]
+    return "extracted", text[:700]
 
 
 def resolve_llm_endpoint_config(
