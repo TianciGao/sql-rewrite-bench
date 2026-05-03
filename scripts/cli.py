@@ -10677,6 +10677,395 @@ def cmd_formal_common_core_method_plan_collection_preflight(args: argparse.Names
     return print_and_exit(payload, 0 if payload["ok"] else 1)
 
 
+def cmd_formal_common_core_method_plan_collection(args: argparse.Namespace) -> int:
+    output_name = normalize_formal_common_core_output_name(args.output)
+    selected_route = str(args.route or "").strip().upper()
+    valid_routes = {
+        "SQLGLOT_OPT_SAME_DIALECT": {
+            "baseline_id": "SQLGLOT_OPT_SAME_DIALECT",
+            "route": "sqlglot_opt_same_dialect",
+            "report_path": FORMAL_COMMON_CORE_REPORT_DIR / "sqlglot_opt_same_dialect_execution_v0.json",
+            "sql_field": "generated_sql_text",
+            "sql_len_field": "generated_sql_character_count",
+            "status_field": "execution_status",
+            "plan_dir": FORMAL_COMMON_CORE_REPORT_DIR / "plans" / "sqlglot_opt_same_dialect",
+        },
+        "LLM_DIRECT_REWRITE_STRONG": {
+            "baseline_id": "LLM_DIRECT_REWRITE_STRONG",
+            "route": "llm_direct_rewrite",
+            "report_path": FORMAL_COMMON_CORE_REPORT_DIR / "llm_direct_rewrite_execution_v0.json",
+            "sql_field": "extracted_sql_text",
+            "sql_len_field": "extracted_sql_character_count",
+            "status_field": "pg_execution_status",
+            "plan_dir": FORMAL_COMMON_CORE_REPORT_DIR / "plans" / "llm_direct_rewrite",
+        },
+    }
+
+    def resolve_plan_collection_candidate_sql(
+        baseline_id: str,
+        case_id: str,
+        execution_record: dict[str, Any] | None,
+    ) -> tuple[str, str, int | None, str, bool]:
+        execution_record = execution_record or {}
+        if baseline_id == "SQLGLOT_OPT_SAME_DIALECT":
+            generated_sql_text = str(execution_record.get("generated_sql_text") or "").strip()
+            generated_sql_preview = str(execution_record.get("generated_sql_preview") or "").strip()
+            if generated_sql_text:
+                return (
+                    generated_sql_text,
+                    "formal_execution.generated_sql_text",
+                    int(execution_record.get("generated_sql_character_count") or len(generated_sql_text)),
+                    generated_sql_preview[:500],
+                    False,
+                )
+            return "", "not_available", None, generated_sql_preview[:500], False
+
+        case_slug = case_id.lower()
+        call_report_path = BASELINE_SMOKE_REPORT_DIR / f"llm_direct_rewrite_call_{case_slug}_v0.json"
+        call_report = load_json_if_present(call_report_path)
+        call_record = ((call_report or {}).get("records") or [{}])[0]
+
+        formal_extracted_sql_text = str(execution_record.get("extracted_sql_text") or "").strip()
+        formal_raw_output_text = str(execution_record.get("raw_output_text") or "").strip()
+        formal_preview = str(execution_record.get("extracted_sql_preview") or execution_record.get("raw_output_preview") or "").strip()
+
+        call_extracted_sql_text = str(call_record.get("extracted_sql_text") or "").strip()
+        call_raw_output_text = str(call_record.get("raw_output_text") or "").strip()
+        call_extracted_sql_preview = str(call_record.get("extracted_sql_preview") or "").strip()
+        call_raw_output_preview = str(call_record.get("raw_output_preview") or "").strip()
+
+        formal_extracted_is_preview_only = bool(
+            formal_extracted_sql_text
+            and call_extracted_sql_text
+            and formal_extracted_sql_text == call_extracted_sql_preview
+            and len(call_extracted_sql_text) > len(formal_extracted_sql_text)
+        )
+
+        if formal_extracted_sql_text and not formal_extracted_is_preview_only:
+            return (
+                formal_extracted_sql_text,
+                "formal_execution.extracted_sql_text",
+                int(execution_record.get("extracted_sql_character_count") or len(formal_extracted_sql_text)),
+                formal_extracted_sql_text[:500],
+                False,
+            )
+        if formal_raw_output_text:
+            return (
+                formal_raw_output_text,
+                "formal_execution.raw_output_text",
+                int(execution_record.get("raw_output_character_count") or len(formal_raw_output_text)),
+                formal_raw_output_text[:500],
+                False,
+            )
+        if call_extracted_sql_text:
+            return (
+                call_extracted_sql_text,
+                "baseline_call.extracted_sql_text",
+                int(call_record.get("extracted_sql_character_count") or len(call_extracted_sql_text)),
+                call_extracted_sql_text[:500],
+                False,
+            )
+        if call_raw_output_text:
+            return (
+                call_raw_output_text,
+                "baseline_call.raw_output_text",
+                int(call_record.get("raw_output_character_count") or len(call_raw_output_text)),
+                call_raw_output_text[:500],
+                False,
+            )
+
+        preview_only = bool(
+            formal_preview
+            or call_extracted_sql_preview
+            or call_raw_output_preview
+        )
+        preview_value = formal_preview or call_extracted_sql_preview or call_raw_output_preview
+        return "", "preview_only_unusable", None, preview_value[:500], preview_only
+
+    if args.execute and selected_route not in valid_routes:
+        payload = {
+            "command": "formal-common-core-method-plan-collection",
+            "ok": False,
+            "ran_at_utc": utc_now(),
+            "output_path": "reports/formal_common_core/method_plan_collection_execute_refused_v0.json",
+            "route": selected_route or "",
+            "claim_boundary": "formal_method_plan_collection_explain_only_not_speedup_or_attribution",
+            "message": "This command requires a valid --route when --execute is provided.",
+            "issues": [
+                {
+                    "type": "invalid_or_missing_route",
+                    "message": "formal-common-core-method-plan-collection --execute requires --route SQLGLOT_OPT_SAME_DIALECT or --route LLM_DIRECT_REWRITE_STRONG",
+                }
+            ],
+            "guardrails": {
+                "database_execution": "explain_only",
+                "case_result_execution": "disabled",
+                "explain_analyze": "disabled",
+                "model_api_call": "disabled",
+                "sqlglot_generation": "disabled",
+                "checker_execution": "disabled",
+                "speedup_scoring": "disabled",
+                "attribution_scoring": "disabled",
+                "case_artifact_write": "disabled",
+                "registry_writeback": "disabled",
+            },
+        }
+        write_formal_common_core_report("method_plan_collection_execute_refused_v0.json", payload)
+        return print_and_exit(payload, 1)
+
+    if selected_route not in valid_routes:
+        payload = {
+            "command": "formal-common-core-method-plan-collection",
+            "ok": False,
+            "ran_at_utc": utc_now(),
+            "output_path": f"reports/formal_common_core/{output_name}",
+            "route": selected_route or "",
+            "issues": [
+                {
+                    "type": "missing_route",
+                    "message": "Provide --route SQLGLOT_OPT_SAME_DIALECT or --route LLM_DIRECT_REWRITE_STRONG",
+                }
+            ],
+            "records": [],
+            "guardrails": {
+                "database_execution": "explain_only",
+                "case_result_execution": "disabled",
+                "explain_analyze": "disabled",
+                "model_api_call": "disabled",
+                "sqlglot_generation": "disabled",
+                "checker_execution": "disabled",
+                "speedup_scoring": "disabled",
+                "attribution_scoring": "disabled",
+                "case_artifact_write": "disabled",
+                "registry_writeback": "disabled",
+            },
+            "claim_boundary": "formal_method_plan_collection_explain_only_not_speedup_or_attribution",
+        }
+        write_formal_common_core_report(output_name, payload)
+        return print_and_exit(payload, 1)
+
+    route_config = valid_routes[selected_route]
+    report = load_json_if_present(route_config["report_path"])
+    issues: list[dict[str, Any]] = []
+    psycopg: Any | None = None
+    if report is None:
+        issues.append(
+            {
+                "type": "missing_method_execution_report",
+                "path": relative_to_root(route_config["report_path"]),
+            }
+        )
+    if args.execute:
+        try:
+            psycopg = importlib.import_module("psycopg")
+        except ModuleNotFoundError:
+            issues.append(
+                {
+                    "type": "missing_psycopg",
+                    "message": "psycopg is required for EXPLAIN-only method plan collection",
+                }
+            )
+
+    report_record_map = {
+        str(record.get("case_id", "")).strip(): record
+        for record in (report or {}).get("records", [])
+        if record.get("case_id")
+    }
+
+    selected_case_ids = args.case_id or formal_common_core_case_ids()
+    case_ids: list[str] = []
+    seen_case_ids: set[str] = set()
+    for case_id in selected_case_ids:
+        normalized_case_id = str(case_id).strip().upper()
+        if not normalized_case_id or normalized_case_id in seen_case_ids:
+            continue
+        seen_case_ids.add(normalized_case_id)
+        case_ids.append(normalized_case_id)
+
+    records: list[dict[str, Any]] = []
+    requested_count = len(case_ids)
+    plan_success_count = 0
+    plan_failed_count = 0
+    plan_written_count = 0
+    plan_json_valid_count = 0
+    skipped_count = 0
+
+    for case_id in case_ids:
+        inferred = case_root_for_case_id(case_id)
+        pool = inferred[0] if inferred else "unknown"
+        record = report_record_map.get(case_id)
+        validation_schema = str((record or {}).get("validation_schema", "")).strip()
+        candidate_sql, candidate_sql_source, candidate_sql_character_count, candidate_sql_preview, preview_only_unusable = (
+            resolve_plan_collection_candidate_sql(route_config["baseline_id"], case_id, record)
+        )
+        candidate_sql_available = bool(candidate_sql)
+
+        plan_output_path = route_config["plan_dir"] / f"{case_id.lower()}.json"
+        explain_execution_status = "dry_run_only"
+        plan_collection_status = "dry_run_ready"
+        plan_written = False
+        plan_json_valid = False
+        runtime_ms: int | None = None
+        failure_category = "none"
+        error_message = ""
+        search_path_after_set = ""
+
+        blockers: list[str] = []
+        if record is None:
+            explain_execution_status = "skipped_missing_execution_report"
+            plan_collection_status = "blocked_missing_execution_report"
+            failure_category = "missing_execution_report"
+            blockers.append("method execution record missing")
+        elif not validation_schema:
+            explain_execution_status = "skipped_missing_validation_schema"
+            plan_collection_status = "blocked_missing_validation_schema_hint"
+            failure_category = "missing_validation_schema"
+            blockers.append("validation schema missing")
+        elif preview_only_unusable:
+            explain_execution_status = "blocked_missing_full_candidate_sql"
+            plan_collection_status = "blocked_missing_full_candidate_sql"
+            failure_category = "truncated_preview_only"
+            blockers.append("only preview text is available; no full candidate SQL is present")
+        elif not candidate_sql_available:
+            explain_execution_status = "skipped_missing_candidate_sql"
+            plan_collection_status = "blocked_missing_full_candidate_sql"
+            failure_category = "missing_candidate_sql"
+            blockers.append("candidate SQL missing from execution report")
+
+        if blockers:
+            skipped_count += 1
+            if args.execute:
+                plan_failed_count += 1
+        elif args.execute and psycopg is None:
+            explain_execution_status = "failed"
+            plan_collection_status = "failed"
+            failure_category = "missing_psycopg"
+            error_message = "psycopg is not available"
+            plan_failed_count += 1
+        elif args.execute:
+            started = time.perf_counter()
+            try:
+                plan_output_path.parent.mkdir(parents=True, exist_ok=True)
+                with psycopg.connect(
+                    host=os.environ.get("PGHOST"),
+                    port=os.environ.get("PGPORT"),
+                    dbname=os.environ.get("PGDATABASE"),
+                    user=os.environ.get("PGUSER"),
+                    password=os.environ.get("PGPASSWORD"),
+                    autocommit=False,
+                ) as conn:
+                    with conn.cursor() as cur:
+                        cur.execute("SET SESSION CHARACTERISTICS AS TRANSACTION READ ONLY")
+                        cur.execute(
+                            "SELECT set_config('statement_timeout', %s, false)",
+                            (str(args.statement_timeout_ms),),
+                        )
+                        cur.execute("SELECT to_regnamespace(%s)", (validation_schema,))
+                        schema_row = cur.fetchone()
+                        if not schema_row or schema_row[0] is None:
+                            raise RuntimeError(f"validation schema not visible: {validation_schema}")
+                        cur.execute(
+                            psycopg.sql.SQL("SET search_path TO {}, public").format(
+                                psycopg.sql.Identifier(validation_schema)
+                            )
+                        )
+                        cur.execute("SHOW search_path")
+                        search_path_row = cur.fetchone()
+                        search_path_after_set = str(search_path_row[0]) if search_path_row else ""
+                        cur.execute(f"EXPLAIN (FORMAT JSON) {candidate_sql}")
+                        explain_row = cur.fetchone()
+                        plan_payload = explain_row[0] if explain_row else None
+                        runtime_ms = int((time.perf_counter() - started) * 1000)
+                        conn.rollback()
+
+                plan_output_path.write_text(
+                    json.dumps(plan_payload, indent=2, ensure_ascii=True) + "\n",
+                    encoding="utf-8",
+                )
+                plan_written = True
+                plan_json_valid = True
+                explain_execution_status = "success"
+                plan_collection_status = "success"
+                failure_category = "none"
+                plan_success_count += 1
+                plan_written_count += 1
+                plan_json_valid_count += 1
+            except Exception as exc:
+                runtime_ms = int((time.perf_counter() - started) * 1000)
+                explain_execution_status = "failed"
+                plan_collection_status = "failed"
+                failure_category = type(exc).__name__
+                error_message = str(exc)
+                plan_failed_count += 1
+        else:
+            explain_execution_status = "dry_run_ready"
+            plan_collection_status = "dry_run_ready"
+
+        records.append(
+            {
+                "case_id": case_id,
+                "pool": pool,
+                "baseline_id": route_config["baseline_id"],
+                "route": route_config["route"],
+                "candidate_sql_available": candidate_sql_available,
+                "candidate_sql_source": candidate_sql_source,
+                "candidate_sql_character_count": candidate_sql_character_count,
+                "candidate_sql_preview": candidate_sql_preview,
+                "validation_schema": validation_schema,
+                "plan_output_path": relative_to_root(plan_output_path),
+                "plan_collection_requested": bool(args.execute),
+                "plan_collection_status": plan_collection_status,
+                "explain_execution_status": explain_execution_status,
+                "plan_written": plan_written,
+                "plan_json_valid": plan_json_valid,
+                "runtime_ms": runtime_ms,
+                "failure_category": failure_category,
+                "error_message": error_message,
+                "search_path_after_set": search_path_after_set,
+                "statement_timeout_ms": args.statement_timeout_ms,
+                "artifact_claim_boundary": "formal_method_plan_collection_explain_only_no_analyze_no_case_result_execution",
+            }
+        )
+
+    if args.execute:
+        ok = plan_failed_count == 0 and requested_count > 0 and len(issues) == 0
+    else:
+        ok = skipped_count == 0 and requested_count > 0 and len(issues) == 0
+
+    payload = {
+        "command": "formal-common-core-method-plan-collection",
+        "ok": ok,
+        "ran_at_utc": utc_now(),
+        "output_path": f"reports/formal_common_core/{output_name}",
+        "route": route_config["route"],
+        "baseline_id": route_config["baseline_id"],
+        "case_count": len(case_ids),
+        "requested_count": requested_count,
+        "plan_success_count": plan_success_count,
+        "plan_failed_count": plan_failed_count,
+        "plan_written_count": plan_written_count,
+        "plan_json_valid_count": plan_json_valid_count,
+        "skipped_count": skipped_count,
+        "records": records,
+        "issues": issues,
+        "guardrails": {
+            "database_execution": "explain_only",
+            "case_result_execution": "disabled",
+            "explain_analyze": "disabled",
+            "model_api_call": "disabled",
+            "sqlglot_generation": "disabled",
+            "checker_execution": "disabled",
+            "speedup_scoring": "disabled",
+            "attribution_scoring": "disabled",
+            "case_artifact_write": "disabled",
+            "registry_writeback": "disabled",
+        },
+        "claim_boundary": "formal_method_plan_collection_explain_only_not_speedup_or_attribution",
+    }
+    write_formal_common_core_report(output_name, payload)
+    return print_and_exit(payload, 0 if payload["ok"] else 1)
+
+
 def cmd_baseline_smoke_llm_call_canary(args: argparse.Namespace) -> int:
     default_output_name = "llm_direct_rewrite_call_canary_v0.json"
     output_name = normalize_baseline_smoke_output_name(default_output_name)
@@ -17414,6 +17803,24 @@ def build_parser() -> argparse.ArgumentParser:
     )
     formal_common_core_method_plan_collection_preflight_parser.add_argument("--execute", action="store_true", default=False)
     formal_common_core_method_plan_collection_preflight_parser.set_defaults(func=cmd_formal_common_core_method_plan_collection_preflight)
+
+    formal_common_core_method_plan_collection_parser = subparsers.add_parser("formal-common-core-method-plan-collection")
+    formal_common_core_method_plan_collection_parser.add_argument(
+        "--route",
+        default="",
+    )
+    formal_common_core_method_plan_collection_parser.add_argument("--case-id", action="append", default=[])
+    formal_common_core_method_plan_collection_parser.add_argument(
+        "--output",
+        default="method_plan_collection_v0.json",
+    )
+    formal_common_core_method_plan_collection_parser.add_argument(
+        "--statement-timeout-ms",
+        type=int,
+        default=30000,
+    )
+    formal_common_core_method_plan_collection_parser.add_argument("--execute", action="store_true", default=False)
+    formal_common_core_method_plan_collection_parser.set_defaults(func=cmd_formal_common_core_method_plan_collection)
 
     sqlglot_transpile_summary_parser = subparsers.add_parser("baseline-smoke-sqlglot-transpile-summary")
     sqlglot_transpile_summary_parser.add_argument(
