@@ -4090,6 +4090,257 @@ def cmd_baseline_smoke_llm_canary_summary(args: argparse.Namespace) -> int:
     return print_and_exit(payload, 0 if ok else 1)
 
 
+def cmd_baseline_smoke_llm_translate_summary(args: argparse.Namespace) -> int:
+    output_name = normalize_baseline_smoke_output_name(args.output)
+    input_paths = {
+        "call": resolve_repo_path(args.call_report),
+        "pg": resolve_repo_path(args.pg_report),
+    }
+    input_report_refs = {name: relative_to_root(path) for name, path in input_paths.items()}
+
+    if args.execute:
+        payload = {
+            "command": "baseline-smoke-llm-translate-summary",
+            "cwd": str(ROOT),
+            "ok": False,
+            "ran_at_utc": utc_now(),
+            "input_reports": input_report_refs,
+            "output_path": "reports/baseline_smoke/llm_direct_translate_summary_execute_refused_v0.json",
+            "claim_boundary": "llm_translate_summary_only_not_translation_correctness_or_execution_scoring",
+            "message": "Execution is not supported for the LLM translate summary. This command only summarizes existing reports.",
+            "issues": [
+                {
+                    "type": "execution_not_supported",
+                    "message": "baseline-smoke-llm-translate-summary is read-only and never executes baselines",
+                }
+            ],
+            "guardrails": {
+                "model_api_call": "disabled_for_summary",
+                "database_execution": "disabled_for_summary",
+                "mysql_execution": "disabled",
+                "spark_execution": "disabled",
+                "sqlglot_generation": "disabled",
+                "generated_sql_execution": "disabled_for_summary",
+                "case_artifact_write": "disabled",
+            },
+        }
+        write_baseline_smoke_report("llm_direct_translate_summary_execute_refused_v0.json", payload)
+        return print_and_exit(payload, 1)
+
+    reports: dict[str, dict[str, Any]] = {}
+    issues: list[dict[str, Any]] = []
+    required_fields = {
+        "call": [
+            "records",
+            "call_success_count",
+            "call_failed_count",
+            "env_blocked_count",
+            "extracted_sql_count",
+            "needs_manual_review_count",
+            "model_label",
+            "provider_mode",
+        ],
+        "pg": [
+            "records",
+            "success_count",
+            "failed_count",
+            "executed_count",
+        ],
+    }
+
+    for name, path in input_paths.items():
+        if not path.is_file():
+            issues.append({"type": "missing_input", "report": name, "path": relative_to_root(path)})
+            continue
+        try:
+            report = load_json(path)
+        except (json.JSONDecodeError, OSError) as exc:
+            issues.append(
+                {
+                    "type": "malformed_input",
+                    "report": name,
+                    "path": relative_to_root(path),
+                    "detail": str(exc),
+                }
+            )
+            continue
+        missing_fields = [field for field in required_fields[name] if field not in report]
+        if missing_fields:
+            issues.append(
+                {
+                    "type": "missing_required_fields",
+                    "report": name,
+                    "path": relative_to_root(path),
+                    "fields": missing_fields,
+                }
+            )
+            continue
+        if not isinstance(report.get("records"), list):
+            issues.append(
+                {
+                    "type": "malformed_input",
+                    "report": name,
+                    "path": relative_to_root(path),
+                    "detail": "records field is not a list",
+                }
+            )
+            continue
+        reports[name] = report
+
+    def index_records(report: dict[str, Any] | None) -> dict[str, dict[str, Any]]:
+        if not report:
+            return {}
+        return {
+            record.get("case_id", ""): record
+            for record in report.get("records", [])
+            if isinstance(record, dict) and record.get("case_id")
+        }
+
+    call_records = index_records(reports.get("call"))
+    pg_records = index_records(reports.get("pg"))
+    call_case_ids = sorted(call_records)
+    pg_case_ids = sorted(pg_records)
+
+    if len(call_case_ids) != 1:
+        issues.append({"type": "expected_single_call_case", "actual_case_ids": call_case_ids})
+    if len(pg_case_ids) != 1:
+        issues.append({"type": "expected_single_pg_case", "actual_case_ids": pg_case_ids})
+
+    case_id = ""
+    if len(call_case_ids) == 1 and len(pg_case_ids) == 1:
+        if call_case_ids[0] != pg_case_ids[0]:
+            issues.append(
+                {
+                    "type": "shared_case_id_mismatch",
+                    "call_case_id": call_case_ids[0],
+                    "pg_case_id": pg_case_ids[0],
+                }
+            )
+        else:
+            case_id = call_case_ids[0]
+
+    call_record = call_records.get(case_id, {}) if case_id else {}
+    pg_record = pg_records.get(case_id, {}) if case_id else {}
+
+    if case_id and not call_record:
+        issues.append({"type": "missing_call_record", "case_id": case_id})
+    if case_id and not pg_record:
+        issues.append({"type": "missing_pg_record", "case_id": case_id})
+
+    call_status = call_record.get("call_status", "")
+    extracted_sql_status = call_record.get("extracted_sql_status", "")
+    pg_execution_status = pg_record.get("execution_status", "")
+    pg_failure_category = pg_record.get("failure_category", "")
+    pg_row_count = pg_record.get("row_count")
+    pg_runtime_ms = pg_record.get("runtime_ms")
+    validation_schema = pg_record.get("validation_schema", "")
+    search_path_after_set = pg_record.get("search_path_after_set", "")
+    source_dialect = call_record.get("source_dialect") or pg_record.get("source_dialect", "")
+    target_dialect = call_record.get("target_dialect") or pg_record.get("target_dialect", "")
+    model_label = call_record.get("model_label") or pg_record.get("model_label", "")
+    provider_mode = call_record.get("provider_mode") or pg_record.get("provider_mode", "")
+    token_usage_input = call_record.get("token_usage_input")
+    token_usage_output = call_record.get("token_usage_output")
+    token_usage_total = call_record.get("token_usage_total")
+
+    if not case_id:
+        canary_layer_status = "mixed"
+    elif not call_record:
+        canary_layer_status = "missing_call_record"
+    elif not pg_record:
+        canary_layer_status = "missing_pg_record"
+    elif call_status != "success":
+        canary_layer_status = "call_failed"
+    elif pg_execution_status != "success":
+        canary_layer_status = "call_succeeded_pg_failed"
+    elif call_status == "success" and extracted_sql_status == "extracted" and pg_execution_status == "success":
+        canary_layer_status = "call_and_pg_execution_succeeded"
+    else:
+        canary_layer_status = "mixed"
+
+    if canary_layer_status == "call_and_pg_execution_succeeded":
+        row_count_observation = "llm_translate_row_count_recorded" if pg_row_count is not None else "missing_row_count"
+    elif case_id and pg_record and pg_row_count is None and pg_execution_status == "success":
+        row_count_observation = "missing_row_count"
+    else:
+        row_count_observation = "not_scored"
+
+    if case_id and call_status != "success":
+        issues.append({"type": "call_status_not_success", "case_id": case_id, "actual": call_status})
+    if case_id and extracted_sql_status != "extracted":
+        issues.append(
+            {
+                "type": "extracted_sql_status_not_extracted",
+                "case_id": case_id,
+                "actual": extracted_sql_status,
+            }
+        )
+    if case_id and pg_execution_status != "success":
+        issues.append(
+            {
+                "type": "pg_execution_status_not_success",
+                "case_id": case_id,
+                "actual": pg_execution_status,
+            }
+        )
+    if case_id and not validation_schema:
+        issues.append({"type": "missing_validation_schema", "case_id": case_id})
+    if case_id and not call_record.get("artifact_claim_boundary"):
+        issues.append({"type": "missing_call_artifact_claim_boundary", "case_id": case_id})
+    if case_id and not pg_record.get("artifact_claim_boundary"):
+        issues.append({"type": "missing_pg_artifact_claim_boundary", "case_id": case_id})
+
+    ok = (
+        not issues
+        and bool(case_id)
+        and call_status == "success"
+        and extracted_sql_status == "extracted"
+        and pg_execution_status == "success"
+        and bool(validation_schema)
+    )
+
+    payload = {
+        "command": "baseline-smoke-llm-translate-summary",
+        "ok": ok,
+        "ran_at_utc": utc_now(),
+        "input_reports": input_report_refs,
+        "output_path": f"reports/baseline_smoke/{output_name}",
+        "baseline_id": "LLM_DIRECT_TRANSLATE",
+        "case_count": 1 if case_id else 0,
+        "case_id": case_id,
+        "source_dialect": source_dialect,
+        "target_dialect": target_dialect,
+        "model_label": model_label,
+        "provider_mode": provider_mode,
+        "call_status": call_status,
+        "extracted_sql_status": extracted_sql_status,
+        "pg_execution_status": pg_execution_status,
+        "pg_failure_category": pg_failure_category,
+        "pg_row_count": pg_row_count,
+        "pg_runtime_ms": pg_runtime_ms,
+        "validation_schema": validation_schema,
+        "search_path_after_set": search_path_after_set,
+        "token_usage_input": token_usage_input,
+        "token_usage_output": token_usage_output,
+        "token_usage_total": token_usage_total,
+        "canary_layer_status": canary_layer_status,
+        "row_count_observation": row_count_observation,
+        "issues": issues,
+        "guardrails": {
+            "model_api_call": "disabled_for_summary",
+            "database_execution": "disabled_for_summary",
+            "mysql_execution": "disabled",
+            "spark_execution": "disabled",
+            "sqlglot_generation": "disabled",
+            "generated_sql_execution": "disabled_for_summary",
+            "case_artifact_write": "disabled",
+        },
+        "claim_boundary": "llm_translate_summary_only_not_translation_correctness_or_execution_scoring",
+    }
+    write_baseline_smoke_report(output_name, payload)
+    return print_and_exit(payload, 0 if ok else 1)
+
+
 def cmd_baseline_smoke_sqlglot_transpile_summary(args: argparse.Namespace) -> int:
     output_name = normalize_baseline_smoke_output_name(args.output)
     input_paths = {
@@ -11631,6 +11882,22 @@ def build_parser() -> argparse.ArgumentParser:
     llm_canary_summary_parser.add_argument("--per-case-output", action="store_true", default=False)
     llm_canary_summary_parser.add_argument("--execute", action="store_true", default=False)
     llm_canary_summary_parser.set_defaults(func=cmd_baseline_smoke_llm_canary_summary)
+
+    llm_translate_summary_parser = subparsers.add_parser("baseline-smoke-llm-translate-summary")
+    llm_translate_summary_parser.add_argument(
+        "--call-report",
+        default="reports/baseline_smoke/llm_direct_translate_call_port_0004_v0.json",
+    )
+    llm_translate_summary_parser.add_argument(
+        "--pg-report",
+        default="reports/baseline_smoke/llm_direct_translate_pg_port_0004_v0.json",
+    )
+    llm_translate_summary_parser.add_argument(
+        "--output",
+        default="llm_direct_translate_summary_port_0004_v0.json",
+    )
+    llm_translate_summary_parser.add_argument("--execute", action="store_true", default=False)
+    llm_translate_summary_parser.set_defaults(func=cmd_baseline_smoke_llm_translate_summary)
 
     llm_rollup_parser = subparsers.add_parser("baseline-smoke-llm-rollup")
     llm_rollup_parser.add_argument("--input", action="append", default=[])
