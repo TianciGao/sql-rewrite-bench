@@ -25,7 +25,7 @@ This document is not:
 | Step 3 | Calcite HEP rules | readiness-only complete | first-subset and PG-native-9 audit scope | readiness audit complete; parse-readiness scaffold complete | subset-only, adapter missing, no actual parse/rewrite attempted | not execution-ready |
 | Step 4a | Direct LLM rewrite | complete | PG-native 9-case PERF/CONS smoke set | model call 9 / 9; extraction 9 / 9; PG execution 9 / 9; `total_token_usage=5089` | execution-layer smoke route complete | retain as current LLM rewrite milestone |
 | Step 4b | LLM translate | partial but clean subset passed | PORT smoke route | prompt dry-run 3 / 3; clean PORT canary subset 2 / 2 passed for `PORT_0004` and `PORT_0022`; `total_token_usage=912` | clean subset established; `PORT_0012` held for separate comparison | continue only with bounded failure analysis |
-| Step 5 | LearnedRewrite | not started | future baseline family | no readiness audit yet | unknown readiness | next readiness audit candidate |
+| Step 5 | LearnedRewrite | readiness-only complete | first-subset and PG-native-9 audit scope | readiness audit complete; input-readiness scaffold complete; first-subset `4`, maybe_later `5`; no inference/rewrite/execution attempted | subset-only candidate, artifact stack missing, not execution-ready | execution deferred; use as subset-only candidate after artifact/adapter path exists |
 | Step 6 | GenRewrite | not started | future baseline family | no readiness audit yet | later-stage candidate; correction-loop and cost questions unresolved | defer until post-audit sequencing |
 | Step 7 | R-Bot / LLM-R2 | not started | future baseline family | no readiness audit yet | retrieval/demo/rule-pool assumptions untested | defer until audit scope is defined |
 | Step 8 | SlabCity | not started | frontier exception line | no readiness audit yet | frontier exception, not near-term baseline route | defer |
@@ -58,6 +58,31 @@ This document is not:
     - `PORT_0022`
   - `PORT_0012` held for failure-analysis comparison.
   - `total_token_usage=912`.
+- Step 5 LearnedRewrite:
+  - readiness audit complete.
+  - input-readiness scaffold complete.
+  - command added:
+    - `python -m scripts.cli baseline-smoke-learnedrewrite-readiness`
+  - first-subset candidate count: `4`
+  - PG-native-9 result:
+    - `first_subset_candidate: 4`
+    - `maybe_later: 5`
+  - first-subset candidate cases:
+    - `PERF_0006`
+    - `PERF_0008`
+    - `PERF_0033`
+    - `PERF_0054`
+  - `maybe_later` cases:
+    - `PERF_0013`
+    - `PERF_0017`
+    - `PERF_0024`
+    - `CONS_0007`
+    - `CONS_0012`
+  - `execution_attempted_count: 0`
+  - `inference_attempted_count: 0`
+  - `rewrite_attempted_count: 0`
+  - artifact stack missing.
+  - not runnable as a baseline yet.
 
 ## 4. Claim Boundaries
 
@@ -78,7 +103,7 @@ This document is not:
 - No actual Calcite parse or rewrite has been attempted.
 - LLM translate has only a clean 2-case PORT subset passed so far.
 - `PORT_0012` remains held out of the clean LLM translate subset pending failure-analysis comparison.
-- LearnedRewrite has not received a readiness audit.
+- LearnedRewrite readiness audit and input-readiness scaffold are complete, but execution is blocked by missing adapter/checkpoints/inference path/dependency file/artifact path.
 - GenRewrite still requires correction-loop framing and cost audit before route entry.
 - R-Bot / LLM-R2 still requires retrieval/demo/rule-pool readiness audit.
 - SlabCity remains a frontier exception line, not a near-term baseline route.
@@ -87,8 +112,11 @@ This document is not:
 ## 6. Remaining Baseline Backlog
 
 - Step 5 LearnedRewrite:
-  - not started
-  - recommended next readiness audit
+  - readiness audit complete
+  - input-readiness scaffold complete
+  - execution deferred
+  - subset-only candidate
+  - future work requires artifact/adapter path
 - Step 6 GenRewrite:
   - not started
   - later
@@ -106,7 +134,7 @@ This document is not:
 
 ## 7. Recommended Next Action
 
-- Run a LearnedRewrite readiness audit.
+- Run a GenRewrite readiness audit.
 
 ## 8. Non-Goals
 
