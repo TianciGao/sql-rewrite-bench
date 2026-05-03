@@ -10227,6 +10227,219 @@ def cmd_formal_common_core_method_consistency_scoring(args: argparse.Namespace) 
     return print_and_exit(payload, 0 if payload["ok"] else 1)
 
 
+def cmd_formal_common_core_plan_observability_preflight(args: argparse.Namespace) -> int:
+    output_name = normalize_formal_common_core_output_name(args.output)
+    if args.execute:
+        payload = {
+            "command": "formal-common-core-plan-observability-preflight",
+            "ok": False,
+            "ran_at_utc": utc_now(),
+            "output_path": "reports/formal_common_core/plan_observability_preflight_execute_refused_v0.json",
+            "claim_boundary": "formal_plan_observability_preflight_from_existing_artifacts_only_not_speedup_or_attribution",
+            "message": "This command is read-existing-artifacts-only and does not support --execute.",
+            "issues": [
+                {
+                    "type": "invalid_execute_flag",
+                    "message": "formal-common-core-plan-observability-preflight does not support --execute",
+                }
+            ],
+            "guardrails": {
+                "database_execution": "disabled",
+                "sql_execution": "disabled",
+                "explain_execution": "disabled",
+                "plan_collection": "disabled",
+                "model_api_call": "disabled",
+                "sqlglot_generation": "disabled",
+                "checker_execution": "disabled",
+                "speedup_scoring": "disabled",
+                "case_artifact_write": "disabled",
+                "registry_writeback": "disabled",
+            },
+        }
+        write_formal_common_core_report("plan_observability_preflight_execute_refused_v0.json", payload)
+        return print_and_exit(payload, 1)
+
+    issues: list[dict[str, Any]] = []
+    case_ids = formal_common_core_case_ids()
+    records: list[dict[str, Any]] = []
+
+    native_execution_report = load_json_if_present(FORMAL_COMMON_CORE_REPORT_DIR / "native_identity_execution_v0.json")
+    human_execution_report = load_json_if_present(FORMAL_COMMON_CORE_REPORT_DIR / "human_reference_positive_execution_v0.json")
+    hard_negative_execution_report = load_json_if_present(FORMAL_COMMON_CORE_REPORT_DIR / "hard_negative_guard_execution_v0.json")
+    sqlglot_execution_report = load_json_if_present(FORMAL_COMMON_CORE_REPORT_DIR / "sqlglot_opt_same_dialect_execution_v0.json")
+    llm_execution_report = load_json_if_present(FORMAL_COMMON_CORE_REPORT_DIR / "llm_direct_rewrite_execution_v0.json")
+
+    for issue_type, path, report in [
+        ("missing_native_execution_report", FORMAL_COMMON_CORE_REPORT_DIR / "native_identity_execution_v0.json", native_execution_report),
+        ("missing_human_execution_report", FORMAL_COMMON_CORE_REPORT_DIR / "human_reference_positive_execution_v0.json", human_execution_report),
+        ("missing_hard_negative_execution_report", FORMAL_COMMON_CORE_REPORT_DIR / "hard_negative_guard_execution_v0.json", hard_negative_execution_report),
+        ("missing_sqlglot_execution_report", FORMAL_COMMON_CORE_REPORT_DIR / "sqlglot_opt_same_dialect_execution_v0.json", sqlglot_execution_report),
+        ("missing_llm_execution_report", FORMAL_COMMON_CORE_REPORT_DIR / "llm_direct_rewrite_execution_v0.json", llm_execution_report),
+    ]:
+        if report is None:
+            issues.append({"type": issue_type, "path": relative_to_root(path)})
+
+    def safe_json_parse_status(path: Path) -> str:
+        if not path.is_file():
+            return "missing"
+        try:
+            json.loads(path.read_text(encoding="utf-8"))
+            return "json_readable"
+        except Exception:
+            return "json_unreadable"
+
+    source_plan_present_count = 0
+    positive_plan_present_count = 0
+    negative_plan_present_count = 0
+    plan_check_present_count = 0
+    native_plan_ready_count = 0
+    human_positive_plan_ready_count = 0
+    hard_negative_plan_ready_count = 0
+    sqlglot_method_plan_ready_count = 0
+    sqlglot_method_plan_missing_count = 0
+    llm_method_plan_ready_count = 0
+    llm_method_plan_missing_count = 0
+
+    for case_id in case_ids:
+        inferred = case_root_for_case_id(case_id)
+        pool = inferred[0] if inferred else "unknown"
+        case_root = inferred[1] if inferred else None
+        plans_root = case_root / "runs" / "pg" / "plans" if case_root else None
+        source_plan_path = plans_root / "source.json" if plans_root else Path("")
+        positive_plan_path = plans_root / "rewrite_pos_01.json" if plans_root else Path("")
+        negative_plan_path = plans_root / "rewrite_neg_01.json" if plans_root else Path("")
+        plan_check_path = plans_root / "plan_check.json" if plans_root else Path("")
+
+        source_plan_exists = source_plan_path.is_file() if plans_root else False
+        positive_plan_exists = positive_plan_path.is_file() if plans_root else False
+        negative_plan_exists = negative_plan_path.is_file() if plans_root else False
+        plan_check_exists = plan_check_path.is_file() if plans_root else False
+
+        if source_plan_exists:
+            source_plan_present_count += 1
+        if positive_plan_exists:
+            positive_plan_present_count += 1
+        if negative_plan_exists:
+            negative_plan_present_count += 1
+        if plan_check_exists:
+            plan_check_present_count += 1
+
+        native_ready = "ready" if source_plan_exists else "missing_required_plan_artifact"
+        human_ready = "ready" if source_plan_exists and positive_plan_exists else "missing_required_plan_artifact"
+        hard_negative_ready = "ready" if source_plan_exists and negative_plan_exists else "missing_required_plan_artifact"
+        sqlglot_ready = "missing_method_plan_artifact"
+        llm_ready = "missing_method_plan_artifact"
+
+        if native_ready == "ready":
+            native_plan_ready_count += 1
+        if human_ready == "ready":
+            human_positive_plan_ready_count += 1
+        if hard_negative_ready == "ready":
+            hard_negative_plan_ready_count += 1
+        if sqlglot_ready == "ready":
+            sqlglot_method_plan_ready_count += 1
+        else:
+            sqlglot_method_plan_missing_count += 1
+        if llm_ready == "ready":
+            llm_method_plan_ready_count += 1
+        else:
+            llm_method_plan_missing_count += 1
+
+        warnings: list[str] = []
+        missing_method_plan_artifacts = [
+            "sqlglot_opt_same_dialect_generated_plan",
+            "llm_direct_rewrite_generated_plan",
+        ]
+
+        plan_check_status = "missing"
+        if plan_check_exists:
+            try:
+                plan_check_payload = json.loads(plan_check_path.read_text(encoding="utf-8"))
+                plan_check_status = str(plan_check_payload.get("status", "json_readable"))
+            except Exception:
+                plan_check_status = "json_unreadable"
+
+        records.append(
+            {
+                "case_id": case_id,
+                "pool": pool,
+                "case_root": relative_to_root(case_root) if case_root else "",
+                "source_plan_path": relative_to_root(source_plan_path) if str(source_plan_path) else "",
+                "source_plan_exists": source_plan_exists,
+                "positive_plan_path": relative_to_root(positive_plan_path) if str(positive_plan_path) else "",
+                "positive_plan_exists": positive_plan_exists,
+                "negative_plan_path": relative_to_root(negative_plan_path) if str(negative_plan_path) else "",
+                "negative_plan_exists": negative_plan_exists,
+                "plan_check_path": relative_to_root(plan_check_path) if str(plan_check_path) else "",
+                "plan_check_exists": plan_check_exists,
+                "plan_artifact_count": sum([source_plan_exists, positive_plan_exists, negative_plan_exists, plan_check_exists]),
+                "plan_check_status": plan_check_status,
+                "source_plan_parse_status": safe_json_parse_status(source_plan_path) if source_plan_exists else "missing",
+                "positive_plan_parse_status": safe_json_parse_status(positive_plan_path) if positive_plan_exists else "missing",
+                "negative_plan_parse_status": safe_json_parse_status(negative_plan_path) if negative_plan_exists else "missing",
+                "route_plan_readiness": {
+                    "native_identity": native_ready,
+                    "human_reference_positive": human_ready,
+                    "hard_negative_guard": hard_negative_ready,
+                    "sqlglot_opt_same_dialect": sqlglot_ready,
+                    "llm_direct_rewrite": llm_ready,
+                },
+                "missing_method_plan_artifacts": missing_method_plan_artifacts,
+                "warnings": warnings,
+                "artifact_claim_boundary": "formal_plan_observability_preflight_only_no_explain_no_execution",
+            }
+        )
+
+    control_plan_ready_count = sum(
+        1
+        for record in records
+        if record["route_plan_readiness"]["native_identity"] == "ready"
+        and record["route_plan_readiness"]["human_reference_positive"] == "ready"
+        and record["route_plan_readiness"]["hard_negative_guard"] == "ready"
+    )
+
+    payload = {
+        "command": "formal-common-core-plan-observability-preflight",
+        "ok": True,
+        "ran_at_utc": utc_now(),
+        "output_path": f"reports/formal_common_core/{output_name}",
+        "denominator_case_count": len(case_ids),
+        "source_plan_present_count": source_plan_present_count,
+        "positive_plan_present_count": positive_plan_present_count,
+        "negative_plan_present_count": negative_plan_present_count,
+        "plan_check_present_count": plan_check_present_count,
+        "control_plan_ready_count": control_plan_ready_count,
+        "native_plan_ready_count": native_plan_ready_count,
+        "human_positive_plan_ready_count": human_positive_plan_ready_count,
+        "hard_negative_plan_ready_count": hard_negative_plan_ready_count,
+        "sqlglot_method_plan_ready_count": sqlglot_method_plan_ready_count,
+        "sqlglot_method_plan_missing_count": sqlglot_method_plan_missing_count,
+        "llm_method_plan_ready_count": llm_method_plan_ready_count,
+        "llm_method_plan_missing_count": llm_method_plan_missing_count,
+        "plan_observability_ready_for_controls": control_plan_ready_count == len(case_ids),
+        "plan_observability_ready_for_sqlglot": sqlglot_method_plan_ready_count == len(case_ids),
+        "plan_observability_ready_for_llm": llm_method_plan_ready_count == len(case_ids),
+        "speedup_scoring_ready": False,
+        "records": records,
+        "issues": issues,
+        "guardrails": {
+            "database_execution": "disabled",
+            "sql_execution": "disabled",
+            "explain_execution": "disabled",
+            "plan_collection": "disabled",
+            "model_api_call": "disabled",
+            "sqlglot_generation": "disabled",
+            "checker_execution": "disabled",
+            "speedup_scoring": "disabled",
+            "case_artifact_write": "disabled",
+            "registry_writeback": "disabled",
+        },
+        "claim_boundary": "formal_plan_observability_preflight_from_existing_artifacts_only_not_speedup_or_attribution",
+    }
+    write_formal_common_core_report(output_name, payload)
+    return print_and_exit(payload, 0 if payload["ok"] else 1)
+
+
 def cmd_baseline_smoke_llm_call_canary(args: argparse.Namespace) -> int:
     default_output_name = "llm_direct_rewrite_call_canary_v0.json"
     output_name = normalize_baseline_smoke_output_name(default_output_name)
@@ -16948,6 +17161,14 @@ def build_parser() -> argparse.ArgumentParser:
     )
     formal_common_core_method_consistency_scoring_parser.add_argument("--execute", action="store_true", default=False)
     formal_common_core_method_consistency_scoring_parser.set_defaults(func=cmd_formal_common_core_method_consistency_scoring)
+
+    formal_common_core_plan_observability_preflight_parser = subparsers.add_parser("formal-common-core-plan-observability-preflight")
+    formal_common_core_plan_observability_preflight_parser.add_argument(
+        "--output",
+        default="plan_observability_preflight_v0.json",
+    )
+    formal_common_core_plan_observability_preflight_parser.add_argument("--execute", action="store_true", default=False)
+    formal_common_core_plan_observability_preflight_parser.set_defaults(func=cmd_formal_common_core_plan_observability_preflight)
 
     sqlglot_transpile_summary_parser = subparsers.add_parser("baseline-smoke-sqlglot-transpile-summary")
     sqlglot_transpile_summary_parser.add_argument(
