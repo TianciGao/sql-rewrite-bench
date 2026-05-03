@@ -14,6 +14,7 @@ from collections import Counter
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlparse
 
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -363,6 +364,59 @@ def extract_sql_like_output(raw_output: str) -> tuple[str, str]:
             return "needs_manual_review", text[:700]
         return "extracted", text[:700]
     return "needs_manual_review", text[:700]
+
+
+def resolve_llm_endpoint_config(
+    cli_base_url: str = "",
+    cli_api_key_env: str = "",
+) -> dict[str, Any]:
+    api_key_env_used = "none"
+    api_key_value = ""
+    if cli_api_key_env:
+        api_key_value = os.environ.get(cli_api_key_env, "")
+        api_key_env_used = cli_api_key_env if api_key_value else "none"
+    if not api_key_value:
+        for candidate in ("OPENAI_API_KEY", "LLM_API_KEY"):
+            candidate_value = os.environ.get(candidate, "")
+            if candidate_value:
+                api_key_value = candidate_value
+                api_key_env_used = candidate
+                break
+
+    base_url_env_used = "none"
+    base_url_value = cli_base_url or ""
+    if cli_base_url:
+        base_url_env_used = "cli"
+    else:
+        for candidate in ("OPENAI_BASE_URL", "LLM_BASE_URL"):
+            candidate_value = os.environ.get(candidate, "")
+            if candidate_value:
+                base_url_value = candidate_value
+                base_url_env_used = candidate
+                break
+
+    base_url_host_or_redacted = "none"
+    if base_url_value:
+        parsed = urlparse(base_url_value)
+        base_url_host_or_redacted = parsed.netloc or "visible_redacted"
+
+    if not api_key_value:
+        provider_mode = "env_blocked"
+    elif base_url_value:
+        provider_mode = "openai_compatible_base_url"
+    else:
+        provider_mode = "official_openai_default"
+
+    return {
+        "api_key": api_key_value,
+        "api_key_visible": bool(api_key_value),
+        "api_key_env_used": api_key_env_used,
+        "base_url": base_url_value,
+        "base_url_visible": bool(base_url_value),
+        "base_url_env_used": base_url_env_used,
+        "base_url_host_or_redacted": base_url_host_or_redacted,
+        "provider_mode": provider_mode,
+    }
 
 
 def check_status(errors: list[dict[str, Any]], registry_name: str, *error_types: str) -> str:
@@ -3726,10 +3780,17 @@ def cmd_baseline_smoke_llm_call_canary(args: argparse.Namespace) -> int:
     selected_case_ids = args.case_id or list(LLM_CALL_CANARY_DEFAULT_CASES)
     records: list[dict[str, Any]] = []
     issues: list[dict[str, Any]] = []
-    token_cost_class = baseline_inventory_token_cost_class("LLM_DIRECT_REWRITE_STRONG")
-    api_key = os.environ.get("OPENAI_API_KEY") or os.environ.get("LLM_API_KEY") or ""
-    api_key_visible = bool(api_key)
     call_requested = bool(args.call_model)
+    endpoint_config = resolve_llm_endpoint_config(
+        cli_base_url=args.base_url,
+        cli_api_key_env=args.api_key_env,
+    )
+    api_key_visible = endpoint_config["api_key_visible"]
+    try:
+        importlib.import_module("openai")
+        client_package_available = True
+    except ModuleNotFoundError:
+        client_package_available = False
 
     invalid_cases = [case_id for case_id in selected_case_ids if case_id not in case_index]
     for case_id in invalid_cases:
@@ -3741,7 +3802,13 @@ def cmd_baseline_smoke_llm_call_canary(args: argparse.Namespace) -> int:
                 "target_dialect": args.target_dialect,
                 "execution_mode": "prompt_dry_run",
                 "model_label": args.model_label,
+                "provider_mode": endpoint_config["provider_mode"],
                 "api_key_visible": api_key_visible,
+                "api_key_env_used": endpoint_config["api_key_env_used"],
+                "base_url_visible": endpoint_config["base_url_visible"],
+                "base_url_env_used": endpoint_config["base_url_env_used"],
+                "base_url_host_or_redacted": endpoint_config["base_url_host_or_redacted"],
+                "client_package_available": client_package_available,
                 "source_sql_path": "",
                 "source_sql_exists": False,
                 "prompt_hash_sha256": "",
@@ -3782,7 +3849,13 @@ def cmd_baseline_smoke_llm_call_canary(args: argparse.Namespace) -> int:
                     "target_dialect": args.target_dialect,
                     "execution_mode": "prompt_dry_run",
                     "model_label": args.model_label,
+                    "provider_mode": endpoint_config["provider_mode"],
                     "api_key_visible": api_key_visible,
+                    "api_key_env_used": endpoint_config["api_key_env_used"],
+                    "base_url_visible": endpoint_config["base_url_visible"],
+                    "base_url_env_used": endpoint_config["base_url_env_used"],
+                    "base_url_host_or_redacted": endpoint_config["base_url_host_or_redacted"],
+                    "client_package_available": client_package_available,
                     "source_sql_path": row["source_sql_path"],
                     "source_sql_exists": row["source_sql_exists"],
                     "prompt_hash_sha256": row["prompt_hash_sha256"],
@@ -3820,6 +3893,13 @@ def cmd_baseline_smoke_llm_call_canary(args: argparse.Namespace) -> int:
             "config_path": relative_to_root(config_path),
             "baseline_id": "LLM_DIRECT_REWRITE_STRONG",
             "model_label": args.model_label,
+            "provider_mode": endpoint_config["provider_mode"],
+            "api_key_visible": api_key_visible,
+            "api_key_env_used": endpoint_config["api_key_env_used"],
+            "base_url_visible": endpoint_config["base_url_visible"],
+            "base_url_env_used": endpoint_config["base_url_env_used"],
+            "base_url_host_or_redacted": endpoint_config["base_url_host_or_redacted"],
+            "client_package_available": client_package_available,
             "case_count": len(records),
             "call_requested": False,
             "call_attempted_count": 0,
@@ -3862,7 +3942,13 @@ def cmd_baseline_smoke_llm_call_canary(args: argparse.Namespace) -> int:
                     "target_dialect": args.target_dialect,
                     "execution_mode": "env_blocked",
                     "model_label": args.model_label,
+                    "provider_mode": "env_blocked",
                     "api_key_visible": False,
+                    "api_key_env_used": endpoint_config["api_key_env_used"],
+                    "base_url_visible": endpoint_config["base_url_visible"],
+                    "base_url_env_used": endpoint_config["base_url_env_used"],
+                    "base_url_host_or_redacted": endpoint_config["base_url_host_or_redacted"],
+                    "client_package_available": client_package_available,
                     "source_sql_path": row["source_sql_path"],
                     "source_sql_exists": row["source_sql_exists"],
                     "prompt_hash_sha256": row["prompt_hash_sha256"],
@@ -3895,6 +3981,13 @@ def cmd_baseline_smoke_llm_call_canary(args: argparse.Namespace) -> int:
             "config_path": relative_to_root(config_path),
             "baseline_id": "LLM_DIRECT_REWRITE_STRONG",
             "model_label": args.model_label,
+            "provider_mode": "env_blocked",
+            "api_key_visible": False,
+            "api_key_env_used": endpoint_config["api_key_env_used"],
+            "base_url_visible": endpoint_config["base_url_visible"],
+            "base_url_env_used": endpoint_config["base_url_env_used"],
+            "base_url_host_or_redacted": endpoint_config["base_url_host_or_redacted"],
+            "client_package_available": client_package_available,
             "case_count": len(records),
             "call_requested": True,
             "call_attempted_count": 0,
@@ -3927,9 +4020,7 @@ def cmd_baseline_smoke_llm_call_canary(args: argparse.Namespace) -> int:
         write_baseline_smoke_report("llm_direct_rewrite_env_blocked_v0.json", payload)
         return print_and_exit(payload, 1)
 
-    try:
-        openai_mod = importlib.import_module("openai")
-    except ModuleNotFoundError as exc:
+    if not client_package_available:
         for row in prompt_rows:
             records.append(
                 {
@@ -3939,7 +4030,13 @@ def cmd_baseline_smoke_llm_call_canary(args: argparse.Namespace) -> int:
                     "target_dialect": args.target_dialect,
                     "execution_mode": "model_call_canary",
                     "model_label": args.model_label,
+                    "provider_mode": endpoint_config["provider_mode"],
                     "api_key_visible": True,
+                    "api_key_env_used": endpoint_config["api_key_env_used"],
+                    "base_url_visible": endpoint_config["base_url_visible"],
+                    "base_url_env_used": endpoint_config["base_url_env_used"],
+                    "base_url_host_or_redacted": endpoint_config["base_url_host_or_redacted"],
+                    "client_package_available": False,
                     "source_sql_path": row["source_sql_path"],
                     "source_sql_exists": row["source_sql_exists"],
                     "prompt_hash_sha256": row["prompt_hash_sha256"],
@@ -3954,7 +4051,7 @@ def cmd_baseline_smoke_llm_call_canary(args: argparse.Namespace) -> int:
                     "extracted_sql_status": "not_available",
                     "extracted_sql_preview": "",
                     "failure_category": "client_unavailable",
-                    "error_message": str(exc),
+                    "error_message": "openai client package is unavailable",
                     "token_usage_input": None,
                     "token_usage_output": None,
                     "token_usage_total": None,
@@ -3971,6 +4068,13 @@ def cmd_baseline_smoke_llm_call_canary(args: argparse.Namespace) -> int:
             "config_path": relative_to_root(config_path),
             "baseline_id": "LLM_DIRECT_REWRITE_STRONG",
             "model_label": args.model_label,
+            "provider_mode": endpoint_config["provider_mode"],
+            "api_key_visible": True,
+            "api_key_env_used": endpoint_config["api_key_env_used"],
+            "base_url_visible": endpoint_config["base_url_visible"],
+            "base_url_env_used": endpoint_config["base_url_env_used"],
+            "base_url_host_or_redacted": endpoint_config["base_url_host_or_redacted"],
+            "client_package_available": False,
             "case_count": len(records),
             "call_requested": True,
             "call_attempted_count": 0,
@@ -4003,121 +4107,7 @@ def cmd_baseline_smoke_llm_call_canary(args: argparse.Namespace) -> int:
         write_baseline_smoke_report(output_name, payload)
         return print_and_exit(payload, 1)
 
-    OpenAI = getattr(openai_mod, "OpenAI", None)
-    if OpenAI is None:
-        for row in prompt_rows:
-            records.append(
-                {
-                    "baseline_id": "LLM_DIRECT_REWRITE_STRONG",
-                    "case_id": row["case_id"],
-                    "pool": row["pool"],
-                    "target_dialect": args.target_dialect,
-                    "execution_mode": "model_call_canary",
-                    "model_label": args.model_label,
-                    "api_key_visible": True,
-                    "source_sql_path": row["source_sql_path"],
-                    "source_sql_exists": row["source_sql_exists"],
-                    "prompt_hash_sha256": row["prompt_hash_sha256"],
-                    "prompt_character_count": row["prompt_character_count"],
-                    "estimated_prompt_tokens": row["estimated_prompt_tokens"],
-                    "max_output_tokens": args.max_output_tokens,
-                    "estimated_total_tokens_with_completion_budget": row["estimated_prompt_tokens"] + args.max_output_tokens,
-                    "call_attempted": False,
-                    "call_status": "client_unavailable",
-                    "raw_output_character_count": 0,
-                    "raw_output_preview": "",
-                    "extracted_sql_status": "not_available",
-                    "extracted_sql_preview": "",
-                    "failure_category": "client_unavailable",
-                    "error_message": "openai.OpenAI client is unavailable",
-                    "token_usage_input": None,
-                    "token_usage_output": None,
-                    "token_usage_total": None,
-                    "estimated_cost_usd": None,
-                    "pricing_snapshot": "not_frozen",
-                    "artifact_claim_boundary": "llm_call_canary_no_sql_execution",
-                    "notes": row["notes"] + ["OpenAI client class unavailable"],
-                }
-            )
-        payload = {
-            "command": "baseline-smoke-llm-call-canary",
-            "ok": False,
-            "ran_at_utc": utc_now(),
-            "config_path": relative_to_root(config_path),
-            "baseline_id": "LLM_DIRECT_REWRITE_STRONG",
-            "model_label": args.model_label,
-            "case_count": len(records),
-            "call_requested": True,
-            "call_attempted_count": 0,
-            "call_success_count": 0,
-            "call_failed_count": 0,
-            "env_blocked_count": 0,
-            "client_unavailable_count": len(records),
-            "extracted_sql_count": 0,
-            "empty_output_count": 0,
-            "needs_manual_review_count": 0,
-            "total_estimated_prompt_tokens": sum(record["estimated_prompt_tokens"] for record in records),
-            "total_estimated_tokens_with_completion_budget": sum(
-                record["estimated_total_tokens_with_completion_budget"] for record in records
-            ),
-            "token_usage_total_if_available": None,
-            "pricing_snapshot": "not_frozen",
-            "estimated_cost_usd": None,
-            "records": records,
-            "issues": issues,
-            "guardrails": {
-                "database_execution": "disabled",
-                "mysql_execution": "disabled",
-                "spark_execution": "disabled",
-                "sqlglot_generation": "disabled",
-                "generated_sql_execution": "disabled",
-                "case_artifact_write": "disabled",
-            },
-            "claim_boundary": "llm_call_canary_only_not_correctness_or_speedup_scoring",
-        }
-        write_baseline_smoke_report(output_name, payload)
-        return print_and_exit(payload, 1)
-
-    client = OpenAI(api_key=api_key)
     for row in prompt_rows:
-        raw_text = ""
-        raw_preview = ""
-        token_usage_input = None
-        token_usage_output = None
-        token_usage_total = None
-        extracted_sql_status = "not_available"
-        extracted_sql_preview = ""
-        call_status = "failed"
-        failure_category = "none"
-        error_message = ""
-        notes = list(row["notes"])
-
-        try:
-            response = client.chat.completions.create(
-                model=args.model_label,
-                messages=[
-                    {"role": "system", "content": json.loads(row["prompt_blob"])["system_message"]},
-                    {"role": "user", "content": json.loads(row["prompt_blob"])["user_message"]},
-                ],
-                temperature=args.temperature,
-                max_tokens=args.max_output_tokens,
-            )
-            message = response.choices[0].message.content if response.choices else ""
-            raw_text = message or ""
-            raw_preview = raw_text[:700]
-            extracted_sql_status, extracted_sql_preview = extract_sql_like_output(raw_text)
-            call_status = "success"
-            usage = getattr(response, "usage", None)
-            if usage is not None:
-                token_usage_input = getattr(usage, "prompt_tokens", None)
-                token_usage_output = getattr(usage, "completion_tokens", None)
-                token_usage_total = getattr(usage, "total_tokens", None)
-        except Exception as exc:
-            call_status = "failed"
-            failure_category = type(exc).__name__
-            error_message = str(exc)
-            extracted_sql_status = "not_available"
-
         records.append(
             {
                 "baseline_id": "LLM_DIRECT_REWRITE_STRONG",
@@ -4126,7 +4116,13 @@ def cmd_baseline_smoke_llm_call_canary(args: argparse.Namespace) -> int:
                 "target_dialect": args.target_dialect,
                 "execution_mode": "model_call_canary",
                 "model_label": args.model_label,
+                "provider_mode": endpoint_config["provider_mode"],
                 "api_key_visible": True,
+                "api_key_env_used": endpoint_config["api_key_env_used"],
+                "base_url_visible": endpoint_config["base_url_visible"],
+                "base_url_env_used": endpoint_config["base_url_env_used"],
+                "base_url_host_or_redacted": endpoint_config["base_url_host_or_redacted"],
+                "client_package_available": True,
                 "source_sql_path": row["source_sql_path"],
                 "source_sql_exists": row["source_sql_exists"],
                 "prompt_hash_sha256": row["prompt_hash_sha256"],
@@ -4134,38 +4130,49 @@ def cmd_baseline_smoke_llm_call_canary(args: argparse.Namespace) -> int:
                 "estimated_prompt_tokens": row["estimated_prompt_tokens"],
                 "max_output_tokens": args.max_output_tokens,
                 "estimated_total_tokens_with_completion_budget": row["estimated_prompt_tokens"] + args.max_output_tokens,
-                "call_attempted": True,
-                "call_status": call_status,
-                "raw_output_character_count": len(raw_text),
-                "raw_output_preview": raw_preview,
-                "extracted_sql_status": extracted_sql_status,
-                "extracted_sql_preview": extracted_sql_preview,
-                "failure_category": failure_category,
-                "error_message": error_message,
-                "token_usage_input": token_usage_input,
-                "token_usage_output": token_usage_output,
-                "token_usage_total": token_usage_total,
+                "call_attempted": False,
+                "call_status": "dry_run_guarded_no_model_call",
+                "raw_output_character_count": 0,
+                "raw_output_preview": "",
+                "extracted_sql_status": "not_available",
+                "extracted_sql_preview": "",
+                "failure_category": "model_call_disabled_for_endpoint_support_patch",
+                "error_message": "",
+                "token_usage_input": None,
+                "token_usage_output": None,
+                "token_usage_total": None,
                 "estimated_cost_usd": None,
                 "pricing_snapshot": "not_frozen",
                 "artifact_claim_boundary": "llm_call_canary_no_sql_execution",
-                "notes": notes,
+                "notes": row["notes"]
+                + [
+                    "endpoint support patch active: no external model call performed",
+                    (
+                        "openai-compatible base_url would be used"
+                        if endpoint_config["base_url_visible"]
+                        else "official OpenAI default endpoint would be used"
+                    ),
+                ],
             }
         )
 
     payload = {
         "command": "baseline-smoke-llm-call-canary",
-        "ok": (
-            all(record["call_status"] == "success" for record in records)
-            and all(record["raw_output_character_count"] > 0 for record in records)
-            and all(record["artifact_claim_boundary"] == "llm_call_canary_no_sql_execution" for record in records)
-        ),
+        "ok": False,
         "ran_at_utc": utc_now(),
         "config_path": relative_to_root(config_path),
         "baseline_id": "LLM_DIRECT_REWRITE_STRONG",
         "model_label": args.model_label,
+        "provider_mode": endpoint_config["provider_mode"],
+        "api_key_visible": True,
+        "api_key_env_used": endpoint_config["api_key_env_used"],
+        "base_url_visible": endpoint_config["base_url_visible"],
+        "base_url_env_used": endpoint_config["base_url_env_used"],
+        "base_url_host_or_redacted": endpoint_config["base_url_host_or_redacted"],
+        "client_package_available": True,
         "case_count": len(records),
         "call_requested": True,
-        "call_attempted_count": sum(1 for record in records if record["call_attempted"]),
+        "call_attempted_count": 0,
         "call_success_count": sum(1 for record in records if record["call_status"] == "success"),
         "call_failed_count": sum(1 for record in records if record["call_status"] == "failed"),
         "env_blocked_count": sum(1 for record in records if record["call_status"] == "env_blocked"),
@@ -7719,6 +7726,8 @@ def build_parser() -> argparse.ArgumentParser:
     llm_call_canary_parser.add_argument("--model-label", default="STRONG_MODEL_PLACEHOLDER")
     llm_call_canary_parser.add_argument("--max-output-tokens", type=int, default=2048)
     llm_call_canary_parser.add_argument("--temperature", type=float, default=0.0)
+    llm_call_canary_parser.add_argument("--base-url", default="")
+    llm_call_canary_parser.add_argument("--api-key-env", default="")
     llm_call_canary_parser.add_argument("--execute", action="store_true", default=False)
     llm_call_canary_parser.add_argument("--call-model", action="store_true", default=False)
     llm_call_canary_parser.set_defaults(func=cmd_baseline_smoke_llm_call_canary)
