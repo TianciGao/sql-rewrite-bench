@@ -4091,12 +4091,16 @@ def cmd_baseline_smoke_llm_canary_summary(args: argparse.Namespace) -> int:
 
 
 def cmd_baseline_smoke_llm_translate_summary(args: argparse.Namespace) -> int:
+    default_output_name = "llm_direct_translate_summary_port_0004_v0.json"
     output_name = normalize_baseline_smoke_output_name(args.output)
     input_paths = {
         "call": resolve_repo_path(args.call_report),
         "pg": resolve_repo_path(args.pg_report),
     }
     input_report_refs = {name: relative_to_root(path) for name, path in input_paths.items()}
+    output_mode = "default"
+    output_case_id = ""
+    explicit_output = args.output != default_output_name
 
     if args.execute:
         payload = {
@@ -4200,6 +4204,30 @@ def cmd_baseline_smoke_llm_translate_summary(args: argparse.Namespace) -> int:
     pg_records = index_records(reports.get("pg"))
     call_case_ids = sorted(call_records)
     pg_case_ids = sorted(pg_records)
+
+    if args.per_case_output and not explicit_output:
+        if len(call_case_ids) != 1 or len(pg_case_ids) != 1 or call_case_ids[0] != pg_case_ids[0]:
+            payload = {
+                "command": "baseline-smoke-llm-translate-summary",
+                "ok": False,
+                "ran_at_utc": utc_now(),
+                "input_reports": input_report_refs,
+                "output_path": f"reports/baseline_smoke/{default_output_name}",
+                "output_mode": "per_case",
+                "message": "--per-case-output requires exactly one shared case_id across the call and PG reports.",
+                "issues": [
+                    {
+                        "type": "per_case_output_requires_single_shared_case",
+                        "call_case_ids": call_case_ids,
+                        "pg_case_ids": pg_case_ids,
+                    }
+                ],
+            }
+            write_baseline_smoke_report(default_output_name, payload)
+            return print_and_exit(payload, 1)
+        output_case_id = call_case_ids[0]
+        output_name = f"llm_direct_translate_summary_{normalize_case_id_for_filename(output_case_id)}_v0.json"
+        output_mode = "per_case"
 
     if len(call_case_ids) != 1:
         issues.append({"type": "expected_single_call_case", "actual_case_ids": call_case_ids})
@@ -4307,6 +4335,8 @@ def cmd_baseline_smoke_llm_translate_summary(args: argparse.Namespace) -> int:
         "output_path": f"reports/baseline_smoke/{output_name}",
         "baseline_id": "LLM_DIRECT_TRANSLATE",
         "case_count": 1 if case_id else 0,
+        "output_mode": output_mode,
+        "output_case_id": output_case_id or case_id,
         "case_id": case_id,
         "source_dialect": source_dialect,
         "target_dialect": target_dialect,
@@ -7879,7 +7909,7 @@ def cmd_baseline_smoke_llm_translate_pg_canary(args: argparse.Namespace) -> int:
     provider_mode = report_record.get("provider_mode", "")
     extracted_sql_status = report_record.get("extracted_sql_status", "not_available")
     candidate_sql, candidate_sql_source, candidate_sql_truncated_preview_only = resolve_llm_candidate_sql(report_record)
-    validation_schema = "port_0004_validation"
+    validation_schema = native_identity_validation_schema(case_id, pool)
     env_visibility = pg_env_visibility()
     required_env_visible = all(env_visibility[name] for name in ["PGHOST", "PGPORT", "PGDATABASE", "PGUSER"])
     pg_password_present = env_visibility["PGPASSWORD"]
@@ -11896,6 +11926,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--output",
         default="llm_direct_translate_summary_port_0004_v0.json",
     )
+    llm_translate_summary_parser.add_argument("--per-case-output", action="store_true", default=False)
     llm_translate_summary_parser.add_argument("--execute", action="store_true", default=False)
     llm_translate_summary_parser.set_defaults(func=cmd_baseline_smoke_llm_translate_summary)
 
