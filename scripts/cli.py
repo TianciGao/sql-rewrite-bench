@@ -8581,6 +8581,321 @@ def cmd_formal_common_core_control_execution(args: argparse.Namespace) -> int:
     return print_and_exit(payload, 0 if payload["ok"] else 1)
 
 
+def cmd_formal_common_core_control_scoring(args: argparse.Namespace) -> int:
+    output_name = normalize_formal_common_core_output_name(args.output)
+    if args.execute:
+        payload = {
+            "command": "formal-common-core-control-scoring",
+            "ok": False,
+            "ran_at_utc": utc_now(),
+            "output_path": "reports/formal_common_core/control_scoring_execute_refused_v0.json",
+            "claim_boundary": "formal_control_scoring_from_existing_reports_only_not_full_correctness_or_speedup",
+            "message": "This command is read-existing-reports-only and does not support --execute.",
+            "issues": [
+                {
+                    "type": "invalid_execute_flag",
+                    "message": "formal-common-core-control-scoring does not support --execute",
+                }
+            ],
+            "guardrails": {
+                "database_execution": "disabled",
+                "sql_execution": "disabled",
+                "checker_execution": "disabled",
+                "model_api_call": "disabled",
+                "sqlglot_generation": "disabled",
+                "plan_collection": "disabled",
+                "speedup_scoring": "disabled",
+                "case_artifact_write": "disabled",
+                "registry_writeback": "disabled",
+            },
+        }
+        write_formal_common_core_report("control_scoring_execute_refused_v0.json", payload)
+        return print_and_exit(payload, 1)
+
+    execution_report_paths = {
+        "NATIVE_IDENTITY": FORMAL_COMMON_CORE_REPORT_DIR / "native_identity_execution_v0.json",
+        "HUMAN_REFERENCE_POSITIVE": FORMAL_COMMON_CORE_REPORT_DIR / "human_reference_positive_execution_v0.json",
+        "HARD_NEGATIVE_GUARD": FORMAL_COMMON_CORE_REPORT_DIR / "hard_negative_guard_execution_v0.json",
+    }
+    summary_report_path = FORMAL_COMMON_CORE_REPORT_DIR / "control_execution_summary_v0.json"
+    issues: list[dict[str, Any]] = []
+    reports: dict[str, dict[str, Any]] = {}
+
+    for baseline_id, path in execution_report_paths.items():
+        report = load_json_if_present(path)
+        if report is None:
+            issues.append(
+                {
+                    "type": "missing_execution_report",
+                    "baseline_id": baseline_id,
+                    "path": relative_to_root(path),
+                }
+            )
+            continue
+        reports[baseline_id] = report
+
+    execution_summary_report = load_json_if_present(summary_report_path)
+    if execution_summary_report is None:
+        issues.append(
+            {
+                "type": "missing_execution_summary_report",
+                "path": relative_to_root(summary_report_path),
+            }
+        )
+
+    record_maps: dict[str, dict[str, dict[str, Any]]] = {}
+    for baseline_id in ("NATIVE_IDENTITY", "HUMAN_REFERENCE_POSITIVE", "HARD_NEGATIVE_GUARD"):
+        report = reports.get(baseline_id, {})
+        record_maps[baseline_id] = {
+            str(record.get("case_id", "")).strip(): record
+            for record in report.get("records", [])
+            if record.get("case_id")
+        }
+
+    case_ids = formal_common_core_case_ids()
+    records: list[dict[str, Any]] = []
+    human_positive_row_count_match_count = 0
+    human_positive_row_count_mismatch_count = 0
+    human_positive_row_count_unknown_count = 0
+    hard_negative_row_count_diff_count = 0
+    hard_negative_row_count_same_count = 0
+    hard_negative_row_count_unknown_count = 0
+    consistency_observed_values: list[bool] = []
+    negative_rejection_observed_values: list[bool] = []
+
+    for case_id in case_ids:
+        inferred = case_root_for_case_id(case_id)
+        if inferred is None:
+            issues.append(
+                {
+                    "type": "case_not_resolved",
+                    "case_id": case_id,
+                    "message": "could not resolve case root from case_id",
+                }
+            )
+            records.append(
+                {
+                    "case_id": case_id,
+                    "pool": "unknown",
+                    "native_execution_status": "missing",
+                    "native_row_count": None,
+                    "native_runtime_ms": None,
+                    "human_positive_execution_status": "missing",
+                    "human_positive_row_count": None,
+                    "human_positive_runtime_ms": None,
+                    "human_positive_row_count_matches_native": "unknown",
+                    "human_positive_consistency_status_observed": "unknown",
+                    "hard_negative_execution_status": "missing",
+                    "hard_negative_row_count": None,
+                    "hard_negative_runtime_ms": None,
+                    "hard_negative_row_count_differs_from_native": "unknown",
+                    "negative_rejection_status_observed": "unknown",
+                    "false_accept_status_observed": "unknown",
+                    "checker_artifacts_read": [],
+                    "checker_artifact_count": 0,
+                    "scoring_status": "blocked_missing_execution_records",
+                    "warnings": ["case root could not be resolved"],
+                    "artifact_claim_boundary": "formal_control_scoring_read_existing_reports_only_no_execution",
+                }
+            )
+            continue
+
+        pool, case_root = inferred
+        native_record = record_maps["NATIVE_IDENTITY"].get(case_id)
+        positive_record = record_maps["HUMAN_REFERENCE_POSITIVE"].get(case_id)
+        negative_record = record_maps["HARD_NEGATIVE_GUARD"].get(case_id)
+        warnings: list[str] = []
+
+        native_status = native_record.get("execution_status") if native_record else "missing"
+        native_row_count = native_record.get("row_count") if native_record else None
+        native_runtime_ms = native_record.get("runtime_ms") if native_record else None
+        positive_status = positive_record.get("execution_status") if positive_record else "missing"
+        positive_row_count = positive_record.get("row_count") if positive_record else None
+        positive_runtime_ms = positive_record.get("runtime_ms") if positive_record else None
+        negative_status = negative_record.get("execution_status") if negative_record else "missing"
+        negative_row_count = negative_record.get("row_count") if negative_record else None
+        negative_runtime_ms = negative_record.get("runtime_ms") if negative_record else None
+
+        if native_record is None or positive_record is None or negative_record is None:
+            scoring_status = "blocked_missing_execution_records"
+        elif (
+            native_status == "success"
+            and positive_status == "success"
+            and negative_status == "success"
+        ):
+            scoring_status = "execution_observations_available"
+        else:
+            scoring_status = "partial_missing_execution_records"
+
+        if native_row_count is None or positive_row_count is None:
+            positive_match: bool | str = "unknown"
+            human_positive_row_count_unknown_count += 1
+        else:
+            positive_match = bool(native_row_count == positive_row_count)
+            if positive_match:
+                human_positive_row_count_match_count += 1
+            else:
+                human_positive_row_count_mismatch_count += 1
+
+        if native_row_count is None or negative_row_count is None:
+            negative_diff: bool | str = "unknown"
+            hard_negative_row_count_unknown_count += 1
+        else:
+            negative_diff = bool(native_row_count != negative_row_count)
+            if negative_diff:
+                hard_negative_row_count_diff_count += 1
+            else:
+                hard_negative_row_count_same_count += 1
+
+        checker_artifact_paths = [
+            case_root / "runs" / "pg" / "result_check.json",
+            case_root / "runs" / "result_check.json",
+            case_root / "validation" / "checker.yaml",
+        ]
+        checker_artifacts_read: list[str] = []
+        result_artifact_data = None
+        for artifact_path in checker_artifact_paths:
+            if artifact_path.is_file():
+                checker_artifacts_read.append(relative_to_root(artifact_path))
+                if artifact_path.name == "result_check.json" and result_artifact_data is None:
+                    result_artifact_data = load_json_if_present(artifact_path)
+
+        consistency_observed: bool | str = "unknown"
+        negative_rejection_observed: bool | str = "unknown"
+        false_accept_observed: bool | str = "unknown"
+        if isinstance(result_artifact_data, dict):
+            checks = result_artifact_data.get("checks")
+            if isinstance(checks, dict):
+                signals = recognized_check_signals(checks)
+                if signals.get("positive_equal"):
+                    consistency_observed = True
+                    consistency_observed_values.append(consistency_observed)
+                elif "source_positive_equal" in checks and isinstance(checks["source_positive_equal"], bool):
+                    consistency_observed = bool(checks["source_positive_equal"])
+                    consistency_observed_values.append(consistency_observed)
+                if signals.get("negative_differs"):
+                    negative_rejection_observed = True
+                    false_accept_observed = False
+                    negative_rejection_observed_values.append(negative_rejection_observed)
+                elif "source_negative_different" in checks and isinstance(checks["source_negative_different"], bool):
+                    negative_rejection_observed = bool(checks["source_negative_different"])
+                    false_accept_observed = not negative_rejection_observed
+                    negative_rejection_observed_values.append(negative_rejection_observed)
+            else:
+                warnings.append("result_check.json present but checks field was not parseable")
+        else:
+            warnings.append("no parseable result_check.json found for checker-backed scoring observation")
+
+        records.append(
+            {
+                "case_id": case_id,
+                "pool": pool,
+                "native_execution_status": native_status,
+                "native_row_count": native_row_count,
+                "native_runtime_ms": native_runtime_ms,
+                "human_positive_execution_status": positive_status,
+                "human_positive_row_count": positive_row_count,
+                "human_positive_runtime_ms": positive_runtime_ms,
+                "human_positive_row_count_matches_native": positive_match,
+                "human_positive_consistency_status_observed": consistency_observed,
+                "hard_negative_execution_status": negative_status,
+                "hard_negative_row_count": negative_row_count,
+                "hard_negative_runtime_ms": negative_runtime_ms,
+                "hard_negative_row_count_differs_from_native": negative_diff,
+                "negative_rejection_status_observed": negative_rejection_observed,
+                "false_accept_status_observed": false_accept_observed,
+                "checker_artifacts_read": checker_artifacts_read,
+                "checker_artifact_count": len(checker_artifacts_read),
+                "scoring_status": scoring_status,
+                "warnings": warnings,
+                "artifact_claim_boundary": "formal_control_scoring_read_existing_reports_only_no_execution",
+            }
+        )
+
+    denominator_case_count = len(case_ids)
+    native_success = int(reports.get("NATIVE_IDENTITY", {}).get("success_count", 0))
+    positive_success = int(reports.get("HUMAN_REFERENCE_POSITIVE", {}).get("success_count", 0))
+    negative_success = int(reports.get("HARD_NEGATIVE_GUARD", {}).get("success_count", 0))
+
+    if len(consistency_observed_values) == denominator_case_count:
+        result_consistency_rate_status = "computed_from_existing_checker_artifacts"
+        formal_correctness_scoring_complete = True
+    else:
+        result_consistency_rate_status = "not_computed_checker_required"
+        formal_correctness_scoring_complete = False
+
+    if len(negative_rejection_observed_values) == denominator_case_count:
+        negative_rejection_rate_status = "computed_from_existing_checker_artifacts"
+        false_accept_rate_status = "computed_from_existing_checker_artifacts"
+        formal_negative_guard_scoring_complete = True
+    else:
+        negative_rejection_rate_status = "not_computed_checker_required"
+        false_accept_rate_status = "not_computed_checker_required"
+        formal_negative_guard_scoring_complete = False
+
+    payload = {
+        "command": "formal-common-core-control-scoring",
+        "ok": (
+            len(reports) == 3
+            and len(record_maps["NATIVE_IDENTITY"]) == denominator_case_count
+            and len(record_maps["HUMAN_REFERENCE_POSITIVE"]) == denominator_case_count
+            and len(record_maps["HARD_NEGATIVE_GUARD"]) == denominator_case_count
+        ),
+        "ran_at_utc": utc_now(),
+        "output_path": f"reports/formal_common_core/{output_name}",
+        "denominator_case_count": denominator_case_count,
+        "native_execution_success_count": native_success,
+        "human_positive_execution_success_count": positive_success,
+        "hard_negative_execution_success_count": negative_success,
+        "native_executable_rate": native_success / denominator_case_count if denominator_case_count else 0.0,
+        "human_positive_executable_rate": positive_success / denominator_case_count if denominator_case_count else 0.0,
+        "hard_negative_executable_rate": negative_success / denominator_case_count if denominator_case_count else 0.0,
+        "human_positive_row_count_match_count": human_positive_row_count_match_count,
+        "human_positive_row_count_mismatch_count": human_positive_row_count_mismatch_count,
+        "human_positive_row_count_unknown_count": human_positive_row_count_unknown_count,
+        "hard_negative_row_count_diff_count": hard_negative_row_count_diff_count,
+        "hard_negative_row_count_same_count": hard_negative_row_count_same_count,
+        "hard_negative_row_count_unknown_count": hard_negative_row_count_unknown_count,
+        "result_consistency_rate_status": result_consistency_rate_status,
+        "negative_rejection_rate_status": negative_rejection_rate_status,
+        "false_accept_rate_status": false_accept_rate_status,
+        "result_consistency_rate_observed_existing_artifacts": (
+            sum(1 for value in consistency_observed_values if value) / denominator_case_count
+            if formal_correctness_scoring_complete and denominator_case_count
+            else None
+        ),
+        "negative_rejection_rate_observed_existing_artifacts": (
+            sum(1 for value in negative_rejection_observed_values if value) / denominator_case_count
+            if formal_negative_guard_scoring_complete and denominator_case_count
+            else None
+        ),
+        "false_accept_rate_observed_existing_artifacts": (
+            sum(1 for value in negative_rejection_observed_values if not value) / denominator_case_count
+            if formal_negative_guard_scoring_complete and denominator_case_count
+            else None
+        ),
+        "formal_correctness_scoring_complete": formal_correctness_scoring_complete,
+        "formal_negative_guard_scoring_complete": formal_negative_guard_scoring_complete,
+        "speedup_scoring_complete": False,
+        "records": records,
+        "issues": issues,
+        "guardrails": {
+            "database_execution": "disabled",
+            "sql_execution": "disabled",
+            "checker_execution": "disabled",
+            "model_api_call": "disabled",
+            "sqlglot_generation": "disabled",
+            "plan_collection": "disabled",
+            "speedup_scoring": "disabled",
+            "case_artifact_write": "disabled",
+            "registry_writeback": "disabled",
+        },
+        "claim_boundary": "formal_control_scoring_from_existing_reports_only_not_full_correctness_or_speedup",
+    }
+    write_formal_common_core_report(output_name, payload)
+    return print_and_exit(payload, 0 if payload["ok"] else 1)
+
+
 def cmd_baseline_smoke_llm_call_canary(args: argparse.Namespace) -> int:
     default_output_name = "llm_direct_rewrite_call_canary_v0.json"
     output_name = normalize_baseline_smoke_output_name(default_output_name)
@@ -15243,6 +15558,14 @@ def build_parser() -> argparse.ArgumentParser:
     formal_common_core_control_execution_parser.add_argument("--statement-timeout-ms", type=int, default=30000)
     formal_common_core_control_execution_parser.add_argument("--execute", action="store_true", default=False)
     formal_common_core_control_execution_parser.set_defaults(func=cmd_formal_common_core_control_execution)
+
+    formal_common_core_control_scoring_parser = subparsers.add_parser("formal-common-core-control-scoring")
+    formal_common_core_control_scoring_parser.add_argument(
+        "--output",
+        default="control_scoring_v0.json",
+    )
+    formal_common_core_control_scoring_parser.add_argument("--execute", action="store_true", default=False)
+    formal_common_core_control_scoring_parser.set_defaults(func=cmd_formal_common_core_control_scoring)
 
     sqlglot_transpile_summary_parser = subparsers.add_parser("baseline-smoke-sqlglot-transpile-summary")
     sqlglot_transpile_summary_parser.add_argument(
