@@ -10440,6 +10440,307 @@ def cmd_formal_common_core_plan_observability_preflight(args: argparse.Namespace
     return print_and_exit(payload, 0 if payload["ok"] else 1)
 
 
+def extract_pg_plan_summary(path: Path) -> dict[str, Any]:
+    if not path.is_file():
+        return {
+            "exists": False,
+            "parse_status": "missing",
+            "top_node_type": "",
+            "node_count": None,
+            "node_types": [],
+            "warnings": [],
+        }
+
+    warnings: list[str] = []
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except Exception as exc:
+        return {
+            "exists": True,
+            "parse_status": "json_parse_failed",
+            "top_node_type": "",
+            "node_count": None,
+            "node_types": [],
+            "warnings": [f"json parse failed: {type(exc).__name__}"],
+        }
+
+    plan_root: dict[str, Any] | None = None
+    if isinstance(payload, list) and payload and isinstance(payload[0], dict) and isinstance(payload[0].get("Plan"), dict):
+        plan_root = payload[0]["Plan"]
+    elif isinstance(payload, dict) and isinstance(payload.get("Plan"), dict):
+        plan_root = payload["Plan"]
+    else:
+        return {
+            "exists": True,
+            "parse_status": "json_valid_structure_unknown",
+            "top_node_type": "",
+            "node_count": None,
+            "node_types": [],
+            "warnings": ["JSON is valid but PostgreSQL plan root was not recognized"],
+        }
+
+    node_types: set[str] = set()
+    node_count = 0
+
+    def walk_plan(node: dict[str, Any]) -> None:
+        nonlocal node_count
+        if not isinstance(node, dict):
+            return
+        node_count += 1
+        node_type = node.get("Node Type")
+        if isinstance(node_type, str) and node_type.strip():
+            node_types.add(node_type.strip())
+        child_nodes = node.get("Plans")
+        if isinstance(child_nodes, list):
+            for child in child_nodes:
+                if isinstance(child, dict):
+                    walk_plan(child)
+
+    walk_plan(plan_root)
+    top_node_type = str(plan_root.get("Node Type") or "").strip()
+    parse_status = "parse_success" if node_count > 0 else "json_valid_structure_unknown"
+    if node_count == 0:
+        warnings.append("plan root found but no traversable nodes were counted")
+
+    return {
+        "exists": True,
+        "parse_status": parse_status,
+        "top_node_type": top_node_type,
+        "node_count": node_count if node_count > 0 else None,
+        "node_types": sorted(node_types),
+        "warnings": warnings,
+    }
+
+
+def cmd_formal_common_core_plan_parse_summary(args: argparse.Namespace) -> int:
+    output_name = normalize_formal_common_core_output_name(args.output)
+    if args.execute:
+        payload = {
+            "command": "formal-common-core-plan-parse-summary",
+            "ok": False,
+            "ran_at_utc": utc_now(),
+            "output_path": "reports/formal_common_core/plan_parse_summary_execute_refused_v0.json",
+            "claim_boundary": "formal_plan_parse_summary_from_existing_plans_only_not_speedup_or_attribution",
+            "message": "This command is read-existing-plan-artifacts-only and does not support --execute.",
+            "issues": [
+                {
+                    "type": "invalid_execute_flag",
+                    "message": "formal-common-core-plan-parse-summary does not support --execute",
+                }
+            ],
+            "guardrails": {
+                "database_execution": "disabled",
+                "sql_execution": "disabled",
+                "explain_execution": "disabled",
+                "plan_collection": "disabled",
+                "model_api_call": "disabled",
+                "sqlglot_generation": "disabled",
+                "checker_execution": "disabled",
+                "speedup_scoring": "disabled",
+                "attribution_scoring": "disabled",
+                "case_artifact_write": "disabled",
+                "registry_writeback": "disabled",
+            },
+        }
+        write_formal_common_core_report("plan_parse_summary_execute_refused_v0.json", payload)
+        return print_and_exit(payload, 1)
+
+    case_ids = formal_common_core_case_ids()
+    issues: list[dict[str, Any]] = []
+    records: list[dict[str, Any]] = []
+
+    role_parse_success = {
+        "source": 0,
+        "positive": 0,
+        "negative": 0,
+        "sqlglot": 0,
+        "llm": 0,
+    }
+    pair_ready_counts = {
+        "source_positive": 0,
+        "source_negative": 0,
+        "source_sqlglot": 0,
+        "source_llm": 0,
+    }
+
+    for case_id in case_ids:
+        inferred = case_root_for_case_id(case_id)
+        pool = inferred[0] if inferred else "unknown"
+        case_root = inferred[1] if inferred else None
+        plans_root = case_root / "runs" / "pg" / "plans" if case_root else Path("")
+
+        source_plan_path = plans_root / "source.json" if case_root else Path("")
+        positive_plan_path = plans_root / "rewrite_pos_01.json" if case_root else Path("")
+        negative_plan_path = plans_root / "rewrite_neg_01.json" if case_root else Path("")
+        sqlglot_plan_path = FORMAL_COMMON_CORE_REPORT_DIR / "plans" / "sqlglot_opt_same_dialect" / f"{case_id.lower()}.json"
+        llm_plan_path = FORMAL_COMMON_CORE_REPORT_DIR / "plans" / "llm_direct_rewrite" / f"{case_id.lower()}.json"
+
+        source_summary = extract_pg_plan_summary(source_plan_path)
+        positive_summary = extract_pg_plan_summary(positive_plan_path)
+        negative_summary = extract_pg_plan_summary(negative_plan_path)
+        sqlglot_summary = extract_pg_plan_summary(sqlglot_plan_path)
+        llm_summary = extract_pg_plan_summary(llm_plan_path)
+
+        if source_summary["parse_status"] == "parse_success":
+            role_parse_success["source"] += 1
+        if positive_summary["parse_status"] == "parse_success":
+            role_parse_success["positive"] += 1
+        if negative_summary["parse_status"] == "parse_success":
+            role_parse_success["negative"] += 1
+        if sqlglot_summary["parse_status"] == "parse_success":
+            role_parse_success["sqlglot"] += 1
+        if llm_summary["parse_status"] == "parse_success":
+            role_parse_success["llm"] += 1
+
+        source_positive_pair_ready = source_summary["parse_status"] == "parse_success" and positive_summary["parse_status"] == "parse_success"
+        source_negative_pair_ready = source_summary["parse_status"] == "parse_success" and negative_summary["parse_status"] == "parse_success"
+        source_sqlglot_pair_ready = source_summary["parse_status"] == "parse_success" and sqlglot_summary["parse_status"] == "parse_success"
+        source_llm_pair_ready = source_summary["parse_status"] == "parse_success" and llm_summary["parse_status"] == "parse_success"
+
+        if source_positive_pair_ready:
+            pair_ready_counts["source_positive"] += 1
+        if source_negative_pair_ready:
+            pair_ready_counts["source_negative"] += 1
+        if source_sqlglot_pair_ready:
+            pair_ready_counts["source_sqlglot"] += 1
+        if source_llm_pair_ready:
+            pair_ready_counts["source_llm"] += 1
+
+        warnings = (
+            list(source_summary["warnings"])
+            + list(positive_summary["warnings"])
+            + list(negative_summary["warnings"])
+            + list(sqlglot_summary["warnings"])
+            + list(llm_summary["warnings"])
+        )
+
+        if source_summary["parse_status"] != "parse_success":
+            operator_delta_preflight_status = "blocked_missing_source_plan" if source_summary["parse_status"] == "missing" else "blocked_plan_parse_failure"
+        elif (
+            positive_summary["parse_status"] not in {"parse_success", "missing"}
+            or negative_summary["parse_status"] not in {"parse_success", "missing"}
+            or sqlglot_summary["parse_status"] not in {"parse_success", "missing"}
+            or llm_summary["parse_status"] not in {"parse_success", "missing"}
+        ):
+            operator_delta_preflight_status = "blocked_plan_parse_failure"
+        elif sqlglot_summary["parse_status"] == "missing" or llm_summary["parse_status"] == "missing":
+            operator_delta_preflight_status = "partial_missing_method_plan"
+        else:
+            operator_delta_preflight_status = "ready_for_pairwise_delta"
+
+        records.append(
+            {
+                "case_id": case_id,
+                "pool": pool,
+                "source_plan_exists": source_summary["exists"],
+                "source_plan_parse_status": source_summary["parse_status"],
+                "source_top_node_type": source_summary["top_node_type"],
+                "source_node_count": source_summary["node_count"],
+                "source_node_types": source_summary["node_types"],
+                "positive_plan_exists": positive_summary["exists"],
+                "positive_plan_parse_status": positive_summary["parse_status"],
+                "positive_top_node_type": positive_summary["top_node_type"],
+                "positive_node_count": positive_summary["node_count"],
+                "positive_node_types": positive_summary["node_types"],
+                "negative_plan_exists": negative_summary["exists"],
+                "negative_plan_parse_status": negative_summary["parse_status"],
+                "negative_top_node_type": negative_summary["top_node_type"],
+                "negative_node_count": negative_summary["node_count"],
+                "negative_node_types": negative_summary["node_types"],
+                "sqlglot_plan_exists": sqlglot_summary["exists"],
+                "sqlglot_plan_parse_status": sqlglot_summary["parse_status"],
+                "sqlglot_top_node_type": sqlglot_summary["top_node_type"],
+                "sqlglot_node_count": sqlglot_summary["node_count"],
+                "sqlglot_node_types": sqlglot_summary["node_types"],
+                "llm_plan_exists": llm_summary["exists"],
+                "llm_plan_parse_status": llm_summary["parse_status"],
+                "llm_top_node_type": llm_summary["top_node_type"],
+                "llm_node_count": llm_summary["node_count"],
+                "llm_node_types": llm_summary["node_types"],
+                "source_positive_pair_ready": source_positive_pair_ready,
+                "source_negative_pair_ready": source_negative_pair_ready,
+                "source_sqlglot_pair_ready": source_sqlglot_pair_ready,
+                "source_llm_pair_ready": source_llm_pair_ready,
+                "operator_delta_preflight_status": operator_delta_preflight_status,
+                "warnings": warnings,
+                "artifact_claim_boundary": "formal_plan_parse_summary_from_existing_plans_only_no_execution",
+            }
+        )
+
+    denominator_case_count = len(case_ids)
+    all_source_plans_parseable = role_parse_success["source"] == denominator_case_count
+    all_control_plan_pairs_ready = (
+        pair_ready_counts["source_positive"] == denominator_case_count
+        and pair_ready_counts["source_negative"] == denominator_case_count
+    )
+    all_method_plan_pairs_ready = (
+        pair_ready_counts["source_sqlglot"] == denominator_case_count
+        and pair_ready_counts["source_llm"] == denominator_case_count
+    )
+    operator_delta_preflight_ready = all_source_plans_parseable and all_method_plan_pairs_ready
+
+    payload = {
+        "command": "formal-common-core-plan-parse-summary",
+        "ok": True,
+        "ran_at_utc": utc_now(),
+        "output_path": f"reports/formal_common_core/{output_name}",
+        "denominator_case_count": denominator_case_count,
+        "plan_roles": [
+            "source",
+            "human_reference_positive",
+            "hard_negative_guard",
+            "sqlglot_opt_same_dialect",
+            "llm_direct_rewrite",
+        ],
+        "source_plan_parse_success_count": role_parse_success["source"],
+        "positive_plan_parse_success_count": role_parse_success["positive"],
+        "negative_plan_parse_success_count": role_parse_success["negative"],
+        "sqlglot_plan_parse_success_count": role_parse_success["sqlglot"],
+        "llm_plan_parse_success_count": role_parse_success["llm"],
+        "source_positive_pair_ready_count": pair_ready_counts["source_positive"],
+        "source_negative_pair_ready_count": pair_ready_counts["source_negative"],
+        "source_sqlglot_pair_ready_count": pair_ready_counts["source_sqlglot"],
+        "source_llm_pair_ready_count": pair_ready_counts["source_llm"],
+        "all_source_plans_parseable": all_source_plans_parseable,
+        "all_control_plan_pairs_ready": all_control_plan_pairs_ready,
+        "all_method_plan_pairs_ready": all_method_plan_pairs_ready,
+        "plan_parse_rate_by_role": {
+            "source": role_parse_success["source"] / denominator_case_count,
+            "human_reference_positive": role_parse_success["positive"] / denominator_case_count,
+            "hard_negative_guard": role_parse_success["negative"] / denominator_case_count,
+            "sqlglot_opt_same_dialect": role_parse_success["sqlglot"] / denominator_case_count,
+            "llm_direct_rewrite": role_parse_success["llm"] / denominator_case_count,
+        },
+        "pair_readiness_by_route": {
+            "source_positive": pair_ready_counts["source_positive"] / denominator_case_count,
+            "source_negative": pair_ready_counts["source_negative"] / denominator_case_count,
+            "source_sqlglot": pair_ready_counts["source_sqlglot"] / denominator_case_count,
+            "source_llm": pair_ready_counts["source_llm"] / denominator_case_count,
+        },
+        "operator_delta_preflight_ready": operator_delta_preflight_ready,
+        "attribution_ready": False,
+        "speedup_scoring_ready": False,
+        "records": records,
+        "issues": issues,
+        "guardrails": {
+            "database_execution": "disabled",
+            "sql_execution": "disabled",
+            "explain_execution": "disabled",
+            "plan_collection": "disabled",
+            "model_api_call": "disabled",
+            "sqlglot_generation": "disabled",
+            "checker_execution": "disabled",
+            "speedup_scoring": "disabled",
+            "attribution_scoring": "disabled",
+            "case_artifact_write": "disabled",
+            "registry_writeback": "disabled",
+        },
+        "claim_boundary": "formal_plan_parse_summary_from_existing_plans_only_not_speedup_or_attribution",
+    }
+    write_formal_common_core_report(output_name, payload)
+    return print_and_exit(payload, 0 if payload["ok"] else 1)
+
+
 def cmd_formal_common_core_method_plan_collection_preflight(args: argparse.Namespace) -> int:
     output_name = normalize_formal_common_core_output_name(args.output)
     if args.execute:
@@ -17795,6 +18096,14 @@ def build_parser() -> argparse.ArgumentParser:
     )
     formal_common_core_plan_observability_preflight_parser.add_argument("--execute", action="store_true", default=False)
     formal_common_core_plan_observability_preflight_parser.set_defaults(func=cmd_formal_common_core_plan_observability_preflight)
+
+    formal_common_core_plan_parse_summary_parser = subparsers.add_parser("formal-common-core-plan-parse-summary")
+    formal_common_core_plan_parse_summary_parser.add_argument(
+        "--output",
+        default="plan_parse_summary_v0.json",
+    )
+    formal_common_core_plan_parse_summary_parser.add_argument("--execute", action="store_true", default=False)
+    formal_common_core_plan_parse_summary_parser.set_defaults(func=cmd_formal_common_core_plan_parse_summary)
 
     formal_common_core_method_plan_collection_preflight_parser = subparsers.add_parser("formal-common-core-method-plan-collection-preflight")
     formal_common_core_method_plan_collection_preflight_parser.add_argument(
