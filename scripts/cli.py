@@ -8279,10 +8279,20 @@ def cmd_formal_common_core_control_exec_preflight(args: argparse.Namespace) -> i
 
 
 def cmd_formal_common_core_control_execution(args: argparse.Namespace) -> int:
-    output_name = normalize_formal_common_core_output_name(args.output)
     route = str(args.route or "").strip()
     baseline_id = route
     route_label = formal_control_route_label(route) if route in CONTROL_BASELINE_IDS else route.lower()
+    default_output_by_route = {
+        "NATIVE_IDENTITY": "native_identity_execution_v0.json",
+        "HUMAN_REFERENCE_POSITIVE": "human_reference_positive_execution_v0.json",
+        "HARD_NEGATIVE_GUARD": "hard_negative_guard_execution_v0.json",
+    }
+    requested_output = str(args.output or "").strip()
+    if not requested_output:
+        requested_output = default_output_by_route.get(route, "control_execution_v0.json")
+    elif requested_output == "native_identity_execution_v0.json" and route in default_output_by_route:
+        requested_output = default_output_by_route[route]
+    output_name = normalize_formal_common_core_output_name(requested_output)
     env_visibility = pg_env_visibility()
     required_env_visible = all(env_visibility[name] for name in ["PGHOST", "PGPORT", "PGDATABASE", "PGUSER"])
     pg_password_present = env_visibility["PGPASSWORD"]
@@ -8298,7 +8308,7 @@ def cmd_formal_common_core_control_execution(args: argparse.Namespace) -> int:
         "baseline_id": baseline_id,
         "engine": "postgres",
         "statement_timeout_ms": args.statement_timeout_ms,
-        "claim_boundary": "formal_native_identity_execution_only_not_correctness_or_speedup_scoring",
+        "claim_boundary": "formal_control_execution_only_not_correctness_or_speedup_scoring",
         "guardrails": {
             "mysql_execution": "disabled",
             "spark_execution": "disabled",
@@ -8312,15 +8322,15 @@ def cmd_formal_common_core_control_execution(args: argparse.Namespace) -> int:
         },
     }
 
-    if route != "NATIVE_IDENTITY":
+    if route not in {"NATIVE_IDENTITY", "HUMAN_REFERENCE_POSITIVE", "HARD_NEGATIVE_GUARD"}:
         issues.append(
             {
                 "type": "unsupported_route",
                 "route": route,
-                "message": "this canary only supports --route NATIVE_IDENTITY",
+                "message": "supported routes are NATIVE_IDENTITY, HUMAN_REFERENCE_POSITIVE, and HARD_NEGATIVE_GUARD",
             }
         )
-    if args.case_id and selected_case_ids != ["PERF_0006"]:
+    if args.case_id and route == "NATIVE_IDENTITY" and selected_case_ids != ["PERF_0006"]:
         issues.append(
             {
                 "type": "unsupported_case_id",
@@ -8350,7 +8360,7 @@ def cmd_formal_common_core_control_execution(args: argparse.Namespace) -> int:
                     "search_path_after_set": "",
                     "failure_category": "case_not_resolved",
                     "error_message": "could not resolve case root from case_id",
-                    "artifact_claim_boundary": "formal_native_identity_execution_only_not_correctness_or_speedup_scoring",
+                    "artifact_claim_boundary": "formal_control_execution_only_not_correctness_or_speedup_scoring",
                 }
             )
             issues.append(
@@ -8365,6 +8375,16 @@ def cmd_formal_common_core_control_execution(args: argparse.Namespace) -> int:
         pool, case_root = inferred
         source_sql_path = case_root / "source.sql"
         source_sql_exists = source_sql_path.is_file()
+        candidate_sql_path = source_sql_path
+        candidate_sql_exists = source_sql_exists
+        if route == "HUMAN_REFERENCE_POSITIVE":
+            positive_paths = sorted(case_root.glob("rewrite_pos_*.sql"))
+            candidate_sql_path = positive_paths[0] if positive_paths else (case_root / "rewrite_pos_01.sql")
+            candidate_sql_exists = candidate_sql_path.is_file()
+        elif route == "HARD_NEGATIVE_GUARD":
+            negative_paths = sorted(case_root.glob("rewrite_neg_*.sql"))
+            candidate_sql_path = negative_paths[0] if negative_paths else (case_root / "rewrite_neg_01.sql")
+            candidate_sql_exists = candidate_sql_path.is_file()
         search_path_after_set = ""
         row_count: int | None = None
         runtime_ms: int | None = None
@@ -8372,7 +8392,7 @@ def cmd_formal_common_core_control_execution(args: argparse.Namespace) -> int:
         error_message = ""
         execution_status = "dry_run_only"
 
-        if not source_sql_exists:
+        if route == "NATIVE_IDENTITY" and not source_sql_exists:
             execution_status = "failed"
             failure_category = "missing_source_sql"
             error_message = "source.sql is missing"
@@ -8381,6 +8401,28 @@ def cmd_formal_common_core_control_execution(args: argparse.Namespace) -> int:
                     "type": "missing_source_sql",
                     "case_id": case_id,
                     "path": relative_to_root(source_sql_path),
+                }
+            )
+        elif route == "HUMAN_REFERENCE_POSITIVE" and not candidate_sql_exists:
+            execution_status = "failed"
+            failure_category = "missing_positive_sql"
+            error_message = "positive rewrite SQL is missing"
+            issues.append(
+                {
+                    "type": "missing_positive_sql",
+                    "case_id": case_id,
+                    "path": relative_to_root(candidate_sql_path),
+                }
+            )
+        elif route == "HARD_NEGATIVE_GUARD" and not candidate_sql_exists:
+            execution_status = "failed"
+            failure_category = "missing_negative_sql"
+            error_message = "negative rewrite SQL is missing"
+            issues.append(
+                {
+                    "type": "missing_negative_sql",
+                    "case_id": case_id,
+                    "path": relative_to_root(candidate_sql_path),
                 }
             )
         elif not args.execute:
@@ -8395,7 +8437,7 @@ def cmd_formal_common_core_control_execution(args: argparse.Namespace) -> int:
             execution_status = "client_unavailable"
             failure_category = "psycopg_unavailable"
         else:
-            sql_text = source_sql_path.read_text(encoding="utf-8")
+            sql_text = candidate_sql_path.read_text(encoding="utf-8")
             start = time.perf_counter()
             try:
                 psycopg = importlib.import_module("psycopg")
@@ -8461,7 +8503,7 @@ def cmd_formal_common_core_control_execution(args: argparse.Namespace) -> int:
                 "search_path_after_set": search_path_after_set,
                 "failure_category": failure_category,
                 "error_message": error_message,
-                "artifact_claim_boundary": "formal_native_identity_execution_only_not_correctness_or_speedup_scoring",
+                "artifact_claim_boundary": "formal_control_execution_only_not_correctness_or_speedup_scoring",
             }
         )
 
@@ -8472,13 +8514,13 @@ def cmd_formal_common_core_control_execution(args: argparse.Namespace) -> int:
 
     if args.execute:
         payload["ok"] = (
-            route == "NATIVE_IDENTITY"
+            route in {"NATIVE_IDENTITY", "HUMAN_REFERENCE_POSITIVE", "HARD_NEGATIVE_GUARD"}
             and not issues
             and all(record["execution_status"] == "success" for record in records)
         )
     else:
         payload["ok"] = (
-            route == "NATIVE_IDENTITY"
+            route in {"NATIVE_IDENTITY", "HUMAN_REFERENCE_POSITIVE", "HARD_NEGATIVE_GUARD"}
             and not issues
             and all(record["execution_status"] == "dry_run_only" for record in records)
         )
@@ -8489,6 +8531,53 @@ def cmd_formal_common_core_control_execution(args: argparse.Namespace) -> int:
     payload["records"] = records
     payload["issues"] = issues
     write_formal_common_core_report(output_name, payload)
+    if args.execute and route in {"HUMAN_REFERENCE_POSITIVE", "HARD_NEGATIVE_GUARD"}:
+        summary_name = "control_execution_summary_v0.json"
+        existing_summary = {}
+        summary_path = FORMAL_COMMON_CORE_REPORT_DIR / summary_name
+        if summary_path.is_file():
+            existing_summary = load_json_if_present(summary_path) or {}
+        route_summaries = dict(existing_summary.get("route_summaries", {}))
+        route_summaries[baseline_id] = {
+            "route": route_label,
+            "baseline_id": baseline_id,
+            "report_path": f"reports/formal_common_core/{output_name}",
+            "ok": payload["ok"],
+            "case_count": payload["case_count"],
+            "success_count": payload["success_count"],
+            "failed_count": payload["failed_count"],
+        }
+        included_routes = [
+            route_id
+            for route_id in ("HUMAN_REFERENCE_POSITIVE", "HARD_NEGATIVE_GUARD")
+            if route_id in route_summaries
+        ]
+        summary_payload = {
+            "command": "formal-common-core-control-execution",
+            "ran_at_utc": utc_now(),
+            "output_path": f"reports/formal_common_core/{summary_name}",
+            "routes": included_routes,
+            "route_summaries": route_summaries,
+            "case_count_per_route": {
+                route_id: route_summaries[route_id]["case_count"]
+                for route_id in included_routes
+            },
+            "success_count_per_route": {
+                route_id: route_summaries[route_id]["success_count"]
+                for route_id in included_routes
+            },
+            "failed_count_per_route": {
+                route_id: route_summaries[route_id]["failed_count"]
+                for route_id in included_routes
+            },
+            "all_control_execution_succeeded": (
+                len(included_routes) == 2
+                and all(route_summaries[route_id]["ok"] for route_id in included_routes)
+            ),
+            "total_records": sum(route_summaries[route_id]["case_count"] for route_id in included_routes),
+            "claim_boundary": "formal_control_execution_only_not_correctness_or_speedup_scoring",
+        }
+        write_formal_common_core_report(summary_name, summary_payload)
     return print_and_exit(payload, 0 if payload["ok"] else 1)
 
 
