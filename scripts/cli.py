@@ -212,6 +212,22 @@ def normalize_baseline_smoke_output_name(value: str) -> str:
     return value
 
 
+def normalize_case_id_for_filename(case_id: str) -> str:
+    return case_id.strip().lower()
+
+
+def llm_canary_report_name(kind: str, case_id: str) -> str:
+    case_slug = normalize_case_id_for_filename(case_id)
+    name_map = {
+        "call": f"llm_direct_rewrite_call_{case_slug}_v0.json",
+        "pg": f"llm_direct_rewrite_pg_{case_slug}_v0.json",
+        "summary": f"llm_direct_rewrite_summary_{case_slug}_v0.json",
+    }
+    if kind not in name_map:
+        raise ValueError(f"unsupported llm canary report kind: {kind}")
+    return name_map[kind]
+
+
 def normalize_sql_for_compare(sql_text: str) -> str:
     return re.sub(r"\s+", " ", sql_text).strip().lower()
 
@@ -3373,12 +3389,16 @@ def cmd_baseline_smoke_sqlglot_summary(args: argparse.Namespace) -> int:
 
 
 def cmd_baseline_smoke_llm_canary_summary(args: argparse.Namespace) -> int:
+    default_output_name = "llm_direct_rewrite_canary_summary_v0.json"
     output_name = normalize_baseline_smoke_output_name(args.output)
     input_paths = {
         "call": resolve_repo_path(args.call_report),
         "pg": resolve_repo_path(args.pg_report),
     }
     input_report_refs = {name: relative_to_root(path) for name, path in input_paths.items()}
+    output_mode = "default"
+    output_case_id = ""
+    explicit_output = args.output != default_output_name
 
     if args.execute:
         payload = {
@@ -3478,6 +3498,33 @@ def cmd_baseline_smoke_llm_canary_summary(args: argparse.Namespace) -> int:
     call_records = index_records(reports.get("call"))
     pg_records = index_records(reports.get("pg"))
     all_case_ids = sorted(set(call_records) | set(pg_records))
+
+    if args.per_case_output and not explicit_output:
+        call_case_ids = sorted(call_records)
+        pg_case_ids = sorted(pg_records)
+        if len(call_case_ids) != 1 or len(pg_case_ids) != 1 or call_case_ids[0] != pg_case_ids[0]:
+            payload = {
+                "command": "baseline-smoke-llm-canary-summary",
+                "ok": False,
+                "ran_at_utc": utc_now(),
+                "input_reports": input_report_refs,
+                "output_path": f"reports/baseline_smoke/{default_output_name}",
+                "output_mode": "per_case",
+                "message": "--per-case-output requires exactly one shared case_id across the call and PG reports.",
+                "issues": [
+                    {
+                        "type": "per_case_output_requires_single_shared_case",
+                        "call_case_ids": call_case_ids,
+                        "pg_case_ids": pg_case_ids,
+                    }
+                ],
+                "claim_boundary": "llm_canary_summary_only_not_correctness_or_speedup_scoring",
+            }
+            write_baseline_smoke_report(default_output_name, payload)
+            return print_and_exit(payload, 1)
+        output_case_id = call_case_ids[0]
+        output_name = llm_canary_report_name("summary", output_case_id)
+        output_mode = "per_case"
 
     case_summaries: list[dict[str, Any]] = []
     canary_layer_values: list[str] = []
@@ -3639,6 +3686,8 @@ def cmd_baseline_smoke_llm_canary_summary(args: argparse.Namespace) -> int:
         "ran_at_utc": utc_now(),
         "input_reports": input_report_refs,
         "output_path": f"reports/baseline_smoke/{output_name}",
+        "output_mode": output_mode,
+        "output_case_id": output_case_id,
         "case_count": len(case_summaries),
         "call_success_count": int(call_report.get("call_success_count", 0)),
         "call_failed_count": int(call_report.get("call_failed_count", 0)),
@@ -4121,7 +4170,10 @@ def cmd_baseline_smoke_llm_prompt_dry_run(args: argparse.Namespace) -> int:
 
 
 def cmd_baseline_smoke_llm_call_canary(args: argparse.Namespace) -> int:
-    output_name = normalize_baseline_smoke_output_name("llm_direct_rewrite_call_canary_v0.json")
+    default_output_name = "llm_direct_rewrite_call_canary_v0.json"
+    output_name = normalize_baseline_smoke_output_name(default_output_name)
+    output_mode = "default"
+    output_case_id = ""
 
     if args.execute:
         payload = {
@@ -4172,6 +4224,30 @@ def cmd_baseline_smoke_llm_call_canary(args: argparse.Namespace) -> int:
 
     if call_requested and not args.case_id:
         selected_case_ids = ["PERF_0006"]
+
+    if args.per_case_output:
+        if len(selected_case_ids) != 1:
+            payload = {
+                "command": "baseline-smoke-llm-call-canary",
+                "ok": False,
+                "ran_at_utc": utc_now(),
+                "config_path": relative_to_root(config_path),
+                "baseline_id": "LLM_DIRECT_REWRITE_STRONG",
+                "output_path": f"reports/baseline_smoke/{default_output_name}",
+                "output_mode": "per_case",
+                "message": "--per-case-output requires exactly one selected case.",
+                "issues": [
+                    {
+                        "type": "per_case_output_requires_single_case",
+                        "case_ids": selected_case_ids,
+                    }
+                ],
+            }
+            write_baseline_smoke_report(default_output_name, payload)
+            return print_and_exit(payload, 1)
+        output_case_id = selected_case_ids[0]
+        output_name = llm_canary_report_name("call", output_case_id)
+        output_mode = "per_case"
 
     invalid_cases = [case_id for case_id in selected_case_ids if case_id not in case_index]
     for case_id in invalid_cases:
@@ -4273,6 +4349,8 @@ def cmd_baseline_smoke_llm_call_canary(args: argparse.Namespace) -> int:
             "ran_at_utc": utc_now(),
             "config_path": relative_to_root(config_path),
             "baseline_id": "LLM_DIRECT_REWRITE_STRONG",
+            "output_mode": output_mode,
+            "output_case_id": output_case_id,
             "model_label": args.model_label,
             "provider_mode": endpoint_config["provider_mode"],
             "api_key_visible": api_key_visible,
@@ -4448,6 +4526,8 @@ def cmd_baseline_smoke_llm_call_canary(args: argparse.Namespace) -> int:
             "ran_at_utc": utc_now(),
             "config_path": relative_to_root(config_path),
             "baseline_id": "LLM_DIRECT_REWRITE_STRONG",
+            "output_mode": output_mode,
+            "output_case_id": output_case_id,
             "model_label": args.model_label,
             "provider_mode": "env_blocked",
             "api_key_visible": False,
@@ -4535,6 +4615,8 @@ def cmd_baseline_smoke_llm_call_canary(args: argparse.Namespace) -> int:
             "ran_at_utc": utc_now(),
             "config_path": relative_to_root(config_path),
             "baseline_id": "LLM_DIRECT_REWRITE_STRONG",
+            "output_mode": output_mode,
+            "output_case_id": output_case_id,
             "model_label": args.model_label,
             "provider_mode": endpoint_config["provider_mode"],
             "api_key_visible": True,
@@ -4624,6 +4706,8 @@ def cmd_baseline_smoke_llm_call_canary(args: argparse.Namespace) -> int:
             "ran_at_utc": utc_now(),
             "config_path": relative_to_root(config_path),
             "baseline_id": "LLM_DIRECT_REWRITE_STRONG",
+            "output_mode": output_mode,
+            "output_case_id": output_case_id,
             "model_label": args.model_label,
             "provider_mode": endpoint_config["provider_mode"],
             "api_key_visible": True,
@@ -4758,6 +4842,8 @@ def cmd_baseline_smoke_llm_call_canary(args: argparse.Namespace) -> int:
         "ran_at_utc": utc_now(),
         "config_path": relative_to_root(config_path),
         "baseline_id": "LLM_DIRECT_REWRITE_STRONG",
+        "output_mode": output_mode,
+        "output_case_id": output_case_id,
         "model_label": args.model_label,
         "provider_mode": endpoint_config["provider_mode"],
         "api_key_visible": True,
@@ -4802,7 +4888,10 @@ def cmd_baseline_smoke_llm_call_canary(args: argparse.Namespace) -> int:
 
 
 def cmd_baseline_smoke_llm_generated_pg_canary(args: argparse.Namespace) -> int:
-    output_name = normalize_baseline_smoke_output_name("llm_direct_rewrite_pg_canary_v0.json")
+    default_output_name = "llm_direct_rewrite_pg_canary_v0.json"
+    output_name = normalize_baseline_smoke_output_name(default_output_name)
+    output_mode = "default"
+    output_case_id = ""
 
     if args.execute:
         payload = {
@@ -4839,6 +4928,30 @@ def cmd_baseline_smoke_llm_generated_pg_canary(args: argparse.Namespace) -> int:
     records: list[dict[str, Any]] = []
     issues: list[dict[str, Any]] = []
 
+    if args.per_case_output:
+        if len(selected_case_ids) != 1:
+            payload = {
+                "command": "baseline-smoke-llm-generated-pg-canary",
+                "ok": False,
+                "ran_at_utc": utc_now(),
+                "input_report_path": relative_to_root(input_path),
+                "baseline_id": "LLM_DIRECT_REWRITE_STRONG",
+                "output_path": f"reports/baseline_smoke/{default_output_name}",
+                "output_mode": "per_case",
+                "message": "--per-case-output requires exactly one selected case.",
+                "issues": [
+                    {
+                        "type": "per_case_output_requires_single_case",
+                        "case_ids": selected_case_ids,
+                    }
+                ],
+            }
+            write_baseline_smoke_report(default_output_name, payload)
+            return print_and_exit(payload, 1)
+        output_case_id = selected_case_ids[0]
+        output_name = llm_canary_report_name("pg", output_case_id)
+        output_mode = "per_case"
+
     if len(selected_case_ids) != 1:
         for case_id in selected_case_ids:
             records.append(
@@ -4872,6 +4985,8 @@ def cmd_baseline_smoke_llm_generated_pg_canary(args: argparse.Namespace) -> int:
             "input_report_path": relative_to_root(input_path),
             "engine_scope": "postgres",
             "baseline_id": "LLM_DIRECT_REWRITE_STRONG",
+            "output_mode": output_mode,
+            "output_case_id": output_case_id,
             "case_count": len(records),
             "executed_count": 0,
             "success_count": 0,
@@ -4932,6 +5047,8 @@ def cmd_baseline_smoke_llm_generated_pg_canary(args: argparse.Namespace) -> int:
             "input_report_path": relative_to_root(input_path),
             "engine_scope": "postgres",
             "baseline_id": "LLM_DIRECT_REWRITE_STRONG",
+            "output_mode": output_mode,
+            "output_case_id": output_case_id,
             "case_count": 1,
             "executed_count": 0,
             "success_count": 0,
@@ -5014,6 +5131,8 @@ def cmd_baseline_smoke_llm_generated_pg_canary(args: argparse.Namespace) -> int:
             "input_report_path": relative_to_root(input_path),
             "engine_scope": "postgres",
             "baseline_id": "LLM_DIRECT_REWRITE_STRONG",
+            "output_mode": output_mode,
+            "output_case_id": output_case_id or case_id,
             "case_count": 1,
             "executed_count": 0,
             "success_count": 0,
@@ -5067,6 +5186,8 @@ def cmd_baseline_smoke_llm_generated_pg_canary(args: argparse.Namespace) -> int:
             "input_report_path": relative_to_root(input_path),
             "engine_scope": "postgres",
             "baseline_id": "LLM_DIRECT_REWRITE_STRONG",
+            "output_mode": output_mode,
+            "output_case_id": output_case_id or case_id,
             "case_count": 1,
             "executed_count": 0,
             "success_count": 0,
@@ -5119,6 +5240,8 @@ def cmd_baseline_smoke_llm_generated_pg_canary(args: argparse.Namespace) -> int:
             "input_report_path": relative_to_root(input_path),
             "engine_scope": "postgres",
             "baseline_id": "LLM_DIRECT_REWRITE_STRONG",
+            "output_mode": output_mode,
+            "output_case_id": output_case_id or case_id,
             "case_count": 1,
             "executed_count": 0,
             "success_count": 0,
@@ -5171,6 +5294,8 @@ def cmd_baseline_smoke_llm_generated_pg_canary(args: argparse.Namespace) -> int:
             "input_report_path": relative_to_root(input_path),
             "engine_scope": "postgres",
             "baseline_id": "LLM_DIRECT_REWRITE_STRONG",
+            "output_mode": output_mode,
+            "output_case_id": output_case_id or case_id,
             "case_count": 1,
             "executed_count": 0,
             "success_count": 0,
@@ -5224,6 +5349,8 @@ def cmd_baseline_smoke_llm_generated_pg_canary(args: argparse.Namespace) -> int:
             "input_report_path": relative_to_root(input_path),
             "engine_scope": "postgres",
             "baseline_id": "LLM_DIRECT_REWRITE_STRONG",
+            "output_mode": output_mode,
+            "output_case_id": output_case_id or case_id,
             "case_count": 1,
             "executed_count": 0,
             "success_count": 0,
@@ -5279,6 +5406,8 @@ def cmd_baseline_smoke_llm_generated_pg_canary(args: argparse.Namespace) -> int:
             "input_report_path": relative_to_root(input_path),
             "engine_scope": "postgres",
             "baseline_id": "LLM_DIRECT_REWRITE_STRONG",
+            "output_mode": output_mode,
+            "output_case_id": output_case_id or case_id,
             "case_count": 1,
             "executed_count": 0,
             "success_count": 0,
@@ -5352,6 +5481,8 @@ def cmd_baseline_smoke_llm_generated_pg_canary(args: argparse.Namespace) -> int:
                         "input_report_path": relative_to_root(input_path),
                         "engine_scope": "postgres",
                         "baseline_id": "LLM_DIRECT_REWRITE_STRONG",
+                        "output_mode": output_mode,
+                        "output_case_id": output_case_id or case_id,
                         "case_count": 1,
                         "executed_count": 1,
                         "success_count": 0,
@@ -5449,6 +5580,8 @@ def cmd_baseline_smoke_llm_generated_pg_canary(args: argparse.Namespace) -> int:
         "input_report_path": relative_to_root(input_path),
         "engine_scope": "postgres",
         "baseline_id": "LLM_DIRECT_REWRITE_STRONG",
+        "output_mode": output_mode,
+        "output_case_id": output_case_id or case_id,
         "case_count": 1,
         "executed_count": sum(1 for record in records if record["execution_status"] in {"success", "failed"}),
         "success_count": sum(1 for record in records if record["execution_status"] == "success"),
@@ -8966,6 +9099,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--output",
         default="llm_direct_rewrite_canary_summary_v0.json",
     )
+    llm_canary_summary_parser.add_argument("--per-case-output", action="store_true", default=False)
     llm_canary_summary_parser.add_argument("--execute", action="store_true", default=False)
     llm_canary_summary_parser.set_defaults(func=cmd_baseline_smoke_llm_canary_summary)
 
@@ -9010,6 +9144,7 @@ def build_parser() -> argparse.ArgumentParser:
     llm_call_canary_parser.add_argument("--temperature", type=float, default=0.0)
     llm_call_canary_parser.add_argument("--base-url", default="")
     llm_call_canary_parser.add_argument("--api-key-env", default="")
+    llm_call_canary_parser.add_argument("--per-case-output", action="store_true", default=False)
     llm_call_canary_parser.add_argument("--execute", action="store_true", default=False)
     llm_call_canary_parser.add_argument("--call-model", action="store_true", default=False)
     llm_call_canary_parser.set_defaults(func=cmd_baseline_smoke_llm_call_canary)
@@ -9020,6 +9155,7 @@ def build_parser() -> argparse.ArgumentParser:
         default="reports/baseline_smoke/llm_direct_rewrite_call_canary_v0.json",
     )
     llm_generated_pg_parser.add_argument("--case-id", action="append", default=[])
+    llm_generated_pg_parser.add_argument("--per-case-output", action="store_true", default=False)
     llm_generated_pg_parser.add_argument("--statement-timeout-ms", type=int, default=30000)
     llm_generated_pg_parser.add_argument("--execute", action="store_true", default=False)
     llm_generated_pg_parser.add_argument("--execute-llm-sql", action="store_true", default=False)
