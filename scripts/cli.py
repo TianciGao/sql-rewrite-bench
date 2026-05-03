@@ -107,6 +107,24 @@ RBOT_LLMR2_PG_NATIVE_9_CASES = [
     "CONS_0007",
     "CONS_0012",
 ]
+SQLSOLVER_VERIEQL_SUPPORT_FIRST_CASES = [
+    "CONS_0007",
+    "PERF_0006",
+    "PERF_0008",
+    "PERF_0033",
+    "PERF_0054",
+]
+SQLSOLVER_VERIEQL_SUPPORT_PG_NATIVE_9_CASES = [
+    "PERF_0006",
+    "PERF_0008",
+    "PERF_0013",
+    "PERF_0017",
+    "PERF_0024",
+    "PERF_0033",
+    "PERF_0054",
+    "CONS_0007",
+    "CONS_0012",
+]
 HUMAN_POSITIVE_PG_DEFAULT_CASES = [
     "PERF_0006",
     "PERF_0008",
@@ -403,6 +421,14 @@ def rbot_llmr2_candidate_case_ids(candidate_set: str) -> list[str]:
     raise ValueError(f"unsupported R-Bot / LLM-R2 candidate set: {candidate_set}")
 
 
+def sqlsolver_verieql_support_candidate_case_ids(candidate_set: str) -> list[str]:
+    if candidate_set == "support-first":
+        return list(SQLSOLVER_VERIEQL_SUPPORT_FIRST_CASES)
+    if candidate_set == "pg-native-9":
+        return list(SQLSOLVER_VERIEQL_SUPPORT_PG_NATIVE_9_CASES)
+    raise ValueError(f"unsupported SQLSolver / VeriEQL support candidate set: {candidate_set}")
+
+
 def dependency_support_file_available() -> bool:
     candidates = [
         ROOT / "pyproject.toml",
@@ -501,6 +527,10 @@ def rbot_llmr2_context_availability(manifest_text: str) -> tuple[str, str, str]:
         checker_context = "absent"
     prompt_context = "partial"
     return schema_context, checker_context, prompt_context
+
+
+def sqlsolver_verieql_static_sql_shape_signals(sql_text: str) -> dict[str, bool]:
+    return learnedrewrite_static_sql_shape_signals(sql_text)
 
 
 def learnedrewrite_readiness_assessment(
@@ -686,6 +716,77 @@ def rbot_llmr2_readiness_assessment(
         "unknown",
         "exclude_from_first_retrieval_scaffold",
         "No audited R-Bot / LLM-R2 first-subset recommendation is available for this case.",
+    )
+
+
+def sqlsolver_verieql_support_readiness_assessment(
+    case_id: str,
+    pool: str,
+    source_family: str,
+    signals: dict[str, bool],
+) -> tuple[str, str, str, str]:
+    if case_id == "CONS_0007":
+        return (
+            "medium",
+            "medium",
+            "high",
+            "support_candidate",
+            "Compact Calcite-derived consistency case is the best bounded first support candidate for verifier-style analysis.",
+        )
+    if case_id in {"PERF_0006", "PERF_0008", "PERF_0033", "PERF_0054"}:
+        return (
+            "medium",
+            "medium",
+            "medium",
+            "maybe",
+            "Clean analytical SQL shape is a plausible later support target, but aggregate and bag-semantics support is still uncertain.",
+        )
+    if case_id == "PERF_0024":
+        return (
+            "high",
+            "high",
+            "high",
+            "maybe",
+            "Correlated nested subqueries are semantically useful, but likely difficult for subset-bounded solver support.",
+        )
+    if case_id == "CONS_0012":
+        return (
+            "high",
+            "high",
+            "high",
+            "maybe",
+            "Consistency case is useful for semantic support, but LIMIT/OFFSET and correlation raise verifier subset risk.",
+        )
+    if case_id in {"PERF_0013", "PERF_0017"}:
+        return (
+            "high",
+            "high",
+            "medium",
+            "exclude_from_first_support_scaffold",
+            "Interval/date semantics raise symbolic encoding risk for a first SQLSolver / VeriEQL support scaffold.",
+        )
+    if pool == "portability":
+        return (
+            "high",
+            "high",
+            "medium",
+            "exclude_from_first_support_scaffold",
+            "PORT cases are outside the first same-dialect support subset and should only be considered after dialect normalization.",
+        )
+    if source_family == "VeriEQL" or signals.get("has_calcite_consistency_style_tables"):
+        return (
+            "medium",
+            "medium",
+            "high",
+            "maybe",
+            "Verifier-oriented source family suggests semantic value, but the case is outside the best-first audited subset.",
+        )
+    return (
+        "unknown",
+        "unknown",
+        "unknown",
+        "exclude_from_first_support_scaffold",
+        "No audited SQLSolver / VeriEQL support recommendation is available for this case.",
     )
 
 
@@ -6717,6 +6818,214 @@ def cmd_baseline_smoke_rbot_llmr2_readiness(args: argparse.Namespace) -> int:
             "case_artifact_write": "disabled",
         },
         "claim_boundary": "rbot_llmr2_retrieval_readiness_only_not_model_or_execution",
+    }
+    write_baseline_smoke_report(output_name, payload)
+    return print_and_exit(payload, 0 if payload["ok"] else 1)
+
+
+def cmd_baseline_smoke_sqlsolver_verieql_readiness(args: argparse.Namespace) -> int:
+    output_name = normalize_baseline_smoke_output_name(args.output)
+    _, registry_rows = read_registry(CASE_REGISTRY)
+    case_index = {row["case_id"]: row for row in registry_rows}
+
+    if args.execute:
+        payload = {
+            "command": "baseline-smoke-sqlsolver-verieql-readiness",
+            "cwd": str(ROOT),
+            "ok": False,
+            "ran_at_utc": utc_now(),
+            "baseline_id": "SQLSOLVER_VERIEQL_SUPPORT",
+            "baseline_ids": ["SQLSOLVER_SUPPORT", "VERIEQL_SUPPORT"],
+            "output_path": "reports/baseline_smoke/sqlsolver_verieql_support_readiness_execute_refused_v0.json",
+            "claim_boundary": "sqlsolver_verieql_support_readiness_only_not_equivalence_or_execution",
+            "message": "This scaffold does not execute SQLSolver or VeriEQL. It only emits a static support-readiness report.",
+            "issues": [
+                {
+                    "type": "execution_not_supported",
+                    "message": "baseline-smoke-sqlsolver-verieql-readiness is read-only and never executes SQLSolver, VeriEQL, or an SMT solver",
+                }
+            ],
+            "guardrails": {
+                "sqlsolver_execution": "disabled",
+                "verieql_execution": "disabled",
+                "smt_solver_execution": "disabled",
+                "database_execution": "disabled",
+                "sqlglot_generation": "disabled",
+                "calcite_execution": "disabled",
+                "llm_execution": "disabled",
+                "dependency_install": "disabled",
+                "artifact_download": "disabled",
+                "case_artifact_write": "disabled",
+            },
+        }
+        write_baseline_smoke_report("sqlsolver_verieql_support_readiness_execute_refused_v0.json", payload)
+        return print_and_exit(payload, 1)
+
+    selected_case_ids = args.case_id or sqlsolver_verieql_support_candidate_case_ids(args.candidate_set)
+    records: list[dict[str, Any]] = []
+    issues: list[dict[str, Any]] = []
+
+    for case_id in selected_case_ids:
+        case_spec = case_index.get(case_id)
+        if case_spec is None:
+            records.append(
+                {
+                    "baseline_ids": ["SQLSOLVER_SUPPORT", "VERIEQL_SUPPORT"],
+                    "case_id": case_id,
+                    "pool": "",
+                    "source_sql_path": "",
+                    "source_sql_exists": False,
+                    "manifest_path": "",
+                    "manifest_exists": False,
+                    "source_family": "",
+                    "static_sql_shape_signals": {},
+                    "sqlsolver_support_risk": "unknown",
+                    "verieql_support_risk": "unknown",
+                    "support_usefulness": "unknown",
+                    "recommended_status": "exclude_from_first_support_scaffold",
+                    "reason": "Case is not present in the case registry.",
+                    "sqlsolver_runner_available": False,
+                    "verieql_runner_available": False,
+                    "solver_dependency_available": False,
+                    "smt_solver_available": False,
+                    "schema_constraint_extraction_available": False,
+                    "timeout_policy_available": False,
+                    "subset_policy_available": False,
+                    "equivalence_execution_attempted": False,
+                    "support_analysis_attempted": False,
+                    "artifact_claim_boundary": "sqlsolver_verieql_support_readiness_only_no_solver_execution",
+                    "notes": ["selection refused: case is outside the current case registry"],
+                }
+            )
+            issues.append({"type": "case_not_in_registry", "case_id": case_id})
+            continue
+
+        pool = case_spec.get("primary_pool", "")
+        case_root = pool_case_root(pool) / case_id
+        source_sql_path = case_root / "source.sql"
+        manifest_path = case_root / "manifest.yaml"
+        source_sql_exists = source_sql_path.is_file()
+        manifest_exists = manifest_path.is_file()
+        manifest_text = manifest_path.read_text(encoding="utf-8") if manifest_exists else ""
+        source_sql_text = source_sql_path.read_text(encoding="utf-8") if source_sql_exists else ""
+        source_family = manifest_source_family_hint(manifest_text) or case_spec.get("source_family", "")
+        signals = sqlsolver_verieql_static_sql_shape_signals(source_sql_text) if source_sql_exists else {}
+        (
+            sqlsolver_risk,
+            verieql_risk,
+            usefulness,
+            recommended_status,
+            reason,
+        ) = sqlsolver_verieql_support_readiness_assessment(case_id, pool, source_family, signals)
+
+        notes = []
+        if source_family:
+            notes.append(f"source_family={source_family}")
+        if signals.get("has_interval_literal"):
+            notes.append("interval literal detected")
+        if signals.get("has_nested_select"):
+            notes.append("nested SELECT detected")
+        if signals.get("has_offset"):
+            notes.append("OFFSET detected")
+        if signals.get("has_calcite_consistency_style_tables"):
+            notes.append("Calcite-style consistency tables detected")
+        notes.extend(
+            [
+                "solver dependency missing",
+                "schema constraint extraction missing",
+                "subset policy missing",
+                "timeout policy missing",
+            ]
+        )
+
+        if not source_sql_exists:
+            issues.append({"type": "missing_source_sql", "case_id": case_id, "path": relative_to_root(source_sql_path)})
+        if not manifest_exists:
+            issues.append({"type": "missing_manifest", "case_id": case_id, "path": relative_to_root(manifest_path)})
+
+        records.append(
+            {
+                "baseline_ids": ["SQLSOLVER_SUPPORT", "VERIEQL_SUPPORT"],
+                "case_id": case_id,
+                "pool": pool,
+                "source_sql_path": relative_to_root(source_sql_path),
+                "source_sql_exists": source_sql_exists,
+                "manifest_path": relative_to_root(manifest_path),
+                "manifest_exists": manifest_exists,
+                "source_family": source_family,
+                "static_sql_shape_signals": signals,
+                "sqlsolver_support_risk": sqlsolver_risk,
+                "verieql_support_risk": verieql_risk,
+                "support_usefulness": usefulness,
+                "recommended_status": recommended_status,
+                "reason": reason,
+                "sqlsolver_runner_available": False,
+                "verieql_runner_available": False,
+                "solver_dependency_available": False,
+                "smt_solver_available": False,
+                "schema_constraint_extraction_available": False,
+                "timeout_policy_available": False,
+                "subset_policy_available": False,
+                "equivalence_execution_attempted": False,
+                "support_analysis_attempted": False,
+                "artifact_claim_boundary": "sqlsolver_verieql_support_readiness_only_no_solver_execution",
+                "notes": notes,
+            }
+        )
+
+    payload = {
+        "command": "baseline-smoke-sqlsolver-verieql-readiness",
+        "ok": (
+            all(record["source_sql_exists"] and record["manifest_exists"] for record in records)
+            and all(record["equivalence_execution_attempted"] is False for record in records)
+            and all(record["support_analysis_attempted"] is False for record in records)
+            and all(
+                record["artifact_claim_boundary"] == "sqlsolver_verieql_support_readiness_only_no_solver_execution"
+                for record in records
+            )
+        ),
+        "ran_at_utc": utc_now(),
+        "baseline_ids": ["SQLSOLVER_SUPPORT", "VERIEQL_SUPPORT"],
+        "candidate_set": args.candidate_set if not args.case_id else "case_id_override",
+        "case_count": len(records),
+        "support_candidate_count": sum(1 for record in records if record["recommended_status"] == "support_candidate"),
+        "maybe_count": sum(1 for record in records if record["recommended_status"] == "maybe"),
+        "exclude_from_first_support_scaffold_count": sum(
+            1 for record in records if record["recommended_status"] == "exclude_from_first_support_scaffold"
+        ),
+        "counts_by_recommended_status": count_plain_values(
+            [str(record.get("recommended_status") or "unknown") for record in records]
+        ),
+        "counts_by_sqlsolver_support_risk": count_plain_values(
+            [str(record.get("sqlsolver_support_risk") or "unknown") for record in records]
+        ),
+        "counts_by_verieql_support_risk": count_plain_values(
+            [str(record.get("verieql_support_risk") or "unknown") for record in records]
+        ),
+        "counts_by_support_usefulness": count_plain_values(
+            [str(record.get("support_usefulness") or "unknown") for record in records]
+        ),
+        "sqlsolver_runner_available": False,
+        "verieql_runner_available": False,
+        "solver_dependency_available": False,
+        "equivalence_execution_attempted_count": 0,
+        "support_analysis_attempted_count": 0,
+        "records": records,
+        "issues": issues,
+        "output_path": f"reports/baseline_smoke/{output_name}",
+        "guardrails": {
+            "sqlsolver_execution": "disabled",
+            "verieql_execution": "disabled",
+            "smt_solver_execution": "disabled",
+            "database_execution": "disabled",
+            "sqlglot_generation": "disabled",
+            "calcite_execution": "disabled",
+            "llm_execution": "disabled",
+            "dependency_install": "disabled",
+            "artifact_download": "disabled",
+            "case_artifact_write": "disabled",
+        },
+        "claim_boundary": "sqlsolver_verieql_support_readiness_only_not_equivalence_or_execution",
     }
     write_baseline_smoke_report(output_name, payload)
     return print_and_exit(payload, 0 if payload["ok"] else 1)
@@ -13330,6 +13639,20 @@ def build_parser() -> argparse.ArgumentParser:
     )
     rbot_llmr2_readiness_parser.add_argument("--execute", action="store_true", default=False)
     rbot_llmr2_readiness_parser.set_defaults(func=cmd_baseline_smoke_rbot_llmr2_readiness)
+
+    sqlsolver_verieql_readiness_parser = subparsers.add_parser("baseline-smoke-sqlsolver-verieql-readiness")
+    sqlsolver_verieql_readiness_parser.add_argument("--case-id", action="append", default=[])
+    sqlsolver_verieql_readiness_parser.add_argument(
+        "--candidate-set",
+        choices=["support-first", "pg-native-9"],
+        default="support-first",
+    )
+    sqlsolver_verieql_readiness_parser.add_argument(
+        "--output",
+        default="sqlsolver_verieql_support_readiness_v0.json",
+    )
+    sqlsolver_verieql_readiness_parser.add_argument("--execute", action="store_true", default=False)
+    sqlsolver_verieql_readiness_parser.set_defaults(func=cmd_baseline_smoke_sqlsolver_verieql_readiness)
 
     sqlglot_transpile_summary_parser = subparsers.add_parser("baseline-smoke-sqlglot-transpile-summary")
     sqlglot_transpile_summary_parser.add_argument(
