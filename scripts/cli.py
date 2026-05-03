@@ -10512,6 +10512,68 @@ def extract_pg_plan_summary(path: Path) -> dict[str, Any]:
     }
 
 
+def build_plan_pair_delta_record(
+    case_id: str,
+    pool: str,
+    pair_label: str,
+    candidate_role: str,
+    source_summary: dict[str, Any],
+    candidate_summary: dict[str, Any],
+) -> dict[str, Any]:
+    source_ready = source_summary.get("parse_status") == "parse_success"
+    candidate_ready = candidate_summary.get("parse_status") == "parse_success"
+    source_node_types = list(source_summary.get("node_types") or [])
+    candidate_node_types = list(candidate_summary.get("node_types") or [])
+    source_node_type_set = set(source_node_types)
+    candidate_node_type_set = set(candidate_node_types)
+
+    if source_summary.get("parse_status") == "missing" or candidate_summary.get("parse_status") == "missing":
+        pair_delta_status = "blocked_missing_plan"
+    elif not source_ready or not candidate_ready:
+        pair_delta_status = "blocked_parse_failure"
+    else:
+        pair_delta_status = "ready"
+
+    source_top_node_type = str(source_summary.get("top_node_type") or "")
+    candidate_top_node_type = str(candidate_summary.get("top_node_type") or "")
+    source_node_count = source_summary.get("node_count")
+    candidate_node_count = candidate_summary.get("node_count")
+    if isinstance(source_node_count, int) and isinstance(candidate_node_count, int):
+        node_count_delta: int | None = candidate_node_count - source_node_count
+    else:
+        node_count_delta = None
+
+    top_node_changed = (
+        bool(source_top_node_type and candidate_top_node_type and source_top_node_type != candidate_top_node_type)
+        if pair_delta_status == "ready"
+        else False
+    )
+
+    warnings = list(source_summary.get("warnings") or []) + list(candidate_summary.get("warnings") or [])
+
+    return {
+        "case_id": case_id,
+        "pool": pool,
+        "pair_label": pair_label,
+        "source_role": "source",
+        "candidate_role": candidate_role,
+        "source_top_node_type": source_top_node_type,
+        "candidate_top_node_type": candidate_top_node_type,
+        "top_node_changed": top_node_changed,
+        "source_node_count": source_node_count,
+        "candidate_node_count": candidate_node_count,
+        "node_count_delta": node_count_delta,
+        "source_node_types": source_node_types,
+        "candidate_node_types": candidate_node_types,
+        "added_node_types": sorted(candidate_node_type_set - source_node_type_set),
+        "removed_node_types": sorted(source_node_type_set - candidate_node_type_set),
+        "common_node_types": sorted(source_node_type_set & candidate_node_type_set),
+        "pair_delta_status": pair_delta_status,
+        "warnings": warnings,
+        "artifact_claim_boundary": "formal_plan_operator_delta_preflight_only_no_execution",
+    }
+
+
 def cmd_formal_common_core_plan_parse_summary(args: argparse.Namespace) -> int:
     output_name = normalize_formal_common_core_output_name(args.output)
     if args.execute:
@@ -10736,6 +10798,131 @@ def cmd_formal_common_core_plan_parse_summary(args: argparse.Namespace) -> int:
             "registry_writeback": "disabled",
         },
         "claim_boundary": "formal_plan_parse_summary_from_existing_plans_only_not_speedup_or_attribution",
+    }
+    write_formal_common_core_report(output_name, payload)
+    return print_and_exit(payload, 0 if payload["ok"] else 1)
+
+
+def cmd_formal_common_core_plan_operator_delta_preflight(args: argparse.Namespace) -> int:
+    output_name = normalize_formal_common_core_output_name(args.output)
+    if args.execute:
+        payload = {
+            "command": "formal-common-core-plan-operator-delta-preflight",
+            "ok": False,
+            "ran_at_utc": utc_now(),
+            "output_path": "reports/formal_common_core/plan_operator_delta_preflight_execute_refused_v0.json",
+            "claim_boundary": "formal_plan_operator_delta_preflight_only_not_attribution_or_speedup",
+            "message": "This command is read-existing-plan-artifacts-only and does not support --execute.",
+            "issues": [
+                {
+                    "type": "invalid_execute_flag",
+                    "message": "formal-common-core-plan-operator-delta-preflight does not support --execute",
+                }
+            ],
+            "guardrails": {
+                "database_execution": "disabled",
+                "sql_execution": "disabled",
+                "explain_execution": "disabled",
+                "plan_collection": "disabled",
+                "model_api_call": "disabled",
+                "sqlglot_generation": "disabled",
+                "checker_execution": "disabled",
+                "speedup_scoring": "disabled",
+                "attribution_scoring": "disabled",
+                "case_artifact_write": "disabled",
+                "registry_writeback": "disabled",
+            },
+        }
+        write_formal_common_core_report("plan_operator_delta_preflight_execute_refused_v0.json", payload)
+        return print_and_exit(payload, 1)
+
+    case_ids = formal_common_core_case_ids()
+    issues: list[dict[str, Any]] = []
+    records: list[dict[str, Any]] = []
+    pair_roles = [
+        ("source_positive", "human_reference_positive", "positive"),
+        ("source_negative", "hard_negative_guard", "negative"),
+        ("source_sqlglot", "sqlglot_opt_same_dialect", "sqlglot"),
+        ("source_llm", "llm_direct_rewrite", "llm"),
+    ]
+    ready_counts = {pair_key: 0 for pair_key, _, _ in pair_roles}
+    top_node_changed_counts = {pair_key: 0 for pair_key, _, _ in pair_roles}
+    node_type_delta_available_counts = {pair_key: 0 for pair_key, _, _ in pair_roles}
+    blocked_pair_count = 0
+
+    for case_id in case_ids:
+        inferred = case_root_for_case_id(case_id)
+        pool = inferred[0] if inferred else "unknown"
+        case_root = inferred[1] if inferred else None
+        plans_root = case_root / "runs" / "pg" / "plans" if case_root else Path("")
+
+        source_summary = extract_pg_plan_summary(plans_root / "source.json" if case_root else Path(""))
+        summary_map = {
+            "positive": extract_pg_plan_summary(plans_root / "rewrite_pos_01.json" if case_root else Path("")),
+            "negative": extract_pg_plan_summary(plans_root / "rewrite_neg_01.json" if case_root else Path("")),
+            "sqlglot": extract_pg_plan_summary(
+                FORMAL_COMMON_CORE_REPORT_DIR / "plans" / "sqlglot_opt_same_dialect" / f"{case_id.lower()}.json"
+            ),
+            "llm": extract_pg_plan_summary(
+                FORMAL_COMMON_CORE_REPORT_DIR / "plans" / "llm_direct_rewrite" / f"{case_id.lower()}.json"
+            ),
+        }
+
+        for pair_key, candidate_role, summary_key in pair_roles:
+            pair_record = build_plan_pair_delta_record(
+                case_id=case_id,
+                pool=pool,
+                pair_label=pair_key,
+                candidate_role=candidate_role,
+                source_summary=source_summary,
+                candidate_summary=summary_map[summary_key],
+            )
+            records.append(pair_record)
+            if pair_record["pair_delta_status"] == "ready":
+                ready_counts[pair_key] += 1
+                node_type_delta_available_counts[pair_key] += 1
+                if pair_record["top_node_changed"]:
+                    top_node_changed_counts[pair_key] += 1
+            else:
+                blocked_pair_count += 1
+
+    denominator_case_count = len(case_ids)
+    pair_count = len(records)
+    ready_pair_count = sum(ready_counts.values())
+
+    payload = {
+        "command": "formal-common-core-plan-operator-delta-preflight",
+        "ok": True,
+        "ran_at_utc": utc_now(),
+        "output_path": f"reports/formal_common_core/{output_name}",
+        "denominator_case_count": denominator_case_count,
+        "pair_count": pair_count,
+        "ready_pair_count": ready_pair_count,
+        "blocked_pair_count": blocked_pair_count,
+        "source_positive_ready_count": ready_counts["source_positive"],
+        "source_negative_ready_count": ready_counts["source_negative"],
+        "source_sqlglot_ready_count": ready_counts["source_sqlglot"],
+        "source_llm_ready_count": ready_counts["source_llm"],
+        "top_node_changed_count_by_pair": top_node_changed_counts,
+        "node_type_delta_available_count_by_pair": node_type_delta_available_counts,
+        "attribution_ready": False,
+        "speedup_scoring_ready": False,
+        "records": records,
+        "issues": issues,
+        "guardrails": {
+            "database_execution": "disabled",
+            "sql_execution": "disabled",
+            "explain_execution": "disabled",
+            "plan_collection": "disabled",
+            "model_api_call": "disabled",
+            "sqlglot_generation": "disabled",
+            "checker_execution": "disabled",
+            "speedup_scoring": "disabled",
+            "attribution_scoring": "disabled",
+            "case_artifact_write": "disabled",
+            "registry_writeback": "disabled",
+        },
+        "claim_boundary": "formal_plan_operator_delta_preflight_only_not_attribution_or_speedup",
     }
     write_formal_common_core_report(output_name, payload)
     return print_and_exit(payload, 0 if payload["ok"] else 1)
@@ -18104,6 +18291,14 @@ def build_parser() -> argparse.ArgumentParser:
     )
     formal_common_core_plan_parse_summary_parser.add_argument("--execute", action="store_true", default=False)
     formal_common_core_plan_parse_summary_parser.set_defaults(func=cmd_formal_common_core_plan_parse_summary)
+
+    formal_common_core_plan_operator_delta_preflight_parser = subparsers.add_parser("formal-common-core-plan-operator-delta-preflight")
+    formal_common_core_plan_operator_delta_preflight_parser.add_argument(
+        "--output",
+        default="plan_operator_delta_preflight_v0.json",
+    )
+    formal_common_core_plan_operator_delta_preflight_parser.add_argument("--execute", action="store_true", default=False)
+    formal_common_core_plan_operator_delta_preflight_parser.set_defaults(func=cmd_formal_common_core_plan_operator_delta_preflight)
 
     formal_common_core_method_plan_collection_preflight_parser = subparsers.add_parser("formal-common-core-method-plan-collection-preflight")
     formal_common_core_method_plan_collection_preflight_parser.add_argument(
