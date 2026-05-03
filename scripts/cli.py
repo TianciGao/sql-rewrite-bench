@@ -56,6 +56,23 @@ CALCITE_HEP_PG_NATIVE_9_CASES = [
     "CONS_0007",
     "CONS_0012",
 ]
+LEARNEDREWRITE_FIRST_SUBSET_CASES = [
+    "PERF_0006",
+    "PERF_0008",
+    "PERF_0033",
+    "PERF_0054",
+]
+LEARNEDREWRITE_PG_NATIVE_9_CASES = [
+    "PERF_0006",
+    "PERF_0008",
+    "PERF_0013",
+    "PERF_0017",
+    "PERF_0024",
+    "PERF_0033",
+    "PERF_0054",
+    "CONS_0007",
+    "CONS_0012",
+]
 HUMAN_POSITIVE_PG_DEFAULT_CASES = [
     "PERF_0006",
     "PERF_0008",
@@ -326,6 +343,127 @@ def calcite_hep_candidate_case_ids(candidate_set: str) -> list[str]:
     if candidate_set == "pg-native-9":
         return list(CALCITE_HEP_PG_NATIVE_9_CASES)
     raise ValueError(f"unsupported Calcite HEP candidate set: {candidate_set}")
+
+
+def learnedrewrite_candidate_case_ids(candidate_set: str) -> list[str]:
+    if candidate_set == "first-subset":
+        return list(LEARNEDREWRITE_FIRST_SUBSET_CASES)
+    if candidate_set == "pg-native-9":
+        return list(LEARNEDREWRITE_PG_NATIVE_9_CASES)
+    raise ValueError(f"unsupported LearnedRewrite candidate set: {candidate_set}")
+
+
+def dependency_support_file_available() -> bool:
+    candidates = [
+        ROOT / "pyproject.toml",
+        ROOT / "setup.py",
+        ROOT / "environment.yml",
+    ]
+    candidates.extend(ROOT.glob("requirements*.txt"))
+    return any(path.is_file() for path in candidates)
+
+
+def learnedrewrite_static_sql_shape_signals(sql_text: str) -> dict[str, bool]:
+    upper = sql_text.upper()
+    compact = sql_text
+    return {
+        "has_comments": "--" in compact or "/*" in compact,
+        "has_join": bool(re.search(r"\bJOIN\b", upper))
+        or len(re.findall(r"\bFROM\b", upper)) == 1 and "," in compact.partition("from")[2].partition("where")[0].lower(),
+        "has_aggregate": bool(re.search(r"\b(SUM|AVG|COUNT|MIN|MAX)\s*\(", upper)),
+        "has_group_by": bool(re.search(r"\bGROUP\s+BY\b", upper)),
+        "has_order_by": bool(re.search(r"\bORDER\s+BY\b", upper)),
+        "has_limit": bool(re.search(r"\bLIMIT\b", upper)),
+        "has_offset": bool(re.search(r"\bOFFSET\b", upper)),
+        "has_date_literal": bool(re.search(r"\bDATE\s*'", upper)),
+        "has_interval_literal": bool(re.search(r"\bINTERVAL\s*'", upper)),
+        "has_exists": bool(re.search(r"\bEXISTS\b", upper)),
+        "has_nested_select": len(re.findall(r"\bSELECT\b", upper)) > 1,
+        "has_correlated_subquery_risk": bool(re.search(r"\bEXISTS\b|\bIN\s*\(\s*SELECT\b", upper)),
+        "has_window_function": bool(re.search(r"\bOVER\s*\(", upper)),
+        "has_tpc_h_style_tables": bool(re.search(r"\b(LINEITEM|ORDERS|CUSTOMER|PARTSUPP|SUPPLIER|NATION|REGION|PART)\b", upper)),
+        "has_tpc_ds_style_tables": bool(re.search(r"\b(STORE_SALES|DATE_DIM|ITEM|CUSTOMER_DEMOGRAPHICS|WEB_SALES)\b", upper)),
+        "has_calcite_consistency_style_tables": bool(re.search(r"\b(TMP_EMPS|DEPT|EMP)\b", upper)),
+    }
+
+
+def learnedrewrite_context_availability(pool: str, source_family: str, manifest_text: str) -> tuple[str, str, str]:
+    lower_manifest = manifest_text.lower()
+    schema_present = "schema_files:" in lower_manifest or "schema/" in lower_manifest
+    witness_present = "witness_data_files:" in lower_manifest or "validation/" in lower_manifest
+    schema_context = "present" if schema_present else "absent"
+    if pool == "consistency" or source_family in {"Calcite", "VeriEQL"}:
+        statistics_context = "absent"
+        cost_model_context = "absent"
+    elif witness_present:
+        statistics_context = "unknown"
+        cost_model_context = "unknown"
+    else:
+        statistics_context = "absent"
+        cost_model_context = "absent"
+    return schema_context, statistics_context, cost_model_context
+
+
+def learnedrewrite_readiness_assessment(
+    case_id: str,
+    pool: str,
+    signals: dict[str, bool],
+) -> tuple[str, str, str, str, str]:
+    if case_id in {"PERF_0006", "PERF_0008", "PERF_0033", "PERF_0054"}:
+        return (
+            "medium",
+            "medium",
+            "medium",
+            "first_subset_candidate",
+            "Clean analytical SQL shape fits the bounded first subset, but adapter/model artifacts are still missing.",
+        )
+    if case_id in {"PERF_0013", "PERF_0017"}:
+        return (
+            "high",
+            "high",
+            "medium",
+            "maybe_later",
+            "Interval syntax increases canonicalization and adapter complexity for an early LearnedRewrite scaffold.",
+        )
+    if case_id == "PERF_0024":
+        return (
+            "high",
+            "high",
+            "high",
+            "maybe_later",
+            "Correlated nested subqueries are potentially useful but likely require stronger representation and context support.",
+        )
+    if case_id in {"CONS_0007", "CONS_0012"}:
+        return (
+            "high",
+            "high",
+            "high",
+            "maybe_later",
+            "Calcite-derived consistency cases are semantically valuable, but likely sensitive to canonical-form and rule-context assumptions.",
+        )
+    if pool == "portability":
+        return (
+            "high",
+            "high",
+            "low",
+            "exclude_from_first_learnedrewrite_scaffold",
+            "PORT cases are outside the PG-native first LearnedRewrite scaffold and cross-dialect handling is not the target here.",
+        )
+    if signals.get("has_window_function"):
+        return (
+            "high",
+            "high",
+            "medium",
+            "maybe_later",
+            "Window-function handling is outside the best-first bounded subset for this missing-artifact scaffold.",
+        )
+    return (
+        "unknown",
+        "unknown",
+        "unknown",
+        "exclude_from_first_learnedrewrite_scaffold",
+        "No audited LearnedRewrite first-subset recommendation is available for this case.",
+    )
 
 
 def calcite_hep_static_risk_signals(sql_text: str) -> dict[str, bool]:
@@ -5609,6 +5747,220 @@ def cmd_baseline_smoke_calcite_readiness(args: argparse.Namespace) -> int:
             "case_artifact_write": "disabled",
         },
         "claim_boundary": "calcite_parse_readiness_only_not_actual_parse_or_rewrite",
+    }
+    write_baseline_smoke_report(output_name, payload)
+    return print_and_exit(payload, 0 if payload["ok"] else 1)
+
+
+def cmd_baseline_smoke_learnedrewrite_readiness(args: argparse.Namespace) -> int:
+    output_name = normalize_baseline_smoke_output_name(args.output)
+    config_path = resolve_repo_path(args.config)
+    config = load_json(config_path)
+
+    if args.execute:
+        payload = {
+            "command": "baseline-smoke-learnedrewrite-readiness",
+            "cwd": str(ROOT),
+            "ok": False,
+            "ran_at_utc": utc_now(),
+            "baseline_id": "LEARNED_REWRITE",
+            "output_path": "reports/baseline_smoke/learnedrewrite_input_readiness_execute_refused_v0.json",
+            "claim_boundary": "learnedrewrite_input_readiness_only_not_inference_or_rewrite",
+            "message": "This scaffold does not execute LearnedRewrite. It only emits a static input-readiness report.",
+            "issues": [
+                {
+                    "type": "execution_not_supported",
+                    "message": "baseline-smoke-learnedrewrite-readiness is read-only and never executes LearnedRewrite",
+                }
+            ],
+            "guardrails": {
+                "learnedrewrite_execution": "disabled",
+                "artifact_download": "disabled",
+                "dependency_install": "disabled",
+                "database_execution": "disabled",
+                "mysql_execution": "disabled",
+                "spark_execution": "disabled",
+                "calcite_execution": "disabled",
+                "sqlglot_generation": "disabled",
+                "llm_execution": "disabled",
+                "case_artifact_write": "disabled",
+            },
+        }
+        write_baseline_smoke_report("learnedrewrite_input_readiness_execute_refused_v0.json", payload)
+        return print_and_exit(payload, 1)
+
+    case_index = {case["case_id"]: case for case in config.get("cases", [])}
+    selected_case_ids = args.case_id or learnedrewrite_candidate_case_ids(args.candidate_set)
+    dependency_file_available = dependency_support_file_available()
+    records: list[dict[str, Any]] = []
+    issues: list[dict[str, Any]] = []
+
+    for case_id in selected_case_ids:
+        case_spec = case_index.get(case_id)
+        if case_spec is None:
+            records.append(
+                {
+                    "baseline_id": "LEARNED_REWRITE",
+                    "case_id": case_id,
+                    "pool": "",
+                    "source_sql_path": "",
+                    "source_sql_exists": False,
+                    "manifest_path": "",
+                    "manifest_exists": False,
+                    "source_family": "",
+                    "learnedrewrite_adapter_available": False,
+                    "learnedrewrite_checkpoint_available": False,
+                    "learnedrewrite_inference_entrypoint_available": False,
+                    "learnedrewrite_execution_attempted": False,
+                    "canonical_representation_available": False,
+                    "schema_context_available": "absent",
+                    "statistics_context_available": "absent",
+                    "cost_model_context_available": "absent",
+                    "dependency_file_available": dependency_file_available,
+                    "artifact_status": "missing_artifact_stack",
+                    "inference_status": "not_attempted_artifact_missing",
+                    "rewrite_status": "not_attempted_artifact_missing",
+                    "static_sql_shape_signals": {},
+                    "likely_input_compatibility_risk": "unknown",
+                    "likely_adapter_complexity": "unknown",
+                    "likely_usefulness": "unknown",
+                    "recommended_status": "exclude_from_first_learnedrewrite_scaffold",
+                    "reason": "Case is not present in the baseline smoke config.",
+                    "artifact_claim_boundary": "learnedrewrite_readiness_only_no_inference_no_execution",
+                    "notes": ["selection refused: case is outside the current smoke config"],
+                }
+            )
+            issues.append({"type": "case_not_in_smoke_config", "case_id": case_id})
+            continue
+
+        pool = case_spec["pool"]
+        case_root = pool_case_root(pool) / case_id
+        source_sql_path = case_root / "source.sql"
+        manifest_path = case_root / "manifest.yaml"
+        source_sql_exists = source_sql_path.is_file()
+        manifest_exists = manifest_path.is_file()
+        manifest_text = manifest_path.read_text(encoding="utf-8") if manifest_exists else ""
+        source_sql_text = source_sql_path.read_text(encoding="utf-8") if source_sql_exists else ""
+        source_family = manifest_source_family_hint(manifest_text) or case_spec.get("source_family", "")
+        schema_context, statistics_context, cost_model_context = learnedrewrite_context_availability(
+            pool, source_family, manifest_text
+        )
+        signals = learnedrewrite_static_sql_shape_signals(source_sql_text) if source_sql_exists else {}
+        input_risk, adapter_complexity, usefulness, recommended_status, reason = learnedrewrite_readiness_assessment(
+            case_id, pool, signals
+        )
+
+        notes = []
+        if source_family:
+            notes.append(f"source_family={source_family}")
+        if schema_context != "absent":
+            notes.append(f"schema_context_available={schema_context}")
+        if signals.get("has_interval_literal"):
+            notes.append("interval literal detected")
+        if signals.get("has_nested_select"):
+            notes.append("nested SELECT detected")
+        if signals.get("has_offset"):
+            notes.append("OFFSET detected")
+        if signals.get("has_calcite_consistency_style_tables"):
+            notes.append("Calcite-style consistency tables detected")
+        if not dependency_file_available:
+            notes.append("repository dependency file not found")
+
+        if not source_sql_exists:
+            issues.append({"type": "missing_source_sql", "case_id": case_id, "path": relative_to_root(source_sql_path)})
+        if not manifest_exists:
+            issues.append({"type": "missing_manifest", "case_id": case_id, "path": relative_to_root(manifest_path)})
+
+        records.append(
+            {
+                "baseline_id": "LEARNED_REWRITE",
+                "case_id": case_id,
+                "pool": pool,
+                "source_sql_path": relative_to_root(source_sql_path),
+                "source_sql_exists": source_sql_exists,
+                "manifest_path": relative_to_root(manifest_path),
+                "manifest_exists": manifest_exists,
+                "source_family": source_family,
+                "learnedrewrite_adapter_available": False,
+                "learnedrewrite_checkpoint_available": False,
+                "learnedrewrite_inference_entrypoint_available": False,
+                "learnedrewrite_execution_attempted": False,
+                "canonical_representation_available": False,
+                "schema_context_available": schema_context,
+                "statistics_context_available": statistics_context,
+                "cost_model_context_available": cost_model_context,
+                "dependency_file_available": dependency_file_available,
+                "artifact_status": "missing_artifact_stack",
+                "inference_status": "not_attempted_artifact_missing",
+                "rewrite_status": "not_attempted_artifact_missing",
+                "static_sql_shape_signals": signals,
+                "likely_input_compatibility_risk": input_risk,
+                "likely_adapter_complexity": adapter_complexity,
+                "likely_usefulness": usefulness,
+                "recommended_status": recommended_status,
+                "reason": reason,
+                "artifact_claim_boundary": "learnedrewrite_readiness_only_no_inference_no_execution",
+                "notes": notes,
+            }
+        )
+
+    payload = {
+        "command": "baseline-smoke-learnedrewrite-readiness",
+        "ok": (
+            all(record["source_sql_exists"] and record["manifest_exists"] for record in records)
+            and all(record["learnedrewrite_execution_attempted"] is False for record in records)
+            and all(record["inference_status"] == "not_attempted_artifact_missing" for record in records)
+            and all(record["rewrite_status"] == "not_attempted_artifact_missing" for record in records)
+            and all(
+                record["artifact_claim_boundary"] == "learnedrewrite_readiness_only_no_inference_no_execution"
+                for record in records
+            )
+        ),
+        "ran_at_utc": utc_now(),
+        "baseline_id": "LEARNED_REWRITE",
+        "config_path": relative_to_root(config_path),
+        "candidate_set": args.candidate_set if not args.case_id else "case_id_override",
+        "case_count": len(records),
+        "learnedrewrite_adapter_available": False,
+        "learnedrewrite_checkpoint_available": False,
+        "learnedrewrite_inference_entrypoint_available": False,
+        "dependency_file_available": dependency_file_available,
+        "execution_attempted_count": 0,
+        "inference_attempted_count": 0,
+        "rewrite_attempted_count": 0,
+        "first_subset_candidate_count": sum(1 for record in records if record["recommended_status"] == "first_subset_candidate"),
+        "maybe_later_count": sum(1 for record in records if record["recommended_status"] == "maybe_later"),
+        "exclude_from_first_learnedrewrite_scaffold_count": sum(
+            1 for record in records if record["recommended_status"] == "exclude_from_first_learnedrewrite_scaffold"
+        ),
+        "counts_by_likely_input_compatibility_risk": count_plain_values(
+            [str(record.get("likely_input_compatibility_risk") or "unknown") for record in records]
+        ),
+        "counts_by_likely_adapter_complexity": count_plain_values(
+            [str(record.get("likely_adapter_complexity") or "unknown") for record in records]
+        ),
+        "counts_by_likely_usefulness": count_plain_values(
+            [str(record.get("likely_usefulness") or "unknown") for record in records]
+        ),
+        "counts_by_recommended_status": count_plain_values(
+            [str(record.get("recommended_status") or "unknown") for record in records]
+        ),
+        "records": records,
+        "issues": issues,
+        "output_path": f"reports/baseline_smoke/{output_name}",
+        "guardrails": {
+            "learnedrewrite_execution": "disabled",
+            "artifact_download": "disabled",
+            "dependency_install": "disabled",
+            "database_execution": "disabled",
+            "mysql_execution": "disabled",
+            "spark_execution": "disabled",
+            "calcite_execution": "disabled",
+            "sqlglot_generation": "disabled",
+            "llm_execution": "disabled",
+            "case_artifact_write": "disabled",
+        },
+        "claim_boundary": "learnedrewrite_input_readiness_only_not_inference_or_rewrite",
     }
     write_baseline_smoke_report(output_name, payload)
     return print_and_exit(payload, 0 if payload["ok"] else 1)
@@ -12168,6 +12520,24 @@ def build_parser() -> argparse.ArgumentParser:
     )
     calcite_readiness_parser.add_argument("--execute", action="store_true", default=False)
     calcite_readiness_parser.set_defaults(func=cmd_baseline_smoke_calcite_readiness)
+
+    learnedrewrite_readiness_parser = subparsers.add_parser("baseline-smoke-learnedrewrite-readiness")
+    learnedrewrite_readiness_parser.add_argument(
+        "--config",
+        default="docs/_scratch/baseline_smoke_common_core_v0.json",
+    )
+    learnedrewrite_readiness_parser.add_argument("--case-id", action="append", default=[])
+    learnedrewrite_readiness_parser.add_argument(
+        "--candidate-set",
+        choices=["first-subset", "pg-native-9"],
+        default="first-subset",
+    )
+    learnedrewrite_readiness_parser.add_argument(
+        "--output",
+        default="learnedrewrite_input_readiness_v0.json",
+    )
+    learnedrewrite_readiness_parser.add_argument("--execute", action="store_true", default=False)
+    learnedrewrite_readiness_parser.set_defaults(func=cmd_baseline_smoke_learnedrewrite_readiness)
 
     sqlglot_transpile_summary_parser = subparsers.add_parser("baseline-smoke-sqlglot-transpile-summary")
     sqlglot_transpile_summary_parser.add_argument(
