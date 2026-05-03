@@ -621,10 +621,18 @@ def pg_env_visibility() -> dict[str, bool]:
     return visibility
 
 
+def native_identity_validation_schema(case_id: str, pool: str) -> str:
+    if pool == "performance":
+        return f"{case_id.lower()}_validation"
+    return ""
+
+
 def build_native_identity_record(
     case_id: str,
     pool: str,
     source_sql_path: Path | None,
+    validation_schema: str,
+    search_path_after_set: str,
     statement_timeout_ms: int,
     execution_mode: str,
     execution_status: str,
@@ -649,6 +657,8 @@ def build_native_identity_record(
             else ""
         ),
         "source_sql_exists": bool(source_sql_path and source_sql_path.is_file()),
+        "validation_schema": validation_schema,
+        "search_path_after_set": search_path_after_set,
         "pg_env_visible": pg_env_visible,
         "pg_password_present": pg_password_present,
         "statement_timeout_ms": statement_timeout_ms,
@@ -701,6 +711,8 @@ def cmd_baseline_smoke_native_identity_pg(args: argparse.Namespace) -> int:
                     case_id=case_id,
                     pool="",
                     source_sql_path=None,
+                    validation_schema="",
+                    search_path_after_set="",
                     statement_timeout_ms=args.statement_timeout_ms,
                     execution_mode="dry_run" if not args.execute_native_identity else "pg_execute_canary",
                     execution_status="skipped",
@@ -730,12 +742,15 @@ def cmd_baseline_smoke_native_identity_pg(args: argparse.Namespace) -> int:
             case_id = case_spec["case_id"]
             pool = case_spec["pool"]
             source_sql_path = pool_case_root(pool) / case_id / "source.sql"
+            validation_schema = native_identity_validation_schema(case_id, pool)
             if pool == "portability":
                 records.append(
                     build_native_identity_record(
                         case_id=case_id,
                         pool=pool,
                         source_sql_path=source_sql_path,
+                        validation_schema=validation_schema,
+                        search_path_after_set="",
                         statement_timeout_ms=args.statement_timeout_ms,
                         execution_mode="dry_run",
                         execution_status="skipped",
@@ -753,6 +768,8 @@ def cmd_baseline_smoke_native_identity_pg(args: argparse.Namespace) -> int:
                     case_id=case_id,
                     pool=pool,
                     source_sql_path=source_sql_path,
+                    validation_schema=validation_schema,
+                    search_path_after_set="",
                     statement_timeout_ms=args.statement_timeout_ms,
                     execution_mode="dry_run",
                     execution_status="planned",
@@ -795,11 +812,14 @@ def cmd_baseline_smoke_native_identity_pg(args: argparse.Namespace) -> int:
             case_id = case_spec["case_id"]
             pool = case_spec["pool"]
             source_sql_path = pool_case_root(pool) / case_id / "source.sql"
+            validation_schema = native_identity_validation_schema(case_id, pool)
             records.append(
                 build_native_identity_record(
                     case_id=case_id,
                     pool=pool,
                     source_sql_path=source_sql_path,
+                    validation_schema=validation_schema,
+                    search_path_after_set="",
                     statement_timeout_ms=args.statement_timeout_ms,
                     execution_mode="pg_execute_canary",
                     execution_status="env_blocked",
@@ -847,12 +867,15 @@ def cmd_baseline_smoke_native_identity_pg(args: argparse.Namespace) -> int:
             case_id = case_spec["case_id"]
             pool = case_spec["pool"]
             source_sql_path = pool_case_root(pool) / case_id / "source.sql"
+            validation_schema = native_identity_validation_schema(case_id, pool)
             if pool == "portability":
                 records.append(
                     build_native_identity_record(
                         case_id=case_id,
                         pool=pool,
                         source_sql_path=source_sql_path,
+                        validation_schema=validation_schema,
+                        search_path_after_set="",
                         statement_timeout_ms=args.statement_timeout_ms,
                         execution_mode="pg_execute_canary",
                         execution_status="skipped",
@@ -869,6 +892,8 @@ def cmd_baseline_smoke_native_identity_pg(args: argparse.Namespace) -> int:
                         case_id=case_id,
                         pool=pool,
                         source_sql_path=source_sql_path,
+                        validation_schema=validation_schema,
+                        search_path_after_set="",
                         statement_timeout_ms=args.statement_timeout_ms,
                         execution_mode="pg_execute_canary",
                         execution_status="failed",
@@ -909,6 +934,7 @@ def cmd_baseline_smoke_native_identity_pg(args: argparse.Namespace) -> int:
         case_id = case_spec["case_id"]
         pool = case_spec["pool"]
         source_sql_path = pool_case_root(pool) / case_id / "source.sql"
+        validation_schema = native_identity_validation_schema(case_id, pool)
 
         if pool == "portability":
             records.append(
@@ -916,6 +942,8 @@ def cmd_baseline_smoke_native_identity_pg(args: argparse.Namespace) -> int:
                     case_id=case_id,
                     pool=pool,
                     source_sql_path=source_sql_path,
+                    validation_schema=validation_schema,
+                    search_path_after_set="",
                     statement_timeout_ms=args.statement_timeout_ms,
                     execution_mode="pg_execute_canary",
                     execution_status="skipped",
@@ -934,6 +962,8 @@ def cmd_baseline_smoke_native_identity_pg(args: argparse.Namespace) -> int:
                     case_id=case_id,
                     pool=pool,
                     source_sql_path=source_sql_path,
+                    validation_schema=validation_schema,
+                    search_path_after_set="",
                     statement_timeout_ms=args.statement_timeout_ms,
                     execution_mode="pg_execute_canary",
                     execution_status="failed",
@@ -948,6 +978,7 @@ def cmd_baseline_smoke_native_identity_pg(args: argparse.Namespace) -> int:
 
         sql_text = source_sql_path.read_text(encoding="utf-8")
         start = time.perf_counter()
+        search_path_after_set = ""
         try:
             with psycopg.connect(
                 host=os.environ["PGHOST"],
@@ -961,6 +992,40 @@ def cmd_baseline_smoke_native_identity_pg(args: argparse.Namespace) -> int:
                 ),
             ) as conn:
                 with conn.cursor() as cur:
+                    if validation_schema:
+                        cur.execute(
+                            "SELECT to_regnamespace(%s)",
+                            (validation_schema,),
+                        )
+                        schema_name = cur.fetchone()[0]
+                        if not schema_name:
+                            records.append(
+                                build_native_identity_record(
+                                    case_id=case_id,
+                                    pool=pool,
+                                    source_sql_path=source_sql_path,
+                                    validation_schema=validation_schema,
+                                    search_path_after_set="",
+                                    statement_timeout_ms=args.statement_timeout_ms,
+                                    execution_mode="pg_execute_canary",
+                                    execution_status="failed",
+                                    pg_env_visible=True,
+                                    pg_password_present=pg_password_present,
+                                    failure_category="missing_validation_schema",
+                                    blocker="derived validation schema does not exist in PostgreSQL",
+                                    notes=["execution attempted", "search_path not set because validation schema was missing"],
+                                    runtime_ms=int((time.perf_counter() - start) * 1000),
+                                    error_message=f"validation schema not found: {validation_schema}",
+                                )
+                            )
+                            continue
+                        cur.execute(
+                            psycopg.sql.SQL("SET search_path TO {}, public").format(
+                                psycopg.sql.Identifier(validation_schema)
+                            )
+                        )
+                        cur.execute("SHOW search_path")
+                        search_path_after_set = str(cur.fetchone()[0])
                     cur.execute(sql_text)
                     if cur.description is not None:
                         rows = cur.fetchall()
@@ -973,6 +1038,8 @@ def cmd_baseline_smoke_native_identity_pg(args: argparse.Namespace) -> int:
                     case_id=case_id,
                     pool=pool,
                     source_sql_path=source_sql_path,
+                    validation_schema=validation_schema,
+                    search_path_after_set=search_path_after_set,
                     statement_timeout_ms=args.statement_timeout_ms,
                     execution_mode="pg_execute_canary",
                     execution_status="success",
@@ -992,6 +1059,8 @@ def cmd_baseline_smoke_native_identity_pg(args: argparse.Namespace) -> int:
                     case_id=case_id,
                     pool=pool,
                     source_sql_path=source_sql_path,
+                    validation_schema=validation_schema,
+                    search_path_after_set=search_path_after_set,
                     statement_timeout_ms=args.statement_timeout_ms,
                     execution_mode="pg_execute_canary",
                     execution_status="failed",
