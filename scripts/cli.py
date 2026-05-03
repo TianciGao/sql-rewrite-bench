@@ -9137,6 +9137,221 @@ def cmd_formal_common_core_sqlglot_execution(args: argparse.Namespace) -> int:
     return print_and_exit(payload, 0 if payload["ok"] else 1)
 
 
+def cmd_formal_common_core_sqlglot_scoring(args: argparse.Namespace) -> int:
+    output_name = normalize_formal_common_core_output_name(args.output)
+    if args.execute:
+        payload = {
+            "command": "formal-common-core-sqlglot-scoring",
+            "ok": False,
+            "ran_at_utc": utc_now(),
+            "output_path": "reports/formal_common_core/sqlglot_opt_same_dialect_scoring_execute_refused_v0.json",
+            "claim_boundary": "formal_sqlglot_scoring_from_existing_reports_only_not_full_correctness_or_speedup",
+            "message": "This command is read-existing-reports-only and does not support --execute.",
+            "issues": [
+                {
+                    "type": "invalid_execute_flag",
+                    "message": "formal-common-core-sqlglot-scoring does not support --execute",
+                }
+            ],
+            "guardrails": {
+                "database_execution": "disabled",
+                "sql_execution": "disabled",
+                "checker_execution": "disabled",
+                "model_api_call": "disabled",
+                "sqlglot_generation": "disabled",
+                "plan_collection": "disabled",
+                "speedup_scoring": "disabled",
+                "case_artifact_write": "disabled",
+                "registry_writeback": "disabled",
+            },
+        }
+        write_formal_common_core_report("sqlglot_opt_same_dialect_scoring_execute_refused_v0.json", payload)
+        return print_and_exit(payload, 1)
+
+    sqlglot_execution_path = FORMAL_COMMON_CORE_REPORT_DIR / "sqlglot_opt_same_dialect_execution_v0.json"
+    native_execution_path = FORMAL_COMMON_CORE_REPORT_DIR / "native_identity_execution_v0.json"
+    control_scoring_path = FORMAL_COMMON_CORE_REPORT_DIR / "control_scoring_v0.json"
+    control_execution_summary_path = FORMAL_COMMON_CORE_REPORT_DIR / "control_execution_summary_v0.json"
+    baseline_sqlglot_summary_path = BASELINE_SMOKE_REPORT_DIR / "sqlglot_vs_controls_pg_summary_v0.json"
+
+    issues: list[dict[str, Any]] = []
+    sqlglot_execution_report = load_json_if_present(sqlglot_execution_path)
+    native_execution_report = load_json_if_present(native_execution_path)
+    control_scoring_report = load_json_if_present(control_scoring_path)
+    control_execution_summary_report = load_json_if_present(control_execution_summary_path)
+    baseline_sqlglot_summary_report = load_json_if_present(baseline_sqlglot_summary_path)
+
+    if sqlglot_execution_report is None:
+        issues.append({"type": "missing_sqlglot_execution_report", "path": relative_to_root(sqlglot_execution_path)})
+    if native_execution_report is None:
+        issues.append({"type": "missing_native_execution_report", "path": relative_to_root(native_execution_path)})
+    if control_scoring_report is None:
+        issues.append({"type": "missing_control_scoring_report", "path": relative_to_root(control_scoring_path)})
+    if control_execution_summary_report is None:
+        issues.append({"type": "missing_control_execution_summary_report", "path": relative_to_root(control_execution_summary_path)})
+
+    sqlglot_record_map = {
+        str(record.get("case_id", "")).strip(): record
+        for record in (sqlglot_execution_report or {}).get("records", [])
+        if record.get("case_id")
+    }
+    native_record_map = {
+        str(record.get("case_id", "")).strip(): record
+        for record in (native_execution_report or {}).get("records", [])
+        if record.get("case_id")
+    }
+    baseline_sqlglot_case_map = {
+        str(record.get("case_id", "")).strip(): record
+        for record in (baseline_sqlglot_summary_report or {}).get("case_summaries", [])
+        if record.get("case_id")
+    }
+
+    records: list[dict[str, Any]] = []
+    row_match_count = 0
+    row_mismatch_count = 0
+    row_unknown_count = 0
+    observed_consistency_values: list[bool] = []
+    case_ids = formal_common_core_case_ids()
+
+    for case_id in case_ids:
+        inferred = case_root_for_case_id(case_id)
+        pool = inferred[0] if inferred else "unknown"
+        warnings: list[str] = []
+        sqlglot_record = sqlglot_record_map.get(case_id)
+        native_record = native_record_map.get(case_id)
+
+        if sqlglot_record is None or native_record is None:
+            scoring_status = "blocked_missing_execution_records"
+        elif (
+            sqlglot_record.get("parse_status") == "success"
+            and sqlglot_record.get("generation_status") == "success"
+            and sqlglot_record.get("execution_status") == "success"
+            and native_record.get("execution_status") == "success"
+        ):
+            scoring_status = "execution_observations_available"
+        else:
+            scoring_status = "partial_missing_execution_records"
+
+        native_row_count = native_record.get("row_count") if native_record else None
+        sqlglot_row_count = sqlglot_record.get("row_count") if sqlglot_record else None
+        if native_row_count is None or sqlglot_row_count is None:
+            row_match: bool | str = "unknown"
+            row_unknown_count += 1
+        else:
+            row_match = bool(native_row_count == sqlglot_row_count)
+            if row_match:
+                row_match_count += 1
+            else:
+                row_mismatch_count += 1
+
+        checker_artifact_paths: list[Path] = []
+        if inferred:
+            _, case_root = inferred
+            checker_artifact_paths = [
+                case_root / "runs" / "pg" / "result_check.json",
+                case_root / "runs" / "result_check.json",
+                case_root / "validation" / "checker.yaml",
+            ]
+        checker_artifacts_read = [
+            relative_to_root(path)
+            for path in checker_artifact_paths
+            if path.is_file()
+        ]
+
+        # Current case-local checker artifacts are source/positive/negative oriented.
+        # They do not expose an explicit SQLGlot-vs-native equality field, so do not infer one.
+        result_consistency_status_observed: bool | str = "unknown"
+        baseline_case_summary = baseline_sqlglot_case_map.get(case_id)
+        if baseline_case_summary is not None:
+            row_observation = baseline_case_summary.get("row_count_observation")
+            if row_observation not in {None, ""}:
+                warnings.append(f"baseline_sqlglot_row_count_observation={row_observation}")
+            generated_same_flag = baseline_case_summary.get("sqlglot_generated_sql_same_as_source_normalized")
+            if generated_same_flag is not None:
+                warnings.append(
+                    f"baseline_sqlglot_generated_sql_same_as_source_normalized={generated_same_flag}"
+                )
+
+        records.append(
+            {
+                "case_id": case_id,
+                "pool": pool,
+                "baseline_id": "SQLGLOT_OPT_SAME_DIALECT",
+                "route": "sqlglot_opt_same_dialect",
+                "parse_status": (sqlglot_record or {}).get("parse_status", "missing"),
+                "generation_status": (sqlglot_record or {}).get("generation_status", "missing"),
+                "sqlglot_execution_status": (sqlglot_record or {}).get("execution_status", "missing"),
+                "native_execution_status": (native_record or {}).get("execution_status", "missing"),
+                "native_row_count": native_row_count,
+                "sqlglot_row_count": sqlglot_row_count,
+                "sqlglot_runtime_ms": (sqlglot_record or {}).get("runtime_ms"),
+                "native_runtime_ms": (native_record or {}).get("runtime_ms"),
+                "sqlglot_row_count_matches_native": row_match,
+                "result_consistency_status_observed": result_consistency_status_observed,
+                "checker_artifacts_read": checker_artifacts_read,
+                "checker_artifact_count": len(checker_artifacts_read),
+                "scoring_status": scoring_status,
+                "warnings": warnings,
+                "artifact_claim_boundary": "formal_sqlglot_scoring_read_existing_reports_only_no_execution",
+            }
+        )
+
+    denominator_case_count = len(case_ids)
+    parse_success_count = int((sqlglot_execution_report or {}).get("parse_success_count", 0))
+    parse_failed_count = int((sqlglot_execution_report or {}).get("parse_failed_count", 0))
+    generation_success_count = int((sqlglot_execution_report or {}).get("generation_success_count", 0))
+    generation_failed_count = int((sqlglot_execution_report or {}).get("generation_failed_count", 0))
+    execution_success_count = int((sqlglot_execution_report or {}).get("success_count", 0))
+    execution_failed_count = int((sqlglot_execution_report or {}).get("failed_count", 0))
+
+    payload = {
+        "command": "formal-common-core-sqlglot-scoring",
+        "ok": (
+            sqlglot_execution_report is not None
+            and native_execution_report is not None
+            and len(sqlglot_record_map) == denominator_case_count
+            and len(native_record_map) == denominator_case_count
+        ),
+        "ran_at_utc": utc_now(),
+        "output_path": f"reports/formal_common_core/{output_name}",
+        "denominator_case_count": denominator_case_count,
+        "baseline_id": "SQLGLOT_OPT_SAME_DIALECT",
+        "route": "sqlglot_opt_same_dialect",
+        "parse_success_count": parse_success_count,
+        "parse_failed_count": parse_failed_count,
+        "generation_success_count": generation_success_count,
+        "generation_failed_count": generation_failed_count,
+        "execution_success_count": execution_success_count,
+        "execution_failed_count": execution_failed_count,
+        "parse_success_rate": parse_success_count / denominator_case_count if denominator_case_count else 0.0,
+        "generation_success_rate": generation_success_count / denominator_case_count if denominator_case_count else 0.0,
+        "executable_rate": execution_success_count / denominator_case_count if denominator_case_count else 0.0,
+        "sqlglot_row_count_match_count": row_match_count,
+        "sqlglot_row_count_mismatch_count": row_mismatch_count,
+        "sqlglot_row_count_unknown_count": row_unknown_count,
+        "result_consistency_rate_observed_existing_artifacts": None,
+        "result_consistency_rate_status": "not_computed_checker_required",
+        "formal_correctness_scoring_complete": False,
+        "speedup_scoring_complete": False,
+        "records": records,
+        "issues": issues,
+        "guardrails": {
+            "database_execution": "disabled",
+            "sql_execution": "disabled",
+            "checker_execution": "disabled",
+            "model_api_call": "disabled",
+            "sqlglot_generation": "disabled",
+            "plan_collection": "disabled",
+            "speedup_scoring": "disabled",
+            "case_artifact_write": "disabled",
+            "registry_writeback": "disabled",
+        },
+        "claim_boundary": "formal_sqlglot_scoring_from_existing_reports_only_not_full_correctness_or_speedup",
+    }
+    write_formal_common_core_report(output_name, payload)
+    return print_and_exit(payload, 0 if payload["ok"] else 1)
+
+
 def cmd_baseline_smoke_llm_call_canary(args: argparse.Namespace) -> int:
     default_output_name = "llm_direct_rewrite_call_canary_v0.json"
     output_name = normalize_baseline_smoke_output_name(default_output_name)
@@ -15817,6 +16032,14 @@ def build_parser() -> argparse.ArgumentParser:
     formal_common_core_sqlglot_execution_parser.add_argument("--statement-timeout-ms", type=int, default=30000)
     formal_common_core_sqlglot_execution_parser.add_argument("--execute", action="store_true", default=False)
     formal_common_core_sqlglot_execution_parser.set_defaults(func=cmd_formal_common_core_sqlglot_execution)
+
+    formal_common_core_sqlglot_scoring_parser = subparsers.add_parser("formal-common-core-sqlglot-scoring")
+    formal_common_core_sqlglot_scoring_parser.add_argument(
+        "--output",
+        default="sqlglot_opt_same_dialect_scoring_v0.json",
+    )
+    formal_common_core_sqlglot_scoring_parser.add_argument("--execute", action="store_true", default=False)
+    formal_common_core_sqlglot_scoring_parser.set_defaults(func=cmd_formal_common_core_sqlglot_scoring)
 
     sqlglot_transpile_summary_parser = subparsers.add_parser("baseline-smoke-sqlglot-transpile-summary")
     sqlglot_transpile_summary_parser.add_argument(
