@@ -29,7 +29,7 @@ This document is not:
 | Step 6 | GenRewrite | readiness-only complete | first-subset and PG-native-9 audit scope | readiness audit complete; input/cost-readiness scaffold complete; first-subset `4`, maybe_later `5`; likely_cost_risk `medium: 6`, `high: 3`; no model/correction/verifier/executor-feedback attempted | frontier appendix / subset-only candidate, control stack missing, not execution-ready | execution deferred until correction-loop, verifier, retry, cost, and prompt/rule policies are frozen |
 | Step 7 | R-Bot / LLM-R2 | readiness-only complete | first-subset and PG-native-9 audit scope | readiness audit complete; retrieval-readiness scaffold complete; first-subset `4`, maybe_later `5`; likely_retrieval_cost_risk `medium: 6`, `high: 3`; no execution/model/retrieval/demo-selection/rerank attempted | retrieval-dependent appendix / subset-only candidate, retrieval/demo/rule-pool stack missing, not execution-ready | execution deferred until retrieval corpus, demo/rule pool, contamination policy, rerank policy, and fair comparison contract exist |
 | Step 8 | SlabCity | readiness-only complete | frontier exception audit scope | readiness audit complete; conclusion: defer; frontier exception only; no local runner / adapter / CLI / API wrapper; no synthesis engine; no verifier / solver integration; no reproducible service/runtime contract | frontier exception only, not execution-ready | keep deferred until runnable local adapter or reproducible service/runtime contract exists |
-| Step 9 | SQLSolver / VeriEQL support | not started | support / analysis line | no readiness audit yet | support analysis, not main leaderboard route | defer behind main-route audits |
+| Step 9 | SQLSolver / VeriEQL support | readiness-only complete | support-first and pg-native-9 audit scope | readiness audit complete; support-readiness scaffold complete; `support_candidate: 1`, `maybe: 6`, `exclude: 2`; no solver/database/model execution attempted | support-only / subset-only verifier, not main leaderboard, not execution-ready | use only as bounded support-analysis candidate after solver wrapper, subset policy, timeout policy, and schema/constraint extraction exist |
 
 ## 3. Completed Smoke Milestones
 
@@ -153,6 +153,32 @@ This document is not:
   - no verifier / solver integration available.
   - no local adapter / service contract available.
   - not runnable as a baseline yet.
+- Step 9 SQLSolver / VeriEQL support:
+  - readiness audit complete.
+  - tracked audit note exists:
+    - `docs/_scratch/SQLSOLVER_VERIEQL_SUPPORT_READINESS_AUDIT_v0.md`
+  - support-readiness scaffold complete.
+  - command added:
+    - `python -m scripts.cli baseline-smoke-sqlsolver-verieql-readiness`
+  - `support_candidate: 1`
+  - `maybe: 6`
+  - `exclude_from_first_support_scaffold: 2`
+  - support_candidate case:
+    - `CONS_0007`
+  - maybe cases:
+    - `PERF_0006`
+    - `PERF_0008`
+    - `PERF_0024`
+    - `PERF_0033`
+    - `PERF_0054`
+    - `CONS_0012`
+  - excluded cases:
+    - `PERF_0013`
+    - `PERF_0017`
+  - `equivalence_execution_attempted_count: 0`
+  - `support_analysis_attempted_count: 0`
+  - no solver/database/model execution attempted.
+  - not runnable as support verifier yet.
 
 ## 4. Claim Boundaries
 
@@ -177,7 +203,7 @@ This document is not:
 - GenRewrite readiness audit and input/cost-readiness scaffold are complete, but execution is blocked by missing correction-loop implementation, verifier/executor-feedback loop, n-best/rerank path, retry/correction-round budget, frozen prompt/rule library, and cost policy.
 - R-Bot / LLM-R2 readiness audit and retrieval-readiness scaffold are complete, but execution is blocked by missing retrieval corpus/index, demo pool, rule pool, rerank policy, embedding/vector path, demo/retrieval count policy, contamination policy, and fair comparison contract.
 - SlabCity readiness audit is complete, but it remains deferred because there is no local runner, adapter, CLI/API wrapper, synthesis engine, verifier/solver integration, or reproducible service/runtime contract.
-- SQLSolver / VeriEQL support remains a support-analysis line, not a main leaderboard route.
+- SQLSolver / VeriEQL readiness audit and support-readiness scaffold are complete, but execution is blocked by missing SQLSolver/VeriEQL runners, SMT/Z3/CVC5 wrapper, symbolic equivalence checker, schema/constraint extraction path, timeout/subset policy, and local reproducible solver artifact path.
 
 ## 6. Remaining Baseline Backlog
 
@@ -205,12 +231,15 @@ This document is not:
   - frontier exception only
   - future work requires runnable local adapter or reproducible service/runtime contract
 - Step 9 SQLSolver / VeriEQL support:
-  - not started
-  - support analysis, not main leaderboard
+  - readiness audit complete
+  - support-readiness scaffold complete
+  - support-only / subset-only verifier
+  - execution deferred
+  - future work requires solver wrappers, subset policy, timeout policy, schema/constraint extraction, and reproducible artifact path
 
 ## 7. Recommended Next Action
 
-- Run SQLSolver / VeriEQL support readiness audit.
+- Create a final baseline route readiness closeout packet.
 
 ## 8. Non-Goals
 
