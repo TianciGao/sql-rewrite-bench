@@ -9567,6 +9567,194 @@ def cmd_formal_common_core_llm_rewrite_execution(args: argparse.Namespace) -> in
     return print_and_exit(payload, 0 if payload["ok"] else 1)
 
 
+def cmd_formal_common_core_llm_rewrite_scoring(args: argparse.Namespace) -> int:
+    output_name = normalize_formal_common_core_output_name(args.output)
+    if args.execute:
+        payload = {
+            "command": "formal-common-core-llm-rewrite-scoring",
+            "ok": False,
+            "ran_at_utc": utc_now(),
+            "output_path": "reports/formal_common_core/llm_direct_rewrite_scoring_execute_refused_v0.json",
+            "claim_boundary": "formal_llm_direct_rewrite_scoring_from_existing_reports_only_not_full_correctness_or_speedup",
+            "message": "This command is read-existing-reports-only and does not support --execute.",
+            "issues": [
+                {
+                    "type": "invalid_execute_flag",
+                    "message": "formal-common-core-llm-rewrite-scoring does not support --execute",
+                }
+            ],
+            "guardrails": {
+                "database_execution": "disabled",
+                "sql_execution": "disabled",
+                "checker_execution": "disabled",
+                "model_api_call": "disabled",
+                "sqlglot_generation": "disabled",
+                "plan_collection": "disabled",
+                "speedup_scoring": "disabled",
+                "case_artifact_write": "disabled",
+                "registry_writeback": "disabled",
+            },
+        }
+        write_formal_common_core_report("llm_direct_rewrite_scoring_execute_refused_v0.json", payload)
+        return print_and_exit(payload, 1)
+
+    llm_execution_path = FORMAL_COMMON_CORE_REPORT_DIR / "llm_direct_rewrite_execution_v0.json"
+    native_execution_path = FORMAL_COMMON_CORE_REPORT_DIR / "native_identity_execution_v0.json"
+    control_scoring_path = FORMAL_COMMON_CORE_REPORT_DIR / "control_scoring_v0.json"
+    issues: list[dict[str, Any]] = []
+
+    llm_execution_report = load_json_if_present(llm_execution_path)
+    native_execution_report = load_json_if_present(native_execution_path)
+    control_scoring_report = load_json_if_present(control_scoring_path)
+
+    if llm_execution_report is None:
+        issues.append({"type": "missing_llm_execution_report", "path": relative_to_root(llm_execution_path)})
+    if native_execution_report is None:
+        issues.append({"type": "missing_native_execution_report", "path": relative_to_root(native_execution_path)})
+    if control_scoring_report is None:
+        issues.append({"type": "missing_control_scoring_report", "path": relative_to_root(control_scoring_path)})
+
+    llm_record_map = {
+        str(record.get("case_id", "")).strip(): record
+        for record in (llm_execution_report or {}).get("records", [])
+        if record.get("case_id")
+    }
+    native_record_map = {
+        str(record.get("case_id", "")).strip(): record
+        for record in (native_execution_report or {}).get("records", [])
+        if record.get("case_id")
+    }
+
+    records: list[dict[str, Any]] = []
+    row_match_count = 0
+    row_mismatch_count = 0
+    row_unknown_count = 0
+    case_ids = formal_common_core_case_ids()
+
+    for case_id in case_ids:
+        inferred = case_root_for_case_id(case_id)
+        pool = inferred[0] if inferred else "unknown"
+        llm_record = llm_record_map.get(case_id)
+        native_record = native_record_map.get(case_id)
+        warnings: list[str] = []
+
+        if llm_record is None or native_record is None:
+            scoring_status = "blocked_missing_execution_records"
+        elif (
+            llm_record.get("call_status") == "success"
+            and llm_record.get("extracted_sql_status") == "extracted"
+            and llm_record.get("pg_execution_status") == "success"
+            and native_record.get("execution_status") == "success"
+        ):
+            scoring_status = "execution_observations_available"
+        else:
+            scoring_status = "partial_missing_execution_records"
+
+        native_row_count = native_record.get("row_count") if native_record else None
+        llm_row_count = llm_record.get("pg_row_count") if llm_record else None
+        if native_row_count is None or llm_row_count is None:
+            llm_row_count_matches_native: bool | str = "unknown"
+            row_unknown_count += 1
+        else:
+            llm_row_count_matches_native = bool(native_row_count == llm_row_count)
+            if llm_row_count_matches_native:
+                row_match_count += 1
+            else:
+                row_mismatch_count += 1
+
+        checker_artifact_paths: list[Path] = []
+        if inferred:
+            _, case_root = inferred
+            checker_artifact_paths = [
+                case_root / "runs" / "pg" / "result_check.json",
+                case_root / "runs" / "result_check.json",
+                case_root / "validation" / "checker.yaml",
+            ]
+        checker_artifacts_read = [
+            relative_to_root(path)
+            for path in checker_artifact_paths
+            if path.is_file()
+        ]
+
+        # Existing route artifacts do not expose a route-specific LLM-vs-native
+        # result-consistency field. Keep correctness status conservative.
+        result_consistency_status_observed: bool | str = "unknown"
+
+        records.append(
+            {
+                "case_id": case_id,
+                "native_row_count": native_row_count,
+                "llm_row_count": llm_row_count,
+                "llm_row_count_matches_native": llm_row_count_matches_native,
+                "call_status": (llm_record or {}).get("call_status", "missing"),
+                "extracted_sql_status": (llm_record or {}).get("extracted_sql_status", "missing"),
+                "pg_execution_status": (llm_record or {}).get("pg_execution_status", "missing"),
+                "token_usage_total": (llm_record or {}).get("token_usage_total"),
+                "runtime_ms": (llm_record or {}).get("pg_runtime_ms"),
+                "result_consistency_status_observed": result_consistency_status_observed,
+                "checker_artifacts_read": checker_artifacts_read,
+                "checker_artifact_count": len(checker_artifacts_read),
+                "scoring_status": scoring_status,
+                "artifact_claim_boundary": "formal_llm_direct_rewrite_scoring_read_existing_reports_only_no_execution",
+            }
+        )
+
+    denominator_case_count = len(case_ids)
+    call_success_count = int((llm_execution_report or {}).get("call_success_count", 0))
+    extracted_sql_count = int((llm_execution_report or {}).get("extracted_sql_count", 0))
+    pg_execution_success_count = int((llm_execution_report or {}).get("pg_execution_success_count", 0))
+    executable_rate = float((llm_execution_report or {}).get("executable_rate", 0.0))
+    total_token_usage = int((llm_execution_report or {}).get("total_token_usage", 0))
+    execution_success_count = int((llm_execution_report or {}).get("execution_success_count", 0))
+
+    payload = {
+        "command": "formal-common-core-llm-rewrite-scoring",
+        "ok": (
+            llm_execution_report is not None
+            and native_execution_report is not None
+            and len(llm_record_map) == denominator_case_count
+            and len(native_record_map) == denominator_case_count
+        ),
+        "ran_at_utc": utc_now(),
+        "output_path": f"reports/formal_common_core/{output_name}",
+        "denominator_case_count": denominator_case_count,
+        "call_success_count": call_success_count,
+        "extracted_sql_count": extracted_sql_count,
+        "pg_execution_success_count": pg_execution_success_count,
+        "executable_rate": executable_rate,
+        "call_success_rate": call_success_count / denominator_case_count if denominator_case_count else 0.0,
+        "extraction_success_rate": extracted_sql_count / denominator_case_count if denominator_case_count else 0.0,
+        "pg_execution_success_rate": pg_execution_success_count / denominator_case_count if denominator_case_count else 0.0,
+        "row_count_match_count": row_match_count,
+        "row_count_mismatch_count": row_mismatch_count,
+        "row_count_unknown_count": row_unknown_count,
+        "total_token_usage": total_token_usage,
+        "token_per_executable_rewrite": (
+            total_token_usage / execution_success_count if execution_success_count else None
+        ),
+        "result_consistency_rate_status": "not_computed_checker_required",
+        "result_consistency_rate_observed_existing_artifacts": None,
+        "formal_correctness_scoring_complete": False,
+        "speedup_scoring_complete": False,
+        "records": records,
+        "issues": issues,
+        "guardrails": {
+            "database_execution": "disabled",
+            "sql_execution": "disabled",
+            "checker_execution": "disabled",
+            "model_api_call": "disabled",
+            "sqlglot_generation": "disabled",
+            "plan_collection": "disabled",
+            "speedup_scoring": "disabled",
+            "case_artifact_write": "disabled",
+            "registry_writeback": "disabled",
+        },
+        "claim_boundary": "formal_llm_direct_rewrite_scoring_from_existing_reports_only_not_full_correctness_or_speedup",
+    }
+    write_formal_common_core_report(output_name, payload)
+    return print_and_exit(payload, 0 if payload["ok"] else 1)
+
+
 def cmd_baseline_smoke_llm_call_canary(args: argparse.Namespace) -> int:
     default_output_name = "llm_direct_rewrite_call_canary_v0.json"
     output_name = normalize_baseline_smoke_output_name(default_output_name)
@@ -16264,6 +16452,14 @@ def build_parser() -> argparse.ArgumentParser:
     )
     formal_common_core_llm_rewrite_execution_parser.add_argument("--execute", action="store_true", default=False)
     formal_common_core_llm_rewrite_execution_parser.set_defaults(func=cmd_formal_common_core_llm_rewrite_execution)
+
+    formal_common_core_llm_rewrite_scoring_parser = subparsers.add_parser("formal-common-core-llm-rewrite-scoring")
+    formal_common_core_llm_rewrite_scoring_parser.add_argument(
+        "--output",
+        default="llm_direct_rewrite_scoring_v0.json",
+    )
+    formal_common_core_llm_rewrite_scoring_parser.add_argument("--execute", action="store_true", default=False)
+    formal_common_core_llm_rewrite_scoring_parser.set_defaults(func=cmd_formal_common_core_llm_rewrite_scoring)
 
     sqlglot_transpile_summary_parser = subparsers.add_parser("baseline-smoke-sqlglot-transpile-summary")
     sqlglot_transpile_summary_parser.add_argument(
