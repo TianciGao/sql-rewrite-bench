@@ -35,6 +35,7 @@ SQLGLOT_PG_CANARY_DEFAULT_CASES = ["PERF_0006", "PERF_0008"]
 SQLGLOT_TRANSPILE_DEFAULT_CASES = ["PORT_0004", "PORT_0012", "PORT_0022"]
 SQLGLOT_TRANSPILE_PG_CANARY_DEFAULT_CASES = ["PORT_0004", "PORT_0022"]
 LLM_TRANSLATE_PORT_DEFAULT_CASES = ["PORT_0004", "PORT_0012", "PORT_0022"]
+LLM_TRANSLATE_CALL_CANARY_DEFAULT_CASES = ["PORT_0004"]
 LLM_CALL_CANARY_DEFAULT_CASES = ["PERF_0006"]
 CALCITE_HEP_FIRST_SUBSET_CASES = [
     "CONS_0007",
@@ -250,6 +251,16 @@ def llm_canary_report_name(kind: str, case_id: str) -> str:
     }
     if kind not in name_map:
         raise ValueError(f"unsupported llm canary report kind: {kind}")
+    return name_map[kind]
+
+
+def llm_translate_report_name(kind: str, case_id: str) -> str:
+    case_slug = normalize_case_id_for_filename(case_id)
+    name_map = {
+        "call": f"llm_direct_translate_call_{case_slug}_v0.json",
+    }
+    if kind not in name_map:
+        raise ValueError(f"unsupported llm translate report kind: {kind}")
     return name_map[kind]
 
 
@@ -482,6 +493,157 @@ def build_llm_prompt_package(case_spec: dict[str, Any], target_dialect: str, mod
         "source_sql_exists": source_sql_exists,
         "manifest_path": relative_to_root(manifest_path),
         "manifest_exists": manifest_exists,
+        "prompt_character_count": prompt_character_count,
+        "estimated_prompt_tokens": estimated_prompt_tokens,
+        "prompt_package_status": prompt_package_status,
+        "prompt_preview": prompt_preview,
+        "prompt_hash_sha256": prompt_hash_sha256,
+        "prompt_blob": prompt_blob,
+        "notes": notes,
+    }
+
+
+def build_llm_translate_prompt_package(
+    case_spec: dict[str, Any],
+    target_dialect: str,
+    model_label: str,
+    preflight_record: dict[str, Any] | None = None,
+    execution_record: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    case_id = case_spec["case_id"]
+    pool = case_spec["pool"]
+    case_root = pool_case_root(pool) / case_id
+    source_sql_path = case_root / "source.sql"
+    manifest_path = case_root / "manifest.yaml"
+    positive_sql_path = case_root / "rewrite_pos_01.sql"
+    negative_sql_path = case_root / "rewrite_neg_01.sql"
+    source_sql_exists = source_sql_path.is_file()
+    manifest_exists = manifest_path.is_file()
+    manifest_text = manifest_path.read_text(encoding="utf-8") if manifest_exists else ""
+    source_dialect = llm_translate_source_dialect(case_id, manifest_text)
+    preflight_record = preflight_record or {}
+    execution_record = execution_record or {}
+    notes: list[str] = []
+
+    has_human_positive_reference = positive_sql_path.is_file()
+    has_hard_negative_reference = negative_sql_path.is_file()
+    notes.append(f"has_human_positive_reference={'true' if has_human_positive_reference else 'false'}")
+    notes.append(f"has_hard_negative_reference={'true' if has_hard_negative_reference else 'false'}")
+    if case_spec.get("why_selected"):
+        notes.append(f"why_selected={case_spec['why_selected']}")
+    if case_spec.get("caveat"):
+        notes.append(f"smoke_caveat={case_spec['caveat']}")
+    notes.append(f"source_dialect={source_dialect}")
+
+    sqlglot_transpile_preflight_status = preflight_record.get("transpile_status", "")
+    sqlglot_transpile_pg_execution_status = execution_record.get("execution_status", "")
+    if preflight_record.get("source_dialect_used"):
+        notes.append(f"sqlglot_source_dialect_used={preflight_record['source_dialect_used']}")
+    if sqlglot_transpile_preflight_status:
+        notes.append(f"sqlglot_transpile_preflight_status={sqlglot_transpile_preflight_status}")
+    if sqlglot_transpile_pg_execution_status:
+        notes.append(f"sqlglot_transpile_pg_execution_status={sqlglot_transpile_pg_execution_status}")
+    if case_id == "PORT_0012":
+        notes.append(
+            "sqlglot_transpile_execution_layer_failure_note=quoted identifier literal 'birthday' was treated as timestamp input"
+        )
+        if execution_record.get("failure_category"):
+            notes.append(f"sqlglot_transpile_failure_category={execution_record['failure_category']}")
+
+    prompt_package_status = "ready"
+    prompt_preview = ""
+    prompt_hash_sha256 = ""
+    prompt_character_count = 0
+    estimated_prompt_tokens = 0
+    prompt_blob = ""
+
+    if not source_sql_exists:
+        prompt_package_status = "missing_source_sql"
+        notes.append("source.sql is missing")
+    else:
+        source_sql = source_sql_path.read_text(encoding="utf-8")
+        system_message = (
+            "You are translating SQL into PostgreSQL.\n"
+            "Return SQL only.\n"
+            "Do not include markdown fences.\n"
+            "Do not include explanation.\n"
+            "Target dialect: PostgreSQL.\n"
+            "Preserve semantics, output columns, and intended result shape.\n"
+            "Do not use DDL, DML, temp tables, indexes, stored procedures, or UDFs.\n"
+            "Use one SELECT statement only where possible.\n"
+            "Do not rely on unavailable tables or columns.\n"
+            "Preserve identifier intent and treat quoted identifiers carefully.\n"
+            "Translate date/time, string, boolean, LIMIT/OFFSET, cast, and null-handling syntax carefully.\n"
+            "If the source already appears PostgreSQL-compatible, return a PostgreSQL-compatible normalized version.\n"
+            "If no safe translation is possible, return the original SQL unchanged."
+        )
+        user_message = (
+            f"case_id: {case_id}\n"
+            f"pool: {pool}\n"
+            f"source_dialect: {source_dialect}\n"
+            f"target_dialect: {target_dialect}\n"
+            f"why_selected: {case_spec.get('why_selected', '')}\n"
+            f"known_caveat: {case_spec.get('caveat', '')}\n"
+            f"manifest_available: {'true' if manifest_exists else 'false'}\n"
+            f"has_human_positive_reference: {'true' if has_human_positive_reference else 'false'}\n"
+            f"has_hard_negative_reference: {'true' if has_hard_negative_reference else 'false'}\n"
+            f"sqlglot_transpile_source_dialect_used: {preflight_record.get('source_dialect_used', '')}\n"
+            f"sqlglot_transpile_preflight_status: {sqlglot_transpile_preflight_status}\n"
+            f"sqlglot_transpile_pg_execution_status: {sqlglot_transpile_pg_execution_status}\n"
+            "\n"
+            "Translate the following SQL to PostgreSQL while preserving semantics.\n"
+            "Return SQL only.\n"
+            "\n"
+            "SOURCE SQL:\n"
+            f"{source_sql.strip()}\n"
+        )
+        if case_id == "PORT_0012":
+            user_message += (
+                "\n"
+                "KNOWN EXECUTION-LAYER CAVEAT:\n"
+                "A prior SQLGlot transpile route failed on this case because a quoted identifier literal 'birthday' "
+                "was treated as timestamp input. Treat quoted identifiers and date/time handling carefully.\n"
+            )
+        package = {
+            "system_message": system_message,
+            "user_message": user_message,
+            "metadata": {
+                "baseline_id": "LLM_DIRECT_TRANSLATE",
+                "case_id": case_id,
+                "pool": pool,
+                "source_dialect": source_dialect,
+                "target_dialect": target_dialect,
+                "model_label": model_label,
+                "has_human_positive_reference": has_human_positive_reference,
+                "has_hard_negative_reference": has_hard_negative_reference,
+                "manifest_exists": manifest_exists,
+                "smoke_role": case_spec.get("smoke_role", ""),
+                "sqlglot_transpile_source_dialect_used": preflight_record.get("source_dialect_used", ""),
+                "sqlglot_transpile_preflight_status": sqlglot_transpile_preflight_status,
+                "sqlglot_transpile_pg_execution_status": sqlglot_transpile_pg_execution_status,
+            },
+        }
+        prompt_blob = json.dumps(package, ensure_ascii=True, indent=2)
+        prompt_character_count = len(prompt_blob)
+        estimated_prompt_tokens = (prompt_character_count + 3) // 4
+        prompt_preview = prompt_blob[:700]
+        prompt_hash_sha256 = hashlib.sha256(prompt_blob.encode("utf-8")).hexdigest()
+        if not prompt_blob.strip():
+            prompt_package_status = "blocked"
+            notes.append("prompt package unexpectedly empty")
+
+    return {
+        "case_id": case_id,
+        "pool": pool,
+        "source_dialect": source_dialect,
+        "source_sql_path": relative_to_root(source_sql_path),
+        "source_sql_exists": source_sql_exists,
+        "manifest_path": relative_to_root(manifest_path),
+        "manifest_exists": manifest_exists,
+        "has_human_positive_reference": has_human_positive_reference,
+        "has_hard_negative_reference": has_hard_negative_reference,
+        "sqlglot_transpile_preflight_status": sqlglot_transpile_preflight_status,
+        "sqlglot_transpile_pg_execution_status": sqlglot_transpile_pg_execution_status,
         "prompt_character_count": prompt_character_count,
         "estimated_prompt_tokens": estimated_prompt_tokens,
         "prompt_package_status": prompt_package_status,
@@ -4434,158 +4596,43 @@ def cmd_baseline_smoke_llm_translate_prompt_dry_run(args: argparse.Namespace) ->
         issues.append({"type": "case_not_in_smoke_config", "case_id": case_id})
 
     for case_id in [case_id for case_id in selected_case_ids if case_id in case_index]:
-        case_spec = case_index[case_id]
-        pool = case_spec["pool"]
-        case_root = pool_case_root(pool) / case_id
-        source_sql_path = case_root / "source.sql"
-        manifest_path = case_root / "manifest.yaml"
-        positive_sql_path = case_root / "rewrite_pos_01.sql"
-        negative_sql_path = case_root / "rewrite_neg_01.sql"
-        source_sql_exists = source_sql_path.is_file()
-        manifest_exists = manifest_path.is_file()
-        manifest_text = manifest_path.read_text(encoding="utf-8") if manifest_exists else ""
-        source_dialect = llm_translate_source_dialect(case_id, manifest_text)
-        notes: list[str] = []
-
-        has_human_positive_reference = positive_sql_path.is_file()
-        has_hard_negative_reference = negative_sql_path.is_file()
-        notes.append(f"has_human_positive_reference={'true' if has_human_positive_reference else 'false'}")
-        notes.append(f"has_hard_negative_reference={'true' if has_hard_negative_reference else 'false'}")
-        if case_spec.get("why_selected"):
-            notes.append(f"why_selected={case_spec['why_selected']}")
-        if case_spec.get("caveat"):
-            notes.append(f"smoke_caveat={case_spec['caveat']}")
-        notes.append(f"source_dialect={source_dialect}")
-
-        preflight_record = preflight_case_index.get(case_id, {})
-        execution_record = execution_case_index.get(case_id, {})
-        sqlglot_transpile_preflight_status = preflight_record.get("transpile_status", "")
-        sqlglot_transpile_pg_execution_status = execution_record.get("execution_status", "")
-        if preflight_record.get("source_dialect_used"):
-            notes.append(f"sqlglot_source_dialect_used={preflight_record['source_dialect_used']}")
-        if sqlglot_transpile_preflight_status:
-            notes.append(f"sqlglot_transpile_preflight_status={sqlglot_transpile_preflight_status}")
-        if sqlglot_transpile_pg_execution_status:
-            notes.append(f"sqlglot_transpile_pg_execution_status={sqlglot_transpile_pg_execution_status}")
-        if case_id == "PORT_0012":
-            notes.append(
-                "sqlglot_transpile_execution_layer_failure_note=quoted identifier literal 'birthday' was treated as timestamp input"
-            )
-            if execution_record.get("failure_category"):
-                notes.append(f"sqlglot_transpile_failure_category={execution_record['failure_category']}")
-
-        prompt_package_status = "ready"
-        prompt_preview = ""
-        prompt_hash_sha256 = ""
-        prompt_character_count = 0
-        estimated_prompt_tokens = 0
-        estimated_total_tokens = args.max_output_tokens
-
-        if not source_sql_exists:
-            prompt_package_status = "missing_source_sql"
-            notes.append("source.sql is missing")
-        else:
-            source_sql = source_sql_path.read_text(encoding="utf-8")
-            system_message = (
-                "You are translating SQL into PostgreSQL.\n"
-                "Return SQL only.\n"
-                "Do not include markdown fences.\n"
-                "Do not include explanation.\n"
-                "Target dialect: PostgreSQL.\n"
-                "Preserve semantics, output columns, and intended result shape.\n"
-                "Do not use DDL, DML, temp tables, indexes, stored procedures, or UDFs.\n"
-                "Use one SELECT statement only where possible.\n"
-                "Do not rely on unavailable tables or columns.\n"
-                "Preserve identifier intent and treat quoted identifiers carefully.\n"
-                "Translate date/time, string, boolean, LIMIT/OFFSET, cast, and null-handling syntax carefully.\n"
-                "If the source already appears PostgreSQL-compatible, return a PostgreSQL-compatible normalized version.\n"
-                "If no safe translation is possible, return the original SQL unchanged."
-            )
-            user_message = (
-                f"case_id: {case_id}\n"
-                f"pool: {pool}\n"
-                f"source_dialect: {source_dialect}\n"
-                f"target_dialect: {args.target_dialect}\n"
-                f"why_selected: {case_spec.get('why_selected', '')}\n"
-                f"known_caveat: {case_spec.get('caveat', '')}\n"
-                f"manifest_available: {'true' if manifest_exists else 'false'}\n"
-                f"has_human_positive_reference: {'true' if has_human_positive_reference else 'false'}\n"
-                f"has_hard_negative_reference: {'true' if has_hard_negative_reference else 'false'}\n"
-                f"sqlglot_transpile_source_dialect_used: {preflight_record.get('source_dialect_used', '')}\n"
-                f"sqlglot_transpile_preflight_status: {sqlglot_transpile_preflight_status}\n"
-                f"sqlglot_transpile_pg_execution_status: {sqlglot_transpile_pg_execution_status}\n"
-                "\n"
-                "Translate the following SQL to PostgreSQL while preserving semantics.\n"
-                "Return SQL only.\n"
-                "\n"
-                "SOURCE SQL:\n"
-                f"{source_sql.strip()}\n"
-            )
-            if case_id == "PORT_0012":
-                user_message += (
-                    "\n"
-                    "KNOWN EXECUTION-LAYER CAVEAT:\n"
-                    "A prior SQLGlot transpile route failed on this case because a quoted identifier literal 'birthday' "
-                    "was treated as timestamp input. Treat quoted identifiers and date/time handling carefully.\n"
-                )
-            prompt_package = {
-                "system_message": system_message,
-                "user_message": user_message,
-                "metadata": {
-                    "baseline_id": "LLM_DIRECT_TRANSLATE",
-                    "case_id": case_id,
-                    "pool": pool,
-                    "source_dialect": source_dialect,
-                    "target_dialect": args.target_dialect,
-                    "model_label": args.model_label,
-                    "has_human_positive_reference": has_human_positive_reference,
-                    "has_hard_negative_reference": has_hard_negative_reference,
-                    "manifest_exists": manifest_exists,
-                    "smoke_role": case_spec.get("smoke_role", ""),
-                    "sqlglot_transpile_source_dialect_used": preflight_record.get("source_dialect_used", ""),
-                    "sqlglot_transpile_preflight_status": sqlglot_transpile_preflight_status,
-                    "sqlglot_transpile_pg_execution_status": sqlglot_transpile_pg_execution_status,
-                },
-            }
-            prompt_blob = json.dumps(prompt_package, ensure_ascii=True, indent=2)
-            prompt_character_count = len(prompt_blob)
-            estimated_prompt_tokens = (prompt_character_count + 3) // 4
-            estimated_total_tokens = estimated_prompt_tokens + args.max_output_tokens
-            prompt_preview = prompt_blob[:700]
-            prompt_hash_sha256 = hashlib.sha256(prompt_blob.encode("utf-8")).hexdigest()
-            if not prompt_blob.strip():
-                prompt_package_status = "blocked"
-                notes.append("prompt package unexpectedly empty")
-
+        prompt_row = build_llm_translate_prompt_package(
+            case_index[case_id],
+            args.target_dialect,
+            args.model_label,
+            preflight_case_index.get(case_id, {}),
+            execution_case_index.get(case_id, {}),
+        )
+        estimated_total_tokens = prompt_row["estimated_prompt_tokens"] + args.max_output_tokens
         records.append(
             {
                 "baseline_id": "LLM_DIRECT_TRANSLATE",
-                "case_id": case_id,
-                "pool": pool,
-                "source_dialect": source_dialect,
+                "case_id": prompt_row["case_id"],
+                "pool": prompt_row["pool"],
+                "source_dialect": prompt_row["source_dialect"],
                 "target_dialect": args.target_dialect,
                 "execution_mode": "translate_prompt_package_dry_run",
                 "model_label": args.model_label,
-                "source_sql_path": relative_to_root(source_sql_path),
-                "source_sql_exists": source_sql_exists,
-                "manifest_path": relative_to_root(manifest_path),
-                "manifest_exists": manifest_exists,
-                "has_human_positive_reference": has_human_positive_reference,
-                "has_hard_negative_reference": has_hard_negative_reference,
-                "sqlglot_transpile_preflight_status": sqlglot_transpile_preflight_status,
-                "sqlglot_transpile_pg_execution_status": sqlglot_transpile_pg_execution_status,
-                "prompt_character_count": prompt_character_count,
-                "estimated_prompt_tokens": estimated_prompt_tokens,
+                "source_sql_path": prompt_row["source_sql_path"],
+                "source_sql_exists": prompt_row["source_sql_exists"],
+                "manifest_path": prompt_row["manifest_path"],
+                "manifest_exists": prompt_row["manifest_exists"],
+                "has_human_positive_reference": prompt_row["has_human_positive_reference"],
+                "has_hard_negative_reference": prompt_row["has_hard_negative_reference"],
+                "sqlglot_transpile_preflight_status": prompt_row["sqlglot_transpile_preflight_status"],
+                "sqlglot_transpile_pg_execution_status": prompt_row["sqlglot_transpile_pg_execution_status"],
+                "prompt_character_count": prompt_row["prompt_character_count"],
+                "estimated_prompt_tokens": prompt_row["estimated_prompt_tokens"],
                 "max_output_tokens": args.max_output_tokens,
                 "estimated_total_tokens_with_completion_budget": estimated_total_tokens,
                 "token_cost_class": token_cost_class,
                 "estimated_cost_usd": None,
                 "pricing_snapshot": "not_frozen",
-                "prompt_package_status": prompt_package_status,
-                "prompt_preview": prompt_preview,
-                "prompt_hash_sha256": prompt_hash_sha256,
+                "prompt_package_status": prompt_row["prompt_package_status"],
+                "prompt_preview": prompt_row["prompt_preview"],
+                "prompt_hash_sha256": prompt_row["prompt_hash_sha256"],
                 "artifact_claim_boundary": "llm_translate_prompt_package_only_no_model_call",
-                "notes": notes,
+                "notes": prompt_row["notes"],
             }
         )
 
@@ -5784,6 +5831,813 @@ def cmd_baseline_smoke_llm_call_canary(args: argparse.Namespace) -> int:
             "case_artifact_write": "disabled",
         },
         "claim_boundary": "llm_call_canary_only_not_correctness_or_speedup_scoring",
+    }
+    write_baseline_smoke_report(output_name, payload)
+    return print_and_exit(payload, 0 if payload["ok"] else 1)
+
+
+def cmd_baseline_smoke_llm_translate_call_canary(args: argparse.Namespace) -> int:
+    default_output_name = "llm_direct_translate_call_canary_v0.json"
+    output_name = normalize_baseline_smoke_output_name(default_output_name)
+    output_mode = "default"
+    output_case_id = ""
+
+    if args.execute:
+        payload = {
+            "command": "baseline-smoke-llm-translate-call-canary",
+            "cwd": str(ROOT),
+            "ok": False,
+            "ran_at_utc": utc_now(),
+            "config_path": relative_to_root(resolve_repo_path(args.config)),
+            "baseline_id": "LLM_DIRECT_TRANSLATE",
+            "target_dialect": args.target_dialect,
+            "output_path": "reports/baseline_smoke/llm_direct_translate_call_refused_v0.json",
+            "claim_boundary": "llm_translate_call_canary_only_not_translation_correctness_or_execution_scoring",
+            "message": "This is not an execution command. Use --call-model for the tightly bounded LLM translate call canary.",
+            "issues": [
+                {
+                    "type": "invalid_execute_flag",
+                    "message": "baseline-smoke-llm-translate-call-canary does not support --execute; use --call-model",
+                }
+            ],
+            "guardrails": {
+                "model_api_call": "enabled_only_with_call_model",
+                "database_execution": "disabled",
+                "mysql_execution": "disabled",
+                "spark_execution": "disabled",
+                "sqlglot_generation": "disabled",
+                "generated_sql_execution": "disabled",
+                "case_artifact_write": "disabled",
+            },
+        }
+        write_baseline_smoke_report("llm_direct_translate_call_refused_v0.json", payload)
+        return print_and_exit(payload, 1)
+
+    config_path = resolve_repo_path(args.config)
+    config = load_json(config_path)
+    case_index = {case["case_id"]: case for case in config.get("cases", [])}
+    selected_case_ids = args.case_id or list(LLM_TRANSLATE_CALL_CANARY_DEFAULT_CASES)
+    records: list[dict[str, Any]] = []
+    issues: list[dict[str, Any]] = []
+    call_requested = bool(args.call_model)
+    endpoint_config = resolve_llm_endpoint_config()
+    api_key_visible = endpoint_config["api_key_visible"]
+    try:
+        importlib.import_module("openai")
+        client_package_available = True
+    except ModuleNotFoundError:
+        client_package_available = False
+
+    if call_requested and not args.case_id:
+        selected_case_ids = ["PORT_0004"]
+
+    if args.per_case_output:
+        if len(selected_case_ids) != 1:
+            payload = {
+                "command": "baseline-smoke-llm-translate-call-canary",
+                "ok": False,
+                "ran_at_utc": utc_now(),
+                "config_path": relative_to_root(config_path),
+                "baseline_id": "LLM_DIRECT_TRANSLATE",
+                "target_dialect": args.target_dialect,
+                "output_path": f"reports/baseline_smoke/{default_output_name}",
+                "output_mode": "per_case",
+                "message": "--per-case-output requires exactly one selected case.",
+                "issues": [
+                    {
+                        "type": "per_case_output_requires_single_case",
+                        "case_ids": selected_case_ids,
+                    }
+                ],
+            }
+            write_baseline_smoke_report(default_output_name, payload)
+            return print_and_exit(payload, 1)
+        output_case_id = selected_case_ids[0]
+        output_name = llm_translate_report_name("call", output_case_id)
+        output_mode = "per_case"
+
+    preflight_case_index: dict[str, dict[str, Any]] = {}
+    execution_case_index: dict[str, dict[str, Any]] = {}
+    preflight_report_path = ROOT / "reports" / "baseline_smoke" / "sqlglot_transpile_preflight_v0.json"
+    execution_report_path = ROOT / "reports" / "baseline_smoke" / "sqlglot_transpile_pg_canary_v0.json"
+    if preflight_report_path.is_file():
+        try:
+            preflight_case_index = {
+                record.get("case_id", ""): record for record in load_json(preflight_report_path).get("records", [])
+            }
+        except Exception:
+            issues.append(
+                {
+                    "type": "sqlglot_transpile_preflight_unreadable",
+                    "path": relative_to_root(preflight_report_path),
+                }
+            )
+    if execution_report_path.is_file():
+        try:
+            execution_case_index = {
+                record.get("case_id", ""): record for record in load_json(execution_report_path).get("records", [])
+            }
+        except Exception:
+            issues.append(
+                {
+                    "type": "sqlglot_transpile_execution_unreadable",
+                    "path": relative_to_root(execution_report_path),
+                }
+            )
+
+    invalid_cases = [case_id for case_id in selected_case_ids if case_id not in case_index]
+    for case_id in invalid_cases:
+        records.append(
+            {
+                "baseline_id": "LLM_DIRECT_TRANSLATE",
+                "case_id": case_id,
+                "pool": "",
+                "source_dialect": "unknown",
+                "target_dialect": args.target_dialect,
+                "execution_mode": "translate_prompt_dry_run",
+                "model_label": args.model_label,
+                "provider_mode": endpoint_config["provider_mode"],
+                "api_key_visible": api_key_visible,
+                "api_key_env_used": endpoint_config["api_key_env_used"],
+                "base_url_visible": endpoint_config["base_url_visible"],
+                "base_url_env_used": endpoint_config["base_url_env_used"],
+                "base_url_host_or_redacted": endpoint_config["base_url_host_or_redacted"],
+                "source_sql_path": "",
+                "source_sql_exists": False,
+                "prompt_hash_sha256": "",
+                "prompt_character_count": 0,
+                "estimated_prompt_tokens": 0,
+                "max_output_tokens": args.max_output_tokens,
+                "estimated_total_tokens_with_completion_budget": args.max_output_tokens,
+                "call_attempted": False,
+                "call_status": "not_requested",
+                "raw_output_text": "",
+                "raw_output_character_count": 0,
+                "raw_output_preview": "",
+                "raw_output_truncated_in_preview": False,
+                "extracted_sql_status": "not_available",
+                "extracted_sql_text": "",
+                "extracted_sql_character_count": 0,
+                "extracted_sql_preview": "",
+                "extracted_sql_truncated_in_preview": False,
+                "failure_category": "case_not_in_smoke_config",
+                "error_message": "",
+                "token_usage_input": None,
+                "token_usage_output": None,
+                "token_usage_total": None,
+                "estimated_cost_usd": None,
+                "pricing_snapshot": "not_frozen",
+                "artifact_claim_boundary": "llm_translate_prompt_package_only_no_model_call",
+                "notes": ["selection refused: case is outside the current smoke config"],
+            }
+        )
+        issues.append({"type": "case_not_in_smoke_config", "case_id": case_id})
+
+    prompt_rows: list[dict[str, Any]] = []
+    for case_id in [case_id for case_id in selected_case_ids if case_id in case_index]:
+        prompt_rows.append(
+            build_llm_translate_prompt_package(
+                case_index[case_id],
+                args.target_dialect,
+                args.model_label,
+                preflight_case_index.get(case_id, {}),
+                execution_case_index.get(case_id, {}),
+            )
+        )
+
+    if not call_requested:
+        for row in prompt_rows:
+            records.append(
+                {
+                    "baseline_id": "LLM_DIRECT_TRANSLATE",
+                    "case_id": row["case_id"],
+                    "pool": row["pool"],
+                    "source_dialect": row["source_dialect"],
+                    "target_dialect": args.target_dialect,
+                    "execution_mode": "translate_prompt_dry_run",
+                    "model_label": args.model_label,
+                    "provider_mode": endpoint_config["provider_mode"],
+                    "api_key_visible": api_key_visible,
+                    "api_key_env_used": endpoint_config["api_key_env_used"],
+                    "base_url_visible": endpoint_config["base_url_visible"],
+                    "base_url_env_used": endpoint_config["base_url_env_used"],
+                    "base_url_host_or_redacted": endpoint_config["base_url_host_or_redacted"],
+                    "source_sql_path": row["source_sql_path"],
+                    "source_sql_exists": row["source_sql_exists"],
+                    "prompt_hash_sha256": row["prompt_hash_sha256"],
+                    "prompt_character_count": row["prompt_character_count"],
+                    "estimated_prompt_tokens": row["estimated_prompt_tokens"],
+                    "max_output_tokens": args.max_output_tokens,
+                    "estimated_total_tokens_with_completion_budget": row["estimated_prompt_tokens"] + args.max_output_tokens,
+                    "call_attempted": False,
+                    "call_status": "not_requested",
+                    "raw_output_text": "",
+                    "raw_output_character_count": 0,
+                    "raw_output_preview": "",
+                    "raw_output_truncated_in_preview": False,
+                    "extracted_sql_status": "not_available",
+                    "extracted_sql_text": "",
+                    "extracted_sql_character_count": 0,
+                    "extracted_sql_preview": "",
+                    "extracted_sql_truncated_in_preview": False,
+                    "failure_category": "none" if row["prompt_package_status"] == "ready" else row["prompt_package_status"],
+                    "error_message": "",
+                    "token_usage_input": None,
+                    "token_usage_output": None,
+                    "token_usage_total": None,
+                    "estimated_cost_usd": None,
+                    "pricing_snapshot": "not_frozen",
+                    "artifact_claim_boundary": "llm_translate_prompt_package_only_no_model_call",
+                    "notes": row["notes"],
+                }
+            )
+
+        payload = {
+            "command": "baseline-smoke-llm-translate-call-canary",
+            "ok": (
+                not issues
+                and all(record["source_sql_exists"] for record in records)
+                and all(record["prompt_character_count"] > 0 for record in records)
+                and all(
+                    record["artifact_claim_boundary"] == "llm_translate_prompt_package_only_no_model_call"
+                    for record in records
+                )
+            ),
+            "ran_at_utc": utc_now(),
+            "config_path": relative_to_root(config_path),
+            "baseline_id": "LLM_DIRECT_TRANSLATE",
+            "target_dialect": args.target_dialect,
+            "output_mode": output_mode,
+            "output_case_id": output_case_id,
+            "output_path": f"reports/baseline_smoke/{output_name}",
+            "model_label": args.model_label,
+            "provider_mode": endpoint_config["provider_mode"],
+            "api_key_visible": api_key_visible,
+            "api_key_env_used": endpoint_config["api_key_env_used"],
+            "base_url_visible": endpoint_config["base_url_visible"],
+            "base_url_env_used": endpoint_config["base_url_env_used"],
+            "base_url_host_or_redacted": endpoint_config["base_url_host_or_redacted"],
+            "case_count": len(records),
+            "call_requested": False,
+            "call_attempted_count": 0,
+            "call_success_count": 0,
+            "call_failed_count": 0,
+            "env_blocked_count": 0,
+            "client_unavailable_count": 0,
+            "extracted_sql_count": 0,
+            "empty_output_count": 0,
+            "needs_manual_review_count": 0,
+            "total_estimated_prompt_tokens": sum(record["estimated_prompt_tokens"] for record in records),
+            "total_estimated_tokens_with_completion_budget": sum(
+                record["estimated_total_tokens_with_completion_budget"] for record in records
+            ),
+            "token_usage_total_if_available": None,
+            "pricing_snapshot": "not_frozen",
+            "records": records,
+            "issues": issues,
+            "guardrails": {
+                "model_api_call": "enabled_only_with_call_model",
+                "database_execution": "disabled",
+                "mysql_execution": "disabled",
+                "spark_execution": "disabled",
+                "sqlglot_generation": "disabled",
+                "generated_sql_execution": "disabled",
+                "case_artifact_write": "disabled",
+            },
+            "claim_boundary": "llm_translate_call_canary_only_not_translation_correctness_or_execution_scoring",
+        }
+        write_baseline_smoke_report(output_name, payload)
+        return print_and_exit(payload, 0 if payload["ok"] else 1)
+
+    valid_selected_case_ids = [case_id for case_id in selected_case_ids if case_id in case_index]
+    if len(valid_selected_case_ids) != 1:
+        for row in prompt_rows:
+            records.append(
+                {
+                    "baseline_id": "LLM_DIRECT_TRANSLATE",
+                    "case_id": row["case_id"],
+                    "pool": row["pool"],
+                    "source_dialect": row["source_dialect"],
+                    "target_dialect": args.target_dialect,
+                    "execution_mode": "translate_model_call_canary",
+                    "model_label": args.model_label,
+                    "provider_mode": endpoint_config["provider_mode"],
+                    "api_key_visible": api_key_visible,
+                    "api_key_env_used": endpoint_config["api_key_env_used"],
+                    "base_url_visible": endpoint_config["base_url_visible"],
+                    "base_url_env_used": endpoint_config["base_url_env_used"],
+                    "base_url_host_or_redacted": endpoint_config["base_url_host_or_redacted"],
+                    "source_sql_path": row["source_sql_path"],
+                    "source_sql_exists": row["source_sql_exists"],
+                    "prompt_hash_sha256": row["prompt_hash_sha256"],
+                    "prompt_character_count": row["prompt_character_count"],
+                    "estimated_prompt_tokens": row["estimated_prompt_tokens"],
+                    "max_output_tokens": args.max_output_tokens,
+                    "estimated_total_tokens_with_completion_budget": row["estimated_prompt_tokens"] + args.max_output_tokens,
+                    "call_attempted": False,
+                    "call_status": "failed",
+                    "raw_output_text": "",
+                    "raw_output_character_count": 0,
+                    "raw_output_preview": "",
+                    "raw_output_truncated_in_preview": False,
+                    "extracted_sql_status": "not_available",
+                    "extracted_sql_text": "",
+                    "extracted_sql_character_count": 0,
+                    "extracted_sql_preview": "",
+                    "extracted_sql_truncated_in_preview": False,
+                    "failure_category": "multiple_case_call_not_allowed",
+                    "error_message": "",
+                    "token_usage_input": None,
+                    "token_usage_output": None,
+                    "token_usage_total": None,
+                    "estimated_cost_usd": None,
+                    "pricing_snapshot": "not_frozen",
+                    "artifact_claim_boundary": "llm_translate_call_canary_no_sql_execution",
+                    "notes": row["notes"] + ["real translate call canary is limited to exactly one case"],
+                }
+            )
+        payload = {
+            "command": "baseline-smoke-llm-translate-call-canary",
+            "ok": False,
+            "ran_at_utc": utc_now(),
+            "config_path": relative_to_root(config_path),
+            "baseline_id": "LLM_DIRECT_TRANSLATE",
+            "target_dialect": args.target_dialect,
+            "output_mode": output_mode,
+            "output_case_id": output_case_id,
+            "output_path": f"reports/baseline_smoke/{output_name}",
+            "model_label": args.model_label,
+            "provider_mode": endpoint_config["provider_mode"],
+            "api_key_visible": api_key_visible,
+            "api_key_env_used": endpoint_config["api_key_env_used"],
+            "base_url_visible": endpoint_config["base_url_visible"],
+            "base_url_env_used": endpoint_config["base_url_env_used"],
+            "base_url_host_or_redacted": endpoint_config["base_url_host_or_redacted"],
+            "case_count": len(records),
+            "call_requested": True,
+            "call_attempted_count": 0,
+            "call_success_count": 0,
+            "call_failed_count": len(records),
+            "env_blocked_count": 0,
+            "client_unavailable_count": 0,
+            "extracted_sql_count": 0,
+            "empty_output_count": 0,
+            "needs_manual_review_count": 0,
+            "total_estimated_prompt_tokens": sum(record["estimated_prompt_tokens"] for record in records),
+            "total_estimated_tokens_with_completion_budget": sum(
+                record["estimated_total_tokens_with_completion_budget"] for record in records
+            ),
+            "token_usage_total_if_available": None,
+            "pricing_snapshot": "not_frozen",
+            "records": records,
+            "issues": issues + [{"type": "multiple_case_call_not_allowed", "message": "real translate call canary is limited to one case"}],
+            "guardrails": {
+                "model_api_call": "enabled_only_with_call_model",
+                "database_execution": "disabled",
+                "mysql_execution": "disabled",
+                "spark_execution": "disabled",
+                "sqlglot_generation": "disabled",
+                "generated_sql_execution": "disabled",
+                "case_artifact_write": "disabled",
+            },
+            "claim_boundary": "llm_translate_call_canary_only_not_translation_correctness_or_execution_scoring",
+        }
+        write_baseline_smoke_report(output_name, payload)
+        return print_and_exit(payload, 1)
+
+    if not api_key_visible:
+        for row in prompt_rows:
+            records.append(
+                {
+                    "baseline_id": "LLM_DIRECT_TRANSLATE",
+                    "case_id": row["case_id"],
+                    "pool": row["pool"],
+                    "source_dialect": row["source_dialect"],
+                    "target_dialect": args.target_dialect,
+                    "execution_mode": "env_blocked",
+                    "model_label": args.model_label,
+                    "provider_mode": "env_blocked",
+                    "api_key_visible": False,
+                    "api_key_env_used": endpoint_config["api_key_env_used"],
+                    "base_url_visible": endpoint_config["base_url_visible"],
+                    "base_url_env_used": endpoint_config["base_url_env_used"],
+                    "base_url_host_or_redacted": endpoint_config["base_url_host_or_redacted"],
+                    "source_sql_path": row["source_sql_path"],
+                    "source_sql_exists": row["source_sql_exists"],
+                    "prompt_hash_sha256": row["prompt_hash_sha256"],
+                    "prompt_character_count": row["prompt_character_count"],
+                    "estimated_prompt_tokens": row["estimated_prompt_tokens"],
+                    "max_output_tokens": args.max_output_tokens,
+                    "estimated_total_tokens_with_completion_budget": row["estimated_prompt_tokens"] + args.max_output_tokens,
+                    "call_attempted": False,
+                    "call_status": "env_blocked",
+                    "raw_output_text": "",
+                    "raw_output_character_count": 0,
+                    "raw_output_preview": "",
+                    "raw_output_truncated_in_preview": False,
+                    "extracted_sql_status": "not_available",
+                    "extracted_sql_text": "",
+                    "extracted_sql_character_count": 0,
+                    "extracted_sql_preview": "",
+                    "extracted_sql_truncated_in_preview": False,
+                    "failure_category": "missing_api_key",
+                    "error_message": "",
+                    "token_usage_input": None,
+                    "token_usage_output": None,
+                    "token_usage_total": None,
+                    "estimated_cost_usd": None,
+                    "pricing_snapshot": "not_frozen",
+                    "artifact_claim_boundary": "llm_translate_call_canary_no_sql_execution",
+                    "notes": row["notes"] + ["model call blocked: no OPENAI_API_KEY or LLM_API_KEY visible"],
+                }
+            )
+
+        payload = {
+            "command": "baseline-smoke-llm-translate-call-canary",
+            "ok": False,
+            "ran_at_utc": utc_now(),
+            "config_path": relative_to_root(config_path),
+            "baseline_id": "LLM_DIRECT_TRANSLATE",
+            "target_dialect": args.target_dialect,
+            "output_mode": output_mode,
+            "output_case_id": output_case_id,
+            "model_label": args.model_label,
+            "provider_mode": "env_blocked",
+            "api_key_visible": False,
+            "api_key_env_used": endpoint_config["api_key_env_used"],
+            "base_url_visible": endpoint_config["base_url_visible"],
+            "base_url_env_used": endpoint_config["base_url_env_used"],
+            "base_url_host_or_redacted": endpoint_config["base_url_host_or_redacted"],
+            "case_count": len(records),
+            "call_requested": True,
+            "call_attempted_count": 0,
+            "call_success_count": 0,
+            "call_failed_count": 0,
+            "env_blocked_count": len(records),
+            "client_unavailable_count": 0,
+            "extracted_sql_count": 0,
+            "empty_output_count": 0,
+            "needs_manual_review_count": 0,
+            "total_estimated_prompt_tokens": sum(record["estimated_prompt_tokens"] for record in records),
+            "total_estimated_tokens_with_completion_budget": sum(
+                record["estimated_total_tokens_with_completion_budget"] for record in records
+            ),
+            "token_usage_total_if_available": None,
+            "pricing_snapshot": "not_frozen",
+            "records": records,
+            "issues": issues,
+            "guardrails": {
+                "model_api_call": "enabled_only_with_call_model",
+                "database_execution": "disabled",
+                "mysql_execution": "disabled",
+                "spark_execution": "disabled",
+                "sqlglot_generation": "disabled",
+                "generated_sql_execution": "disabled",
+                "case_artifact_write": "disabled",
+            },
+            "claim_boundary": "llm_translate_call_canary_only_not_translation_correctness_or_execution_scoring",
+        }
+        write_baseline_smoke_report("llm_direct_translate_env_blocked_v0.json", payload)
+        return print_and_exit(payload, 1)
+
+    if not client_package_available:
+        for row in prompt_rows:
+            records.append(
+                {
+                    "baseline_id": "LLM_DIRECT_TRANSLATE",
+                    "case_id": row["case_id"],
+                    "pool": row["pool"],
+                    "source_dialect": row["source_dialect"],
+                    "target_dialect": args.target_dialect,
+                    "execution_mode": "translate_model_call_canary",
+                    "model_label": args.model_label,
+                    "provider_mode": endpoint_config["provider_mode"],
+                    "api_key_visible": True,
+                    "api_key_env_used": endpoint_config["api_key_env_used"],
+                    "base_url_visible": endpoint_config["base_url_visible"],
+                    "base_url_env_used": endpoint_config["base_url_env_used"],
+                    "base_url_host_or_redacted": endpoint_config["base_url_host_or_redacted"],
+                    "source_sql_path": row["source_sql_path"],
+                    "source_sql_exists": row["source_sql_exists"],
+                    "prompt_hash_sha256": row["prompt_hash_sha256"],
+                    "prompt_character_count": row["prompt_character_count"],
+                    "estimated_prompt_tokens": row["estimated_prompt_tokens"],
+                    "max_output_tokens": args.max_output_tokens,
+                    "estimated_total_tokens_with_completion_budget": row["estimated_prompt_tokens"] + args.max_output_tokens,
+                    "call_attempted": False,
+                    "call_status": "client_unavailable",
+                    "raw_output_text": "",
+                    "raw_output_character_count": 0,
+                    "raw_output_preview": "",
+                    "raw_output_truncated_in_preview": False,
+                    "extracted_sql_status": "not_available",
+                    "extracted_sql_text": "",
+                    "extracted_sql_character_count": 0,
+                    "extracted_sql_preview": "",
+                    "extracted_sql_truncated_in_preview": False,
+                    "failure_category": "client_unavailable",
+                    "error_message": "openai client package is unavailable",
+                    "token_usage_input": None,
+                    "token_usage_output": None,
+                    "token_usage_total": None,
+                    "estimated_cost_usd": None,
+                    "pricing_snapshot": "not_frozen",
+                    "artifact_claim_boundary": "llm_translate_call_canary_no_sql_execution",
+                    "notes": row["notes"] + ["model client unavailable"],
+                }
+            )
+        payload = {
+            "command": "baseline-smoke-llm-translate-call-canary",
+            "ok": False,
+            "ran_at_utc": utc_now(),
+            "config_path": relative_to_root(config_path),
+            "baseline_id": "LLM_DIRECT_TRANSLATE",
+            "target_dialect": args.target_dialect,
+            "output_mode": output_mode,
+            "output_case_id": output_case_id,
+            "output_path": f"reports/baseline_smoke/{output_name}",
+            "model_label": args.model_label,
+            "provider_mode": endpoint_config["provider_mode"],
+            "api_key_visible": True,
+            "api_key_env_used": endpoint_config["api_key_env_used"],
+            "base_url_visible": endpoint_config["base_url_visible"],
+            "base_url_env_used": endpoint_config["base_url_env_used"],
+            "base_url_host_or_redacted": endpoint_config["base_url_host_or_redacted"],
+            "case_count": len(records),
+            "call_requested": True,
+            "call_attempted_count": 0,
+            "call_success_count": 0,
+            "call_failed_count": 0,
+            "env_blocked_count": 0,
+            "client_unavailable_count": len(records),
+            "extracted_sql_count": 0,
+            "empty_output_count": 0,
+            "needs_manual_review_count": 0,
+            "total_estimated_prompt_tokens": sum(record["estimated_prompt_tokens"] for record in records),
+            "total_estimated_tokens_with_completion_budget": sum(
+                record["estimated_total_tokens_with_completion_budget"] for record in records
+            ),
+            "token_usage_total_if_available": None,
+            "pricing_snapshot": "not_frozen",
+            "records": records,
+            "issues": issues,
+            "guardrails": {
+                "model_api_call": "enabled_only_with_call_model",
+                "database_execution": "disabled",
+                "mysql_execution": "disabled",
+                "spark_execution": "disabled",
+                "sqlglot_generation": "disabled",
+                "generated_sql_execution": "disabled",
+                "case_artifact_write": "disabled",
+            },
+            "claim_boundary": "llm_translate_call_canary_only_not_translation_correctness_or_execution_scoring",
+        }
+        write_baseline_smoke_report(output_name, payload)
+        return print_and_exit(payload, 1)
+
+    openai_mod = importlib.import_module("openai")
+    OpenAI = getattr(openai_mod, "OpenAI", None)
+    if OpenAI is None:
+        for row in prompt_rows:
+            records.append(
+                {
+                    "baseline_id": "LLM_DIRECT_TRANSLATE",
+                    "case_id": row["case_id"],
+                    "pool": row["pool"],
+                    "source_dialect": row["source_dialect"],
+                    "target_dialect": args.target_dialect,
+                    "execution_mode": "translate_model_call_canary",
+                    "model_label": args.model_label,
+                    "provider_mode": endpoint_config["provider_mode"],
+                    "api_key_visible": True,
+                    "api_key_env_used": endpoint_config["api_key_env_used"],
+                    "base_url_visible": endpoint_config["base_url_visible"],
+                    "base_url_env_used": endpoint_config["base_url_env_used"],
+                    "base_url_host_or_redacted": endpoint_config["base_url_host_or_redacted"],
+                    "source_sql_path": row["source_sql_path"],
+                    "source_sql_exists": row["source_sql_exists"],
+                    "prompt_hash_sha256": row["prompt_hash_sha256"],
+                    "prompt_character_count": row["prompt_character_count"],
+                    "estimated_prompt_tokens": row["estimated_prompt_tokens"],
+                    "max_output_tokens": args.max_output_tokens,
+                    "estimated_total_tokens_with_completion_budget": row["estimated_prompt_tokens"] + args.max_output_tokens,
+                    "call_attempted": False,
+                    "call_status": "client_unavailable",
+                    "raw_output_text": "",
+                    "raw_output_character_count": 0,
+                    "raw_output_preview": "",
+                    "raw_output_truncated_in_preview": False,
+                    "extracted_sql_status": "not_available",
+                    "extracted_sql_text": "",
+                    "extracted_sql_character_count": 0,
+                    "extracted_sql_preview": "",
+                    "extracted_sql_truncated_in_preview": False,
+                    "failure_category": "client_unavailable",
+                    "error_message": "openai.OpenAI client is unavailable",
+                    "token_usage_input": None,
+                    "token_usage_output": None,
+                    "token_usage_total": None,
+                    "estimated_cost_usd": None,
+                    "pricing_snapshot": "not_frozen",
+                    "artifact_claim_boundary": "llm_translate_call_canary_no_sql_execution",
+                    "notes": row["notes"] + ["OpenAI client class unavailable"],
+                }
+            )
+        payload = {
+            "command": "baseline-smoke-llm-translate-call-canary",
+            "ok": False,
+            "ran_at_utc": utc_now(),
+            "config_path": relative_to_root(config_path),
+            "baseline_id": "LLM_DIRECT_TRANSLATE",
+            "target_dialect": args.target_dialect,
+            "output_mode": output_mode,
+            "output_case_id": output_case_id,
+            "output_path": f"reports/baseline_smoke/{output_name}",
+            "model_label": args.model_label,
+            "provider_mode": endpoint_config["provider_mode"],
+            "api_key_visible": True,
+            "api_key_env_used": endpoint_config["api_key_env_used"],
+            "base_url_visible": endpoint_config["base_url_visible"],
+            "base_url_env_used": endpoint_config["base_url_env_used"],
+            "base_url_host_or_redacted": endpoint_config["base_url_host_or_redacted"],
+            "case_count": len(records),
+            "call_requested": True,
+            "call_attempted_count": 0,
+            "call_success_count": 0,
+            "call_failed_count": 0,
+            "env_blocked_count": 0,
+            "client_unavailable_count": len(records),
+            "extracted_sql_count": 0,
+            "empty_output_count": 0,
+            "needs_manual_review_count": 0,
+            "total_estimated_prompt_tokens": sum(record["estimated_prompt_tokens"] for record in records),
+            "total_estimated_tokens_with_completion_budget": sum(
+                record["estimated_total_tokens_with_completion_budget"] for record in records
+            ),
+            "token_usage_total_if_available": None,
+            "pricing_snapshot": "not_frozen",
+            "records": records,
+            "issues": issues,
+            "guardrails": {
+                "model_api_call": "enabled_only_with_call_model",
+                "database_execution": "disabled",
+                "mysql_execution": "disabled",
+                "spark_execution": "disabled",
+                "sqlglot_generation": "disabled",
+                "generated_sql_execution": "disabled",
+                "case_artifact_write": "disabled",
+            },
+            "claim_boundary": "llm_translate_call_canary_only_not_translation_correctness_or_execution_scoring",
+        }
+        write_baseline_smoke_report(output_name, payload)
+        return print_and_exit(payload, 1)
+
+    client_kwargs = {"api_key": endpoint_config["api_key"]}
+    if endpoint_config["base_url_visible"]:
+        client_kwargs["base_url"] = endpoint_config["base_url"]
+    client = OpenAI(**client_kwargs)
+
+    for row in prompt_rows:
+        raw_text = ""
+        raw_preview = ""
+        token_usage_input = None
+        token_usage_output = None
+        token_usage_total = None
+        extracted_sql_status = "not_available"
+        extracted_sql_text = ""
+        extracted_sql_preview = ""
+        call_status = "failed"
+        failure_category = "none"
+        error_message = ""
+        notes = list(row["notes"])
+        prompt_package = json.loads(row["prompt_blob"])
+
+        try:
+            response = client.chat.completions.create(
+                model=args.model_label,
+                messages=[
+                    {"role": "system", "content": prompt_package["system_message"]},
+                    {"role": "user", "content": prompt_package["user_message"]},
+                ],
+                temperature=args.temperature,
+                max_tokens=args.max_output_tokens,
+            )
+            message = response.choices[0].message.content if response.choices else ""
+            raw_text = (message or "").strip()
+            raw_preview = raw_text[:700]
+            extracted_sql_status, extracted_sql_text = extract_sql_like_output(raw_text)
+            extracted_sql_preview = extracted_sql_text[:700]
+            call_status = "success"
+            usage = getattr(response, "usage", None)
+            if usage is not None:
+                token_usage_input = getattr(usage, "prompt_tokens", None)
+                token_usage_output = getattr(usage, "completion_tokens", None)
+                token_usage_total = getattr(usage, "total_tokens", None)
+        except Exception as exc:
+            call_status = "failed"
+            failure_category = type(exc).__name__
+            error_message = str(exc)
+
+        records.append(
+            {
+                "baseline_id": "LLM_DIRECT_TRANSLATE",
+                "case_id": row["case_id"],
+                "pool": row["pool"],
+                "source_dialect": row["source_dialect"],
+                "target_dialect": args.target_dialect,
+                "execution_mode": "translate_model_call_canary",
+                "model_label": args.model_label,
+                "provider_mode": endpoint_config["provider_mode"],
+                "api_key_visible": True,
+                "api_key_env_used": endpoint_config["api_key_env_used"],
+                "base_url_visible": endpoint_config["base_url_visible"],
+                "base_url_env_used": endpoint_config["base_url_env_used"],
+                "base_url_host_or_redacted": endpoint_config["base_url_host_or_redacted"],
+                "source_sql_path": row["source_sql_path"],
+                "source_sql_exists": row["source_sql_exists"],
+                "prompt_hash_sha256": row["prompt_hash_sha256"],
+                "prompt_character_count": row["prompt_character_count"],
+                "estimated_prompt_tokens": row["estimated_prompt_tokens"],
+                "max_output_tokens": args.max_output_tokens,
+                "estimated_total_tokens_with_completion_budget": row["estimated_prompt_tokens"] + args.max_output_tokens,
+                "call_attempted": True,
+                "call_status": call_status,
+                "raw_output_text": raw_text,
+                "raw_output_character_count": len(raw_text),
+                "raw_output_preview": raw_preview,
+                "raw_output_truncated_in_preview": len(raw_text) > len(raw_preview),
+                "extracted_sql_status": extracted_sql_status,
+                "extracted_sql_text": extracted_sql_text,
+                "extracted_sql_character_count": len(extracted_sql_text),
+                "extracted_sql_preview": extracted_sql_preview,
+                "extracted_sql_truncated_in_preview": len(extracted_sql_text) > len(extracted_sql_preview),
+                "failure_category": failure_category,
+                "error_message": error_message,
+                "token_usage_input": token_usage_input,
+                "token_usage_output": token_usage_output,
+                "token_usage_total": token_usage_total,
+                "estimated_cost_usd": None,
+                "pricing_snapshot": "not_frozen",
+                "artifact_claim_boundary": "llm_translate_call_canary_no_sql_execution",
+                "notes": notes,
+            }
+        )
+
+    payload = {
+        "command": "baseline-smoke-llm-translate-call-canary",
+        "ok": (
+            len(records) == 1
+            and all(record["call_status"] == "success" for record in records)
+            and all(record["raw_output_character_count"] > 0 for record in records)
+            and all(
+                record["artifact_claim_boundary"] == "llm_translate_call_canary_no_sql_execution"
+                for record in records
+            )
+        ),
+        "ran_at_utc": utc_now(),
+        "config_path": relative_to_root(config_path),
+        "baseline_id": "LLM_DIRECT_TRANSLATE",
+        "target_dialect": args.target_dialect,
+        "output_mode": output_mode,
+        "output_case_id": output_case_id,
+        "output_path": f"reports/baseline_smoke/{output_name}",
+        "model_label": args.model_label,
+        "provider_mode": endpoint_config["provider_mode"],
+        "api_key_visible": True,
+        "api_key_env_used": endpoint_config["api_key_env_used"],
+        "base_url_visible": endpoint_config["base_url_visible"],
+        "base_url_env_used": endpoint_config["base_url_env_used"],
+        "base_url_host_or_redacted": endpoint_config["base_url_host_or_redacted"],
+        "case_count": len(records),
+        "call_requested": True,
+        "call_attempted_count": sum(1 for record in records if record["call_attempted"]),
+        "call_success_count": sum(1 for record in records if record["call_status"] == "success"),
+        "call_failed_count": sum(1 for record in records if record["call_status"] == "failed"),
+        "env_blocked_count": sum(1 for record in records if record["call_status"] == "env_blocked"),
+        "client_unavailable_count": sum(1 for record in records if record["call_status"] == "client_unavailable"),
+        "extracted_sql_count": sum(1 for record in records if record["extracted_sql_status"] == "extracted"),
+        "empty_output_count": sum(1 for record in records if record["extracted_sql_status"] == "empty_output"),
+        "needs_manual_review_count": sum(1 for record in records if record["extracted_sql_status"] == "needs_manual_review"),
+        "total_estimated_prompt_tokens": sum(record["estimated_prompt_tokens"] for record in records),
+        "total_estimated_tokens_with_completion_budget": sum(
+            record["estimated_total_tokens_with_completion_budget"] for record in records
+        ),
+        "token_usage_total_if_available": sum(
+            record["token_usage_total"] for record in records if isinstance(record["token_usage_total"], int)
+        ) or None,
+        "pricing_snapshot": "not_frozen",
+        "records": records,
+        "issues": issues,
+        "guardrails": {
+            "model_api_call": "enabled_only_with_call_model",
+            "database_execution": "disabled",
+            "mysql_execution": "disabled",
+            "spark_execution": "disabled",
+            "sqlglot_generation": "disabled",
+            "generated_sql_execution": "disabled",
+            "case_artifact_write": "disabled",
+        },
+        "claim_boundary": "llm_translate_call_canary_only_not_translation_correctness_or_execution_scoring",
     }
     write_baseline_smoke_report(output_name, payload)
     return print_and_exit(payload, 0 if payload["ok"] else 1)
@@ -10141,6 +10995,21 @@ def build_parser() -> argparse.ArgumentParser:
     llm_translate_prompt_dry_run_parser.add_argument("--execute", action="store_true", default=False)
     llm_translate_prompt_dry_run_parser.add_argument("--call-model", action="store_true", default=False)
     llm_translate_prompt_dry_run_parser.set_defaults(func=cmd_baseline_smoke_llm_translate_prompt_dry_run)
+
+    llm_translate_call_canary_parser = subparsers.add_parser("baseline-smoke-llm-translate-call-canary")
+    llm_translate_call_canary_parser.add_argument(
+        "--config",
+        default="docs/_scratch/baseline_smoke_common_core_v0.json",
+    )
+    llm_translate_call_canary_parser.add_argument("--case-id", action="append", default=[])
+    llm_translate_call_canary_parser.add_argument("--target-dialect", default="postgres")
+    llm_translate_call_canary_parser.add_argument("--model-label", default="gpt-5.2")
+    llm_translate_call_canary_parser.add_argument("--max-output-tokens", type=int, default=2048)
+    llm_translate_call_canary_parser.add_argument("--temperature", type=float, default=0.0)
+    llm_translate_call_canary_parser.add_argument("--per-case-output", action="store_true", default=False)
+    llm_translate_call_canary_parser.add_argument("--execute", action="store_true", default=False)
+    llm_translate_call_canary_parser.add_argument("--call-model", action="store_true", default=False)
+    llm_translate_call_canary_parser.set_defaults(func=cmd_baseline_smoke_llm_translate_call_canary)
 
     llm_call_canary_parser = subparsers.add_parser("baseline-smoke-llm-call-canary")
     llm_call_canary_parser.add_argument(
