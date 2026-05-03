@@ -206,6 +206,10 @@ def normalize_baseline_smoke_output_name(value: str) -> str:
     return value
 
 
+def normalize_sql_for_compare(sql_text: str) -> str:
+    return re.sub(r"\s+", " ", sql_text).strip().lower()
+
+
 def check_status(errors: list[dict[str, Any]], registry_name: str, *error_types: str) -> str:
     return "fail" if any(
         error.get("registry") == registry_name and error.get("type") in error_types
@@ -2718,6 +2722,241 @@ def cmd_baseline_smoke_pg_control_summary(args: argparse.Namespace) -> int:
     return print_and_exit(payload, 0 if ok else 1)
 
 
+def cmd_baseline_smoke_sqlglot_preflight(args: argparse.Namespace) -> int:
+    output_name = normalize_baseline_smoke_output_name("sqlglot_same_dialect_preflight_v0.json")
+
+    if args.execute:
+        payload = {
+            "command": "baseline-smoke-sqlglot-preflight",
+            "cwd": str(ROOT),
+            "ok": False,
+            "ran_at_utc": utc_now(),
+            "config_path": relative_to_root(resolve_repo_path(args.config)),
+            "engine_scope": "postgres",
+            "baseline_id": "SQLGLOT_OPT_SAME_DIALECT",
+            "output_path": "reports/baseline_smoke/sqlglot_same_dialect_execute_refused_v0.json",
+            "claim_boundary": "sqlglot_preflight_only_no_execution",
+            "message": "Execution is not supported for SQLGlot preflight. This command only parses and generates same-dialect candidate SQL strings.",
+            "issues": [
+                {
+                    "type": "execution_not_supported",
+                    "message": "baseline-smoke-sqlglot-preflight is read-only and does not execute generated SQL",
+                }
+            ],
+            "guardrails": {
+                "database_execution": "disabled",
+                "mysql_execution": "disabled",
+                "spark_execution": "disabled",
+                "llm_execution": "disabled",
+                "generated_sql_execution": "disabled",
+                "case_artifact_write": "disabled",
+            },
+        }
+        write_baseline_smoke_report("sqlglot_same_dialect_execute_refused_v0.json", payload)
+        return print_and_exit(payload, 1)
+
+    config_path = resolve_repo_path(args.config)
+    config = load_json(config_path)
+    case_index = {case["case_id"]: case for case in config.get("cases", [])}
+    selected_case_ids = args.case_id or list(HUMAN_POSITIVE_PG_DEFAULT_CASES)
+    records: list[dict[str, Any]] = []
+    issues: list[dict[str, Any]] = []
+
+    invalid_cases = [case_id for case_id in selected_case_ids if case_id not in case_index]
+    for case_id in invalid_cases:
+        records.append(
+            {
+                "baseline_id": "SQLGLOT_OPT_SAME_DIALECT",
+                "case_id": case_id,
+                "pool": "",
+                "planned_engine": "postgres",
+                "execution_mode": "preflight_no_execution",
+                "source_sql_path": "",
+                "source_sql_exists": False,
+                "sqlglot_available": False,
+                "parse_status": "skipped",
+                "generation_status": "skipped",
+                "generated_sql_empty": "unknown",
+                "generated_sql_same_as_source_normalized": "unknown",
+                "generated_sql_preview": "",
+                "failure_category": "case_not_in_smoke_config",
+                "error_message": "",
+                "artifact_claim_boundary": "sqlglot_preflight_only_no_execution",
+                "notes": ["selection refused: case is outside the current smoke config"],
+            }
+        )
+        issues.append(
+            {
+                "type": "case_not_in_smoke_config",
+                "case_id": case_id,
+            }
+        )
+
+    valid_case_ids = [case_id for case_id in selected_case_ids if case_id in case_index]
+    selected_specs = [case_index[case_id] for case_id in valid_case_ids]
+
+    sqlglot_available = True
+    sqlglot_error = ""
+    try:
+        sqlglot = importlib.import_module("sqlglot")
+    except ModuleNotFoundError as exc:
+        sqlglot_available = False
+        sqlglot_error = str(exc)
+        sqlglot = None
+        issues.append(
+            {
+                "type": "missing_sqlglot",
+                "detail": str(exc),
+            }
+        )
+
+    generated_dir = BASELINE_SMOKE_REPORT_DIR / "generated_sqlglot"
+    if args.write_generated:
+        generated_dir.mkdir(parents=True, exist_ok=True)
+
+    for case_spec in selected_specs:
+        case_id = case_spec["case_id"]
+        pool = case_spec["pool"]
+        source_sql_path = pool_case_root(pool) / case_id / "source.sql"
+        source_sql_exists = source_sql_path.is_file()
+        generated_sql_preview = ""
+        generated_sql_empty: bool | str = "unknown"
+        generated_sql_same = "unknown"
+        parse_status = "skipped"
+        generation_status = "skipped"
+        failure_category = "none"
+        error_message = ""
+        notes: list[str] = []
+
+        if not source_sql_exists:
+            parse_status = "skipped"
+            generation_status = "skipped"
+            generated_sql_empty = "unknown"
+            generated_sql_same = "unknown"
+            failure_category = "missing_source_sql"
+            notes.append("source.sql is missing")
+        elif not sqlglot_available:
+            parse_status = "skipped"
+            generation_status = "skipped"
+            generated_sql_empty = "unknown"
+            generated_sql_same = "unknown"
+            failure_category = "sqlglot_unavailable"
+            error_message = sqlglot_error
+            notes.append("sqlglot is not importable in the current environment")
+        else:
+            source_sql = source_sql_path.read_text(encoding="utf-8")
+            try:
+                parsed = sqlglot.parse_one(source_sql, dialect=args.dialect)
+                parse_status = "success"
+            except Exception as exc:
+                parsed = None
+                parse_status = "failed"
+                generation_status = "skipped"
+                generated_sql_empty = "unknown"
+                generated_sql_same = "unknown"
+                failure_category = type(exc).__name__
+                error_message = str(exc)
+                notes.append("sqlglot parse failed")
+
+            if parse_status == "success":
+                try:
+                    generated_sql = parsed.sql(dialect=args.dialect)
+                    generation_status = "success"
+                    generated_sql_empty = len(generated_sql.strip()) == 0
+                    generated_sql_preview = generated_sql[:500]
+                    if generated_sql_empty:
+                        failure_category = "empty_generated_sql"
+                        notes.append("generated SQL string was empty")
+                    else:
+                        generated_sql_same = (
+                            normalize_sql_for_compare(source_sql)
+                            == normalize_sql_for_compare(generated_sql)
+                        )
+                        notes.append("sqlglot generated same-dialect candidate SQL")
+                        if args.write_generated:
+                            generated_path = generated_dir / f"{case_id}.sql"
+                            generated_path.write_text(generated_sql, encoding="utf-8")
+                            notes.append(f"generated SQL written to {relative_to_root(generated_path)}")
+                except Exception as exc:
+                    generation_status = "failed"
+                    generated_sql_empty = "unknown"
+                    generated_sql_same = "unknown"
+                    failure_category = type(exc).__name__
+                    error_message = str(exc)
+                    notes.append("sqlglot generation failed")
+
+        records.append(
+            {
+                "baseline_id": "SQLGLOT_OPT_SAME_DIALECT",
+                "case_id": case_id,
+                "pool": pool,
+                "planned_engine": "postgres",
+                "execution_mode": "preflight_no_execution",
+                "source_sql_path": relative_to_root(source_sql_path) if source_sql_path.is_absolute() else str(source_sql_path),
+                "source_sql_exists": source_sql_exists,
+                "sqlglot_available": sqlglot_available,
+                "parse_status": parse_status,
+                "generation_status": generation_status,
+                "generated_sql_empty": generated_sql_empty,
+                "generated_sql_same_as_source_normalized": generated_sql_same,
+                "generated_sql_preview": generated_sql_preview,
+                "failure_category": failure_category,
+                "error_message": error_message,
+                "artifact_claim_boundary": "sqlglot_preflight_only_no_execution",
+                "notes": notes,
+            }
+        )
+
+    parse_success_count = sum(1 for r in records if r["parse_status"] == "success")
+    parse_failed_count = sum(1 for r in records if r["parse_status"] == "failed")
+    generation_success_count = sum(1 for r in records if r["generation_status"] == "success")
+    generation_failed_count = sum(1 for r in records if r["generation_status"] == "failed")
+    empty_generated_sql_count = sum(1 for r in records if r["generated_sql_empty"] is True)
+    identical_to_source_count = sum(1 for r in records if r["generated_sql_same_as_source_normalized"] is True)
+    different_from_source_count = sum(1 for r in records if r["generated_sql_same_as_source_normalized"] is False)
+    skipped_count = sum(1 for r in records if r["parse_status"] == "skipped" or r["generation_status"] == "skipped")
+
+    ok = (
+        sqlglot_available
+        and not issues
+        and all(record["source_sql_exists"] for record in records)
+        and all(record["parse_status"] == "success" for record in records)
+        and all(record["generation_status"] == "success" for record in records)
+        and all(record["generated_sql_empty"] is False for record in records)
+    )
+
+    payload = {
+        "command": "baseline-smoke-sqlglot-preflight",
+        "ok": ok,
+        "ran_at_utc": utc_now(),
+        "config_path": relative_to_root(config_path),
+        "engine_scope": "postgres",
+        "baseline_id": "SQLGLOT_OPT_SAME_DIALECT",
+        "case_count": len(records),
+        "sqlglot_available": sqlglot_available,
+        "parse_success_count": parse_success_count,
+        "parse_failed_count": parse_failed_count,
+        "generation_success_count": generation_success_count,
+        "generation_failed_count": generation_failed_count,
+        "empty_generated_sql_count": empty_generated_sql_count,
+        "identical_to_source_count": identical_to_source_count,
+        "different_from_source_count": different_from_source_count,
+        "skipped_count": skipped_count,
+        "records": records,
+        "issues": issues,
+        "guardrails": {
+            "database_execution": "disabled",
+            "mysql_execution": "disabled",
+            "spark_execution": "disabled",
+            "llm_execution": "disabled",
+            "generated_sql_execution": "disabled",
+            "case_artifact_write": "disabled",
+        },
+    }
+    write_baseline_smoke_report(output_name, payload)
+    return print_and_exit(payload, 0 if ok else 1)
+
+
 def cmd_baseline_smoke_preflight(args: argparse.Namespace) -> int:
     if args.execute:
         payload = {
@@ -3954,6 +4193,17 @@ def build_parser() -> argparse.ArgumentParser:
     )
     pg_control_summary_parser.add_argument("--execute", action="store_true", default=False)
     pg_control_summary_parser.set_defaults(func=cmd_baseline_smoke_pg_control_summary)
+
+    sqlglot_preflight_parser = subparsers.add_parser("baseline-smoke-sqlglot-preflight")
+    sqlglot_preflight_parser.add_argument(
+        "--config",
+        default="docs/_scratch/baseline_smoke_common_core_v0.json",
+    )
+    sqlglot_preflight_parser.add_argument("--case-id", action="append", default=[])
+    sqlglot_preflight_parser.add_argument("--dialect", default="postgres")
+    sqlglot_preflight_parser.add_argument("--write-generated", action="store_true", default=False)
+    sqlglot_preflight_parser.add_argument("--execute", action="store_true", default=False)
+    sqlglot_preflight_parser.set_defaults(func=cmd_baseline_smoke_sqlglot_preflight)
 
     return parser
 
