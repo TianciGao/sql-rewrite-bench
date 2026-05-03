@@ -10440,6 +10440,243 @@ def cmd_formal_common_core_plan_observability_preflight(args: argparse.Namespace
     return print_and_exit(payload, 0 if payload["ok"] else 1)
 
 
+def cmd_formal_common_core_method_plan_collection_preflight(args: argparse.Namespace) -> int:
+    output_name = normalize_formal_common_core_output_name(args.output)
+    if args.execute:
+        payload = {
+            "command": "formal-common-core-method-plan-collection-preflight",
+            "ok": False,
+            "ran_at_utc": utc_now(),
+            "output_path": "reports/formal_common_core/method_plan_collection_preflight_execute_refused_v0.json",
+            "claim_boundary": "formal_method_plan_collection_preflight_from_existing_reports_only_not_explain_or_speedup",
+            "message": "This command is read-existing-reports-only and does not support --execute.",
+            "issues": [
+                {
+                    "type": "invalid_execute_flag",
+                    "message": "formal-common-core-method-plan-collection-preflight does not support --execute",
+                }
+            ],
+            "guardrails": {
+                "database_execution": "disabled",
+                "sql_execution": "disabled",
+                "explain_execution": "disabled",
+                "plan_collection": "disabled",
+                "model_api_call": "disabled",
+                "sqlglot_generation": "disabled",
+                "checker_execution": "disabled",
+                "speedup_scoring": "disabled",
+                "case_artifact_write": "disabled",
+                "registry_writeback": "disabled",
+            },
+        }
+        write_formal_common_core_report("method_plan_collection_preflight_execute_refused_v0.json", payload)
+        return print_and_exit(payload, 1)
+
+    issues: list[dict[str, Any]] = []
+    case_ids = formal_common_core_case_ids()
+    denominator_case_count = len(case_ids)
+    plans_root = FORMAL_COMMON_CORE_REPORT_DIR / "plans"
+
+    sqlglot_execution_path = FORMAL_COMMON_CORE_REPORT_DIR / "sqlglot_opt_same_dialect_execution_v0.json"
+    llm_execution_path = FORMAL_COMMON_CORE_REPORT_DIR / "llm_direct_rewrite_execution_v0.json"
+    plan_observability_preflight_path = FORMAL_COMMON_CORE_REPORT_DIR / "plan_observability_preflight_v0.json"
+    control_exec_preflight_path = FORMAL_COMMON_CORE_REPORT_DIR / "control_exec_preflight_v0.json"
+
+    sqlglot_execution_report = load_json_if_present(sqlglot_execution_path)
+    llm_execution_report = load_json_if_present(llm_execution_path)
+    plan_observability_preflight_report = load_json_if_present(plan_observability_preflight_path)
+    control_exec_preflight_report = load_json_if_present(control_exec_preflight_path)
+
+    for issue_type, path, report in [
+        ("missing_sqlglot_execution_report", sqlglot_execution_path, sqlglot_execution_report),
+        ("missing_llm_execution_report", llm_execution_path, llm_execution_report),
+        ("missing_plan_observability_preflight_report", plan_observability_preflight_path, plan_observability_preflight_report),
+        ("missing_control_exec_preflight_report", control_exec_preflight_path, control_exec_preflight_report),
+    ]:
+        if report is None:
+            issues.append({"type": issue_type, "path": relative_to_root(path)})
+
+    sqlglot_record_map = {
+        str(record.get("case_id", "")).strip(): record
+        for record in (sqlglot_execution_report or {}).get("records", [])
+        if record.get("case_id")
+    }
+    llm_record_map = {
+        str(record.get("case_id", "")).strip(): record
+        for record in (llm_execution_report or {}).get("records", [])
+        if record.get("case_id")
+    }
+
+    def build_route_records(baseline_id: str, route: str) -> tuple[dict[str, Any], list[dict[str, Any]]]:
+        if baseline_id == "SQLGLOT_OPT_SAME_DIALECT":
+            record_map = sqlglot_record_map
+            sql_field = "generated_sql_text"
+            sql_len_field = "generated_sql_character_count"
+            sql_preview_field = "generated_sql_preview"
+            method_exec_field = "execution_status"
+            method_row_field = "row_count"
+            method_runtime_field = "runtime_ms"
+            future_dir = plans_root / "sqlglot_opt_same_dialect"
+            candidate_sql_source_field = "generated_sql_text"
+        else:
+            record_map = llm_record_map
+            sql_field = "extracted_sql_text"
+            sql_len_field = "extracted_sql_character_count"
+            sql_preview_field = "extracted_sql_text"
+            method_exec_field = "pg_execution_status"
+            method_row_field = "pg_row_count"
+            method_runtime_field = "pg_runtime_ms"
+            future_dir = plans_root / "llm_direct_rewrite"
+            candidate_sql_source_field = "extracted_sql_text"
+
+        route_records: list[dict[str, Any]] = []
+        execution_report_present_count = 0
+        candidate_sql_available_count = 0
+        validation_schema_hint_count = 0
+        existing_method_plan_count = 0
+        future_plan_path_defined_count = 0
+        ready_for_future_plan_collection_count = 0
+        blocked_count = 0
+
+        for case_id in case_ids:
+            inferred = case_root_for_case_id(case_id)
+            pool = inferred[0] if inferred else "unknown"
+            case_root = inferred[1] if inferred else None
+            source_sql_path = case_root / "source.sql" if case_root else Path("")
+            source_sql_exists = source_sql_path.is_file() if case_root else False
+            method_record = record_map.get(case_id)
+            validation_schema = (method_record or {}).get("validation_schema")
+            if validation_schema:
+                validation_schema_hint_count += 1
+            method_execution_report_exists = method_record is not None
+            if method_execution_report_exists:
+                execution_report_present_count += 1
+
+            candidate_sql_text = (method_record or {}).get(sql_field)
+            candidate_sql_text_available = bool(candidate_sql_text)
+            if candidate_sql_text_available:
+                candidate_sql_available_count += 1
+
+            candidate_sql_character_count = (method_record or {}).get(sql_len_field)
+            if candidate_sql_character_count is None and isinstance(candidate_sql_text, str):
+                candidate_sql_character_count = len(candidate_sql_text)
+
+            candidate_sql_preview = (method_record or {}).get(sql_preview_field)
+            if isinstance(candidate_sql_preview, str) and len(candidate_sql_preview) > 500:
+                candidate_sql_preview = candidate_sql_preview[:500]
+
+            planned_plan_output_path = future_dir / f"{case_id.lower()}.json"
+            future_plan_path_defined_count += 1
+            planned_plan_output_parent_exists = planned_plan_output_path.parent.is_dir()
+            existing_method_plan_exists = planned_plan_output_path.is_file()
+            if existing_method_plan_exists:
+                existing_method_plan_count += 1
+
+            blockers: list[str] = []
+            warnings: list[str] = []
+            if not method_execution_report_exists:
+                plan_collection_preflight_status = "blocked_missing_execution_report"
+                blockers.append("method execution report missing")
+                blocked_count += 1
+            elif not validation_schema:
+                plan_collection_preflight_status = "blocked_missing_validation_schema_hint"
+                blockers.append("validation schema missing from execution report")
+                blocked_count += 1
+            elif not candidate_sql_text_available:
+                plan_collection_preflight_status = "blocked_missing_candidate_sql"
+                blockers.append("candidate SQL not present in execution report")
+                blocked_count += 1
+            else:
+                plan_collection_preflight_status = "ready_for_future_plan_collection"
+                ready_for_future_plan_collection_count += 1
+
+            route_records.append(
+                {
+                    "case_id": case_id,
+                    "pool": pool,
+                    "baseline_id": baseline_id,
+                    "route": route,
+                    "validation_schema": validation_schema or "",
+                    "source_sql_path": relative_to_root(source_sql_path) if str(source_sql_path) else "",
+                    "source_sql_exists": source_sql_exists,
+                    "method_execution_report_path": relative_to_root(
+                        sqlglot_execution_path if baseline_id == "SQLGLOT_OPT_SAME_DIALECT" else llm_execution_path
+                    ),
+                    "method_execution_report_exists": method_execution_report_exists,
+                    "candidate_sql_text_available": candidate_sql_text_available,
+                    "candidate_sql_character_count": candidate_sql_character_count,
+                    "candidate_sql_preview": candidate_sql_preview if isinstance(candidate_sql_preview, str) else "",
+                    "candidate_sql_source_field": candidate_sql_source_field,
+                    "method_execution_status": (method_record or {}).get(method_exec_field, "missing"),
+                    "method_row_count": (method_record or {}).get(method_row_field),
+                    "method_runtime_ms": (method_record or {}).get(method_runtime_field),
+                    "planned_plan_output_path": relative_to_root(planned_plan_output_path),
+                    "planned_plan_output_parent_exists": planned_plan_output_parent_exists,
+                    "existing_method_plan_path": relative_to_root(planned_plan_output_path),
+                    "existing_method_plan_exists": existing_method_plan_exists,
+                    "plan_collection_preflight_status": plan_collection_preflight_status,
+                    "blockers": blockers,
+                    "warnings": warnings,
+                    "artifact_claim_boundary": "formal_method_plan_collection_preflight_only_no_explain_no_execution",
+                }
+            )
+
+        route_summary = {
+            "baseline_id": baseline_id,
+            "route": route,
+            "case_count": denominator_case_count,
+            "execution_report_present_count": execution_report_present_count,
+            "candidate_sql_available_count": candidate_sql_available_count,
+            "validation_schema_hint_count": validation_schema_hint_count,
+            "existing_method_plan_count": existing_method_plan_count,
+            "future_plan_path_defined_count": future_plan_path_defined_count,
+            "ready_for_future_plan_collection_count": ready_for_future_plan_collection_count,
+            "blocked_count": blocked_count,
+        }
+        return route_summary, route_records
+
+    sqlglot_summary, sqlglot_records = build_route_records("SQLGLOT_OPT_SAME_DIALECT", "sqlglot_opt_same_dialect")
+    llm_summary, llm_records = build_route_records("LLM_DIRECT_REWRITE_STRONG", "llm_direct_rewrite")
+
+    payload = {
+        "command": "formal-common-core-method-plan-collection-preflight",
+        "ok": True,
+        "ran_at_utc": utc_now(),
+        "output_path": f"reports/formal_common_core/{output_name}",
+        "denominator_case_count": denominator_case_count,
+        "routes_inspected": ["SQLGLOT_OPT_SAME_DIALECT", "LLM_DIRECT_REWRITE_STRONG"],
+        "sqlglot_candidate_sql_available_count": sqlglot_summary["candidate_sql_available_count"],
+        "llm_candidate_sql_available_count": llm_summary["candidate_sql_available_count"],
+        "sqlglot_existing_method_plan_count": sqlglot_summary["existing_method_plan_count"],
+        "llm_existing_method_plan_count": llm_summary["existing_method_plan_count"],
+        "sqlglot_ready_for_future_plan_collection_count": sqlglot_summary["ready_for_future_plan_collection_count"],
+        "llm_ready_for_future_plan_collection_count": llm_summary["ready_for_future_plan_collection_count"],
+        "method_plan_collection_ready": (
+            sqlglot_summary["ready_for_future_plan_collection_count"] == denominator_case_count
+            and llm_summary["ready_for_future_plan_collection_count"] == denominator_case_count
+        ),
+        "speedup_scoring_ready": False,
+        "records": sqlglot_records + llm_records,
+        "route_summaries": [sqlglot_summary, llm_summary],
+        "issues": issues,
+        "guardrails": {
+            "database_execution": "disabled",
+            "sql_execution": "disabled",
+            "explain_execution": "disabled",
+            "plan_collection": "disabled",
+            "model_api_call": "disabled",
+            "sqlglot_generation": "disabled",
+            "checker_execution": "disabled",
+            "speedup_scoring": "disabled",
+            "case_artifact_write": "disabled",
+            "registry_writeback": "disabled",
+        },
+        "claim_boundary": "formal_method_plan_collection_preflight_from_existing_reports_only_not_explain_or_speedup",
+    }
+    write_formal_common_core_report(output_name, payload)
+    return print_and_exit(payload, 0 if payload["ok"] else 1)
+
+
 def cmd_baseline_smoke_llm_call_canary(args: argparse.Namespace) -> int:
     default_output_name = "llm_direct_rewrite_call_canary_v0.json"
     output_name = normalize_baseline_smoke_output_name(default_output_name)
@@ -17169,6 +17406,14 @@ def build_parser() -> argparse.ArgumentParser:
     )
     formal_common_core_plan_observability_preflight_parser.add_argument("--execute", action="store_true", default=False)
     formal_common_core_plan_observability_preflight_parser.set_defaults(func=cmd_formal_common_core_plan_observability_preflight)
+
+    formal_common_core_method_plan_collection_preflight_parser = subparsers.add_parser("formal-common-core-method-plan-collection-preflight")
+    formal_common_core_method_plan_collection_preflight_parser.add_argument(
+        "--output",
+        default="method_plan_collection_preflight_v0.json",
+    )
+    formal_common_core_method_plan_collection_preflight_parser.add_argument("--execute", action="store_true", default=False)
+    formal_common_core_method_plan_collection_preflight_parser.set_defaults(func=cmd_formal_common_core_method_plan_collection_preflight)
 
     sqlglot_transpile_summary_parser = subparsers.add_parser("baseline-smoke-sqlglot-transpile-summary")
     sqlglot_transpile_summary_parser.add_argument(
