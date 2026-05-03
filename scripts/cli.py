@@ -33,6 +33,7 @@ NATIVE_IDENTITY_CANARY_DEFAULT_CASES = ["PERF_0006", "PERF_0008"]
 SQLGLOT_PG_CANARY_DEFAULT_CASES = ["PERF_0006", "PERF_0008"]
 SQLGLOT_TRANSPILE_DEFAULT_CASES = ["PORT_0004", "PORT_0012", "PORT_0022"]
 SQLGLOT_TRANSPILE_PG_CANARY_DEFAULT_CASES = ["PORT_0004", "PORT_0022"]
+LLM_CALL_CANARY_DEFAULT_CASES = ["PERF_0006", "PERF_0008"]
 HUMAN_POSITIVE_PG_DEFAULT_CASES = [
     "PERF_0006",
     "PERF_0008",
@@ -236,6 +237,132 @@ def source_dialect_candidate_order(source_dialect_hint: str, requested: str) -> 
     if hinted:
         return [hinted] + [dialect for dialect in default_order if dialect != hinted]
     return list(default_order)
+
+
+def baseline_inventory_token_cost_class(baseline_id: str) -> str:
+    inventory_path = ROOT / "docs" / "_scratch" / "baseline_inventory_boss_requirements.csv"
+    if not inventory_path.is_file():
+        return "unknown"
+    with inventory_path.open(encoding="utf-8", newline="") as f:
+        for row in csv.DictReader(f):
+            if row.get("baseline_id") == baseline_id:
+                return row.get("token_cost_class") or "unknown"
+    return "unknown"
+
+
+def build_llm_prompt_package(case_spec: dict[str, Any], target_dialect: str, model_label: str) -> dict[str, Any]:
+    case_id = case_spec["case_id"]
+    pool = case_spec["pool"]
+    case_root = pool_case_root(pool) / case_id
+    source_sql_path = case_root / "source.sql"
+    manifest_path = case_root / "manifest.yaml"
+    positive_sql_path = case_root / "rewrite_pos_01.sql"
+    negative_sql_path = case_root / "rewrite_neg_01.sql"
+    source_sql_exists = source_sql_path.is_file()
+    manifest_exists = manifest_path.is_file()
+    notes: list[str] = []
+
+    notes.append(f"has_human_positive_reference={'true' if positive_sql_path.is_file() else 'false'}")
+    notes.append(f"has_hard_negative_reference={'true' if negative_sql_path.is_file() else 'false'}")
+    if case_spec.get("caveat"):
+        notes.append(f"smoke_caveat={case_spec['caveat']}")
+
+    prompt_package_status = "ready"
+    prompt_preview = ""
+    prompt_hash_sha256 = ""
+    prompt_character_count = 0
+    estimated_prompt_tokens = 0
+    prompt_blob = ""
+
+    if not source_sql_exists:
+        prompt_package_status = "missing_source_sql"
+        notes.append("source.sql is missing")
+    else:
+        source_sql = source_sql_path.read_text(encoding="utf-8")
+        system_message = (
+            "You are rewriting SQL for PostgreSQL.\n"
+            "Return SQL only.\n"
+            "Do not include markdown fences.\n"
+            "Do not include explanation.\n"
+            "Do not change query semantics.\n"
+            "Do not use engine-specific features beyond PostgreSQL.\n"
+            "Do not rely on unavailable tables or columns.\n"
+            "Preserve output columns and intended result shape.\n"
+            "Avoid DDL, DML, temp tables, indexes, stored procedures, and UDFs.\n"
+            "Use one SELECT statement only where possible.\n"
+            "If no safe rewrite is possible, return the original SQL unchanged."
+        )
+        user_message = (
+            f"case_id: {case_id}\n"
+            f"pool: {pool}\n"
+            f"target_dialect: {target_dialect}\n"
+            f"why_selected: {case_spec.get('why_selected', '')}\n"
+            f"known_caveat: {case_spec.get('caveat', '')}\n"
+            f"manifest_available: {'true' if manifest_exists else 'false'}\n"
+            f"has_human_positive_reference: {'true' if positive_sql_path.is_file() else 'false'}\n"
+            f"has_hard_negative_reference: {'true' if negative_sql_path.is_file() else 'false'}\n"
+            "\n"
+            "Rewrite the following SQL for PostgreSQL while preserving semantics.\n"
+            "Return SQL only.\n"
+            "\n"
+            "SOURCE SQL:\n"
+            f"{source_sql.strip()}\n"
+        )
+        package = {
+            "system_message": system_message,
+            "user_message": user_message,
+            "metadata": {
+                "baseline_id": "LLM_DIRECT_REWRITE_STRONG",
+                "case_id": case_id,
+                "pool": pool,
+                "target_dialect": target_dialect,
+                "model_label": model_label,
+                "has_human_positive_reference": positive_sql_path.is_file(),
+                "has_hard_negative_reference": negative_sql_path.is_file(),
+                "manifest_exists": manifest_exists,
+                "smoke_role": case_spec.get("smoke_role", ""),
+            },
+        }
+        prompt_blob = json.dumps(package, ensure_ascii=True, indent=2)
+        prompt_character_count = len(prompt_blob)
+        estimated_prompt_tokens = (prompt_character_count + 3) // 4
+        prompt_preview = prompt_blob[:700]
+        prompt_hash_sha256 = hashlib.sha256(prompt_blob.encode("utf-8")).hexdigest()
+        if not prompt_blob.strip():
+            prompt_package_status = "blocked"
+            notes.append("prompt package unexpectedly empty")
+
+    return {
+        "case_id": case_id,
+        "pool": pool,
+        "source_sql_path": relative_to_root(source_sql_path),
+        "source_sql_exists": source_sql_exists,
+        "manifest_path": relative_to_root(manifest_path),
+        "manifest_exists": manifest_exists,
+        "prompt_character_count": prompt_character_count,
+        "estimated_prompt_tokens": estimated_prompt_tokens,
+        "prompt_package_status": prompt_package_status,
+        "prompt_preview": prompt_preview,
+        "prompt_hash_sha256": prompt_hash_sha256,
+        "prompt_blob": prompt_blob,
+        "notes": notes,
+    }
+
+
+def extract_sql_like_output(raw_output: str) -> tuple[str, str]:
+    if not raw_output.strip():
+        return "empty_output", ""
+    text = raw_output.strip()
+    if text.startswith("```"):
+        text = re.sub(r"^```[A-Za-z0-9_-]*\n?", "", text)
+        text = re.sub(r"\n?```$", "", text).strip()
+    compact = text.lstrip()
+    upper = compact.upper()
+    if upper.startswith("SELECT ") or upper.startswith("WITH "):
+        if "\n\n" in text or "EXPLANATION" in upper or "HERE IS" in upper:
+            return "needs_manual_review", text[:700]
+        return "extracted", text[:700]
+    return "needs_manual_review", text[:700]
 
 
 def check_status(errors: list[dict[str, Any]], registry_name: str, *error_types: str) -> str:
@@ -3559,6 +3686,516 @@ def cmd_baseline_smoke_llm_prompt_dry_run(args: argparse.Namespace) -> int:
     }
     write_baseline_smoke_report(output_name, payload)
     return print_and_exit(payload, 0 if ok else 1)
+
+
+def cmd_baseline_smoke_llm_call_canary(args: argparse.Namespace) -> int:
+    output_name = normalize_baseline_smoke_output_name("llm_direct_rewrite_call_canary_v0.json")
+
+    if args.execute:
+        payload = {
+            "command": "baseline-smoke-llm-call-canary",
+            "cwd": str(ROOT),
+            "ok": False,
+            "ran_at_utc": utc_now(),
+            "config_path": relative_to_root(resolve_repo_path(args.config)),
+            "baseline_id": "LLM_DIRECT_REWRITE_STRONG",
+            "output_path": "reports/baseline_smoke/llm_direct_rewrite_call_refused_v0.json",
+            "claim_boundary": "llm_call_canary_only_not_correctness_or_speedup_scoring",
+            "message": "This is not an execution command. Use --call-model for the tightly bounded LLM call canary.",
+            "issues": [
+                {
+                    "type": "invalid_execute_flag",
+                    "message": "baseline-smoke-llm-call-canary does not support --execute; use --call-model",
+                }
+            ],
+            "guardrails": {
+                "database_execution": "disabled",
+                "mysql_execution": "disabled",
+                "spark_execution": "disabled",
+                "sqlglot_generation": "disabled",
+                "generated_sql_execution": "disabled",
+                "case_artifact_write": "disabled",
+            },
+        }
+        write_baseline_smoke_report("llm_direct_rewrite_call_refused_v0.json", payload)
+        return print_and_exit(payload, 1)
+
+    config_path = resolve_repo_path(args.config)
+    config = load_json(config_path)
+    case_index = {case["case_id"]: case for case in config.get("cases", [])}
+    selected_case_ids = args.case_id or list(LLM_CALL_CANARY_DEFAULT_CASES)
+    records: list[dict[str, Any]] = []
+    issues: list[dict[str, Any]] = []
+    token_cost_class = baseline_inventory_token_cost_class("LLM_DIRECT_REWRITE_STRONG")
+    api_key = os.environ.get("OPENAI_API_KEY") or os.environ.get("LLM_API_KEY") or ""
+    api_key_visible = bool(api_key)
+    call_requested = bool(args.call_model)
+
+    invalid_cases = [case_id for case_id in selected_case_ids if case_id not in case_index]
+    for case_id in invalid_cases:
+        records.append(
+            {
+                "baseline_id": "LLM_DIRECT_REWRITE_STRONG",
+                "case_id": case_id,
+                "pool": "",
+                "target_dialect": args.target_dialect,
+                "execution_mode": "prompt_dry_run",
+                "model_label": args.model_label,
+                "api_key_visible": api_key_visible,
+                "source_sql_path": "",
+                "source_sql_exists": False,
+                "prompt_hash_sha256": "",
+                "prompt_character_count": 0,
+                "estimated_prompt_tokens": 0,
+                "max_output_tokens": args.max_output_tokens,
+                "estimated_total_tokens_with_completion_budget": args.max_output_tokens,
+                "call_attempted": False,
+                "call_status": "not_requested",
+                "raw_output_character_count": 0,
+                "raw_output_preview": "",
+                "extracted_sql_status": "not_available",
+                "extracted_sql_preview": "",
+                "failure_category": "case_not_in_smoke_config",
+                "error_message": "",
+                "token_usage_input": None,
+                "token_usage_output": None,
+                "token_usage_total": None,
+                "estimated_cost_usd": None,
+                "pricing_snapshot": "not_frozen",
+                "artifact_claim_boundary": "prompt_package_only_no_model_call",
+                "notes": ["selection refused: case is outside the current smoke config"],
+            }
+        )
+        issues.append({"type": "case_not_in_smoke_config", "case_id": case_id})
+
+    prompt_rows: list[dict[str, Any]] = []
+    for case_id in [case_id for case_id in selected_case_ids if case_id in case_index]:
+        prompt_rows.append(build_llm_prompt_package(case_index[case_id], args.target_dialect, args.model_label))
+
+    if not call_requested:
+        for row in prompt_rows:
+            records.append(
+                {
+                    "baseline_id": "LLM_DIRECT_REWRITE_STRONG",
+                    "case_id": row["case_id"],
+                    "pool": row["pool"],
+                    "target_dialect": args.target_dialect,
+                    "execution_mode": "prompt_dry_run",
+                    "model_label": args.model_label,
+                    "api_key_visible": api_key_visible,
+                    "source_sql_path": row["source_sql_path"],
+                    "source_sql_exists": row["source_sql_exists"],
+                    "prompt_hash_sha256": row["prompt_hash_sha256"],
+                    "prompt_character_count": row["prompt_character_count"],
+                    "estimated_prompt_tokens": row["estimated_prompt_tokens"],
+                    "max_output_tokens": args.max_output_tokens,
+                    "estimated_total_tokens_with_completion_budget": row["estimated_prompt_tokens"] + args.max_output_tokens,
+                    "call_attempted": False,
+                    "call_status": "not_requested",
+                    "raw_output_character_count": 0,
+                    "raw_output_preview": "",
+                    "extracted_sql_status": "not_available",
+                    "extracted_sql_preview": "",
+                    "failure_category": "none" if row["prompt_package_status"] == "ready" else row["prompt_package_status"],
+                    "error_message": "",
+                    "token_usage_input": None,
+                    "token_usage_output": None,
+                    "token_usage_total": None,
+                    "estimated_cost_usd": None,
+                    "pricing_snapshot": "not_frozen",
+                    "artifact_claim_boundary": "prompt_package_only_no_model_call",
+                    "notes": row["notes"],
+                }
+            )
+
+        payload = {
+            "command": "baseline-smoke-llm-call-canary",
+            "ok": (
+                not issues
+                and all(record["source_sql_exists"] for record in records)
+                and all(record["prompt_character_count"] > 0 for record in records)
+                and all(record["artifact_claim_boundary"] == "prompt_package_only_no_model_call" for record in records)
+            ),
+            "ran_at_utc": utc_now(),
+            "config_path": relative_to_root(config_path),
+            "baseline_id": "LLM_DIRECT_REWRITE_STRONG",
+            "model_label": args.model_label,
+            "case_count": len(records),
+            "call_requested": False,
+            "call_attempted_count": 0,
+            "call_success_count": 0,
+            "call_failed_count": 0,
+            "env_blocked_count": 0,
+            "client_unavailable_count": 0,
+            "extracted_sql_count": 0,
+            "empty_output_count": 0,
+            "needs_manual_review_count": 0,
+            "total_estimated_prompt_tokens": sum(record["estimated_prompt_tokens"] for record in records),
+            "total_estimated_tokens_with_completion_budget": sum(
+                record["estimated_total_tokens_with_completion_budget"] for record in records
+            ),
+            "token_usage_total_if_available": None,
+            "pricing_snapshot": "not_frozen",
+            "estimated_cost_usd": None,
+            "records": records,
+            "issues": issues,
+            "guardrails": {
+                "database_execution": "disabled",
+                "mysql_execution": "disabled",
+                "spark_execution": "disabled",
+                "sqlglot_generation": "disabled",
+                "generated_sql_execution": "disabled",
+                "case_artifact_write": "disabled",
+            },
+            "claim_boundary": "llm_call_canary_only_not_correctness_or_speedup_scoring",
+        }
+        write_baseline_smoke_report(output_name, payload)
+        return print_and_exit(payload, 0 if payload["ok"] else 1)
+
+    if not api_key_visible:
+        for row in prompt_rows:
+            records.append(
+                {
+                    "baseline_id": "LLM_DIRECT_REWRITE_STRONG",
+                    "case_id": row["case_id"],
+                    "pool": row["pool"],
+                    "target_dialect": args.target_dialect,
+                    "execution_mode": "env_blocked",
+                    "model_label": args.model_label,
+                    "api_key_visible": False,
+                    "source_sql_path": row["source_sql_path"],
+                    "source_sql_exists": row["source_sql_exists"],
+                    "prompt_hash_sha256": row["prompt_hash_sha256"],
+                    "prompt_character_count": row["prompt_character_count"],
+                    "estimated_prompt_tokens": row["estimated_prompt_tokens"],
+                    "max_output_tokens": args.max_output_tokens,
+                    "estimated_total_tokens_with_completion_budget": row["estimated_prompt_tokens"] + args.max_output_tokens,
+                    "call_attempted": False,
+                    "call_status": "env_blocked",
+                    "raw_output_character_count": 0,
+                    "raw_output_preview": "",
+                    "extracted_sql_status": "not_available",
+                    "extracted_sql_preview": "",
+                    "failure_category": "missing_api_key",
+                    "error_message": "",
+                    "token_usage_input": None,
+                    "token_usage_output": None,
+                    "token_usage_total": None,
+                    "estimated_cost_usd": None,
+                    "pricing_snapshot": "not_frozen",
+                    "artifact_claim_boundary": "llm_call_canary_no_sql_execution",
+                    "notes": row["notes"] + ["model call blocked: no OPENAI_API_KEY or LLM_API_KEY visible"],
+                }
+            )
+
+        payload = {
+            "command": "baseline-smoke-llm-call-canary",
+            "ok": False,
+            "ran_at_utc": utc_now(),
+            "config_path": relative_to_root(config_path),
+            "baseline_id": "LLM_DIRECT_REWRITE_STRONG",
+            "model_label": args.model_label,
+            "case_count": len(records),
+            "call_requested": True,
+            "call_attempted_count": 0,
+            "call_success_count": 0,
+            "call_failed_count": 0,
+            "env_blocked_count": len(records),
+            "client_unavailable_count": 0,
+            "extracted_sql_count": 0,
+            "empty_output_count": 0,
+            "needs_manual_review_count": 0,
+            "total_estimated_prompt_tokens": sum(record["estimated_prompt_tokens"] for record in records),
+            "total_estimated_tokens_with_completion_budget": sum(
+                record["estimated_total_tokens_with_completion_budget"] for record in records
+            ),
+            "token_usage_total_if_available": None,
+            "pricing_snapshot": "not_frozen",
+            "estimated_cost_usd": None,
+            "records": records,
+            "issues": issues,
+            "guardrails": {
+                "database_execution": "disabled",
+                "mysql_execution": "disabled",
+                "spark_execution": "disabled",
+                "sqlglot_generation": "disabled",
+                "generated_sql_execution": "disabled",
+                "case_artifact_write": "disabled",
+            },
+            "claim_boundary": "llm_call_canary_only_not_correctness_or_speedup_scoring",
+        }
+        write_baseline_smoke_report("llm_direct_rewrite_env_blocked_v0.json", payload)
+        return print_and_exit(payload, 1)
+
+    try:
+        openai_mod = importlib.import_module("openai")
+    except ModuleNotFoundError as exc:
+        for row in prompt_rows:
+            records.append(
+                {
+                    "baseline_id": "LLM_DIRECT_REWRITE_STRONG",
+                    "case_id": row["case_id"],
+                    "pool": row["pool"],
+                    "target_dialect": args.target_dialect,
+                    "execution_mode": "model_call_canary",
+                    "model_label": args.model_label,
+                    "api_key_visible": True,
+                    "source_sql_path": row["source_sql_path"],
+                    "source_sql_exists": row["source_sql_exists"],
+                    "prompt_hash_sha256": row["prompt_hash_sha256"],
+                    "prompt_character_count": row["prompt_character_count"],
+                    "estimated_prompt_tokens": row["estimated_prompt_tokens"],
+                    "max_output_tokens": args.max_output_tokens,
+                    "estimated_total_tokens_with_completion_budget": row["estimated_prompt_tokens"] + args.max_output_tokens,
+                    "call_attempted": False,
+                    "call_status": "client_unavailable",
+                    "raw_output_character_count": 0,
+                    "raw_output_preview": "",
+                    "extracted_sql_status": "not_available",
+                    "extracted_sql_preview": "",
+                    "failure_category": "client_unavailable",
+                    "error_message": str(exc),
+                    "token_usage_input": None,
+                    "token_usage_output": None,
+                    "token_usage_total": None,
+                    "estimated_cost_usd": None,
+                    "pricing_snapshot": "not_frozen",
+                    "artifact_claim_boundary": "llm_call_canary_no_sql_execution",
+                    "notes": row["notes"] + ["model client unavailable"],
+                }
+            )
+        payload = {
+            "command": "baseline-smoke-llm-call-canary",
+            "ok": False,
+            "ran_at_utc": utc_now(),
+            "config_path": relative_to_root(config_path),
+            "baseline_id": "LLM_DIRECT_REWRITE_STRONG",
+            "model_label": args.model_label,
+            "case_count": len(records),
+            "call_requested": True,
+            "call_attempted_count": 0,
+            "call_success_count": 0,
+            "call_failed_count": 0,
+            "env_blocked_count": 0,
+            "client_unavailable_count": len(records),
+            "extracted_sql_count": 0,
+            "empty_output_count": 0,
+            "needs_manual_review_count": 0,
+            "total_estimated_prompt_tokens": sum(record["estimated_prompt_tokens"] for record in records),
+            "total_estimated_tokens_with_completion_budget": sum(
+                record["estimated_total_tokens_with_completion_budget"] for record in records
+            ),
+            "token_usage_total_if_available": None,
+            "pricing_snapshot": "not_frozen",
+            "estimated_cost_usd": None,
+            "records": records,
+            "issues": issues,
+            "guardrails": {
+                "database_execution": "disabled",
+                "mysql_execution": "disabled",
+                "spark_execution": "disabled",
+                "sqlglot_generation": "disabled",
+                "generated_sql_execution": "disabled",
+                "case_artifact_write": "disabled",
+            },
+            "claim_boundary": "llm_call_canary_only_not_correctness_or_speedup_scoring",
+        }
+        write_baseline_smoke_report(output_name, payload)
+        return print_and_exit(payload, 1)
+
+    OpenAI = getattr(openai_mod, "OpenAI", None)
+    if OpenAI is None:
+        for row in prompt_rows:
+            records.append(
+                {
+                    "baseline_id": "LLM_DIRECT_REWRITE_STRONG",
+                    "case_id": row["case_id"],
+                    "pool": row["pool"],
+                    "target_dialect": args.target_dialect,
+                    "execution_mode": "model_call_canary",
+                    "model_label": args.model_label,
+                    "api_key_visible": True,
+                    "source_sql_path": row["source_sql_path"],
+                    "source_sql_exists": row["source_sql_exists"],
+                    "prompt_hash_sha256": row["prompt_hash_sha256"],
+                    "prompt_character_count": row["prompt_character_count"],
+                    "estimated_prompt_tokens": row["estimated_prompt_tokens"],
+                    "max_output_tokens": args.max_output_tokens,
+                    "estimated_total_tokens_with_completion_budget": row["estimated_prompt_tokens"] + args.max_output_tokens,
+                    "call_attempted": False,
+                    "call_status": "client_unavailable",
+                    "raw_output_character_count": 0,
+                    "raw_output_preview": "",
+                    "extracted_sql_status": "not_available",
+                    "extracted_sql_preview": "",
+                    "failure_category": "client_unavailable",
+                    "error_message": "openai.OpenAI client is unavailable",
+                    "token_usage_input": None,
+                    "token_usage_output": None,
+                    "token_usage_total": None,
+                    "estimated_cost_usd": None,
+                    "pricing_snapshot": "not_frozen",
+                    "artifact_claim_boundary": "llm_call_canary_no_sql_execution",
+                    "notes": row["notes"] + ["OpenAI client class unavailable"],
+                }
+            )
+        payload = {
+            "command": "baseline-smoke-llm-call-canary",
+            "ok": False,
+            "ran_at_utc": utc_now(),
+            "config_path": relative_to_root(config_path),
+            "baseline_id": "LLM_DIRECT_REWRITE_STRONG",
+            "model_label": args.model_label,
+            "case_count": len(records),
+            "call_requested": True,
+            "call_attempted_count": 0,
+            "call_success_count": 0,
+            "call_failed_count": 0,
+            "env_blocked_count": 0,
+            "client_unavailable_count": len(records),
+            "extracted_sql_count": 0,
+            "empty_output_count": 0,
+            "needs_manual_review_count": 0,
+            "total_estimated_prompt_tokens": sum(record["estimated_prompt_tokens"] for record in records),
+            "total_estimated_tokens_with_completion_budget": sum(
+                record["estimated_total_tokens_with_completion_budget"] for record in records
+            ),
+            "token_usage_total_if_available": None,
+            "pricing_snapshot": "not_frozen",
+            "estimated_cost_usd": None,
+            "records": records,
+            "issues": issues,
+            "guardrails": {
+                "database_execution": "disabled",
+                "mysql_execution": "disabled",
+                "spark_execution": "disabled",
+                "sqlglot_generation": "disabled",
+                "generated_sql_execution": "disabled",
+                "case_artifact_write": "disabled",
+            },
+            "claim_boundary": "llm_call_canary_only_not_correctness_or_speedup_scoring",
+        }
+        write_baseline_smoke_report(output_name, payload)
+        return print_and_exit(payload, 1)
+
+    client = OpenAI(api_key=api_key)
+    for row in prompt_rows:
+        raw_text = ""
+        raw_preview = ""
+        token_usage_input = None
+        token_usage_output = None
+        token_usage_total = None
+        extracted_sql_status = "not_available"
+        extracted_sql_preview = ""
+        call_status = "failed"
+        failure_category = "none"
+        error_message = ""
+        notes = list(row["notes"])
+
+        try:
+            response = client.chat.completions.create(
+                model=args.model_label,
+                messages=[
+                    {"role": "system", "content": json.loads(row["prompt_blob"])["system_message"]},
+                    {"role": "user", "content": json.loads(row["prompt_blob"])["user_message"]},
+                ],
+                temperature=args.temperature,
+                max_tokens=args.max_output_tokens,
+            )
+            message = response.choices[0].message.content if response.choices else ""
+            raw_text = message or ""
+            raw_preview = raw_text[:700]
+            extracted_sql_status, extracted_sql_preview = extract_sql_like_output(raw_text)
+            call_status = "success"
+            usage = getattr(response, "usage", None)
+            if usage is not None:
+                token_usage_input = getattr(usage, "prompt_tokens", None)
+                token_usage_output = getattr(usage, "completion_tokens", None)
+                token_usage_total = getattr(usage, "total_tokens", None)
+        except Exception as exc:
+            call_status = "failed"
+            failure_category = type(exc).__name__
+            error_message = str(exc)
+            extracted_sql_status = "not_available"
+
+        records.append(
+            {
+                "baseline_id": "LLM_DIRECT_REWRITE_STRONG",
+                "case_id": row["case_id"],
+                "pool": row["pool"],
+                "target_dialect": args.target_dialect,
+                "execution_mode": "model_call_canary",
+                "model_label": args.model_label,
+                "api_key_visible": True,
+                "source_sql_path": row["source_sql_path"],
+                "source_sql_exists": row["source_sql_exists"],
+                "prompt_hash_sha256": row["prompt_hash_sha256"],
+                "prompt_character_count": row["prompt_character_count"],
+                "estimated_prompt_tokens": row["estimated_prompt_tokens"],
+                "max_output_tokens": args.max_output_tokens,
+                "estimated_total_tokens_with_completion_budget": row["estimated_prompt_tokens"] + args.max_output_tokens,
+                "call_attempted": True,
+                "call_status": call_status,
+                "raw_output_character_count": len(raw_text),
+                "raw_output_preview": raw_preview,
+                "extracted_sql_status": extracted_sql_status,
+                "extracted_sql_preview": extracted_sql_preview,
+                "failure_category": failure_category,
+                "error_message": error_message,
+                "token_usage_input": token_usage_input,
+                "token_usage_output": token_usage_output,
+                "token_usage_total": token_usage_total,
+                "estimated_cost_usd": None,
+                "pricing_snapshot": "not_frozen",
+                "artifact_claim_boundary": "llm_call_canary_no_sql_execution",
+                "notes": notes,
+            }
+        )
+
+    payload = {
+        "command": "baseline-smoke-llm-call-canary",
+        "ok": (
+            all(record["call_status"] == "success" for record in records)
+            and all(record["raw_output_character_count"] > 0 for record in records)
+            and all(record["artifact_claim_boundary"] == "llm_call_canary_no_sql_execution" for record in records)
+        ),
+        "ran_at_utc": utc_now(),
+        "config_path": relative_to_root(config_path),
+        "baseline_id": "LLM_DIRECT_REWRITE_STRONG",
+        "model_label": args.model_label,
+        "case_count": len(records),
+        "call_requested": True,
+        "call_attempted_count": sum(1 for record in records if record["call_attempted"]),
+        "call_success_count": sum(1 for record in records if record["call_status"] == "success"),
+        "call_failed_count": sum(1 for record in records if record["call_status"] == "failed"),
+        "env_blocked_count": sum(1 for record in records if record["call_status"] == "env_blocked"),
+        "client_unavailable_count": sum(1 for record in records if record["call_status"] == "client_unavailable"),
+        "extracted_sql_count": sum(1 for record in records if record["extracted_sql_status"] == "extracted"),
+        "empty_output_count": sum(1 for record in records if record["extracted_sql_status"] == "empty_output"),
+        "needs_manual_review_count": sum(1 for record in records if record["extracted_sql_status"] == "needs_manual_review"),
+        "total_estimated_prompt_tokens": sum(record["estimated_prompt_tokens"] for record in records),
+        "total_estimated_tokens_with_completion_budget": sum(
+            record["estimated_total_tokens_with_completion_budget"] for record in records
+        ),
+        "token_usage_total_if_available": sum(
+            record["token_usage_total"] for record in records if isinstance(record["token_usage_total"], int)
+        ) or None,
+        "pricing_snapshot": "not_frozen",
+        "estimated_cost_usd": None,
+        "records": records,
+        "issues": issues,
+        "guardrails": {
+            "database_execution": "disabled",
+            "mysql_execution": "disabled",
+            "spark_execution": "disabled",
+            "sqlglot_generation": "disabled",
+            "generated_sql_execution": "disabled",
+            "case_artifact_write": "disabled",
+        },
+        "claim_boundary": "llm_call_canary_only_not_correctness_or_speedup_scoring",
+    }
+    write_baseline_smoke_report(output_name, payload)
+    return print_and_exit(payload, 0 if payload["ok"] else 1)
 
 
 def cmd_baseline_smoke_sqlglot_transpile_preflight(args: argparse.Namespace) -> int:
@@ -7071,6 +7708,20 @@ def build_parser() -> argparse.ArgumentParser:
     llm_prompt_dry_run_parser.add_argument("--execute", action="store_true", default=False)
     llm_prompt_dry_run_parser.add_argument("--call-model", action="store_true", default=False)
     llm_prompt_dry_run_parser.set_defaults(func=cmd_baseline_smoke_llm_prompt_dry_run)
+
+    llm_call_canary_parser = subparsers.add_parser("baseline-smoke-llm-call-canary")
+    llm_call_canary_parser.add_argument(
+        "--config",
+        default="docs/_scratch/baseline_smoke_common_core_v0.json",
+    )
+    llm_call_canary_parser.add_argument("--case-id", action="append", default=[])
+    llm_call_canary_parser.add_argument("--target-dialect", default="postgres")
+    llm_call_canary_parser.add_argument("--model-label", default="STRONG_MODEL_PLACEHOLDER")
+    llm_call_canary_parser.add_argument("--max-output-tokens", type=int, default=2048)
+    llm_call_canary_parser.add_argument("--temperature", type=float, default=0.0)
+    llm_call_canary_parser.add_argument("--execute", action="store_true", default=False)
+    llm_call_canary_parser.add_argument("--call-model", action="store_true", default=False)
+    llm_call_canary_parser.set_defaults(func=cmd_baseline_smoke_llm_call_canary)
 
     sqlglot_transpile_preflight_parser = subparsers.add_parser("baseline-smoke-sqlglot-transpile-preflight")
     sqlglot_transpile_preflight_parser.add_argument(
