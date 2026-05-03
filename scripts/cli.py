@@ -29,6 +29,7 @@ CONTROL_BASELINE_IDS = {
     "HARD_NEGATIVE_GUARD",
 }
 NATIVE_IDENTITY_CANARY_DEFAULT_CASES = ["PERF_0006", "PERF_0008"]
+SQLGLOT_PG_CANARY_DEFAULT_CASES = ["PERF_0006", "PERF_0008"]
 HUMAN_POSITIVE_PG_DEFAULT_CASES = [
     "PERF_0006",
     "PERF_0008",
@@ -2957,6 +2958,842 @@ def cmd_baseline_smoke_sqlglot_preflight(args: argparse.Namespace) -> int:
     return print_and_exit(payload, 0 if ok else 1)
 
 
+def cmd_baseline_smoke_sqlglot_pg_canary(args: argparse.Namespace) -> int:
+    output_name = normalize_baseline_smoke_output_name("sqlglot_same_dialect_pg_canary_v0.json")
+
+    if args.execute:
+        payload = {
+            "command": "baseline-smoke-sqlglot-pg-canary",
+            "cwd": str(ROOT),
+            "ok": False,
+            "ran_at_utc": utc_now(),
+            "config_path": relative_to_root(resolve_repo_path(args.config)),
+            "engine_scope": "postgres",
+            "baseline_id": "SQLGLOT_OPT_SAME_DIALECT",
+            "output_path": "reports/baseline_smoke/sqlglot_same_dialect_pg_execute_refused_v0.json",
+            "message": "Use --execute-sqlglot for the PG SQLGlot canary. --execute is intentionally not supported here.",
+            "issues": [
+                {
+                    "type": "invalid_execute_flag",
+                    "message": "only --execute-sqlglot can enable the PG SQLGlot canary",
+                }
+            ],
+            "guardrails": {
+                "mysql_execution": "disabled",
+                "spark_execution": "disabled",
+                "llm_execution": "disabled",
+                "case_artifact_write": "disabled",
+                "generated_sql_case_write": "disabled",
+            },
+        }
+        write_baseline_smoke_report("sqlglot_same_dialect_pg_execute_refused_v0.json", payload)
+        return print_and_exit(payload, 1)
+
+    config_path = resolve_repo_path(args.config)
+    config = load_json(config_path)
+    case_index = {case["case_id"]: case for case in config.get("cases", [])}
+    selected_case_ids = args.case_id or list(SQLGLOT_PG_CANARY_DEFAULT_CASES)
+    records: list[dict[str, Any]] = []
+    issues: list[dict[str, Any]] = []
+
+    invalid_cases = [case_id for case_id in selected_case_ids if case_id not in case_index]
+    for case_id in invalid_cases:
+        records.append(
+            {
+                "baseline_id": "SQLGLOT_OPT_SAME_DIALECT",
+                "case_id": case_id,
+                "pool": "",
+                "planned_engine": "postgres",
+                "execution_mode": "dry_run" if not args.execute_sqlglot else "pg_execute_sqlglot_canary",
+                "source_sql_path": "",
+                "source_sql_exists": False,
+                "sqlglot_available": False,
+                "parse_status": "skipped",
+                "generation_status": "skipped",
+                "generated_sql_empty": "unknown",
+                "generated_sql_same_as_source_normalized": "unknown",
+                "generated_sql_preview": "",
+                "pg_env_visible": False,
+                "pg_password_present": "unknown",
+                "validation_schema": "",
+                "search_path_after_set": "",
+                "statement_timeout_ms": args.statement_timeout_ms,
+                "execution_status": "skipped",
+                "row_count": None,
+                "runtime_ms": None,
+                "result_materialization": "not_persisted",
+                "output_scope": "reports_only_no_case_artifact_write",
+                "failure_category": "case_not_in_smoke_config",
+                "error_message": "",
+                "artifact_claim_boundary": (
+                    "sqlglot_pg_canary_execution_not_benchmark_claim"
+                    if args.execute_sqlglot
+                    else "dry_run_no_execution"
+                ),
+                "notes": ["selection refused: case is outside the current smoke config"],
+            }
+        )
+        issues.append({"type": "case_not_in_smoke_config", "case_id": case_id})
+
+    valid_case_ids = [case_id for case_id in selected_case_ids if case_id in case_index]
+    selected_specs = [case_index[case_id] for case_id in valid_case_ids]
+
+    env_visibility = pg_env_visibility()
+    required_env_visible = all(env_visibility[name] for name in ["PGHOST", "PGPORT", "PGDATABASE", "PGUSER"])
+    pg_password_present = env_visibility["PGPASSWORD"]
+
+    sqlglot_available = True
+    sqlglot_error = ""
+    try:
+        sqlglot = importlib.import_module("sqlglot")
+    except ModuleNotFoundError as exc:
+        sqlglot_available = False
+        sqlglot_error = str(exc)
+        sqlglot = None
+        issues.append({"type": "missing_sqlglot", "detail": str(exc)})
+
+    if not args.execute_sqlglot:
+        for case_spec in selected_specs:
+            case_id = case_spec["case_id"]
+            pool = case_spec["pool"]
+            source_sql_path = pool_case_root(pool) / case_id / "source.sql"
+            source_sql_exists = source_sql_path.is_file()
+            validation_schema = native_identity_validation_schema(case_id, pool)
+            parse_status = "skipped"
+            generation_status = "skipped"
+            generated_sql_empty: bool | str = "unknown"
+            generated_sql_same: bool | str = "unknown"
+            generated_sql_preview = ""
+            failure_category = "none"
+            error_message = ""
+            notes: list[str] = []
+
+            if pool == "portability":
+                records.append(
+                    {
+                        "baseline_id": "SQLGLOT_OPT_SAME_DIALECT",
+                        "case_id": case_id,
+                        "pool": pool,
+                        "planned_engine": "postgres",
+                        "execution_mode": "dry_run",
+                        "source_sql_path": relative_to_root(source_sql_path),
+                        "source_sql_exists": source_sql_exists,
+                        "sqlglot_available": sqlglot_available,
+                        "parse_status": "skipped",
+                        "generation_status": "skipped",
+                        "generated_sql_empty": "unknown",
+                        "generated_sql_same_as_source_normalized": "unknown",
+                        "generated_sql_preview": "",
+                        "pg_env_visible": required_env_visible,
+                        "pg_password_present": "unknown",
+                        "validation_schema": validation_schema,
+                        "search_path_after_set": "",
+                        "statement_timeout_ms": args.statement_timeout_ms,
+                        "execution_status": "skipped",
+                        "row_count": None,
+                        "runtime_ms": None,
+                        "result_materialization": "not_persisted",
+                        "output_scope": "reports_only_no_case_artifact_write",
+                        "failure_category": "port_case_not_enabled",
+                        "error_message": "",
+                        "artifact_claim_boundary": "dry_run_no_execution",
+                        "notes": ["dry-run skip: portability cases are not enabled in this PG SQLGlot canary"],
+                    }
+                )
+                continue
+
+            if not source_sql_exists:
+                failure_category = "missing_source_sql"
+                notes.append("source.sql is missing")
+            elif not sqlglot_available:
+                failure_category = "sqlglot_unavailable"
+                error_message = sqlglot_error
+                notes.append("sqlglot is not importable in the current environment")
+            else:
+                source_sql = source_sql_path.read_text(encoding="utf-8")
+                try:
+                    parsed = sqlglot.parse_one(source_sql, dialect=args.dialect)
+                    parse_status = "success"
+                except Exception as exc:
+                    parsed = None
+                    parse_status = "failed"
+                    failure_category = type(exc).__name__
+                    error_message = str(exc)
+                    notes.append("sqlglot parse failed")
+
+                if parse_status == "success":
+                    try:
+                        generated_sql = parsed.sql(dialect=args.dialect)
+                        generation_status = "success"
+                        generated_sql_empty = len(generated_sql.strip()) == 0
+                        generated_sql_preview = generated_sql[:500]
+                        if generated_sql_empty:
+                            failure_category = "empty_generated_sql"
+                            notes.append("generated SQL string was empty")
+                        else:
+                            generated_sql_same = (
+                                normalize_sql_for_compare(source_sql)
+                                == normalize_sql_for_compare(generated_sql)
+                            )
+                            notes.append("sqlglot generated same-dialect candidate SQL")
+                    except Exception as exc:
+                        generation_status = "failed"
+                        failure_category = type(exc).__name__
+                        error_message = str(exc)
+                        notes.append("sqlglot generation failed")
+
+            records.append(
+                {
+                    "baseline_id": "SQLGLOT_OPT_SAME_DIALECT",
+                    "case_id": case_id,
+                    "pool": pool,
+                    "planned_engine": "postgres",
+                    "execution_mode": "dry_run",
+                    "source_sql_path": relative_to_root(source_sql_path),
+                    "source_sql_exists": source_sql_exists,
+                    "sqlglot_available": sqlglot_available,
+                    "parse_status": parse_status,
+                    "generation_status": generation_status,
+                    "generated_sql_empty": generated_sql_empty,
+                    "generated_sql_same_as_source_normalized": generated_sql_same,
+                    "generated_sql_preview": generated_sql_preview,
+                    "pg_env_visible": required_env_visible,
+                    "pg_password_present": "unknown",
+                    "validation_schema": validation_schema,
+                    "search_path_after_set": "",
+                    "statement_timeout_ms": args.statement_timeout_ms,
+                    "execution_status": "planned",
+                    "row_count": None,
+                    "runtime_ms": None,
+                    "result_materialization": "not_persisted",
+                    "output_scope": "reports_only_no_case_artifact_write",
+                    "failure_category": failure_category,
+                    "error_message": error_message,
+                    "artifact_claim_boundary": "dry_run_no_execution",
+                    "notes": notes or ["dry-run only; no PostgreSQL connection attempted"],
+                }
+            )
+
+        payload = {
+            "command": "baseline-smoke-sqlglot-pg-canary",
+            "ok": (
+                sqlglot_available
+                and not issues
+                and all(record["source_sql_exists"] for record in records if record["execution_status"] != "skipped")
+                and all(record["parse_status"] == "success" for record in records if record["execution_status"] != "skipped")
+                and all(record["generation_status"] == "success" for record in records if record["execution_status"] != "skipped")
+                and all(record["generated_sql_empty"] is False for record in records if record["execution_status"] != "skipped")
+            ),
+            "ran_at_utc": utc_now(),
+            "config_path": relative_to_root(config_path),
+            "engine_scope": "postgres",
+            "baseline_id": "SQLGLOT_OPT_SAME_DIALECT",
+            "case_count": len(records),
+            "sqlglot_available": sqlglot_available,
+            "parse_success_count": sum(1 for r in records if r["parse_status"] == "success"),
+            "parse_failed_count": sum(1 for r in records if r["parse_status"] == "failed"),
+            "generation_success_count": sum(1 for r in records if r["generation_status"] == "success"),
+            "generation_failed_count": sum(1 for r in records if r["generation_status"] == "failed"),
+            "identical_to_source_count": sum(1 for r in records if r["generated_sql_same_as_source_normalized"] is True),
+            "different_from_source_count": sum(1 for r in records if r["generated_sql_same_as_source_normalized"] is False),
+            "executed_count": 0,
+            "success_count": 0,
+            "failed_count": 0,
+            "skipped_count": sum(1 for r in records if r["execution_status"] == "skipped"),
+            "env_blocked_count": 0,
+            "records": records,
+            "issues": issues,
+            "guardrails": {
+                "mysql_execution": "disabled",
+                "spark_execution": "disabled",
+                "llm_execution": "disabled",
+                "case_artifact_write": "disabled",
+                "generated_sql_case_write": "disabled",
+            },
+        }
+        write_baseline_smoke_report(output_name, payload)
+        return print_and_exit(payload, 0 if payload["ok"] else 1)
+
+    if not sqlglot_available:
+        for case_spec in selected_specs:
+            case_id = case_spec["case_id"]
+            pool = case_spec["pool"]
+            source_sql_path = pool_case_root(pool) / case_id / "source.sql"
+            records.append(
+                {
+                    "baseline_id": "SQLGLOT_OPT_SAME_DIALECT",
+                    "case_id": case_id,
+                    "pool": pool,
+                    "planned_engine": "postgres",
+                    "execution_mode": "pg_execute_sqlglot_canary",
+                    "source_sql_path": relative_to_root(source_sql_path),
+                    "source_sql_exists": source_sql_path.is_file(),
+                    "sqlglot_available": False,
+                    "parse_status": "skipped",
+                    "generation_status": "skipped",
+                    "generated_sql_empty": "unknown",
+                    "generated_sql_same_as_source_normalized": "unknown",
+                    "generated_sql_preview": "",
+                    "pg_env_visible": required_env_visible,
+                    "pg_password_present": pg_password_present,
+                    "validation_schema": native_identity_validation_schema(case_id, pool),
+                    "search_path_after_set": "",
+                    "statement_timeout_ms": args.statement_timeout_ms,
+                    "execution_status": "failed",
+                    "row_count": None,
+                    "runtime_ms": None,
+                    "result_materialization": "not_persisted",
+                    "output_scope": "reports_only_no_case_artifact_write",
+                    "failure_category": "sqlglot_unavailable",
+                    "error_message": sqlglot_error,
+                    "artifact_claim_boundary": "sqlglot_pg_canary_execution_not_benchmark_claim",
+                    "notes": ["execution not attempted because sqlglot is unavailable"],
+                }
+            )
+        payload = {
+            "command": "baseline-smoke-sqlglot-pg-canary",
+            "ok": False,
+            "ran_at_utc": utc_now(),
+            "config_path": relative_to_root(config_path),
+            "engine_scope": "postgres",
+            "baseline_id": "SQLGLOT_OPT_SAME_DIALECT",
+            "case_count": len(records),
+            "sqlglot_available": False,
+            "parse_success_count": 0,
+            "parse_failed_count": 0,
+            "generation_success_count": 0,
+            "generation_failed_count": 0,
+            "identical_to_source_count": 0,
+            "different_from_source_count": 0,
+            "executed_count": 0,
+            "success_count": 0,
+            "failed_count": len(records),
+            "skipped_count": 0,
+            "env_blocked_count": 0,
+            "records": records,
+            "issues": issues,
+            "guardrails": {
+                "mysql_execution": "disabled",
+                "spark_execution": "disabled",
+                "llm_execution": "disabled",
+                "case_artifact_write": "disabled",
+                "generated_sql_case_write": "disabled",
+            },
+        }
+        write_baseline_smoke_report(output_name, payload)
+        return print_and_exit(payload, 1)
+
+    try:
+        psycopg = importlib.import_module("psycopg")
+    except ModuleNotFoundError as exc:
+        issues.append({"type": "missing_psycopg", "detail": str(exc)})
+        for case_spec in selected_specs:
+            case_id = case_spec["case_id"]
+            pool = case_spec["pool"]
+            source_sql_path = pool_case_root(pool) / case_id / "source.sql"
+            records.append(
+                {
+                    "baseline_id": "SQLGLOT_OPT_SAME_DIALECT",
+                    "case_id": case_id,
+                    "pool": pool,
+                    "planned_engine": "postgres",
+                    "execution_mode": "pg_execute_sqlglot_canary",
+                    "source_sql_path": relative_to_root(source_sql_path),
+                    "source_sql_exists": source_sql_path.is_file(),
+                    "sqlglot_available": True,
+                    "parse_status": "skipped",
+                    "generation_status": "skipped",
+                    "generated_sql_empty": "unknown",
+                    "generated_sql_same_as_source_normalized": "unknown",
+                    "generated_sql_preview": "",
+                    "pg_env_visible": required_env_visible,
+                    "pg_password_present": pg_password_present,
+                    "validation_schema": native_identity_validation_schema(case_id, pool),
+                    "search_path_after_set": "",
+                    "statement_timeout_ms": args.statement_timeout_ms,
+                    "execution_status": "failed",
+                    "row_count": None,
+                    "runtime_ms": None,
+                    "result_materialization": "not_persisted",
+                    "output_scope": "reports_only_no_case_artifact_write",
+                    "failure_category": "psycopg_unavailable",
+                    "error_message": str(exc),
+                    "artifact_claim_boundary": "sqlglot_pg_canary_execution_not_benchmark_claim",
+                    "notes": ["execution not attempted because psycopg is unavailable"],
+                }
+            )
+        payload = {
+            "command": "baseline-smoke-sqlglot-pg-canary",
+            "ok": False,
+            "ran_at_utc": utc_now(),
+            "config_path": relative_to_root(config_path),
+            "engine_scope": "postgres",
+            "baseline_id": "SQLGLOT_OPT_SAME_DIALECT",
+            "case_count": len(records),
+            "sqlglot_available": True,
+            "parse_success_count": 0,
+            "parse_failed_count": 0,
+            "generation_success_count": 0,
+            "generation_failed_count": 0,
+            "identical_to_source_count": 0,
+            "different_from_source_count": 0,
+            "executed_count": 0,
+            "success_count": 0,
+            "failed_count": len(records),
+            "skipped_count": 0,
+            "env_blocked_count": 0,
+            "records": records,
+            "issues": issues,
+            "guardrails": {
+                "mysql_execution": "disabled",
+                "spark_execution": "disabled",
+                "llm_execution": "disabled",
+                "case_artifact_write": "disabled",
+                "generated_sql_case_write": "disabled",
+            },
+        }
+        write_baseline_smoke_report(output_name, payload)
+        return print_and_exit(payload, 1)
+
+    if not required_env_visible:
+        for case_spec in selected_specs:
+            case_id = case_spec["case_id"]
+            pool = case_spec["pool"]
+            source_sql_path = pool_case_root(pool) / case_id / "source.sql"
+            records.append(
+                {
+                    "baseline_id": "SQLGLOT_OPT_SAME_DIALECT",
+                    "case_id": case_id,
+                    "pool": pool,
+                    "planned_engine": "postgres",
+                    "execution_mode": "pg_execute_sqlglot_canary",
+                    "source_sql_path": relative_to_root(source_sql_path),
+                    "source_sql_exists": source_sql_path.is_file(),
+                    "sqlglot_available": True,
+                    "parse_status": "skipped",
+                    "generation_status": "skipped",
+                    "generated_sql_empty": "unknown",
+                    "generated_sql_same_as_source_normalized": "unknown",
+                    "generated_sql_preview": "",
+                    "pg_env_visible": False,
+                    "pg_password_present": pg_password_present,
+                    "validation_schema": native_identity_validation_schema(case_id, pool),
+                    "search_path_after_set": "",
+                    "statement_timeout_ms": args.statement_timeout_ms,
+                    "execution_status": "env_blocked",
+                    "row_count": None,
+                    "runtime_ms": None,
+                    "result_materialization": "not_persisted",
+                    "output_scope": "reports_only_no_case_artifact_write",
+                    "failure_category": "missing_pg_env",
+                    "error_message": "",
+                    "artifact_claim_boundary": "sqlglot_pg_canary_execution_not_benchmark_claim",
+                    "notes": ["execution not attempted", "required env: PGHOST, PGPORT, PGDATABASE, PGUSER"],
+                }
+            )
+        payload = {
+            "command": "baseline-smoke-sqlglot-pg-canary",
+            "ok": False,
+            "ran_at_utc": utc_now(),
+            "config_path": relative_to_root(config_path),
+            "engine_scope": "postgres",
+            "baseline_id": "SQLGLOT_OPT_SAME_DIALECT",
+            "case_count": len(records),
+            "sqlglot_available": True,
+            "parse_success_count": 0,
+            "parse_failed_count": 0,
+            "generation_success_count": 0,
+            "generation_failed_count": 0,
+            "identical_to_source_count": 0,
+            "different_from_source_count": 0,
+            "executed_count": 0,
+            "success_count": 0,
+            "failed_count": 0,
+            "skipped_count": 0,
+            "env_blocked_count": len(records),
+            "records": records,
+            "issues": issues,
+            "guardrails": {
+                "mysql_execution": "disabled",
+                "spark_execution": "disabled",
+                "llm_execution": "disabled",
+                "case_artifact_write": "disabled",
+                "generated_sql_case_write": "disabled",
+            },
+        }
+        write_baseline_smoke_report("sqlglot_same_dialect_pg_env_blocked_v0.json", payload)
+        return print_and_exit(payload, 1)
+
+    for case_spec in selected_specs:
+        case_id = case_spec["case_id"]
+        pool = case_spec["pool"]
+        source_sql_path = pool_case_root(pool) / case_id / "source.sql"
+        source_sql_exists = source_sql_path.is_file()
+        validation_schema = native_identity_validation_schema(case_id, pool)
+        generated_sql_preview = ""
+        search_path_after_set = ""
+        parse_status = "skipped"
+        generation_status = "skipped"
+        generated_sql_empty: bool | str = "unknown"
+        generated_sql_same: bool | str = "unknown"
+        failure_category = "none"
+        error_message = ""
+        notes: list[str] = []
+        row_count = None
+        runtime_ms = None
+
+        if pool == "portability":
+            records.append(
+                {
+                    "baseline_id": "SQLGLOT_OPT_SAME_DIALECT",
+                    "case_id": case_id,
+                    "pool": pool,
+                    "planned_engine": "postgres",
+                    "execution_mode": "pg_execute_sqlglot_canary",
+                    "source_sql_path": relative_to_root(source_sql_path),
+                    "source_sql_exists": source_sql_exists,
+                    "sqlglot_available": True,
+                    "parse_status": "skipped",
+                    "generation_status": "skipped",
+                    "generated_sql_empty": "unknown",
+                    "generated_sql_same_as_source_normalized": "unknown",
+                    "generated_sql_preview": "",
+                    "pg_env_visible": True,
+                    "pg_password_present": pg_password_present,
+                    "validation_schema": validation_schema,
+                    "search_path_after_set": "",
+                    "statement_timeout_ms": args.statement_timeout_ms,
+                    "execution_status": "skipped",
+                    "row_count": None,
+                    "runtime_ms": None,
+                    "result_materialization": "not_persisted",
+                    "output_scope": "reports_only_no_case_artifact_write",
+                    "failure_category": "port_case_not_enabled",
+                    "error_message": "",
+                    "artifact_claim_boundary": "sqlglot_pg_canary_execution_not_benchmark_claim",
+                    "notes": ["execution skip: portability cases are not enabled in this PG SQLGlot canary"],
+                }
+            )
+            continue
+
+        if not source_sql_exists:
+            records.append(
+                {
+                    "baseline_id": "SQLGLOT_OPT_SAME_DIALECT",
+                    "case_id": case_id,
+                    "pool": pool,
+                    "planned_engine": "postgres",
+                    "execution_mode": "pg_execute_sqlglot_canary",
+                    "source_sql_path": relative_to_root(source_sql_path),
+                    "source_sql_exists": False,
+                    "sqlglot_available": True,
+                    "parse_status": "skipped",
+                    "generation_status": "skipped",
+                    "generated_sql_empty": "unknown",
+                    "generated_sql_same_as_source_normalized": "unknown",
+                    "generated_sql_preview": "",
+                    "pg_env_visible": True,
+                    "pg_password_present": pg_password_present,
+                    "validation_schema": validation_schema,
+                    "search_path_after_set": "",
+                    "statement_timeout_ms": args.statement_timeout_ms,
+                    "execution_status": "failed",
+                    "row_count": None,
+                    "runtime_ms": None,
+                    "result_materialization": "not_persisted",
+                    "output_scope": "reports_only_no_case_artifact_write",
+                    "failure_category": "missing_source_sql",
+                    "error_message": "",
+                    "artifact_claim_boundary": "sqlglot_pg_canary_execution_not_benchmark_claim",
+                    "notes": ["execution not attempted because source.sql is absent"],
+                }
+            )
+            continue
+
+        source_sql = source_sql_path.read_text(encoding="utf-8")
+        try:
+            parsed = sqlglot.parse_one(source_sql, dialect=args.dialect)
+            parse_status = "success"
+        except Exception as exc:
+            records.append(
+                {
+                    "baseline_id": "SQLGLOT_OPT_SAME_DIALECT",
+                    "case_id": case_id,
+                    "pool": pool,
+                    "planned_engine": "postgres",
+                    "execution_mode": "pg_execute_sqlglot_canary",
+                    "source_sql_path": relative_to_root(source_sql_path),
+                    "source_sql_exists": True,
+                    "sqlglot_available": True,
+                    "parse_status": "failed",
+                    "generation_status": "skipped",
+                    "generated_sql_empty": "unknown",
+                    "generated_sql_same_as_source_normalized": "unknown",
+                    "generated_sql_preview": "",
+                    "pg_env_visible": True,
+                    "pg_password_present": pg_password_present,
+                    "validation_schema": validation_schema,
+                    "search_path_after_set": "",
+                    "statement_timeout_ms": args.statement_timeout_ms,
+                    "execution_status": "failed",
+                    "row_count": None,
+                    "runtime_ms": None,
+                    "result_materialization": "not_persisted",
+                    "output_scope": "reports_only_no_case_artifact_write",
+                    "failure_category": type(exc).__name__,
+                    "error_message": str(exc),
+                    "artifact_claim_boundary": "sqlglot_pg_canary_execution_not_benchmark_claim",
+                    "notes": ["sqlglot parse failed"],
+                }
+            )
+            continue
+
+        try:
+            generated_sql = parsed.sql(dialect=args.dialect)
+            generation_status = "success"
+            generated_sql_empty = len(generated_sql.strip()) == 0
+            generated_sql_preview = generated_sql[:500]
+            if generated_sql_empty:
+                records.append(
+                    {
+                        "baseline_id": "SQLGLOT_OPT_SAME_DIALECT",
+                        "case_id": case_id,
+                        "pool": pool,
+                        "planned_engine": "postgres",
+                        "execution_mode": "pg_execute_sqlglot_canary",
+                        "source_sql_path": relative_to_root(source_sql_path),
+                        "source_sql_exists": True,
+                        "sqlglot_available": True,
+                        "parse_status": parse_status,
+                        "generation_status": "success",
+                        "generated_sql_empty": True,
+                        "generated_sql_same_as_source_normalized": "unknown",
+                        "generated_sql_preview": generated_sql_preview,
+                        "pg_env_visible": True,
+                        "pg_password_present": pg_password_present,
+                        "validation_schema": validation_schema,
+                        "search_path_after_set": "",
+                        "statement_timeout_ms": args.statement_timeout_ms,
+                        "execution_status": "failed",
+                        "row_count": None,
+                        "runtime_ms": None,
+                        "result_materialization": "not_persisted",
+                        "output_scope": "reports_only_no_case_artifact_write",
+                        "failure_category": "empty_generated_sql",
+                        "error_message": "",
+                        "artifact_claim_boundary": "sqlglot_pg_canary_execution_not_benchmark_claim",
+                        "notes": ["generated SQL string was empty"],
+                    }
+                )
+                continue
+            generated_sql_same = (
+                normalize_sql_for_compare(source_sql)
+                == normalize_sql_for_compare(generated_sql)
+            )
+        except Exception as exc:
+            records.append(
+                {
+                    "baseline_id": "SQLGLOT_OPT_SAME_DIALECT",
+                    "case_id": case_id,
+                    "pool": pool,
+                    "planned_engine": "postgres",
+                    "execution_mode": "pg_execute_sqlglot_canary",
+                    "source_sql_path": relative_to_root(source_sql_path),
+                    "source_sql_exists": True,
+                    "sqlglot_available": True,
+                    "parse_status": parse_status,
+                    "generation_status": "failed",
+                    "generated_sql_empty": "unknown",
+                    "generated_sql_same_as_source_normalized": "unknown",
+                    "generated_sql_preview": generated_sql_preview,
+                    "pg_env_visible": True,
+                    "pg_password_present": pg_password_present,
+                    "validation_schema": validation_schema,
+                    "search_path_after_set": "",
+                    "statement_timeout_ms": args.statement_timeout_ms,
+                    "execution_status": "failed",
+                    "row_count": None,
+                    "runtime_ms": None,
+                    "result_materialization": "not_persisted",
+                    "output_scope": "reports_only_no_case_artifact_write",
+                    "failure_category": type(exc).__name__,
+                    "error_message": str(exc),
+                    "artifact_claim_boundary": "sqlglot_pg_canary_execution_not_benchmark_claim",
+                    "notes": ["sqlglot generation failed"],
+                }
+            )
+            continue
+
+        start = time.perf_counter()
+        try:
+            with psycopg.connect(
+                host=os.environ["PGHOST"],
+                port=os.environ["PGPORT"],
+                dbname=os.environ["PGDATABASE"],
+                user=os.environ["PGUSER"],
+                password=os.environ.get("PGPASSWORD"),
+                options=(
+                    f"-c statement_timeout={args.statement_timeout_ms} "
+                    "-c default_transaction_read_only=on"
+                ),
+            ) as conn:
+                with conn.cursor() as cur:
+                    if validation_schema:
+                        cur.execute("SELECT to_regnamespace(%s)", (validation_schema,))
+                        schema_name = cur.fetchone()[0]
+                        if not schema_name:
+                            runtime_ms = int((time.perf_counter() - start) * 1000)
+                            records.append(
+                                {
+                                    "baseline_id": "SQLGLOT_OPT_SAME_DIALECT",
+                                    "case_id": case_id,
+                                    "pool": pool,
+                                    "planned_engine": "postgres",
+                                    "execution_mode": "pg_execute_sqlglot_canary",
+                                    "source_sql_path": relative_to_root(source_sql_path),
+                                    "source_sql_exists": True,
+                                    "sqlglot_available": True,
+                                    "parse_status": parse_status,
+                                    "generation_status": generation_status,
+                                    "generated_sql_empty": False,
+                                    "generated_sql_same_as_source_normalized": generated_sql_same,
+                                    "generated_sql_preview": generated_sql_preview,
+                                    "pg_env_visible": True,
+                                    "pg_password_present": pg_password_present,
+                                    "validation_schema": validation_schema,
+                                    "search_path_after_set": "",
+                                    "statement_timeout_ms": args.statement_timeout_ms,
+                                    "execution_status": "failed",
+                                    "row_count": None,
+                                    "runtime_ms": runtime_ms,
+                                    "result_materialization": "not_persisted",
+                                    "output_scope": "reports_only_no_case_artifact_write",
+                                    "failure_category": "missing_validation_schema",
+                                    "error_message": f"validation schema not found: {validation_schema}",
+                                    "artifact_claim_boundary": "sqlglot_pg_canary_execution_not_benchmark_claim",
+                                    "notes": ["execution attempted", "search_path not set because validation schema was missing"],
+                                }
+                            )
+                            continue
+                        cur.execute(
+                            psycopg.sql.SQL("SET search_path TO {}, public").format(
+                                psycopg.sql.Identifier(validation_schema)
+                            )
+                        )
+                        cur.execute("SHOW search_path")
+                        search_path_after_set = str(cur.fetchone()[0])
+                    cur.execute(generated_sql)
+                    if cur.description is not None:
+                        rows = cur.fetchall()
+                        row_count = len(rows)
+                    else:
+                        row_count = cur.rowcount if cur.rowcount >= 0 else None
+            runtime_ms = int((time.perf_counter() - start) * 1000)
+            records.append(
+                {
+                    "baseline_id": "SQLGLOT_OPT_SAME_DIALECT",
+                    "case_id": case_id,
+                    "pool": pool,
+                    "planned_engine": "postgres",
+                    "execution_mode": "pg_execute_sqlglot_canary",
+                    "source_sql_path": relative_to_root(source_sql_path),
+                    "source_sql_exists": True,
+                    "sqlglot_available": True,
+                    "parse_status": parse_status,
+                    "generation_status": generation_status,
+                    "generated_sql_empty": False,
+                    "generated_sql_same_as_source_normalized": generated_sql_same,
+                    "generated_sql_preview": generated_sql_preview,
+                    "pg_env_visible": True,
+                    "pg_password_present": pg_password_present,
+                    "validation_schema": validation_schema,
+                    "search_path_after_set": search_path_after_set,
+                    "statement_timeout_ms": args.statement_timeout_ms,
+                    "execution_status": "success",
+                    "row_count": row_count,
+                    "runtime_ms": runtime_ms,
+                    "result_materialization": "not_persisted",
+                    "output_scope": "reports_only_no_case_artifact_write",
+                    "failure_category": "none",
+                    "error_message": "",
+                    "artifact_claim_boundary": "sqlglot_pg_canary_execution_not_benchmark_claim",
+                    "notes": ["sqlglot generated SQL executed under read-only PG canary mode"],
+                }
+            )
+        except Exception as exc:
+            runtime_ms = int((time.perf_counter() - start) * 1000)
+            records.append(
+                {
+                    "baseline_id": "SQLGLOT_OPT_SAME_DIALECT",
+                    "case_id": case_id,
+                    "pool": pool,
+                    "planned_engine": "postgres",
+                    "execution_mode": "pg_execute_sqlglot_canary",
+                    "source_sql_path": relative_to_root(source_sql_path),
+                    "source_sql_exists": True,
+                    "sqlglot_available": True,
+                    "parse_status": parse_status,
+                    "generation_status": generation_status,
+                    "generated_sql_empty": False,
+                    "generated_sql_same_as_source_normalized": generated_sql_same,
+                    "generated_sql_preview": generated_sql_preview,
+                    "pg_env_visible": True,
+                    "pg_password_present": pg_password_present,
+                    "validation_schema": validation_schema,
+                    "search_path_after_set": search_path_after_set,
+                    "statement_timeout_ms": args.statement_timeout_ms,
+                    "execution_status": "failed",
+                    "row_count": None,
+                    "runtime_ms": runtime_ms,
+                    "result_materialization": "not_persisted",
+                    "output_scope": "reports_only_no_case_artifact_write",
+                    "failure_category": type(exc).__name__,
+                    "error_message": str(exc),
+                    "artifact_claim_boundary": "sqlglot_pg_canary_execution_not_benchmark_claim",
+                    "notes": ["execution attempted", "no case-local artifacts were written"],
+                }
+            )
+
+    payload = {
+        "command": "baseline-smoke-sqlglot-pg-canary",
+        "ok": (
+            sqlglot_available
+            and not issues
+            and all(record["parse_status"] == "success" for record in records if record["execution_status"] != "skipped")
+            and all(record["generation_status"] == "success" for record in records if record["execution_status"] != "skipped")
+            and all(record["execution_status"] == "success" for record in records if record["execution_status"] != "skipped")
+        ),
+        "ran_at_utc": utc_now(),
+        "config_path": relative_to_root(config_path),
+        "engine_scope": "postgres",
+        "baseline_id": "SQLGLOT_OPT_SAME_DIALECT",
+        "case_count": len(records),
+        "sqlglot_available": sqlglot_available,
+        "parse_success_count": sum(1 for r in records if r["parse_status"] == "success"),
+        "parse_failed_count": sum(1 for r in records if r["parse_status"] == "failed"),
+        "generation_success_count": sum(1 for r in records if r["generation_status"] == "success"),
+        "generation_failed_count": sum(1 for r in records if r["generation_status"] == "failed"),
+        "identical_to_source_count": sum(1 for r in records if r["generated_sql_same_as_source_normalized"] is True),
+        "different_from_source_count": sum(1 for r in records if r["generated_sql_same_as_source_normalized"] is False),
+        "executed_count": sum(1 for r in records if r["execution_status"] in {"success", "failed"}),
+        "success_count": sum(1 for r in records if r["execution_status"] == "success"),
+        "failed_count": sum(1 for r in records if r["execution_status"] == "failed"),
+        "skipped_count": sum(1 for r in records if r["execution_status"] == "skipped"),
+        "env_blocked_count": sum(1 for r in records if r["execution_status"] == "env_blocked"),
+        "records": records,
+        "issues": issues,
+        "guardrails": {
+            "mysql_execution": "disabled",
+            "spark_execution": "disabled",
+            "llm_execution": "disabled",
+            "case_artifact_write": "disabled",
+            "generated_sql_case_write": "disabled",
+        },
+    }
+    write_baseline_smoke_report(output_name, payload)
+    return print_and_exit(payload, 0 if payload["ok"] else 1)
+
+
 def cmd_baseline_smoke_preflight(args: argparse.Namespace) -> int:
     if args.execute:
         payload = {
@@ -4204,6 +5041,18 @@ def build_parser() -> argparse.ArgumentParser:
     sqlglot_preflight_parser.add_argument("--write-generated", action="store_true", default=False)
     sqlglot_preflight_parser.add_argument("--execute", action="store_true", default=False)
     sqlglot_preflight_parser.set_defaults(func=cmd_baseline_smoke_sqlglot_preflight)
+
+    sqlglot_pg_canary_parser = subparsers.add_parser("baseline-smoke-sqlglot-pg-canary")
+    sqlglot_pg_canary_parser.add_argument(
+        "--config",
+        default="docs/_scratch/baseline_smoke_common_core_v0.json",
+    )
+    sqlglot_pg_canary_parser.add_argument("--case-id", action="append", default=[])
+    sqlglot_pg_canary_parser.add_argument("--dialect", default="postgres")
+    sqlglot_pg_canary_parser.add_argument("--statement-timeout-ms", type=int, default=30000)
+    sqlglot_pg_canary_parser.add_argument("--execute", action="store_true", default=False)
+    sqlglot_pg_canary_parser.add_argument("--execute-sqlglot", action="store_true", default=False)
+    sqlglot_pg_canary_parser.set_defaults(func=cmd_baseline_smoke_sqlglot_pg_canary)
 
     return parser
 
