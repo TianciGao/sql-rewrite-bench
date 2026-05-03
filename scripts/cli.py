@@ -90,6 +90,23 @@ GENREWRITE_PG_NATIVE_9_CASES = [
     "CONS_0007",
     "CONS_0012",
 ]
+RBOT_LLMR2_FIRST_SUBSET_CASES = [
+    "PERF_0006",
+    "PERF_0008",
+    "PERF_0033",
+    "PERF_0054",
+]
+RBOT_LLMR2_PG_NATIVE_9_CASES = [
+    "PERF_0006",
+    "PERF_0008",
+    "PERF_0013",
+    "PERF_0017",
+    "PERF_0024",
+    "PERF_0033",
+    "PERF_0054",
+    "CONS_0007",
+    "CONS_0012",
+]
 HUMAN_POSITIVE_PG_DEFAULT_CASES = [
     "PERF_0006",
     "PERF_0008",
@@ -378,6 +395,14 @@ def genrewrite_candidate_case_ids(candidate_set: str) -> list[str]:
     raise ValueError(f"unsupported GenRewrite candidate set: {candidate_set}")
 
 
+def rbot_llmr2_candidate_case_ids(candidate_set: str) -> list[str]:
+    if candidate_set == "first-subset":
+        return list(RBOT_LLMR2_FIRST_SUBSET_CASES)
+    if candidate_set == "pg-native-9":
+        return list(RBOT_LLMR2_PG_NATIVE_9_CASES)
+    raise ValueError(f"unsupported R-Bot / LLM-R2 candidate set: {candidate_set}")
+
+
 def dependency_support_file_available() -> bool:
     candidates = [
         ROOT / "pyproject.toml",
@@ -454,6 +479,28 @@ def genrewrite_context_availability(manifest_text: str) -> tuple[str, str, bool,
     execution_feedback_context_available = False
     prompt_context_available = "partial"
     return schema_context, checker_context, execution_feedback_context_available, prompt_context_available
+
+
+def rbot_llmr2_context_availability(manifest_text: str) -> tuple[str, str, str]:
+    lower_manifest = manifest_text.lower()
+    schema_present = "schema_files:" in lower_manifest or "schema/" in lower_manifest
+    checker_signals = [
+        "validation_scripts:",
+        "result_check:",
+        "plan_check:",
+        "validation/",
+        "witness_data_files:",
+    ]
+    checker_count = sum(1 for signal in checker_signals if signal in lower_manifest)
+    schema_context = "present" if schema_present else "absent"
+    if checker_count >= 3:
+        checker_context = "present"
+    elif checker_count >= 1:
+        checker_context = "partial"
+    else:
+        checker_context = "absent"
+    prompt_context = "partial"
+    return schema_context, checker_context, prompt_context
 
 
 def learnedrewrite_readiness_assessment(
@@ -577,6 +624,68 @@ def genrewrite_readiness_assessment(
         "unknown",
         "exclude_from_first_genrewrite_scaffold",
         "No audited GenRewrite first-subset recommendation is available for this case.",
+    )
+
+
+def rbot_llmr2_readiness_assessment(
+    case_id: str,
+    pool: str,
+    signals: dict[str, bool],
+) -> tuple[str, str, str, str, str]:
+    if case_id in {"PERF_0006", "PERF_0008", "PERF_0033", "PERF_0054"}:
+        return (
+            "low",
+            "medium",
+            "medium",
+            "first_subset_candidate",
+            "Clean analytical SQL shape fits a bounded retrieval-first subset, but retrieval corpus, demo policy, and rule-pool layers are missing.",
+        )
+    if case_id in {"PERF_0013", "PERF_0017"}:
+        return (
+            "medium",
+            "medium",
+            "medium",
+            "maybe_later",
+            "Interval syntax raises normalization pressure for retrieval examples and rule-selection prompts.",
+        )
+    if case_id == "PERF_0024":
+        return (
+            "medium",
+            "high",
+            "high",
+            "maybe_later",
+            "Correlated nested subqueries increase potential value but also raise demo-selection and retrieval-cost risk.",
+        )
+    if case_id in {"CONS_0007", "CONS_0012"}:
+        return (
+            "medium",
+            "high",
+            "high",
+            "maybe_later",
+            "Consistency cases are useful later, but retrieval/example selection is likely more brittle and fairness-sensitive.",
+        )
+    if pool == "portability":
+        return (
+            "high",
+            "high",
+            "high",
+            "exclude_from_first_retrieval_scaffold",
+            "PORT cases are outside the first PG-native retrieval scaffold and should not be mixed into the bounded denominator yet.",
+        )
+    if signals.get("has_window_function"):
+        return (
+            "high",
+            "high",
+            "high",
+            "maybe_later",
+            "Window-function handling is outside the best-first bounded subset for a missing retrieval-control scaffold.",
+        )
+    return (
+        "unknown",
+        "unknown",
+        "unknown",
+        "exclude_from_first_retrieval_scaffold",
+        "No audited R-Bot / LLM-R2 first-subset recommendation is available for this case.",
     )
 
 
@@ -6342,6 +6451,272 @@ def cmd_baseline_smoke_genrewrite_readiness(args: argparse.Namespace) -> int:
             "case_artifact_write": "disabled",
         },
         "claim_boundary": "genrewrite_input_cost_readiness_only_not_model_or_execution",
+    }
+    write_baseline_smoke_report(output_name, payload)
+    return print_and_exit(payload, 0 if payload["ok"] else 1)
+
+
+def cmd_baseline_smoke_rbot_llmr2_readiness(args: argparse.Namespace) -> int:
+    output_name = normalize_baseline_smoke_output_name(args.output)
+    config_path = resolve_repo_path(args.config)
+    config = load_json(config_path)
+
+    if args.execute:
+        payload = {
+            "command": "baseline-smoke-rbot-llmr2-readiness",
+            "cwd": str(ROOT),
+            "ok": False,
+            "ran_at_utc": utc_now(),
+            "baseline_id": "R_BOT_LLM_R2",
+            "baseline_ids": ["R_BOT", "LLM_R2"],
+            "output_path": "reports/baseline_smoke/rbot_llmr2_retrieval_readiness_execute_refused_v0.json",
+            "claim_boundary": "rbot_llmr2_retrieval_readiness_only_not_model_or_execution",
+            "message": "This scaffold does not execute R-Bot or LLM-R2. It only emits a static retrieval-readiness report.",
+            "issues": [
+                {
+                    "type": "execution_not_supported",
+                    "message": "baseline-smoke-rbot-llmr2-readiness is read-only and never executes R-Bot or LLM-R2",
+                }
+            ],
+            "guardrails": {
+                "rbot_execution": "disabled",
+                "llmr2_execution": "disabled",
+                "model_api_call": "disabled",
+                "retrieval_index_build": "disabled",
+                "embedding_vector_path": "disabled",
+                "demo_selection": "disabled",
+                "rerank": "disabled",
+                "database_execution": "disabled",
+                "mysql_execution": "disabled",
+                "spark_execution": "disabled",
+                "calcite_execution": "disabled",
+                "sqlglot_generation": "disabled",
+                "case_artifact_write": "disabled",
+            },
+        }
+        write_baseline_smoke_report("rbot_llmr2_retrieval_readiness_execute_refused_v0.json", payload)
+        return print_and_exit(payload, 1)
+
+    case_index = {case["case_id"]: case for case in config.get("cases", [])}
+    selected_case_ids = args.case_id or rbot_llmr2_candidate_case_ids(args.candidate_set)
+    records: list[dict[str, Any]] = []
+    issues: list[dict[str, Any]] = []
+
+    for case_id in selected_case_ids:
+        case_spec = case_index.get(case_id)
+        if case_spec is None:
+            records.append(
+                {
+                    "baseline_id": "R_BOT_LLM_R2",
+                    "baseline_ids": ["R_BOT", "LLM_R2"],
+                    "case_id": case_id,
+                    "pool": "",
+                    "source_sql_path": "",
+                    "source_sql_exists": False,
+                    "manifest_path": "",
+                    "manifest_exists": False,
+                    "source_family": "",
+                    "rbot_runner_available": False,
+                    "llmr2_runner_available": False,
+                    "retrieval_module_available": False,
+                    "demo_selector_available": False,
+                    "rule_pool_available": False,
+                    "rerank_path_available": False,
+                    "embedding_vector_path_available": False,
+                    "retrieval_index_build_available": False,
+                    "retrieval_corpus_available": False,
+                    "demo_selection_policy_frozen": False,
+                    "contamination_policy_frozen": False,
+                    "fair_comparison_contract_available": False,
+                    "rbot_execution_attempted": False,
+                    "llmr2_execution_attempted": False,
+                    "model_call_attempted": False,
+                    "retrieval_attempted": False,
+                    "demo_selection_attempted": False,
+                    "rerank_attempted": False,
+                    "schema_context_available": "absent",
+                    "checker_context_available": "absent",
+                    "prompt_context_available": "absent",
+                    "static_sql_shape_signals": {},
+                    "likely_input_risk": "unknown",
+                    "likely_usefulness": "unknown",
+                    "likely_retrieval_cost_risk": "unknown",
+                    "recommended_status": "exclude_from_first_retrieval_scaffold",
+                    "rewrite_status": "not_attempted_retrieval_control_stack_missing",
+                    "artifact_status": "missing_retrieval_control_stack",
+                    "reason": "Case is not present in the baseline smoke config.",
+                    "artifact_claim_boundary": "rbot_llmr2_readiness_only_no_model_no_execution",
+                    "notes": ["selection refused: case is outside the current smoke config"],
+                }
+            )
+            issues.append({"type": "case_not_in_smoke_config", "case_id": case_id})
+            continue
+
+        pool = case_spec["pool"]
+        case_root = pool_case_root(pool) / case_id
+        source_sql_path = case_root / "source.sql"
+        manifest_path = case_root / "manifest.yaml"
+        source_sql_exists = source_sql_path.is_file()
+        manifest_exists = manifest_path.is_file()
+        manifest_text = manifest_path.read_text(encoding="utf-8") if manifest_exists else ""
+        source_sql_text = source_sql_path.read_text(encoding="utf-8") if source_sql_exists else ""
+        source_family = manifest_source_family_hint(manifest_text) or case_spec.get("source_family", "")
+        schema_context, checker_context, prompt_context = rbot_llmr2_context_availability(manifest_text)
+        if not source_sql_exists:
+            prompt_context = "absent"
+        signals = learnedrewrite_static_sql_shape_signals(source_sql_text) if source_sql_exists else {}
+        input_risk, usefulness, retrieval_cost_risk, recommended_status, reason = rbot_llmr2_readiness_assessment(
+            case_id, pool, signals
+        )
+
+        notes = []
+        if source_family:
+            notes.append(f"source_family={source_family}")
+        if schema_context != "absent":
+            notes.append(f"schema_context_available={schema_context}")
+        if checker_context != "absent":
+            notes.append(f"checker_context_available={checker_context}")
+        if signals.get("has_interval_literal"):
+            notes.append("interval literal detected")
+        if signals.get("has_nested_select"):
+            notes.append("nested SELECT detected")
+        if signals.get("has_offset"):
+            notes.append("OFFSET detected")
+        if signals.get("has_calcite_consistency_style_tables"):
+            notes.append("Calcite-style consistency tables detected")
+        notes.extend(
+            [
+                "retrieval corpus missing",
+                "demo selection policy missing",
+                "contamination policy missing",
+                "fair comparison contract missing",
+                "no demo/rule pool",
+                "no embedding/vector path",
+            ]
+        )
+
+        if not source_sql_exists:
+            issues.append({"type": "missing_source_sql", "case_id": case_id, "path": relative_to_root(source_sql_path)})
+        if not manifest_exists:
+            issues.append({"type": "missing_manifest", "case_id": case_id, "path": relative_to_root(manifest_path)})
+
+        records.append(
+            {
+                "baseline_id": "R_BOT_LLM_R2",
+                "baseline_ids": ["R_BOT", "LLM_R2"],
+                "case_id": case_id,
+                "pool": pool,
+                "source_sql_path": relative_to_root(source_sql_path),
+                "source_sql_exists": source_sql_exists,
+                "manifest_path": relative_to_root(manifest_path),
+                "manifest_exists": manifest_exists,
+                "source_family": source_family,
+                "rbot_runner_available": False,
+                "llmr2_runner_available": False,
+                "retrieval_module_available": False,
+                "demo_selector_available": False,
+                "rule_pool_available": False,
+                "rerank_path_available": False,
+                "embedding_vector_path_available": False,
+                "retrieval_index_build_available": False,
+                "retrieval_corpus_available": False,
+                "demo_selection_policy_frozen": False,
+                "contamination_policy_frozen": False,
+                "fair_comparison_contract_available": False,
+                "rbot_execution_attempted": False,
+                "llmr2_execution_attempted": False,
+                "model_call_attempted": False,
+                "retrieval_attempted": False,
+                "demo_selection_attempted": False,
+                "rerank_attempted": False,
+                "schema_context_available": schema_context,
+                "checker_context_available": checker_context,
+                "prompt_context_available": prompt_context,
+                "static_sql_shape_signals": signals,
+                "likely_input_risk": input_risk,
+                "likely_usefulness": usefulness,
+                "likely_retrieval_cost_risk": retrieval_cost_risk,
+                "recommended_status": recommended_status,
+                "rewrite_status": "not_attempted_retrieval_control_stack_missing",
+                "artifact_status": "missing_retrieval_control_stack",
+                "reason": reason,
+                "artifact_claim_boundary": "rbot_llmr2_readiness_only_no_model_no_execution",
+                "notes": notes,
+            }
+        )
+
+    payload = {
+        "command": "baseline-smoke-rbot-llmr2-readiness",
+        "ok": (
+            all(record["source_sql_exists"] and record["manifest_exists"] for record in records)
+            and all(record["rbot_execution_attempted"] is False for record in records)
+            and all(record["llmr2_execution_attempted"] is False for record in records)
+            and all(record["model_call_attempted"] is False for record in records)
+            and all(record["retrieval_attempted"] is False for record in records)
+            and all(record["demo_selection_attempted"] is False for record in records)
+            and all(record["rerank_attempted"] is False for record in records)
+            and all(record["rewrite_status"] == "not_attempted_retrieval_control_stack_missing" for record in records)
+            and all(record["artifact_claim_boundary"] == "rbot_llmr2_readiness_only_no_model_no_execution" for record in records)
+        ),
+        "ran_at_utc": utc_now(),
+        "baseline_id": "R_BOT_LLM_R2",
+        "baseline_ids": ["R_BOT", "LLM_R2"],
+        "config_path": relative_to_root(config_path),
+        "candidate_set": args.candidate_set if not args.case_id else "case_id_override",
+        "case_count": len(records),
+        "rbot_runner_available": False,
+        "llmr2_runner_available": False,
+        "retrieval_module_available": False,
+        "demo_selector_available": False,
+        "rule_pool_available": False,
+        "rerank_path_available": False,
+        "embedding_vector_path_available": False,
+        "retrieval_index_build_available": False,
+        "retrieval_corpus_available": False,
+        "demo_selection_policy_frozen": False,
+        "contamination_policy_frozen": False,
+        "fair_comparison_contract_available": False,
+        "execution_attempted_count": 0,
+        "model_call_attempted_count": 0,
+        "retrieval_attempted_count": 0,
+        "demo_selection_attempted_count": 0,
+        "rerank_attempted_count": 0,
+        "first_subset_candidate_count": sum(1 for record in records if record["recommended_status"] == "first_subset_candidate"),
+        "maybe_later_count": sum(1 for record in records if record["recommended_status"] == "maybe_later"),
+        "exclude_from_first_retrieval_scaffold_count": sum(
+            1 for record in records if record["recommended_status"] == "exclude_from_first_retrieval_scaffold"
+        ),
+        "counts_by_likely_input_risk": count_plain_values(
+            [str(record.get("likely_input_risk") or "unknown") for record in records]
+        ),
+        "counts_by_likely_usefulness": count_plain_values(
+            [str(record.get("likely_usefulness") or "unknown") for record in records]
+        ),
+        "counts_by_likely_retrieval_cost_risk": count_plain_values(
+            [str(record.get("likely_retrieval_cost_risk") or "unknown") for record in records]
+        ),
+        "counts_by_recommended_status": count_plain_values(
+            [str(record.get("recommended_status") or "unknown") for record in records]
+        ),
+        "records": records,
+        "issues": issues,
+        "output_path": f"reports/baseline_smoke/{output_name}",
+        "guardrails": {
+            "rbot_execution": "disabled",
+            "llmr2_execution": "disabled",
+            "model_api_call": "disabled",
+            "retrieval_index_build": "disabled",
+            "embedding_vector_path": "disabled",
+            "demo_selection": "disabled",
+            "rerank": "disabled",
+            "database_execution": "disabled",
+            "mysql_execution": "disabled",
+            "spark_execution": "disabled",
+            "calcite_execution": "disabled",
+            "sqlglot_generation": "disabled",
+            "case_artifact_write": "disabled",
+        },
+        "claim_boundary": "rbot_llmr2_retrieval_readiness_only_not_model_or_execution",
     }
     write_baseline_smoke_report(output_name, payload)
     return print_and_exit(payload, 0 if payload["ok"] else 1)
@@ -12937,6 +13312,24 @@ def build_parser() -> argparse.ArgumentParser:
     )
     genrewrite_readiness_parser.add_argument("--execute", action="store_true", default=False)
     genrewrite_readiness_parser.set_defaults(func=cmd_baseline_smoke_genrewrite_readiness)
+
+    rbot_llmr2_readiness_parser = subparsers.add_parser("baseline-smoke-rbot-llmr2-readiness")
+    rbot_llmr2_readiness_parser.add_argument(
+        "--config",
+        default="docs/_scratch/baseline_smoke_common_core_v0.json",
+    )
+    rbot_llmr2_readiness_parser.add_argument("--case-id", action="append", default=[])
+    rbot_llmr2_readiness_parser.add_argument(
+        "--candidate-set",
+        choices=["first-subset", "pg-native-9"],
+        default="first-subset",
+    )
+    rbot_llmr2_readiness_parser.add_argument(
+        "--output",
+        default="rbot_llmr2_retrieval_readiness_v0.json",
+    )
+    rbot_llmr2_readiness_parser.add_argument("--execute", action="store_true", default=False)
+    rbot_llmr2_readiness_parser.set_defaults(func=cmd_baseline_smoke_rbot_llmr2_readiness)
 
     sqlglot_transpile_summary_parser = subparsers.add_parser("baseline-smoke-sqlglot-transpile-summary")
     sqlglot_transpile_summary_parser.add_argument(
