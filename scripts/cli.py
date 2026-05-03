@@ -2723,6 +2723,370 @@ def cmd_baseline_smoke_pg_control_summary(args: argparse.Namespace) -> int:
     return print_and_exit(payload, 0 if ok else 1)
 
 
+def cmd_baseline_smoke_sqlglot_summary(args: argparse.Namespace) -> int:
+    output_name = normalize_baseline_smoke_output_name(args.output)
+    input_paths = {
+        "native": resolve_repo_path(args.native_report),
+        "positive": resolve_repo_path(args.positive_report),
+        "negative": resolve_repo_path(args.negative_report),
+        "sqlglot": resolve_repo_path(args.sqlglot_report),
+    }
+    input_report_refs = {name: relative_to_root(path) for name, path in input_paths.items()}
+
+    if args.execute:
+        payload = {
+            "command": "baseline-smoke-sqlglot-summary",
+            "cwd": str(ROOT),
+            "ok": False,
+            "ran_at_utc": utc_now(),
+            "input_reports": input_report_refs,
+            "output_path": f"reports/baseline_smoke/{normalize_baseline_smoke_output_name('sqlglot_vs_controls_pg_summary_execute_refused_v0.json')}",
+            "claim_boundary": "execution_layer_summary_only_not_correctness_or_speedup_scoring",
+            "message": "Execution is not supported for the SQLGlot-vs-controls summary. This command only summarizes existing reports.",
+            "issues": [
+                {
+                    "type": "execution_not_supported",
+                    "message": "baseline-smoke-sqlglot-summary is read-only and never executes baselines",
+                }
+            ],
+        }
+        write_baseline_smoke_report("sqlglot_vs_controls_pg_summary_execute_refused_v0.json", payload)
+        return print_and_exit(payload, 1)
+
+    reports: dict[str, dict[str, Any]] = {}
+    issues: list[dict[str, Any]] = []
+    expected = {
+        "native": {"baseline_id": "NATIVE_IDENTITY"},
+        "positive": {"baseline_id": "HUMAN_REFERENCE_POSITIVE"},
+        "negative": {"baseline_id": "HARD_NEGATIVE_GUARD"},
+        "sqlglot": {"baseline_id": "SQLGLOT_OPT_SAME_DIALECT"},
+    }
+    required_fields = ["baseline_id", "records", "success_count", "failed_count", "executed_count"]
+
+    for name, path in input_paths.items():
+        if not path.is_file():
+            issues.append(
+                {
+                    "type": "missing_input",
+                    "report": name,
+                    "path": relative_to_root(path),
+                }
+            )
+            continue
+        try:
+            report = load_json(path)
+        except (json.JSONDecodeError, OSError) as exc:
+            issues.append(
+                {
+                    "type": "malformed_input",
+                    "report": name,
+                    "path": relative_to_root(path),
+                    "detail": str(exc),
+                }
+            )
+            continue
+
+        missing_fields = [field for field in required_fields if field not in report]
+        if missing_fields:
+            issues.append(
+                {
+                    "type": "missing_required_fields",
+                    "report": name,
+                    "path": relative_to_root(path),
+                    "fields": missing_fields,
+                }
+            )
+            continue
+
+        if not isinstance(report.get("records"), list):
+            issues.append(
+                {
+                    "type": "malformed_input",
+                    "report": name,
+                    "path": relative_to_root(path),
+                    "detail": "records field is not a list",
+                }
+            )
+            continue
+
+        reports[name] = report
+        if report.get("baseline_id") != expected[name]["baseline_id"]:
+            issues.append(
+                {
+                    "type": "unexpected_baseline_id",
+                    "report": name,
+                    "expected": expected[name]["baseline_id"],
+                    "actual": report.get("baseline_id"),
+                }
+            )
+
+    def index_records(report: dict[str, Any] | None) -> dict[str, dict[str, Any]]:
+        if not report:
+            return {}
+        return {
+            record.get("case_id", ""): record
+            for record in report.get("records", [])
+            if isinstance(record, dict) and record.get("case_id")
+        }
+
+    native_records = index_records(reports.get("native"))
+    positive_records = index_records(reports.get("positive"))
+    negative_records = index_records(reports.get("negative"))
+    sqlglot_records = index_records(reports.get("sqlglot"))
+    all_case_ids = sorted(set(native_records) | set(positive_records) | set(negative_records) | set(sqlglot_records))
+
+    case_summaries: list[dict[str, Any]] = []
+    execution_layer_values: list[str] = []
+    row_count_observation_values: list[str] = []
+    human_positive_observation_values: list[str] = []
+    hard_negative_observation_values: list[str] = []
+    sqlglot_generated_same_values: list[str] = []
+
+    for case_id in all_case_ids:
+        native = native_records.get(case_id)
+        positive = positive_records.get(case_id)
+        negative = negative_records.get(case_id)
+        sqlglot = sqlglot_records.get(case_id)
+        pool = (
+            (native or {}).get("pool")
+            or (positive or {}).get("pool")
+            or (negative or {}).get("pool")
+            or (sqlglot or {}).get("pool")
+            or ""
+        )
+
+        anomaly_notes: list[str] = []
+        missing_parts: list[str] = []
+        if native is None:
+            missing_parts.append("native")
+        if positive is None:
+            missing_parts.append("positive")
+        if negative is None:
+            missing_parts.append("negative")
+        if sqlglot is None:
+            missing_parts.append("sqlglot")
+
+        native_status = (native or {}).get("execution_status", "")
+        positive_status = (positive or {}).get("execution_status", "")
+        negative_status = (negative or {}).get("execution_status", "")
+        sqlglot_status = (sqlglot or {}).get("execution_status", "")
+        sqlglot_parse_status = (sqlglot or {}).get("parse_status", "")
+        sqlglot_generation_status = (sqlglot or {}).get("generation_status", "")
+
+        if missing_parts:
+            execution_layer_status = "missing_record"
+            anomaly_notes.append(f"missing records: {', '.join(missing_parts)}")
+        elif sqlglot_status != "success" or sqlglot_parse_status != "success" or sqlglot_generation_status != "success":
+            execution_layer_status = "sqlglot_failed"
+        elif any(status != "success" for status in [native_status, positive_status, negative_status]):
+            execution_layer_status = "control_failed"
+        elif all(
+            status == "success"
+            for status in [native_status, positive_status, negative_status, sqlglot_status]
+        ):
+            execution_layer_status = "all_four_succeeded"
+        else:
+            execution_layer_status = "mixed"
+
+        native_row_count = (native or {}).get("row_count")
+        positive_row_count = (positive or {}).get("row_count")
+        negative_row_count = (negative or {}).get("row_count")
+        sqlglot_row_count = (sqlglot or {}).get("row_count")
+
+        if execution_layer_status != "all_four_succeeded":
+            row_count_observation = "not_scored"
+            human_positive_row_count_observation = "not_scored"
+            hard_negative_row_count_observation = "not_scored"
+        else:
+            if native_row_count is None or sqlglot_row_count is None:
+                row_count_observation = "missing_row_count"
+            elif native_row_count == sqlglot_row_count:
+                row_count_observation = "sqlglot_same_row_count_as_source"
+            else:
+                row_count_observation = "sqlglot_different_row_count_from_source"
+                anomaly_notes.append("sqlglot and source row counts differ; needs_followup_if_unexpected")
+
+            if native_row_count is None or positive_row_count is None:
+                human_positive_row_count_observation = "missing_row_count"
+            elif native_row_count == positive_row_count:
+                human_positive_row_count_observation = "positive_same_row_count_as_source"
+            else:
+                human_positive_row_count_observation = "positive_different_row_count_from_source"
+                anomaly_notes.append("positive and source row counts differ; needs_followup_if_unexpected")
+
+            if native_row_count is None or negative_row_count is None:
+                hard_negative_row_count_observation = "missing_row_count"
+            elif native_row_count == negative_row_count:
+                hard_negative_row_count_observation = "negative_same_row_count_as_source"
+            else:
+                hard_negative_row_count_observation = "negative_different_row_count_from_source"
+                anomaly_notes.append("negative and source row counts differ; needs_followup_if_unexpected")
+
+        sqlglot_runtime_ms = (sqlglot or {}).get("runtime_ms")
+        runtime_observation = "sqlglot_runtime_recorded" if isinstance(sqlglot_runtime_ms, int) else "sqlglot_runtime_missing"
+
+        if native and not native.get("validation_schema"):
+            anomaly_notes.append("native missing validation_schema")
+        if sqlglot and not sqlglot.get("validation_schema"):
+            anomaly_notes.append("sqlglot missing validation_schema")
+        if native and not native.get("search_path_after_set"):
+            anomaly_notes.append("native missing search_path_after_set")
+        if sqlglot and not sqlglot.get("search_path_after_set"):
+            anomaly_notes.append("sqlglot missing search_path_after_set")
+
+        sqlglot_same_flag = (sqlglot or {}).get("generated_sql_same_as_source_normalized")
+        if sqlglot_same_flag is True:
+            sqlglot_same_label = "same_as_source_normalized"
+        elif sqlglot_same_flag is False:
+            sqlglot_same_label = "different_from_source_normalized"
+        else:
+            sqlglot_same_label = "unknown"
+
+        row = {
+            "case_id": case_id,
+            "pool": pool,
+            "native_execution_status": native_status,
+            "positive_execution_status": positive_status,
+            "negative_execution_status": negative_status,
+            "sqlglot_execution_status": sqlglot_status,
+            "native_row_count": native_row_count,
+            "positive_row_count": positive_row_count,
+            "negative_row_count": negative_row_count,
+            "sqlglot_row_count": sqlglot_row_count,
+            "native_runtime_ms": (native or {}).get("runtime_ms"),
+            "positive_runtime_ms": (positive or {}).get("runtime_ms"),
+            "negative_runtime_ms": (negative or {}).get("runtime_ms"),
+            "sqlglot_runtime_ms": sqlglot_runtime_ms,
+            "native_validation_schema": (native or {}).get("validation_schema", ""),
+            "sqlglot_validation_schema": (sqlglot or {}).get("validation_schema", ""),
+            "native_search_path_after_set": (native or {}).get("search_path_after_set", ""),
+            "sqlglot_search_path_after_set": (sqlglot or {}).get("search_path_after_set", ""),
+            "sqlglot_generated_sql_same_as_source_normalized": sqlglot_same_flag,
+            "sqlglot_parse_status": sqlglot_parse_status,
+            "sqlglot_generation_status": sqlglot_generation_status,
+            "execution_layer_status": execution_layer_status,
+            "row_count_observation": row_count_observation,
+            "human_positive_row_count_observation": human_positive_row_count_observation,
+            "hard_negative_row_count_observation": hard_negative_row_count_observation,
+            "runtime_observation": runtime_observation,
+            "anomaly_notes": anomaly_notes,
+        }
+        case_summaries.append(row)
+        execution_layer_values.append(execution_layer_status)
+        row_count_observation_values.append(row_count_observation)
+        human_positive_observation_values.append(human_positive_row_count_observation)
+        hard_negative_observation_values.append(hard_negative_row_count_observation)
+        sqlglot_generated_same_values.append(sqlglot_same_label)
+
+    def total_runtime(report: dict[str, Any] | None) -> int:
+        if not report:
+            return 0
+        return sum(
+            runtime
+            for runtime in (
+                record.get("runtime_ms")
+                for record in report.get("records", [])
+                if isinstance(record, dict)
+            )
+            if isinstance(runtime, int)
+        )
+
+    native_success_count = int((reports.get("native") or {}).get("success_count", 0))
+    positive_success_count = int((reports.get("positive") or {}).get("success_count", 0))
+    negative_success_count = int((reports.get("negative") or {}).get("success_count", 0))
+    sqlglot_success_count = int((reports.get("sqlglot") or {}).get("success_count", 0))
+    sqlglot_failed_count = int((reports.get("sqlglot") or {}).get("failed_count", 0))
+
+    all_four_succeeded_count = sum(1 for row in case_summaries if row["execution_layer_status"] == "all_four_succeeded")
+    control_failed_count = sum(1 for row in case_summaries if row["execution_layer_status"] == "control_failed")
+    missing_record_count = sum(1 for row in case_summaries if row["execution_layer_status"] == "missing_record")
+
+    for row in case_summaries:
+        if row["execution_layer_status"] == "missing_record":
+            issues.append(
+                {
+                    "type": "missing_record",
+                    "case_id": row["case_id"],
+                    "detail": row["anomaly_notes"],
+                }
+            )
+        if not row["native_validation_schema"] or not row["sqlglot_validation_schema"]:
+            issues.append(
+                {
+                    "type": "missing_validation_schema",
+                    "case_id": row["case_id"],
+                }
+            )
+        if not row["native_search_path_after_set"] or not row["sqlglot_search_path_after_set"]:
+            issues.append(
+                {
+                    "type": "missing_search_path_after_set",
+                    "case_id": row["case_id"],
+                }
+            )
+        if row["sqlglot_parse_status"] != "success":
+            issues.append(
+                {
+                    "type": "sqlglot_parse_not_success",
+                    "case_id": row["case_id"],
+                    "actual": row["sqlglot_parse_status"],
+                }
+            )
+        if row["sqlglot_generation_status"] != "success":
+            issues.append(
+                {
+                    "type": "sqlglot_generation_not_success",
+                    "case_id": row["case_id"],
+                    "actual": row["sqlglot_generation_status"],
+                }
+            )
+
+    ok = (
+        len(reports) == 4
+        and not issues
+        and len(case_summaries) > 0
+        and all_four_succeeded_count == len(case_summaries)
+    )
+
+    payload = {
+        "command": "baseline-smoke-sqlglot-summary",
+        "ok": ok,
+        "ran_at_utc": utc_now(),
+        "input_reports": input_report_refs,
+        "output_path": f"reports/baseline_smoke/{output_name}",
+        "case_count": len(case_summaries),
+        "all_four_succeeded_count": all_four_succeeded_count,
+        "sqlglot_success_count": sqlglot_success_count,
+        "sqlglot_failed_count": sqlglot_failed_count,
+        "control_failed_count": control_failed_count,
+        "missing_record_count": missing_record_count,
+        "counts_by_execution_layer_status": count_plain_values(execution_layer_values),
+        "counts_by_row_count_observation": count_plain_values(row_count_observation_values),
+        "counts_by_human_positive_row_count_observation": count_plain_values(human_positive_observation_values),
+        "counts_by_hard_negative_row_count_observation": count_plain_values(hard_negative_observation_values),
+        "counts_by_sqlglot_generated_same_as_source": count_plain_values(sqlglot_generated_same_values),
+        "total_runtime_ms_by_baseline": {
+            "NATIVE_IDENTITY": total_runtime(reports.get("native")),
+            "HUMAN_REFERENCE_POSITIVE": total_runtime(reports.get("positive")),
+            "HARD_NEGATIVE_GUARD": total_runtime(reports.get("negative")),
+            "SQLGLOT_OPT_SAME_DIALECT": total_runtime(reports.get("sqlglot")),
+        },
+        "case_summaries": case_summaries,
+        "issues": issues,
+        "guardrails": {
+            "database_execution": "disabled_for_summary",
+            "mysql_execution": "disabled",
+            "spark_execution": "disabled",
+            "sqlglot_generation": "disabled_for_summary",
+            "llm_execution": "disabled",
+            "case_artifact_write": "disabled",
+        },
+        "claim_boundary": "execution_layer_summary_only_not_correctness_or_speedup_scoring",
+    }
+    write_baseline_smoke_report(output_name, payload)
+    return print_and_exit(payload, 0 if ok else 1)
+
+
 def cmd_baseline_smoke_sqlglot_preflight(args: argparse.Namespace) -> int:
     output_name = normalize_baseline_smoke_output_name("sqlglot_same_dialect_preflight_v0.json")
 
@@ -5030,6 +5394,30 @@ def build_parser() -> argparse.ArgumentParser:
     )
     pg_control_summary_parser.add_argument("--execute", action="store_true", default=False)
     pg_control_summary_parser.set_defaults(func=cmd_baseline_smoke_pg_control_summary)
+
+    sqlglot_summary_parser = subparsers.add_parser("baseline-smoke-sqlglot-summary")
+    sqlglot_summary_parser.add_argument(
+        "--native-report",
+        default="reports/baseline_smoke/native_identity_pg_canary_v0.json",
+    )
+    sqlglot_summary_parser.add_argument(
+        "--positive-report",
+        default="reports/baseline_smoke/human_reference_positive_pg_v0.json",
+    )
+    sqlglot_summary_parser.add_argument(
+        "--negative-report",
+        default="reports/baseline_smoke/hard_negative_guard_pg_v0.json",
+    )
+    sqlglot_summary_parser.add_argument(
+        "--sqlglot-report",
+        default="reports/baseline_smoke/sqlglot_same_dialect_pg_canary_v0.json",
+    )
+    sqlglot_summary_parser.add_argument(
+        "--output",
+        default="sqlglot_vs_controls_pg_summary_v0.json",
+    )
+    sqlglot_summary_parser.add_argument("--execute", action="store_true", default=False)
+    sqlglot_summary_parser.set_defaults(func=cmd_baseline_smoke_sqlglot_summary)
 
     sqlglot_preflight_parser = subparsers.add_parser("baseline-smoke-sqlglot-preflight")
     sqlglot_preflight_parser.add_argument(
