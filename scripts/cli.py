@@ -8278,6 +8278,264 @@ def cmd_formal_common_core_control_exec_preflight(args: argparse.Namespace) -> i
     return print_and_exit(payload, 0 if payload["ok"] else 1)
 
 
+def cmd_formal_common_core_control_execution(args: argparse.Namespace) -> int:
+    output_name = normalize_formal_common_core_output_name(args.output)
+    route = str(args.route or "").strip()
+    case_id = str(args.case_id or "").strip()
+    baseline_id = route
+    route_label = formal_control_route_label(route) if route in CONTROL_BASELINE_IDS else route.lower()
+    validation_schema = validation_schema_hint(case_id) if case_id else ""
+    env_visibility = pg_env_visibility()
+    required_env_visible = all(env_visibility[name] for name in ["PGHOST", "PGPORT", "PGDATABASE", "PGUSER"])
+    pg_password_present = env_visibility["PGPASSWORD"]
+    pg_client_available = safe_module_available("psycopg")
+    issues: list[dict[str, Any]] = []
+    notes: list[str] = []
+    search_path_after_set = ""
+    row_count: int | None = None
+    runtime_ms: int | None = None
+    execution_status = "dry_run_only"
+    connection_check_status = "not_attempted"
+    failure_category = "none"
+    error_message = ""
+
+    payload = {
+        "command": "formal-common-core-control-execution",
+        "ran_at_utc": utc_now(),
+        "output_path": f"reports/formal_common_core/{output_name}",
+        "case_id": case_id,
+        "route": route_label,
+        "baseline_id": baseline_id,
+        "engine": "postgres",
+        "execution_status": execution_status,
+        "connection_check_status": connection_check_status,
+        "failure_category": failure_category,
+        "row_count": row_count,
+        "runtime_ms": runtime_ms,
+        "validation_schema": validation_schema,
+        "search_path_after_set": search_path_after_set,
+        "statement_timeout_ms": args.statement_timeout_ms,
+        "result_materialization": "not_persisted",
+        "claim_boundary": "formal_control_execution_canary_only_not_full_scoring",
+        "guardrails": {
+            "mysql_execution": "disabled",
+            "spark_execution": "disabled",
+            "sqlglot_generation": "disabled",
+            "llm_execution": "disabled",
+            "plan_collection": "disabled",
+            "speedup_scoring": "disabled",
+            "correctness_scoring": "disabled",
+            "case_artifact_write": "disabled",
+            "registry_writeback": "disabled",
+        },
+    }
+
+    if route != "NATIVE_IDENTITY":
+        issues.append(
+            {
+                "type": "unsupported_route",
+                "route": route,
+                "message": "this canary only supports --route NATIVE_IDENTITY",
+            }
+        )
+    if case_id != "PERF_0006":
+        issues.append(
+            {
+                "type": "unsupported_case_id",
+                "case_id": case_id,
+                "message": "this canary only supports --case-id PERF_0006",
+            }
+        )
+
+    inferred = case_root_for_case_id(case_id) if case_id else None
+    if inferred is None:
+        issues.append(
+            {
+                "type": "case_not_resolved",
+                "case_id": case_id,
+                "message": "could not resolve case root from case_id",
+            }
+        )
+        payload["ok"] = False
+        payload["issues"] = issues
+        payload["notes"] = notes
+        write_formal_common_core_report(output_name, payload)
+        return print_and_exit(payload, 1)
+
+    pool, case_root = inferred
+    source_sql_path = case_root / "source.sql"
+    source_sql_exists = source_sql_path.is_file()
+    if not source_sql_exists:
+        issues.append(
+            {
+                "type": "missing_source_sql",
+                "case_id": case_id,
+                "path": relative_to_root(source_sql_path),
+            }
+        )
+
+    payload["pool"] = pool
+    payload["case_root"] = relative_to_root(case_root)
+    payload["candidate_sql_source"] = "source.sql"
+    payload["candidate_sql_path"] = relative_to_root(source_sql_path)
+    payload["source_sql_exists"] = source_sql_exists
+    payload["pg_env_visible"] = required_env_visible
+    payload["pg_password_present"] = pg_password_present
+    payload["pg_client_available"] = pg_client_available
+
+    if not args.execute:
+        payload["ok"] = not issues and source_sql_exists
+        payload["execution_status"] = "dry_run_only"
+        payload["connection_check_status"] = "not_attempted"
+        payload["failure_category"] = "none"
+        notes.append("dry-run only; no PostgreSQL connection attempted")
+        payload["issues"] = issues
+        payload["notes"] = notes
+        write_formal_common_core_report(output_name, payload)
+        return print_and_exit(payload, 0 if payload["ok"] else 1)
+
+    if issues:
+        payload["ok"] = False
+        payload["execution_status"] = "blocked_invalid_selection"
+        payload["connection_check_status"] = "not_attempted"
+        payload["failure_category"] = "invalid_selection"
+        payload["issues"] = issues
+        payload["notes"] = notes
+        write_formal_common_core_report(output_name, payload)
+        return print_and_exit(payload, 1)
+
+    if not source_sql_exists:
+        payload["ok"] = False
+        payload["execution_status"] = "blocked_missing_source_sql"
+        payload["connection_check_status"] = "not_attempted"
+        payload["failure_category"] = "missing_source_sql"
+        payload["issues"] = issues
+        payload["notes"] = notes
+        write_formal_common_core_report(output_name, payload)
+        return print_and_exit(payload, 1)
+
+    if not required_env_visible:
+        payload["ok"] = False
+        payload["execution_status"] = "env_blocked"
+        payload["connection_check_status"] = "env_blocked"
+        payload["failure_category"] = "missing_pg_env"
+        issues.append(
+            {
+                "type": "missing_pg_env",
+                "message": "required env: PGHOST, PGPORT, PGDATABASE, PGUSER",
+            }
+        )
+        payload["issues"] = issues
+        payload["notes"] = notes
+        write_formal_common_core_report(output_name, payload)
+        return print_and_exit(payload, 1)
+
+    if not pg_client_available:
+        payload["ok"] = False
+        payload["execution_status"] = "client_unavailable"
+        payload["connection_check_status"] = "client_unavailable"
+        payload["failure_category"] = "psycopg_unavailable"
+        issues.append(
+            {
+                "type": "missing_psycopg",
+                "message": "psycopg is not installed in the current environment",
+            }
+        )
+        payload["issues"] = issues
+        payload["notes"] = notes
+        write_formal_common_core_report(output_name, payload)
+        return print_and_exit(payload, 1)
+
+    sql_text = source_sql_path.read_text(encoding="utf-8")
+    start = time.perf_counter()
+    try:
+        psycopg = importlib.import_module("psycopg")
+        with psycopg.connect(
+            host=os.environ["PGHOST"],
+            port=os.environ["PGPORT"],
+            dbname=os.environ["PGDATABASE"],
+            user=os.environ["PGUSER"],
+            password=os.environ.get("PGPASSWORD"),
+            autocommit=False,
+        ) as conn:
+            connection_check_status = "connected"
+            with conn.cursor() as cur:
+                cur.execute("SET SESSION CHARACTERISTICS AS TRANSACTION READ ONLY")
+                cur.execute(
+                    "SELECT set_config('statement_timeout', %s, false)",
+                    (str(args.statement_timeout_ms),),
+                )
+                cur.execute("SELECT to_regnamespace(%s)", (validation_schema,))
+                schema_row = cur.fetchone()
+                schema_name = schema_row[0] if schema_row else None
+                if not schema_name:
+                    runtime_ms = int((time.perf_counter() - start) * 1000)
+                    payload["ok"] = False
+                    payload["execution_status"] = "failed"
+                    payload["connection_check_status"] = connection_check_status
+                    payload["failure_category"] = "missing_validation_schema"
+                    payload["runtime_ms"] = runtime_ms
+                    issues.append(
+                        {
+                            "type": "missing_validation_schema",
+                            "validation_schema": validation_schema,
+                        }
+                    )
+                    notes.append("execution attempted")
+                    notes.append("search_path not set because validation schema was missing")
+                    payload["issues"] = issues
+                    payload["notes"] = notes
+                    write_formal_common_core_report(output_name, payload)
+                    return print_and_exit(payload, 1)
+                cur.execute(
+                    psycopg.sql.SQL("SET search_path TO {}, public").format(
+                        psycopg.sql.Identifier(validation_schema)
+                    )
+                )
+                cur.execute("SHOW search_path")
+                search_path_row = cur.fetchone()
+                search_path_after_set = str(search_path_row[0]) if search_path_row else ""
+                cur.execute(sql_text)
+                if cur.description is not None:
+                    rows = cur.fetchall()
+                    row_count = len(rows)
+                else:
+                    row_count = cur.rowcount if cur.rowcount >= 0 else None
+                conn.rollback()
+        runtime_ms = int((time.perf_counter() - start) * 1000)
+        execution_status = "success"
+        failure_category = "none"
+        notes.append("source.sql executed under read-only formal control canary mode")
+        payload["ok"] = True
+    except Exception as exc:
+        runtime_ms = int((time.perf_counter() - start) * 1000)
+        execution_status = "failed"
+        connection_check_status = "failed"
+        failure_category = type(exc).__name__
+        error_message = str(exc)
+        notes.append("execution attempted")
+        notes.append("no case-local artifacts were written")
+        issues.append(
+            {
+                "type": type(exc).__name__,
+                "message": str(exc),
+            }
+        )
+        payload["ok"] = False
+
+    payload["execution_status"] = execution_status
+    payload["connection_check_status"] = connection_check_status
+    payload["failure_category"] = failure_category
+    payload["row_count"] = row_count
+    payload["runtime_ms"] = runtime_ms
+    payload["search_path_after_set"] = search_path_after_set
+    payload["error_message"] = error_message
+    payload["issues"] = issues
+    payload["notes"] = notes
+    write_formal_common_core_report(output_name, payload)
+    return print_and_exit(payload, 0 if payload["ok"] else 1)
+
+
 def cmd_baseline_smoke_llm_call_canary(args: argparse.Namespace) -> int:
     default_output_name = "llm_direct_rewrite_call_canary_v0.json"
     output_name = normalize_baseline_smoke_output_name(default_output_name)
@@ -14929,6 +15187,17 @@ def build_parser() -> argparse.ArgumentParser:
     formal_common_core_control_exec_preflight_parser.add_argument("--statement-timeout-ms", type=int, default=30000)
     formal_common_core_control_exec_preflight_parser.add_argument("--execute", action="store_true", default=False)
     formal_common_core_control_exec_preflight_parser.set_defaults(func=cmd_formal_common_core_control_exec_preflight)
+
+    formal_common_core_control_execution_parser = subparsers.add_parser("formal-common-core-control-execution")
+    formal_common_core_control_execution_parser.add_argument("--route", required=True)
+    formal_common_core_control_execution_parser.add_argument("--case-id", required=True)
+    formal_common_core_control_execution_parser.add_argument(
+        "--output",
+        default="control_execution_native_identity_perf_0006_v0.json",
+    )
+    formal_common_core_control_execution_parser.add_argument("--statement-timeout-ms", type=int, default=30000)
+    formal_common_core_control_execution_parser.add_argument("--execute", action="store_true", default=False)
+    formal_common_core_control_execution_parser.set_defaults(func=cmd_formal_common_core_control_execution)
 
     sqlglot_transpile_summary_parser = subparsers.add_parser("baseline-smoke-sqlglot-transpile-summary")
     sqlglot_transpile_summary_parser.add_argument(
