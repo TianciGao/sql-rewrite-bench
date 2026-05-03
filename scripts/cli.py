@@ -294,6 +294,20 @@ def write_formal_common_core_report(report_name: str, payload: dict[str, Any]) -
     return report_path
 
 
+def write_json_report_to_dir(output_dir: Path, report_name: str, payload: dict[str, Any]) -> Path:
+    output_dir.mkdir(parents=True, exist_ok=True)
+    report_path = output_dir / report_name
+    if report_path.is_relative_to(ROOT):
+        payload["report_path"] = str(report_path.relative_to(ROOT))
+    else:
+        payload["report_path"] = str(report_path)
+    report_path.write_text(
+        json.dumps(payload, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    return report_path
+
+
 def print_and_exit(payload: dict[str, Any], exit_code: int) -> int:
     print(json.dumps(payload, indent=2, sort_keys=True))
     return exit_code
@@ -551,6 +565,72 @@ def formal_common_core_route_readiness_counts(records: list[dict[str, Any]]) -> 
         ]
         counts[route_name] = count_plain_values(statuses)
     return counts
+
+
+def formal_control_route_report_name(baseline_id: str) -> str:
+    name_map = {
+        "NATIVE_IDENTITY": "native_identity_v0.json",
+        "HUMAN_REFERENCE_POSITIVE": "human_reference_positive_v0.json",
+        "HARD_NEGATIVE_GUARD": "hard_negative_guard_v0.json",
+    }
+    return name_map[baseline_id]
+
+
+def formal_control_route_label(baseline_id: str) -> str:
+    name_map = {
+        "NATIVE_IDENTITY": "native_identity",
+        "HUMAN_REFERENCE_POSITIVE": "human_reference_positive",
+        "HARD_NEGATIVE_GUARD": "hard_negative_guard",
+    }
+    return name_map[baseline_id]
+
+
+def formal_control_route_smoke_report_path(baseline_id: str) -> Path:
+    name_map = {
+        "NATIVE_IDENTITY": BASELINE_SMOKE_REPORT_DIR / "native_identity_pg_canary_v0.json",
+        "HUMAN_REFERENCE_POSITIVE": BASELINE_SMOKE_REPORT_DIR / "human_reference_positive_pg_v0.json",
+        "HARD_NEGATIVE_GUARD": BASELINE_SMOKE_REPORT_DIR / "hard_negative_guard_pg_v0.json",
+    }
+    return name_map[baseline_id]
+
+
+def formal_control_route_smoke_record_index(baseline_id: str) -> dict[str, dict[str, Any]]:
+    report = load_json_if_present(formal_control_route_smoke_report_path(baseline_id))
+    if not isinstance(report, dict):
+        return {}
+    records = report.get("records")
+    if not isinstance(records, list):
+        return {}
+    index: dict[str, dict[str, Any]] = {}
+    for item in records:
+        if isinstance(item, dict) and item.get("case_id"):
+            index[str(item["case_id"])] = item
+    return index
+
+
+def formal_control_common_smoke_evidence_paths(case_id: str) -> list[Path]:
+    candidates = [
+        BASELINE_SMOKE_REPORT_DIR / "control_records_common_core_v0.json",
+        BASELINE_SMOKE_REPORT_DIR / "control_records_summary_common_core_v0.json",
+        BASELINE_SMOKE_REPORT_DIR / "pg_control_smoke_summary_v0.json",
+    ]
+    case_slug = normalize_case_id_for_filename(case_id)
+    candidates.extend(
+        [
+            BASELINE_SMOKE_REPORT_DIR / f"llm_direct_rewrite_summary_{case_slug}_v0.json",
+            BASELINE_SMOKE_REPORT_DIR / f"llm_direct_rewrite_call_{case_slug}_v0.json",
+            BASELINE_SMOKE_REPORT_DIR / f"llm_direct_rewrite_pg_{case_slug}_v0.json",
+        ]
+    )
+    return [path for path in candidates if path.is_file()]
+
+
+def formal_control_route_smoke_evidence_paths(case_id: str, baseline_id: str) -> list[Path]:
+    candidates = formal_control_common_smoke_evidence_paths(case_id)
+    route_report = formal_control_route_smoke_report_path(baseline_id)
+    if route_report.is_file():
+        candidates.append(route_report)
+    return sorted({path for path in candidates}, key=lambda p: str(p))
 
 
 def learnedrewrite_static_sql_shape_signals(sql_text: str) -> dict[str, bool]:
@@ -7446,6 +7526,381 @@ def cmd_formal_common_core_preflight(args: argparse.Namespace) -> int:
     return print_and_exit(payload, 0 if payload["ok"] else 1)
 
 
+def cmd_formal_common_core_control_summary(args: argparse.Namespace) -> int:
+    output_dir = resolve_repo_path(args.output_dir)
+    selected_case_ids = args.case_id or formal_common_core_case_ids()
+    preflight_path = FORMAL_COMMON_CORE_REPORT_DIR / "common_core_preflight_v0.json"
+
+    if args.execute:
+        payload = {
+            "command": "formal-common-core-control-summary",
+            "cwd": str(ROOT),
+            "ok": False,
+            "ran_at_utc": utc_now(),
+            "output_path": str((output_dir / "control_routes_execute_refused_v0.json").relative_to(ROOT)),
+            "claim_boundary": "formal_common_core_control_summary_only_not_correctness_or_speedup_result",
+            "message": "formal-common-core-control-summary is read-only and never executes control routes or formal scoring.",
+            "issues": [
+                {
+                    "type": "execution_not_supported",
+                    "message": "formal-common-core-control-summary only summarizes existing artifacts and smoke evidence",
+                }
+            ],
+            "guardrails": {
+                "database_execution": "disabled",
+                "sql_execution": "disabled",
+                "model_api_call": "disabled",
+                "sqlglot_generation": "disabled",
+                "case_artifact_write": "disabled",
+                "registry_writeback": "disabled",
+            },
+        }
+        write_json_report_to_dir(output_dir, "control_routes_execute_refused_v0.json", payload)
+        return print_and_exit(payload, 1)
+
+    preflight_report = load_json_if_present(preflight_path)
+    preflight_case_index: dict[str, dict[str, Any]] = {}
+    preflight_issue: dict[str, Any] | None = None
+    if isinstance(preflight_report, dict) and isinstance(preflight_report.get("records"), list):
+        for item in preflight_report["records"]:
+            if isinstance(item, dict) and item.get("case_id"):
+                preflight_case_index[str(item["case_id"])] = item
+    else:
+        preflight_issue = {
+            "type": "missing_or_unreadable_preflight_report",
+            "path": relative_to_root(preflight_path),
+        }
+
+    route_indexes = {
+        "NATIVE_IDENTITY": formal_control_route_smoke_record_index("NATIVE_IDENTITY"),
+        "HUMAN_REFERENCE_POSITIVE": formal_control_route_smoke_record_index("HUMAN_REFERENCE_POSITIVE"),
+        "HARD_NEGATIVE_GUARD": formal_control_route_smoke_record_index("HARD_NEGATIVE_GUARD"),
+    }
+
+    route_payloads: dict[str, dict[str, Any]] = {}
+    route_ready_ok: dict[str, bool] = {}
+
+    for baseline_id in ("NATIVE_IDENTITY", "HUMAN_REFERENCE_POSITIVE", "HARD_NEGATIVE_GUARD"):
+        records: list[dict[str, Any]] = []
+        issues: list[dict[str, Any]] = []
+        if preflight_issue:
+            issues.append(preflight_issue)
+
+        for case_id in selected_case_ids:
+            inferred = case_root_for_case_id(case_id)
+            if inferred is None:
+                records.append(
+                    {
+                        "case_id": case_id,
+                        "pool": "",
+                        "baseline_id": baseline_id,
+                        "route": formal_control_route_label(baseline_id),
+                        "case_root": "",
+                        "source_sql_path": "",
+                        "source_sql_exists": False,
+                        "manifest_path": "",
+                        "manifest_exists": False,
+                        "validation_schema_hint": validation_schema_hint(case_id),
+                        "existing_result_artifacts": [],
+                        "existing_plan_artifacts": [],
+                        "source_plan_exists": False,
+                        "plan_check_exists": False,
+                        "smoke_evidence_paths": [],
+                        "artifact_summary_status": (
+                            "blocked_missing_core_inputs"
+                            if baseline_id == "NATIVE_IDENTITY"
+                            else (
+                                "blocked_missing_positive_or_core_inputs"
+                                if baseline_id == "HUMAN_REFERENCE_POSITIVE"
+                                else "blocked_missing_negative_or_core_inputs"
+                            )
+                        ),
+                        "execution_status_observed": "unknown_not_reexecuted",
+                        "result_consistency_status_observed": "unknown_not_rescored",
+                        "runtime_ms_observed": None,
+                        "row_count_observed": None,
+                        "blockers": ["unsupported case_id format"],
+                        "warnings": [],
+                        "artifact_claim_boundary": "formal_control_summary_only_no_reexecution",
+                    }
+                )
+                issues.append({"type": "unsupported_case_id_format", "case_id": case_id})
+                continue
+
+            pool, case_root = inferred
+            source_sql_path = case_root / "source.sql"
+            manifest_path = case_root / "manifest.yaml"
+            source_sql_exists = source_sql_path.is_file()
+            manifest_exists = manifest_path.is_file()
+            positive_rewrite_paths = existing_case_sql_paths(case_root, "rewrite_pos_*.sql")
+            negative_rewrite_paths = existing_case_sql_paths(case_root, "rewrite_neg_*.sql")
+            result_artifacts = formal_common_core_checker_or_result_artifacts(case_root)
+            plan_artifacts = formal_common_core_plan_artifacts(case_root)
+            source_plan_exists = (case_root / "runs" / "pg" / "plans" / "source.json").is_file()
+            positive_plan_exists = (case_root / "runs" / "pg" / "plans" / "rewrite_pos_01.json").is_file()
+            negative_plan_exists = (case_root / "runs" / "pg" / "plans" / "rewrite_neg_01.json").is_file()
+            plan_check_exists = (case_root / "runs" / "pg" / "plans" / "plan_check.json").is_file()
+            smoke_evidence_paths = formal_control_route_smoke_evidence_paths(case_id, baseline_id)
+            result_summary = summarize_result_check(
+                load_json_if_present(first_existing_path([case_root / "runs" / "pg" / "result_check.json", case_root / "runs" / "result_check.json"]))
+            )
+            smoke_record = route_indexes[baseline_id].get(case_id, {})
+
+            blockers: list[str] = []
+            warnings: list[str] = []
+            core_ready = source_sql_exists and manifest_exists
+
+            if not source_sql_exists:
+                blockers.append("source.sql missing")
+                issues.append({"type": "missing_source_sql", "case_id": case_id, "path": relative_to_root(source_sql_path)})
+            if not manifest_exists:
+                blockers.append("manifest.yaml missing")
+                issues.append({"type": "missing_manifest", "case_id": case_id, "path": relative_to_root(manifest_path)})
+
+            candidate_present = True
+            candidate_sql_source = ""
+            if baseline_id == "HUMAN_REFERENCE_POSITIVE":
+                candidate_present = bool(positive_rewrite_paths)
+                candidate_sql_source = "existing_human_positive_rewrite"
+                if not candidate_present:
+                    blockers.append("positive rewrite missing")
+            elif baseline_id == "HARD_NEGATIVE_GUARD":
+                candidate_present = bool(negative_rewrite_paths)
+                candidate_sql_source = "existing_hard_negative_rewrite"
+                if not candidate_present:
+                    blockers.append("negative rewrite missing")
+
+            if not result_artifacts:
+                warnings.append("existing result artifacts not detected")
+            if not plan_artifacts:
+                warnings.append("existing plan artifacts not detected")
+            if not smoke_evidence_paths:
+                warnings.append("matching smoke evidence reports not detected")
+
+            optional_ready = bool(result_artifacts) and bool(smoke_evidence_paths)
+            if baseline_id == "NATIVE_IDENTITY":
+                optional_ready = optional_ready and source_plan_exists and plan_check_exists
+            elif baseline_id == "HUMAN_REFERENCE_POSITIVE":
+                optional_ready = optional_ready and positive_plan_exists and plan_check_exists
+            else:
+                optional_ready = optional_ready and negative_plan_exists and plan_check_exists
+
+            if core_ready and candidate_present:
+                artifact_summary_status = "ready_from_existing_artifacts" if optional_ready else "partial_missing_optional_evidence"
+            else:
+                artifact_summary_status = (
+                    "blocked_missing_core_inputs"
+                    if baseline_id == "NATIVE_IDENTITY"
+                    else (
+                        "blocked_missing_positive_or_core_inputs"
+                        if baseline_id == "HUMAN_REFERENCE_POSITIVE"
+                        else "blocked_missing_negative_or_core_inputs"
+                    )
+                )
+
+            execution_status_observed = str(smoke_record.get("execution_status") or "unknown_not_reexecuted")
+            runtime_ms_observed = smoke_record.get("runtime_ms") if isinstance(smoke_record.get("runtime_ms"), int | float) else None
+            row_count_observed = smoke_record.get("row_count") if isinstance(smoke_record.get("row_count"), int) else None
+
+            if baseline_id == "NATIVE_IDENTITY":
+                result_consistency_status_observed = (
+                    "observed_existing_result_check_ok_true"
+                    if result_summary["present"] and result_summary["ok"] is True
+                    else "unknown_not_rescored"
+                )
+                record = {
+                    "case_id": case_id,
+                    "pool": pool,
+                    "baseline_id": baseline_id,
+                    "route": formal_control_route_label(baseline_id),
+                    "case_root": relative_to_root(case_root),
+                    "source_sql_path": relative_to_root(source_sql_path),
+                    "source_sql_exists": source_sql_exists,
+                    "manifest_path": relative_to_root(manifest_path),
+                    "manifest_exists": manifest_exists,
+                    "validation_schema_hint": validation_schema_hint(case_id),
+                    "existing_result_artifacts": [relative_to_root(path) for path in result_artifacts],
+                    "existing_plan_artifacts": [relative_to_root(path) for path in plan_artifacts],
+                    "source_plan_exists": source_plan_exists,
+                    "plan_check_exists": plan_check_exists,
+                    "smoke_evidence_paths": [relative_to_root(path) for path in smoke_evidence_paths],
+                    "artifact_summary_status": artifact_summary_status,
+                    "execution_status_observed": execution_status_observed,
+                    "result_consistency_status_observed": result_consistency_status_observed,
+                    "runtime_ms_observed": runtime_ms_observed,
+                    "row_count_observed": row_count_observed,
+                    "blockers": blockers,
+                    "warnings": warnings,
+                    "artifact_claim_boundary": "formal_control_summary_only_no_reexecution",
+                }
+            elif baseline_id == "HUMAN_REFERENCE_POSITIVE":
+                result_consistency_status_observed = (
+                    "observed_positive_equal_from_result_check"
+                    if result_summary["signals"]["positive_equal"]
+                    else "unknown_not_rescored"
+                )
+                record = {
+                    "case_id": case_id,
+                    "pool": pool,
+                    "baseline_id": baseline_id,
+                    "route": formal_control_route_label(baseline_id),
+                    "case_root": relative_to_root(case_root),
+                    "source_sql_path": relative_to_root(source_sql_path),
+                    "source_sql_exists": source_sql_exists,
+                    "manifest_path": relative_to_root(manifest_path),
+                    "manifest_exists": manifest_exists,
+                    "positive_rewrite_paths": [relative_to_root(path) for path in positive_rewrite_paths],
+                    "positive_rewrite_count": len(positive_rewrite_paths),
+                    "existing_result_artifacts": [relative_to_root(path) for path in result_artifacts],
+                    "existing_plan_artifacts": [relative_to_root(path) for path in plan_artifacts],
+                    "source_plan_exists": source_plan_exists,
+                    "positive_plan_exists": positive_plan_exists,
+                    "plan_check_exists": plan_check_exists,
+                    "smoke_evidence_paths": [relative_to_root(path) for path in smoke_evidence_paths],
+                    "validation_schema_hint": validation_schema_hint(case_id),
+                    "candidate_sql_source": candidate_sql_source,
+                    "artifact_summary_status": artifact_summary_status,
+                    "execution_status_observed": execution_status_observed,
+                    "result_consistency_status_observed": result_consistency_status_observed,
+                    "runtime_ms_observed": runtime_ms_observed,
+                    "row_count_observed": row_count_observed,
+                    "blockers": blockers,
+                    "warnings": warnings,
+                    "artifact_claim_boundary": "formal_control_summary_only_no_reexecution",
+                }
+            else:
+                negative_guard_status_observed = (
+                    "observed_negative_differs_from_result_check"
+                    if result_summary["signals"]["negative_differs"]
+                    else "unknown_not_rescored"
+                )
+                rejection_status_observed = (
+                    "observed_rejected_from_result_check"
+                    if result_summary["signals"]["negative_differs"]
+                    else "unknown_not_rescored"
+                )
+                false_accept_observed = False if result_summary["signals"]["negative_differs"] else "unknown_not_rescored"
+                record = {
+                    "case_id": case_id,
+                    "pool": pool,
+                    "baseline_id": baseline_id,
+                    "route": formal_control_route_label(baseline_id),
+                    "case_root": relative_to_root(case_root),
+                    "source_sql_path": relative_to_root(source_sql_path),
+                    "source_sql_exists": source_sql_exists,
+                    "manifest_path": relative_to_root(manifest_path),
+                    "manifest_exists": manifest_exists,
+                    "negative_rewrite_paths": [relative_to_root(path) for path in negative_rewrite_paths],
+                    "negative_rewrite_count": len(negative_rewrite_paths),
+                    "existing_result_artifacts": [relative_to_root(path) for path in result_artifacts],
+                    "existing_plan_artifacts": [relative_to_root(path) for path in plan_artifacts],
+                    "source_plan_exists": source_plan_exists,
+                    "negative_plan_exists": negative_plan_exists,
+                    "plan_check_exists": plan_check_exists,
+                    "smoke_evidence_paths": [relative_to_root(path) for path in smoke_evidence_paths],
+                    "validation_schema_hint": validation_schema_hint(case_id),
+                    "candidate_sql_source": candidate_sql_source,
+                    "artifact_summary_status": artifact_summary_status,
+                    "execution_status_observed": execution_status_observed,
+                    "negative_guard_status_observed": negative_guard_status_observed,
+                    "rejection_status_observed": rejection_status_observed,
+                    "false_accept_observed": false_accept_observed,
+                    "runtime_ms_observed": runtime_ms_observed,
+                    "row_count_observed": row_count_observed,
+                    "blockers": blockers,
+                    "warnings": warnings,
+                    "artifact_claim_boundary": "formal_control_summary_only_no_reexecution",
+                }
+
+            if case_id not in preflight_case_index:
+                record["warnings"] = list(record["warnings"]) + ["case missing from formal preflight report"]
+                issues.append({"type": "case_missing_from_preflight", "case_id": case_id})
+
+            records.append(record)
+
+        candidate_rewrite_present_count = 0
+        if baseline_id == "HUMAN_REFERENCE_POSITIVE":
+            candidate_rewrite_present_count = sum(1 for record in records if record.get("positive_rewrite_count", 0) > 0)
+        elif baseline_id == "HARD_NEGATIVE_GUARD":
+            candidate_rewrite_present_count = sum(1 for record in records if record.get("negative_rewrite_count", 0) > 0)
+
+        payload = {
+            "command": "formal-common-core-control-summary",
+            "ok": all(
+                record["artifact_summary_status"]
+                in {"ready_from_existing_artifacts", "partial_missing_optional_evidence"}
+                for record in records
+            ),
+            "ran_at_utc": utc_now(),
+            "output_path": str((output_dir / formal_control_route_report_name(baseline_id)).relative_to(ROOT)),
+            "baseline_id": baseline_id,
+            "route": formal_control_route_label(baseline_id),
+            "case_count": len(records),
+            "ready_record_count": sum(
+                1 for record in records if record["artifact_summary_status"] == "ready_from_existing_artifacts"
+            ),
+            "partial_record_count": sum(
+                1 for record in records if record["artifact_summary_status"] == "partial_missing_optional_evidence"
+            ),
+            "blocked_record_count": sum(1 for record in records if record["artifact_summary_status"].startswith("blocked")),
+            "source_sql_present_count": sum(1 for record in records if record["source_sql_exists"]),
+            "manifest_present_count": sum(1 for record in records if record["manifest_exists"]),
+            "candidate_rewrite_present_count": candidate_rewrite_present_count,
+            "result_artifact_present_count": sum(
+                1 for record in records if len(record.get("existing_result_artifacts", [])) > 0
+            ),
+            "plan_artifact_present_count": sum(
+                1 for record in records if len(record.get("existing_plan_artifacts", [])) > 0
+            ),
+            "smoke_evidence_present_count": sum(1 for record in records if len(record.get("smoke_evidence_paths", [])) > 0),
+            "execution_reperformed": False,
+            "scoring_reperformed": False,
+            "records": records,
+            "issues": issues,
+            "guardrails": {
+                "database_execution": "disabled",
+                "sql_execution": "disabled",
+                "model_api_call": "disabled",
+                "sqlglot_generation": "disabled",
+                "case_artifact_write": "disabled",
+                "registry_writeback": "disabled",
+            },
+            "claim_boundary": "formal_control_summary_only_not_formal_scoring",
+        }
+        write_json_report_to_dir(output_dir, formal_control_route_report_name(baseline_id), payload)
+        route_payloads[baseline_id] = payload
+        route_ready_ok[baseline_id] = payload["ok"]
+
+    summary_payload = {
+        "command": "formal-common-core-control-summary",
+        "ok": all(route_ready_ok.values()),
+        "ran_at_utc": utc_now(),
+        "denominator_case_count": len(selected_case_ids),
+        "routes": ["NATIVE_IDENTITY", "HUMAN_REFERENCE_POSITIVE", "HARD_NEGATIVE_GUARD"],
+        "route_status_summary": {
+            baseline_id: {
+                "ok": route_payloads[baseline_id]["ok"],
+                "ready_record_count": route_payloads[baseline_id]["ready_record_count"],
+                "partial_record_count": route_payloads[baseline_id]["partial_record_count"],
+                "blocked_record_count": route_payloads[baseline_id]["blocked_record_count"],
+            }
+            for baseline_id in ("NATIVE_IDENTITY", "HUMAN_REFERENCE_POSITIVE", "HARD_NEGATIVE_GUARD")
+        },
+        "all_routes_ready": all(
+            route_payloads[baseline_id]["blocked_record_count"] == 0
+            for baseline_id in ("NATIVE_IDENTITY", "HUMAN_REFERENCE_POSITIVE", "HARD_NEGATIVE_GUARD")
+        ),
+        "total_records": sum(route_payloads[baseline_id]["case_count"] for baseline_id in route_payloads),
+        "total_ready_records": sum(route_payloads[baseline_id]["ready_record_count"] for baseline_id in route_payloads),
+        "total_partial_records": sum(route_payloads[baseline_id]["partial_record_count"] for baseline_id in route_payloads),
+        "total_blocked_records": sum(route_payloads[baseline_id]["blocked_record_count"] for baseline_id in route_payloads),
+        "claim_boundary": "formal_common_core_control_summary_only_not_correctness_or_speedup_result",
+        "next_recommended_action": "implement formal common-core control execution/scoring command only after this artifact-summary scaffold is reviewed",
+    }
+    write_json_report_to_dir(output_dir, "control_routes_summary_v0.json", summary_payload)
+    return print_and_exit(summary_payload, 0 if summary_payload["ok"] else 1)
+
+
 def cmd_baseline_smoke_llm_call_canary(args: argparse.Namespace) -> int:
     default_output_name = "llm_direct_rewrite_call_canary_v0.json"
     output_name = normalize_baseline_smoke_output_name(default_output_name)
@@ -14077,6 +14532,15 @@ def build_parser() -> argparse.ArgumentParser:
     )
     formal_common_core_preflight_parser.add_argument("--execute", action="store_true", default=False)
     formal_common_core_preflight_parser.set_defaults(func=cmd_formal_common_core_preflight)
+
+    formal_common_core_control_summary_parser = subparsers.add_parser("formal-common-core-control-summary")
+    formal_common_core_control_summary_parser.add_argument("--case-id", action="append", default=[])
+    formal_common_core_control_summary_parser.add_argument(
+        "--output-dir",
+        default="reports/formal_common_core",
+    )
+    formal_common_core_control_summary_parser.add_argument("--execute", action="store_true", default=False)
+    formal_common_core_control_summary_parser.set_defaults(func=cmd_formal_common_core_control_summary)
 
     sqlglot_transpile_summary_parser = subparsers.add_parser("baseline-smoke-sqlglot-transpile-summary")
     sqlglot_transpile_summary_parser.add_argument(
