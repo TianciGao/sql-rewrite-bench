@@ -20,6 +20,7 @@ from urllib.parse import urlparse
 ROOT = Path(__file__).resolve().parent.parent
 REPORT_DIR = ROOT / "reports" / "cli"
 BASELINE_SMOKE_REPORT_DIR = ROOT / "reports" / "baseline_smoke"
+FORMAL_COMMON_CORE_REPORT_DIR = ROOT / "reports" / "formal_common_core"
 ENV_VARS = ["PGHOST", "MYSQL_HOST", "SPARK_LOCAL_IP"]
 SOURCE_REGISTRY = ROOT / "inventory" / "source_registry.csv"
 CASE_REGISTRY = ROOT / "inventory" / "case_registry.csv"
@@ -115,6 +116,17 @@ SQLSOLVER_VERIEQL_SUPPORT_FIRST_CASES = [
     "PERF_0054",
 ]
 SQLSOLVER_VERIEQL_SUPPORT_PG_NATIVE_9_CASES = [
+    "PERF_0006",
+    "PERF_0008",
+    "PERF_0013",
+    "PERF_0017",
+    "PERF_0024",
+    "PERF_0033",
+    "PERF_0054",
+    "CONS_0007",
+    "CONS_0012",
+]
+FORMAL_COMMON_CORE_CASES = [
     "PERF_0006",
     "PERF_0008",
     "PERF_0013",
@@ -271,6 +283,17 @@ def write_baseline_smoke_report(report_name: str, payload: dict[str, Any]) -> Pa
     return report_path
 
 
+def write_formal_common_core_report(report_name: str, payload: dict[str, Any]) -> Path:
+    FORMAL_COMMON_CORE_REPORT_DIR.mkdir(parents=True, exist_ok=True)
+    report_path = FORMAL_COMMON_CORE_REPORT_DIR / report_name
+    payload["report_path"] = str(report_path.relative_to(ROOT))
+    report_path.write_text(
+        json.dumps(payload, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    return report_path
+
+
 def print_and_exit(payload: dict[str, Any], exit_code: int) -> int:
     print(json.dumps(payload, indent=2, sort_keys=True))
     return exit_code
@@ -303,6 +326,13 @@ def median_int(values: list[int]) -> int | None:
 def normalize_baseline_smoke_output_name(value: str) -> str:
     path = Path(value)
     if path.parts[:2] == ("reports", "baseline_smoke"):
+        return path.name
+    return value
+
+
+def normalize_formal_common_core_output_name(value: str) -> str:
+    path = Path(value)
+    if path.parts[:2] == ("reports", "formal_common_core"):
         return path.name
     return value
 
@@ -429,6 +459,10 @@ def sqlsolver_verieql_support_candidate_case_ids(candidate_set: str) -> list[str
     raise ValueError(f"unsupported SQLSolver / VeriEQL support candidate set: {candidate_set}")
 
 
+def formal_common_core_case_ids() -> list[str]:
+    return list(FORMAL_COMMON_CORE_CASES)
+
+
 def dependency_support_file_available() -> bool:
     candidates = [
         ROOT / "pyproject.toml",
@@ -437,6 +471,86 @@ def dependency_support_file_available() -> bool:
     ]
     candidates.extend(ROOT.glob("requirements*.txt"))
     return any(path.is_file() for path in candidates)
+
+
+def case_root_for_case_id(case_id: str) -> tuple[str, Path] | None:
+    if PERF_CASE_ID_RE.fullmatch(case_id):
+        return "performance", PERF_CASE_ROOT / case_id
+    if case_id.startswith("CONS_") and re.fullmatch(r"CONS_\d{4}", case_id):
+        return "consistency", CONS_CASE_ROOT / case_id
+    if PORT_CASE_ID_RE.fullmatch(case_id):
+        return "portability", PORT_CASE_ROOT / case_id
+    return None
+
+
+def validation_schema_hint(case_id: str) -> str:
+    return f"{case_id.lower()}_validation"
+
+
+def safe_module_available(module_name: str) -> bool:
+    try:
+        return importlib.util.find_spec(module_name) is not None
+    except (ImportError, AttributeError, ValueError):
+        return False
+
+
+def existing_case_sql_paths(case_root: Path, pattern: str) -> list[Path]:
+    return sorted(path for path in case_root.glob(pattern) if path.is_file())
+
+
+def formal_common_core_checker_or_result_artifacts(case_root: Path) -> list[Path]:
+    candidates = [
+        case_root / "validation" / "checker.yaml",
+        case_root / "validation" / "checker.yml",
+        case_root / "runs" / "pg" / "result_check.json",
+        case_root / "runs" / "result_check.json",
+    ]
+    return [path for path in candidates if path.is_file()]
+
+
+def formal_common_core_plan_artifacts(case_root: Path) -> list[Path]:
+    plan_dir = case_root / "runs" / "pg" / "plans"
+    if not plan_dir.is_dir():
+        return []
+    return sorted(path for path in plan_dir.rglob("*") if path.is_file())
+
+
+def formal_common_core_smoke_evidence_paths(case_id: str) -> list[Path]:
+    case_slug = normalize_case_id_for_filename(case_id)
+    candidates = [
+        BASELINE_SMOKE_REPORT_DIR / "control_records_common_core_v0.json",
+        BASELINE_SMOKE_REPORT_DIR / "control_records_summary_common_core_v0.json",
+        BASELINE_SMOKE_REPORT_DIR / "pg_control_smoke_summary_v0.json",
+        BASELINE_SMOKE_REPORT_DIR / "native_identity_pg_canary_v0.json",
+        BASELINE_SMOKE_REPORT_DIR / "human_reference_positive_pg_v0.json",
+        BASELINE_SMOKE_REPORT_DIR / "hard_negative_guard_pg_v0.json",
+        BASELINE_SMOKE_REPORT_DIR / "sqlglot_vs_controls_pg_summary_v0.json",
+        BASELINE_SMOKE_REPORT_DIR / "sqlglot_same_dialect_preflight_v0.json",
+        BASELINE_SMOKE_REPORT_DIR / "sqlglot_same_dialect_pg_canary_v0.json",
+        BASELINE_SMOKE_REPORT_DIR / "llm_direct_rewrite_9case_rollup_v0.json",
+        BASELINE_SMOKE_REPORT_DIR / "llm_direct_rewrite_prompt_packages_v0.json",
+        BASELINE_SMOKE_REPORT_DIR / f"llm_direct_rewrite_summary_{case_slug}_v0.json",
+        BASELINE_SMOKE_REPORT_DIR / f"llm_direct_rewrite_call_{case_slug}_v0.json",
+        BASELINE_SMOKE_REPORT_DIR / f"llm_direct_rewrite_pg_{case_slug}_v0.json",
+    ]
+    return [path for path in candidates if path.is_file()]
+
+
+def formal_common_core_route_readiness_counts(records: list[dict[str, Any]]) -> dict[str, dict[str, int]]:
+    counts: dict[str, dict[str, int]] = {}
+    for route_name in (
+        "NATIVE_IDENTITY",
+        "HUMAN_REFERENCE_POSITIVE",
+        "HARD_NEGATIVE_GUARD",
+        "SQLGLOT_OPT_SAME_DIALECT",
+        "LLM_DIRECT_REWRITE_STRONG",
+    ):
+        statuses = [
+            str((record.get("route_readiness", {}).get(route_name, {}) or {}).get("status") or "unknown")
+            for record in records
+        ]
+        counts[route_name] = count_plain_values(statuses)
+    return counts
 
 
 def learnedrewrite_static_sql_shape_signals(sql_text: str) -> dict[str, bool]:
@@ -7028,6 +7142,307 @@ def cmd_baseline_smoke_sqlsolver_verieql_readiness(args: argparse.Namespace) -> 
         "claim_boundary": "sqlsolver_verieql_support_readiness_only_not_equivalence_or_execution",
     }
     write_baseline_smoke_report(output_name, payload)
+    return print_and_exit(payload, 0 if payload["ok"] else 1)
+
+
+def cmd_formal_common_core_preflight(args: argparse.Namespace) -> int:
+    output_name = normalize_formal_common_core_output_name(args.output)
+
+    if args.execute:
+        payload = {
+            "command": "formal-common-core-preflight",
+            "cwd": str(ROOT),
+            "ok": False,
+            "formal_run_ready": False,
+            "ran_at_utc": utc_now(),
+            "output_path": "reports/formal_common_core/common_core_preflight_execute_refused_v0.json",
+            "claim_boundary": "formal_common_core_preflight_only_not_formal_result",
+            "message": "formal-common-core-preflight is read-only and never executes the formal common-core experiment.",
+            "issues": [
+                {
+                    "type": "execution_not_supported",
+                    "message": "formal-common-core-preflight never executes databases, models, SQLGlot generation, or formal scoring",
+                }
+            ],
+            "guardrails": {
+                "database_execution": "disabled",
+                "sql_execution": "disabled",
+                "model_api_call": "disabled",
+                "sqlglot_generation": "disabled",
+                "calcite_execution": "disabled",
+                "learnedrewrite_execution": "disabled",
+                "genrewrite_execution": "disabled",
+                "rbot_llmr2_execution": "disabled",
+                "slabcity_execution": "disabled",
+                "solver_execution": "disabled",
+                "case_artifact_write": "disabled",
+                "registry_writeback": "disabled",
+            },
+        }
+        write_formal_common_core_report("common_core_preflight_execute_refused_v0.json", payload)
+        return print_and_exit(payload, 1)
+
+    selected_case_ids = args.case_id or formal_common_core_case_ids()
+    endpoint_config = resolve_llm_endpoint_config()
+    api_key_visible = bool(endpoint_config.get("api_key_visible"))
+    sqlglot_package_available = safe_module_available("sqlglot")
+
+    records: list[dict[str, Any]] = []
+    issues: list[dict[str, Any]] = []
+
+    for case_id in selected_case_ids:
+        inferred = case_root_for_case_id(case_id)
+        if inferred is None:
+            records.append(
+                {
+                    "case_id": case_id,
+                    "pool": "",
+                    "case_root": "",
+                    "case_root_exists": False,
+                    "source_sql_path": "",
+                    "source_sql_exists": False,
+                    "manifest_path": "",
+                    "manifest_exists": False,
+                    "positive_rewrite_paths": [],
+                    "positive_rewrite_count": 0,
+                    "negative_rewrite_paths": [],
+                    "negative_rewrite_count": 0,
+                    "checker_or_result_artifacts": [],
+                    "checker_or_result_artifact_count": 0,
+                    "validation_schema_hint": validation_schema_hint(case_id),
+                    "plan_artifacts": [],
+                    "plan_artifact_count": 0,
+                    "source_plan_exists": False,
+                    "positive_plan_exists": False,
+                    "negative_plan_exists": False,
+                    "plan_check_exists": False,
+                    "smoke_evidence_paths": [],
+                    "smoke_evidence_count": 0,
+                    "route_readiness": {
+                        "NATIVE_IDENTITY": {"status": "blocked_missing_core_inputs", "blockers": ["unsupported case_id format"]},
+                        "HUMAN_REFERENCE_POSITIVE": {"status": "blocked_missing_positive", "blockers": ["unsupported case_id format"]},
+                        "HARD_NEGATIVE_GUARD": {"status": "blocked_missing_negative", "blockers": ["unsupported case_id format"]},
+                        "SQLGLOT_OPT_SAME_DIALECT": {
+                            "status": "blocked_missing_core_inputs",
+                            "blockers": ["unsupported case_id format"],
+                            "sqlglot_package_available": sqlglot_package_available,
+                        },
+                        "LLM_DIRECT_REWRITE_STRONG": {
+                            "status": "blocked_missing_core_inputs",
+                            "blockers": ["unsupported case_id format"],
+                            "api_key_visible": api_key_visible,
+                            "provider_mode": endpoint_config.get("provider_mode", ""),
+                        },
+                    },
+                    "formal_preflight_status": "blocked",
+                    "blockers": ["unsupported case_id format"],
+                    "warnings": [],
+                    "artifact_claim_boundary": "formal_common_core_preflight_only_no_execution",
+                }
+            )
+            issues.append({"type": "unsupported_case_id_format", "case_id": case_id})
+            continue
+
+        pool, case_root = inferred
+        source_sql_path = case_root / "source.sql"
+        manifest_path = case_root / "manifest.yaml"
+        case_root_exists = case_root.is_dir()
+        source_sql_exists = source_sql_path.is_file()
+        manifest_exists = manifest_path.is_file()
+
+        positive_rewrite_paths = existing_case_sql_paths(case_root, "rewrite_pos_*.sql")
+        negative_rewrite_paths = existing_case_sql_paths(case_root, "rewrite_neg_*.sql")
+        checker_or_result_artifacts = formal_common_core_checker_or_result_artifacts(case_root)
+        plan_artifacts = formal_common_core_plan_artifacts(case_root)
+        smoke_evidence_paths = formal_common_core_smoke_evidence_paths(case_id)
+
+        source_plan_exists = (case_root / "runs" / "pg" / "plans" / "source.json").is_file()
+        positive_plan_exists = (case_root / "runs" / "pg" / "plans" / "rewrite_pos_01.json").is_file()
+        negative_plan_exists = (case_root / "runs" / "pg" / "plans" / "rewrite_neg_01.json").is_file()
+        plan_check_exists = (case_root / "runs" / "pg" / "plans" / "plan_check.json").is_file()
+
+        core_inputs_present = case_root_exists and source_sql_exists and manifest_exists
+        positive_present = bool(positive_rewrite_paths)
+        negative_present = bool(negative_rewrite_paths)
+
+        route_readiness = {
+            "NATIVE_IDENTITY": {
+                "status": "ready_if_core_inputs_present" if core_inputs_present else "blocked_missing_core_inputs",
+                "required_inputs_present": core_inputs_present,
+                "optional_smoke_evidence_present": bool(smoke_evidence_paths),
+                "blockers": [] if core_inputs_present else ["case_root/source.sql/manifest.yaml missing"],
+            },
+            "HUMAN_REFERENCE_POSITIVE": {
+                "status": "ready_if_positive_present" if core_inputs_present and positive_present else "blocked_missing_positive",
+                "required_inputs_present": core_inputs_present,
+                "positive_rewrite_present": positive_present,
+                "optional_result_or_plan_artifacts_present": bool(checker_or_result_artifacts or plan_artifacts),
+                "blockers": [] if core_inputs_present and positive_present else ["positive rewrite missing or core inputs missing"],
+            },
+            "HARD_NEGATIVE_GUARD": {
+                "status": "ready_if_negative_present" if core_inputs_present and negative_present else "blocked_missing_negative",
+                "required_inputs_present": core_inputs_present,
+                "negative_rewrite_present": negative_present,
+                "optional_result_or_plan_artifacts_present": bool(checker_or_result_artifacts or plan_artifacts),
+                "blockers": [] if core_inputs_present and negative_present else ["negative rewrite missing or core inputs missing"],
+            },
+            "SQLGLOT_OPT_SAME_DIALECT": {
+                "status": "ready_for_generation_preflight" if core_inputs_present else "blocked_missing_core_inputs",
+                "required_inputs_present": core_inputs_present,
+                "sqlglot_package_available": sqlglot_package_available,
+                "optional_smoke_evidence_present": bool(smoke_evidence_paths),
+                "blockers": [] if core_inputs_present else ["case_root/source.sql/manifest.yaml missing"],
+            },
+            "LLM_DIRECT_REWRITE_STRONG": {
+                "status": "ready_for_prompt_or_call_preflight" if core_inputs_present else "blocked_missing_core_inputs",
+                "required_inputs_present": core_inputs_present,
+                "api_key_visible": api_key_visible,
+                "provider_mode": endpoint_config.get("provider_mode", ""),
+                "optional_smoke_evidence_present": bool(smoke_evidence_paths),
+                "blockers": [] if core_inputs_present else ["case_root/source.sql/manifest.yaml missing"],
+            },
+        }
+
+        blockers: list[str] = []
+        warnings: list[str] = []
+        if not case_root_exists:
+            blockers.append("case_root missing")
+            issues.append({"type": "missing_case_root", "case_id": case_id, "path": relative_to_root(case_root)})
+        if not source_sql_exists:
+            blockers.append("source.sql missing")
+            issues.append({"type": "missing_source_sql", "case_id": case_id, "path": relative_to_root(source_sql_path)})
+        if not manifest_exists:
+            blockers.append("manifest.yaml missing")
+            issues.append({"type": "missing_manifest", "case_id": case_id, "path": relative_to_root(manifest_path)})
+        if not positive_present:
+            blockers.append("positive rewrite missing for HUMAN_REFERENCE_POSITIVE")
+        if not negative_present:
+            blockers.append("negative rewrite missing for HARD_NEGATIVE_GUARD")
+        if not checker_or_result_artifacts:
+            warnings.append("checker/result artifacts not detected")
+        if not source_plan_exists:
+            warnings.append("source plan artifact not detected")
+        if not positive_plan_exists:
+            warnings.append("positive rewrite plan artifact not detected")
+        if not negative_plan_exists:
+            warnings.append("negative rewrite plan artifact not detected")
+        if not plan_check_exists:
+            warnings.append("plan_check artifact not detected")
+        if not smoke_evidence_paths:
+            warnings.append("baseline smoke evidence reports not detected")
+
+        all_routes_ready = (
+            route_readiness["NATIVE_IDENTITY"]["status"] == "ready_if_core_inputs_present"
+            and route_readiness["HUMAN_REFERENCE_POSITIVE"]["status"] == "ready_if_positive_present"
+            and route_readiness["HARD_NEGATIVE_GUARD"]["status"] == "ready_if_negative_present"
+            and route_readiness["SQLGLOT_OPT_SAME_DIALECT"]["status"] == "ready_for_generation_preflight"
+            and route_readiness["LLM_DIRECT_REWRITE_STRONG"]["status"] == "ready_for_prompt_or_call_preflight"
+        )
+        if all_routes_ready:
+            formal_preflight_status = "ready"
+        elif core_inputs_present:
+            formal_preflight_status = "partial"
+        else:
+            formal_preflight_status = "blocked"
+
+        records.append(
+            {
+                "case_id": case_id,
+                "pool": pool,
+                "case_root": relative_to_root(case_root),
+                "case_root_exists": case_root_exists,
+                "source_sql_path": relative_to_root(source_sql_path),
+                "source_sql_exists": source_sql_exists,
+                "manifest_path": relative_to_root(manifest_path),
+                "manifest_exists": manifest_exists,
+                "positive_rewrite_paths": [relative_to_root(path) for path in positive_rewrite_paths],
+                "positive_rewrite_count": len(positive_rewrite_paths),
+                "negative_rewrite_paths": [relative_to_root(path) for path in negative_rewrite_paths],
+                "negative_rewrite_count": len(negative_rewrite_paths),
+                "checker_or_result_artifacts": [relative_to_root(path) for path in checker_or_result_artifacts],
+                "checker_or_result_artifact_count": len(checker_or_result_artifacts),
+                "validation_schema_hint": validation_schema_hint(case_id),
+                "plan_artifacts": [relative_to_root(path) for path in plan_artifacts],
+                "plan_artifact_count": len(plan_artifacts),
+                "source_plan_exists": source_plan_exists,
+                "positive_plan_exists": positive_plan_exists,
+                "negative_plan_exists": negative_plan_exists,
+                "plan_check_exists": plan_check_exists,
+                "smoke_evidence_paths": [relative_to_root(path) for path in smoke_evidence_paths],
+                "smoke_evidence_count": len(smoke_evidence_paths),
+                "route_readiness": route_readiness,
+                "formal_preflight_status": formal_preflight_status,
+                "blockers": blockers,
+                "warnings": warnings,
+                "artifact_claim_boundary": "formal_common_core_preflight_only_no_execution",
+            }
+        )
+
+    route_readiness_counts = formal_common_core_route_readiness_counts(records)
+    formal_run_ready = all(
+        (
+            (record.get("route_readiness", {}).get("NATIVE_IDENTITY", {}) or {}).get("status")
+            == "ready_if_core_inputs_present"
+            and (record.get("route_readiness", {}).get("HUMAN_REFERENCE_POSITIVE", {}) or {}).get("status")
+            == "ready_if_positive_present"
+            and (record.get("route_readiness", {}).get("HARD_NEGATIVE_GUARD", {}) or {}).get("status")
+            == "ready_if_negative_present"
+            and (record.get("route_readiness", {}).get("SQLGLOT_OPT_SAME_DIALECT", {}) or {}).get("status")
+            == "ready_for_generation_preflight"
+            and (record.get("route_readiness", {}).get("LLM_DIRECT_REWRITE_STRONG", {}) or {}).get("status")
+            == "ready_for_prompt_or_call_preflight"
+        )
+        for record in records
+    )
+
+    payload = {
+        "command": "formal-common-core-preflight",
+        "ok": (
+            all(record["case_root_exists"] for record in records)
+            and all(record["source_sql_exists"] for record in records)
+            and all(record["manifest_exists"] for record in records)
+            and all(record["artifact_claim_boundary"] == "formal_common_core_preflight_only_no_execution" for record in records)
+        ),
+        "formal_run_ready": formal_run_ready,
+        "ran_at_utc": utc_now(),
+        "output_path": f"reports/formal_common_core/{output_name}",
+        "denominator_case_count": len(formal_common_core_case_ids()),
+        "case_count": len(records),
+        "ready_case_count": sum(1 for record in records if record["formal_preflight_status"] == "ready"),
+        "partial_case_count": sum(1 for record in records if record["formal_preflight_status"] == "partial"),
+        "blocked_case_count": sum(1 for record in records if record["formal_preflight_status"] == "blocked"),
+        "source_sql_present_count": sum(1 for record in records if record["source_sql_exists"]),
+        "manifest_present_count": sum(1 for record in records if record["manifest_exists"]),
+        "positive_rewrite_present_count": sum(1 for record in records if record["positive_rewrite_count"] > 0),
+        "negative_rewrite_present_count": sum(1 for record in records if record["negative_rewrite_count"] > 0),
+        "checker_or_result_artifact_present_count": sum(
+            1 for record in records if record["checker_or_result_artifact_count"] > 0
+        ),
+        "plan_source_present_count": sum(1 for record in records if record["source_plan_exists"]),
+        "plan_positive_present_count": sum(1 for record in records if record["positive_plan_exists"]),
+        "plan_negative_present_count": sum(1 for record in records if record["negative_plan_exists"]),
+        "plan_check_present_count": sum(1 for record in records if record["plan_check_exists"]),
+        "smoke_evidence_present_count": sum(1 for record in records if record["smoke_evidence_count"] > 0),
+        "route_readiness_counts": route_readiness_counts,
+        "records": records,
+        "issues": issues,
+        "guardrails": {
+            "database_execution": "disabled",
+            "sql_execution": "disabled",
+            "model_api_call": "disabled",
+            "sqlglot_generation": "disabled",
+            "calcite_execution": "disabled",
+            "learnedrewrite_execution": "disabled",
+            "genrewrite_execution": "disabled",
+            "rbot_llmr2_execution": "disabled",
+            "slabcity_execution": "disabled",
+            "solver_execution": "disabled",
+            "case_artifact_write": "disabled",
+            "registry_writeback": "disabled",
+        },
+        "claim_boundary": "formal_common_core_preflight_only_not_formal_result",
+    }
+    write_formal_common_core_report(output_name, payload)
     return print_and_exit(payload, 0 if payload["ok"] else 1)
 
 
@@ -13653,6 +14068,15 @@ def build_parser() -> argparse.ArgumentParser:
     )
     sqlsolver_verieql_readiness_parser.add_argument("--execute", action="store_true", default=False)
     sqlsolver_verieql_readiness_parser.set_defaults(func=cmd_baseline_smoke_sqlsolver_verieql_readiness)
+
+    formal_common_core_preflight_parser = subparsers.add_parser("formal-common-core-preflight")
+    formal_common_core_preflight_parser.add_argument("--case-id", action="append", default=[])
+    formal_common_core_preflight_parser.add_argument(
+        "--output",
+        default="common_core_preflight_v0.json",
+    )
+    formal_common_core_preflight_parser.add_argument("--execute", action="store_true", default=False)
+    formal_common_core_preflight_parser.set_defaults(func=cmd_formal_common_core_preflight)
 
     sqlglot_transpile_summary_parser = subparsers.add_parser("baseline-smoke-sqlglot-transpile-summary")
     sqlglot_transpile_summary_parser.add_argument(
