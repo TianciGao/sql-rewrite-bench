@@ -31,6 +31,7 @@ CONTROL_BASELINE_IDS = {
 }
 NATIVE_IDENTITY_CANARY_DEFAULT_CASES = ["PERF_0006", "PERF_0008"]
 SQLGLOT_PG_CANARY_DEFAULT_CASES = ["PERF_0006", "PERF_0008"]
+SQLGLOT_TRANSPILE_DEFAULT_CASES = ["PORT_0004", "PORT_0012", "PORT_0022"]
 HUMAN_POSITIVE_PG_DEFAULT_CASES = [
     "PERF_0006",
     "PERF_0008",
@@ -210,6 +211,30 @@ def normalize_baseline_smoke_output_name(value: str) -> str:
 
 def normalize_sql_for_compare(sql_text: str) -> str:
     return re.sub(r"\s+", " ", sql_text).strip().lower()
+
+
+def manifest_source_dialect_hint(manifest_text: str) -> str:
+    match = re.search(r"(?m)^source_dialect:\s*([A-Za-z0-9_+-]+)\s*$", manifest_text)
+    return match.group(1) if match else ""
+
+
+def source_dialect_candidate_order(source_dialect_hint: str, requested: str) -> list[str]:
+    default_order = ["mysql", "postgres", "spark"]
+    if requested != "auto":
+        return [requested]
+
+    hint_map = {
+        "mysql_like_candidate": "mysql",
+        "postgres_like_candidate": "postgres",
+        "spark_like_candidate": "spark",
+        "mysql": "mysql",
+        "postgres": "postgres",
+        "spark": "spark",
+    }
+    hinted = hint_map.get(source_dialect_hint, "")
+    if hinted:
+        return [hinted] + [dialect for dialect in default_order if dialect != hinted]
+    return list(default_order)
 
 
 def check_status(errors: list[dict[str, Any]], registry_name: str, *error_types: str) -> str:
@@ -3328,6 +3353,236 @@ def cmd_baseline_smoke_llm_prompt_dry_run(args: argparse.Namespace) -> int:
     return print_and_exit(payload, 0 if ok else 1)
 
 
+def cmd_baseline_smoke_sqlglot_transpile_preflight(args: argparse.Namespace) -> int:
+    output_name = normalize_baseline_smoke_output_name("sqlglot_transpile_preflight_v0.json")
+
+    if args.execute:
+        payload = {
+            "command": "baseline-smoke-sqlglot-transpile-preflight",
+            "cwd": str(ROOT),
+            "ok": False,
+            "ran_at_utc": utc_now(),
+            "config_path": relative_to_root(resolve_repo_path(args.config)),
+            "engine_scope": args.target_dialect,
+            "baseline_id": "SQLGLOT_TRANSPILE",
+            "output_path": "reports/baseline_smoke/sqlglot_transpile_execute_refused_v0.json",
+            "message": "Execution is intentionally disabled. This command only builds SQLGlot transpile preflight records.",
+            "issues": [
+                {
+                    "type": "execution_not_supported",
+                    "message": "baseline-smoke-sqlglot-transpile-preflight is read-only and does not execute transpiled SQL",
+                }
+            ],
+            "guardrails": {
+                "database_execution": "disabled",
+                "mysql_execution": "disabled",
+                "spark_execution": "disabled",
+                "llm_execution": "disabled",
+                "transpiled_sql_execution": "disabled",
+                "case_artifact_write": "disabled",
+            },
+        }
+        write_baseline_smoke_report("sqlglot_transpile_execute_refused_v0.json", payload)
+        return print_and_exit(payload, 1)
+
+    config_path = resolve_repo_path(args.config)
+    config = load_json(config_path)
+    case_index = {case["case_id"]: case for case in config.get("cases", [])}
+    selected_case_ids = args.case_id or list(SQLGLOT_TRANSPILE_DEFAULT_CASES)
+    records: list[dict[str, Any]] = []
+    issues: list[dict[str, Any]] = []
+
+    invalid_cases = [case_id for case_id in selected_case_ids if case_id not in case_index]
+    for case_id in invalid_cases:
+        records.append(
+            {
+                "baseline_id": "SQLGLOT_TRANSPILE",
+                "case_id": case_id,
+                "pool": "",
+                "target_dialect": args.target_dialect,
+                "execution_mode": "transpile_preflight_no_execution",
+                "source_sql_path": "",
+                "source_sql_exists": False,
+                "sqlglot_available": False,
+                "source_dialect_used": "",
+                "source_dialect_candidates_tried": [],
+                "source_dialect_successes": [],
+                "parse_status": "skipped",
+                "transpile_status": "skipped",
+                "transpiled_sql_empty": "unknown",
+                "transpiled_sql_same_as_source_normalized": "unknown",
+                "transpiled_sql_preview": "",
+                "failure_category": "case_not_in_smoke_config",
+                "error_message": "",
+                "artifact_claim_boundary": "sqlglot_transpile_preflight_only_no_execution",
+                "notes": ["selection refused: case is outside the current smoke config"],
+            }
+        )
+        issues.append({"type": "case_not_in_smoke_config", "case_id": case_id})
+
+    sqlglot_available = True
+    sqlglot_error = ""
+    try:
+        sqlglot = importlib.import_module("sqlglot")
+    except ModuleNotFoundError as exc:
+        sqlglot_available = False
+        sqlglot_error = str(exc)
+        sqlglot = None
+        issues.append({"type": "missing_sqlglot", "detail": str(exc)})
+
+    for case_id in [case_id for case_id in selected_case_ids if case_id in case_index]:
+        case_spec = case_index[case_id]
+        pool = case_spec["pool"]
+        case_root = pool_case_root(pool) / case_id
+        source_sql_path = case_root / "source.sql"
+        manifest_path = case_root / "manifest.yaml"
+        source_sql_exists = source_sql_path.is_file()
+        source_dialect_hint = ""
+        if manifest_path.is_file():
+            source_dialect_hint = manifest_source_dialect_hint(manifest_path.read_text(encoding="utf-8"))
+
+        candidates_tried = source_dialect_candidate_order(source_dialect_hint, args.source_dialect)
+        parse_status = "skipped"
+        transpile_status = "skipped"
+        transpiled_sql_empty: bool | str = "unknown"
+        transpiled_sql_same: bool | str = "unknown"
+        transpiled_sql_preview = ""
+        failure_category = "none"
+        error_message = ""
+        notes: list[str] = []
+        source_dialect_used = ""
+        source_dialect_successes: list[str] = []
+
+        if pool != "portability":
+            failure_category = "non_port_case_not_enabled"
+            parse_status = "skipped"
+            transpile_status = "skipped"
+            notes.append("only portability cases are enabled for this transpile preflight")
+        elif not source_sql_exists:
+            failure_category = "missing_source_sql"
+            notes.append("source.sql is missing")
+        elif not sqlglot_available:
+            failure_category = "sqlglot_unavailable"
+            error_message = sqlglot_error
+            notes.append("sqlglot is not importable in the current environment")
+        else:
+            source_sql = source_sql_path.read_text(encoding="utf-8")
+            parsed = None
+            last_exc: Exception | None = None
+            for candidate in candidates_tried:
+                try:
+                    parsed = sqlglot.parse_one(source_sql, dialect=candidate)
+                    source_dialect_successes.append(candidate)
+                    if not source_dialect_used:
+                        source_dialect_used = candidate
+                except Exception as exc:
+                    last_exc = exc
+
+            if source_dialect_successes:
+                parse_status = "success"
+                if len(source_dialect_successes) > 1:
+                    notes.append(
+                        "multiple dialects parsed successfully: " + ", ".join(source_dialect_successes)
+                    )
+                if source_dialect_hint:
+                    notes.append(f"manifest_source_dialect_hint={source_dialect_hint}")
+            else:
+                parse_status = "failed"
+                failure_category = type(last_exc).__name__ if last_exc else "parse_failed"
+                error_message = str(last_exc) if last_exc else "no source dialect candidate parsed"
+                notes.append("sqlglot parse failed for all source dialect candidates")
+
+            if parse_status == "success" and parsed is not None:
+                try:
+                    transpiled_sql = parsed.sql(dialect=args.target_dialect)
+                    transpile_status = "success"
+                    transpiled_sql_empty = len(transpiled_sql.strip()) == 0
+                    transpiled_sql_preview = transpiled_sql[:500]
+                    if transpiled_sql_empty:
+                        failure_category = "empty_transpiled_sql"
+                        notes.append("transpiled SQL string was empty")
+                    else:
+                        transpiled_sql_same = (
+                            normalize_sql_for_compare(source_sql)
+                            == normalize_sql_for_compare(transpiled_sql)
+                        )
+                        notes.append(f"transpiled_to={args.target_dialect}")
+                except Exception as exc:
+                    transpile_status = "failed"
+                    failure_category = type(exc).__name__
+                    error_message = str(exc)
+                    notes.append("sqlglot transpile failed")
+
+        records.append(
+            {
+                "baseline_id": "SQLGLOT_TRANSPILE",
+                "case_id": case_id,
+                "pool": pool,
+                "target_dialect": args.target_dialect,
+                "execution_mode": "transpile_preflight_no_execution",
+                "source_sql_path": relative_to_root(source_sql_path),
+                "source_sql_exists": source_sql_exists,
+                "sqlglot_available": sqlglot_available,
+                "source_dialect_used": source_dialect_used,
+                "source_dialect_candidates_tried": candidates_tried,
+                "source_dialect_successes": source_dialect_successes,
+                "parse_status": parse_status,
+                "transpile_status": transpile_status,
+                "transpiled_sql_empty": transpiled_sql_empty,
+                "transpiled_sql_same_as_source_normalized": transpiled_sql_same,
+                "transpiled_sql_preview": transpiled_sql_preview,
+                "failure_category": failure_category,
+                "error_message": error_message,
+                "artifact_claim_boundary": "sqlglot_transpile_preflight_only_no_execution",
+                "notes": notes,
+            }
+        )
+
+    ok = (
+        sqlglot_available
+        and not issues
+        and all(record["source_sql_exists"] for record in records if record["failure_category"] != "case_not_in_smoke_config")
+        and all(record["parse_status"] == "success" for record in records)
+        and all(record["transpile_status"] == "success" for record in records)
+        and all(record["transpiled_sql_empty"] is False for record in records)
+    )
+
+    payload = {
+        "command": "baseline-smoke-sqlglot-transpile-preflight",
+        "ok": ok,
+        "ran_at_utc": utc_now(),
+        "config_path": relative_to_root(config_path),
+        "engine_scope": args.target_dialect,
+        "baseline_id": "SQLGLOT_TRANSPILE",
+        "case_count": len(records),
+        "sqlglot_available": sqlglot_available,
+        "parse_success_count": sum(1 for record in records if record["parse_status"] == "success"),
+        "parse_failed_count": sum(1 for record in records if record["parse_status"] == "failed"),
+        "transpile_success_count": sum(1 for record in records if record["transpile_status"] == "success"),
+        "transpile_failed_count": sum(1 for record in records if record["transpile_status"] == "failed"),
+        "empty_transpiled_sql_count": sum(1 for record in records if record["transpiled_sql_empty"] is True),
+        "identical_to_source_count": sum(
+            1 for record in records if record["transpiled_sql_same_as_source_normalized"] is True
+        ),
+        "different_from_source_count": sum(
+            1 for record in records if record["transpiled_sql_same_as_source_normalized"] is False
+        ),
+        "skipped_count": sum(1 for record in records if record["parse_status"] == "skipped"),
+        "records": records,
+        "issues": issues,
+        "guardrails": {
+            "database_execution": "disabled",
+            "mysql_execution": "disabled",
+            "spark_execution": "disabled",
+            "llm_execution": "disabled",
+            "transpiled_sql_execution": "disabled",
+            "case_artifact_write": "disabled",
+        },
+    }
+    write_baseline_smoke_report(output_name, payload)
+    return print_and_exit(payload, 0 if ok else 1)
+
+
 def cmd_baseline_smoke_sqlglot_preflight(args: argparse.Namespace) -> int:
     output_name = normalize_baseline_smoke_output_name("sqlglot_same_dialect_preflight_v0.json")
 
@@ -5672,6 +5927,18 @@ def build_parser() -> argparse.ArgumentParser:
     llm_prompt_dry_run_parser.add_argument("--execute", action="store_true", default=False)
     llm_prompt_dry_run_parser.add_argument("--call-model", action="store_true", default=False)
     llm_prompt_dry_run_parser.set_defaults(func=cmd_baseline_smoke_llm_prompt_dry_run)
+
+    sqlglot_transpile_preflight_parser = subparsers.add_parser("baseline-smoke-sqlglot-transpile-preflight")
+    sqlglot_transpile_preflight_parser.add_argument(
+        "--config",
+        default="docs/_scratch/baseline_smoke_common_core_v0.json",
+    )
+    sqlglot_transpile_preflight_parser.add_argument("--case-id", action="append", default=[])
+    sqlglot_transpile_preflight_parser.add_argument("--target-dialect", default="postgres")
+    sqlglot_transpile_preflight_parser.add_argument("--source-dialect", default="auto")
+    sqlglot_transpile_preflight_parser.add_argument("--write-generated", action="store_true", default=False)
+    sqlglot_transpile_preflight_parser.add_argument("--execute", action="store_true", default=False)
+    sqlglot_transpile_preflight_parser.set_defaults(func=cmd_baseline_smoke_sqlglot_transpile_preflight)
 
     sqlglot_preflight_parser = subparsers.add_parser("baseline-smoke-sqlglot-preflight")
     sqlglot_preflight_parser.add_argument(
