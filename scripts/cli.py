@@ -386,15 +386,19 @@ def extract_sql_like_output(raw_output: str) -> tuple[str, str]:
         return "needs_manual_review", text
     if semicolon_count == 1 and not compact.endswith(";"):
         return "needs_manual_review", text
+    balance = 0
+    for char in compact:
+        if char == "(":
+            balance += 1
+        elif char == ")":
+            balance -= 1
+            if balance < 0:
+                return "needs_manual_review", text
+    if balance != 0:
+        return "needs_manual_review", text
     trailing = compact[:-1].rstrip() if compact.endswith(";") else compact
     if ";" in trailing:
         return "needs_manual_review", text
-    if re.search(r"\b(SELECT|WITH)\b.*\b(SELECT|WITH)\b", upper, flags=re.DOTALL):
-        first = re.match(r"^(SELECT|WITH)\b", upper)
-        if first:
-            remainder = upper[first.end():]
-            if re.search(r"\n\s*(SELECT|WITH)\b", remainder):
-                return "needs_manual_review", text
     return "extracted", text
 
 
