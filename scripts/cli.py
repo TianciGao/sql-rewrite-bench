@@ -622,7 +622,7 @@ def pg_env_visibility() -> dict[str, bool]:
 
 
 def native_identity_validation_schema(case_id: str, pool: str) -> str:
-    if pool == "performance":
+    if pool in {"performance", "consistency"}:
         return f"{case_id.lower()}_validation"
     return ""
 
