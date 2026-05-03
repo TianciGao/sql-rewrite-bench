@@ -633,6 +633,24 @@ def formal_control_route_smoke_evidence_paths(case_id: str, baseline_id: str) ->
     return sorted({path for path in candidates}, key=lambda p: str(p))
 
 
+def formal_control_summary_report_path(baseline_id: str) -> Path:
+    return FORMAL_COMMON_CORE_REPORT_DIR / formal_control_route_report_name(baseline_id)
+
+
+def formal_control_summary_record_index(baseline_id: str) -> dict[str, dict[str, Any]]:
+    report = load_json_if_present(formal_control_summary_report_path(baseline_id))
+    if not isinstance(report, dict):
+        return {}
+    records = report.get("records")
+    if not isinstance(records, list):
+        return {}
+    index: dict[str, dict[str, Any]] = {}
+    for item in records:
+        if isinstance(item, dict) and item.get("case_id"):
+            index[str(item["case_id"])] = item
+    return index
+
+
 def learnedrewrite_static_sql_shape_signals(sql_text: str) -> dict[str, bool]:
     upper = sql_text.upper()
     compact = sql_text
@@ -7901,6 +7919,365 @@ def cmd_formal_common_core_control_summary(args: argparse.Namespace) -> int:
     return print_and_exit(summary_payload, 0 if summary_payload["ok"] else 1)
 
 
+def cmd_formal_common_core_control_exec_preflight(args: argparse.Namespace) -> int:
+    output_name = normalize_formal_common_core_output_name(args.output)
+    selected_case_ids = args.case_id or formal_common_core_case_ids()
+    pg_metadata_check_requested = bool(args.check_pg_metadata)
+    env_visibility = pg_env_visibility()
+    required_pg_env_visible = all(env_visibility[name] for name in ["PGHOST", "PGPORT", "PGDATABASE", "PGUSER"])
+    pg_client_available = safe_module_available("psycopg")
+
+    if args.execute:
+        payload = {
+            "command": "formal-common-core-control-exec-preflight",
+            "cwd": str(ROOT),
+            "ok": False,
+            "ran_at_utc": utc_now(),
+            "output_path": "reports/formal_common_core/control_exec_preflight_execute_refused_v0.json",
+            "claim_boundary": "formal_control_exec_preflight_only_not_execution_or_scoring",
+            "message": "formal-common-core-control-exec-preflight is read-only and never executes control routes or formal scoring.",
+            "issues": [
+                {
+                    "type": "execution_not_supported",
+                    "message": "formal-common-core-control-exec-preflight never executes case SQL, rescoring, plan collection, or benchmark workloads",
+                }
+            ],
+            "guardrails": {
+                "database_workload_execution": "disabled",
+                "case_sql_execution": "disabled",
+                "sql_execution": "metadata_only_if_check_pg_metadata",
+                "model_api_call": "disabled",
+                "sqlglot_generation": "disabled",
+                "plan_collection": "disabled",
+                "result_scoring": "disabled",
+                "case_artifact_write": "disabled",
+                "registry_writeback": "disabled",
+            },
+        }
+        write_formal_common_core_report("control_exec_preflight_execute_refused_v0.json", payload)
+        return print_and_exit(payload, 1)
+
+    metadata_schema_cache: dict[str, str] = {}
+    metadata_search_path = ""
+    metadata_issues: list[dict[str, Any]] = []
+
+    if pg_metadata_check_requested and (not required_pg_env_visible or not pg_client_available):
+        metadata_issues.append(
+            {
+                "type": "pg_metadata_blocked",
+                "required_env_visible": required_pg_env_visible,
+                "pg_client_available": pg_client_available,
+                "required_env": ["PGHOST", "PGPORT", "PGDATABASE", "PGUSER"],
+            }
+        )
+
+    if pg_metadata_check_requested and required_pg_env_visible and pg_client_available:
+        try:
+            psycopg = importlib.import_module("psycopg")
+            with psycopg.connect(
+                host=os.environ.get("PGHOST"),
+                port=os.environ.get("PGPORT"),
+                dbname=os.environ.get("PGDATABASE"),
+                user=os.environ.get("PGUSER"),
+                password=os.environ.get("PGPASSWORD"),
+                autocommit=False,
+            ) as conn:
+                with conn.cursor() as cur:
+                    cur.execute("SET SESSION CHARACTERISTICS AS TRANSACTION READ ONLY")
+                    cur.execute(
+                        "SELECT set_config('statement_timeout', %s, false)",
+                        (str(args.statement_timeout_ms),),
+                    )
+                    cur.execute("SHOW search_path")
+                    search_path_row = cur.fetchone()
+                    metadata_search_path = str(search_path_row[0]) if search_path_row else ""
+                    for case_id in selected_case_ids:
+                        validation_schema = validation_schema_hint(case_id)
+                        cur.execute("SELECT to_regnamespace(%s)", (validation_schema,))
+                        schema_row = cur.fetchone()
+                        metadata_schema_cache[case_id] = "exists" if schema_row and schema_row[0] is not None else "missing"
+                    conn.rollback()
+        except Exception as exc:
+            metadata_issues.append(
+                {
+                    "type": "pg_metadata_connection_failed",
+                    "detail": str(exc),
+                }
+            )
+            required_pg_env_visible = False
+
+    route_summary_indexes = {
+        "NATIVE_IDENTITY": formal_control_summary_record_index("NATIVE_IDENTITY"),
+        "HUMAN_REFERENCE_POSITIVE": formal_control_summary_record_index("HUMAN_REFERENCE_POSITIVE"),
+        "HARD_NEGATIVE_GUARD": formal_control_summary_record_index("HARD_NEGATIVE_GUARD"),
+    }
+
+    records: list[dict[str, Any]] = []
+    issues: list[dict[str, Any]] = list(metadata_issues)
+
+    for baseline_id in ("NATIVE_IDENTITY", "HUMAN_REFERENCE_POSITIVE", "HARD_NEGATIVE_GUARD"):
+        for case_id in selected_case_ids:
+            inferred = case_root_for_case_id(case_id)
+            route = formal_control_route_label(baseline_id)
+            if inferred is None:
+                records.append(
+                    {
+                        "case_id": case_id,
+                        "pool": "",
+                        "baseline_id": baseline_id,
+                        "route": route,
+                        "case_root": "",
+                        "source_sql_path": "",
+                        "source_sql_exists": False,
+                        "manifest_path": "",
+                        "manifest_exists": False,
+                        "candidate_sql_path": "",
+                        "candidate_sql_exists": False,
+                        "candidate_sql_source": "",
+                        "validation_schema_hint": validation_schema_hint(case_id),
+                        "pg_metadata_check_requested": pg_metadata_check_requested,
+                        "pg_env_visible": required_pg_env_visible,
+                        "pg_client_available": pg_client_available,
+                        "validation_schema_metadata_status": (
+                            "not_checked"
+                            if not pg_metadata_check_requested
+                            else ("env_blocked" if not required_pg_env_visible else "client_unavailable")
+                        ),
+                        "existing_result_artifacts": [],
+                        "existing_result_artifact_count": 0,
+                        "existing_plan_artifacts": [],
+                        "existing_plan_artifact_count": 0,
+                        "source_plan_exists": False,
+                        "candidate_plan_exists": False,
+                        "plan_check_exists": False,
+                        "formal_control_summary_evidence_present": False,
+                        "smoke_evidence_present": False,
+                        "statement_timeout_ms": args.statement_timeout_ms,
+                        "repeat_count_policy": "not_frozen",
+                        "runtime_measurement_policy": "not_frozen",
+                        "warmup_policy": "not_frozen",
+                        "timeout_policy_status": "default_timeout_configured",
+                        "execution_preflight_status": "blocked_missing_required_input",
+                        "blockers": ["unsupported case_id format"],
+                        "warnings": [],
+                        "artifact_claim_boundary": "formal_control_exec_preflight_only_no_case_sql_execution",
+                    }
+                )
+                issues.append({"type": "unsupported_case_id_format", "case_id": case_id, "baseline_id": baseline_id})
+                continue
+
+            pool, case_root = inferred
+            source_sql_path = case_root / "source.sql"
+            manifest_path = case_root / "manifest.yaml"
+            source_sql_exists = source_sql_path.is_file()
+            manifest_exists = manifest_path.is_file()
+            positive_rewrite_paths = existing_case_sql_paths(case_root, "rewrite_pos_*.sql")
+            negative_rewrite_paths = existing_case_sql_paths(case_root, "rewrite_neg_*.sql")
+            existing_result_artifacts = formal_common_core_checker_or_result_artifacts(case_root)
+            existing_plan_artifacts = formal_common_core_plan_artifacts(case_root)
+            source_plan_exists = (case_root / "runs" / "pg" / "plans" / "source.json").is_file()
+            positive_plan_exists = (case_root / "runs" / "pg" / "plans" / "rewrite_pos_01.json").is_file()
+            negative_plan_exists = (case_root / "runs" / "pg" / "plans" / "rewrite_neg_01.json").is_file()
+            plan_check_exists = (case_root / "runs" / "pg" / "plans" / "plan_check.json").is_file()
+            control_summary_record = route_summary_indexes[baseline_id].get(case_id)
+            formal_control_summary_evidence_present = control_summary_record is not None
+            smoke_evidence_present = bool(formal_control_route_smoke_evidence_paths(case_id, baseline_id))
+
+            validation_schema = validation_schema_hint(case_id)
+            if not pg_metadata_check_requested:
+                validation_schema_metadata_status = "not_checked"
+            elif not required_pg_env_visible:
+                validation_schema_metadata_status = "env_blocked"
+            elif not pg_client_available:
+                validation_schema_metadata_status = "client_unavailable"
+            else:
+                validation_schema_metadata_status = metadata_schema_cache.get(case_id, "missing")
+
+            candidate_sql_path = source_sql_path
+            candidate_sql_source = "source.sql"
+            candidate_sql_exists = source_sql_exists
+            candidate_plan_exists = source_plan_exists
+
+            if baseline_id == "HUMAN_REFERENCE_POSITIVE":
+                candidate_sql_path = positive_rewrite_paths[0] if positive_rewrite_paths else case_root / "rewrite_pos_01.sql"
+                candidate_sql_source = "first_rewrite_pos_sql"
+                candidate_sql_exists = bool(positive_rewrite_paths)
+                candidate_plan_exists = positive_plan_exists
+            elif baseline_id == "HARD_NEGATIVE_GUARD":
+                candidate_sql_path = negative_rewrite_paths[0] if negative_rewrite_paths else case_root / "rewrite_neg_01.sql"
+                candidate_sql_source = "first_rewrite_neg_sql"
+                candidate_sql_exists = bool(negative_rewrite_paths)
+                candidate_plan_exists = negative_plan_exists
+
+            blockers: list[str] = []
+            warnings: list[str] = []
+            if not source_sql_exists:
+                blockers.append("source.sql missing")
+                issues.append({"type": "missing_source_sql", "case_id": case_id, "baseline_id": baseline_id, "path": relative_to_root(source_sql_path)})
+            if not manifest_exists:
+                blockers.append("manifest.yaml missing")
+                issues.append({"type": "missing_manifest", "case_id": case_id, "baseline_id": baseline_id, "path": relative_to_root(manifest_path)})
+            if not candidate_sql_exists:
+                blockers.append("candidate SQL missing")
+            if not existing_result_artifacts:
+                warnings.append("existing result artifact not detected")
+            if not existing_plan_artifacts:
+                warnings.append("existing plan artifact not detected")
+            if not formal_control_summary_evidence_present:
+                warnings.append("formal control summary evidence not detected")
+            if not smoke_evidence_present:
+                warnings.append("smoke evidence not detected")
+            if not candidate_plan_exists:
+                warnings.append("candidate plan artifact not detected")
+            if not plan_check_exists:
+                warnings.append("plan_check artifact not detected")
+
+            required_inputs_present = source_sql_exists and manifest_exists and candidate_sql_exists
+            if not required_inputs_present:
+                execution_preflight_status = "blocked_missing_required_input"
+            elif pg_metadata_check_requested and validation_schema_metadata_status == "missing":
+                execution_preflight_status = "blocked_missing_validation_schema"
+                blockers.append("validation schema missing")
+            elif pg_metadata_check_requested and validation_schema_metadata_status in {"env_blocked", "client_unavailable"}:
+                execution_preflight_status = "blocked_pg_env"
+                blockers.append("pg metadata check unavailable")
+            elif pg_metadata_check_requested:
+                if formal_control_summary_evidence_present and smoke_evidence_present:
+                    execution_preflight_status = "ready_for_execution"
+                else:
+                    execution_preflight_status = "partial_missing_optional_evidence"
+            else:
+                if formal_control_summary_evidence_present and smoke_evidence_present:
+                    execution_preflight_status = "ready_artifact_only_metadata_not_checked"
+                else:
+                    execution_preflight_status = "partial_missing_optional_evidence"
+
+            record = {
+                "case_id": case_id,
+                "pool": pool,
+                "baseline_id": baseline_id,
+                "route": route,
+                "case_root": relative_to_root(case_root),
+                "source_sql_path": relative_to_root(source_sql_path),
+                "source_sql_exists": source_sql_exists,
+                "manifest_path": relative_to_root(manifest_path),
+                "manifest_exists": manifest_exists,
+                "candidate_sql_path": relative_to_root(candidate_sql_path),
+                "candidate_sql_exists": candidate_sql_exists,
+                "candidate_sql_source": candidate_sql_source,
+                "validation_schema_hint": validation_schema,
+                "pg_metadata_check_requested": pg_metadata_check_requested,
+                "pg_env_visible": required_pg_env_visible,
+                "pg_client_available": pg_client_available,
+                "validation_schema_metadata_status": validation_schema_metadata_status,
+                "existing_result_artifacts": [relative_to_root(path) for path in existing_result_artifacts],
+                "existing_result_artifact_count": len(existing_result_artifacts),
+                "existing_plan_artifacts": [relative_to_root(path) for path in existing_plan_artifacts],
+                "existing_plan_artifact_count": len(existing_plan_artifacts),
+                "source_plan_exists": source_plan_exists,
+                "candidate_plan_exists": candidate_plan_exists,
+                "plan_check_exists": plan_check_exists,
+                "formal_control_summary_evidence_present": formal_control_summary_evidence_present,
+                "smoke_evidence_present": smoke_evidence_present,
+                "statement_timeout_ms": args.statement_timeout_ms,
+                "repeat_count_policy": "not_frozen",
+                "runtime_measurement_policy": "not_frozen",
+                "warmup_policy": "not_frozen",
+                "timeout_policy_status": "default_timeout_configured",
+                "execution_preflight_status": execution_preflight_status,
+                "blockers": blockers,
+                "warnings": warnings,
+                "artifact_claim_boundary": "formal_control_exec_preflight_only_no_case_sql_execution",
+            }
+            if pg_metadata_check_requested and metadata_search_path:
+                record["pg_search_path_observed"] = metadata_search_path
+            records.append(record)
+
+    all_required_artifacts_present = all(
+        record["source_sql_exists"] and record["manifest_exists"] and record["candidate_sql_exists"]
+        for record in records
+    )
+    if not pg_metadata_check_requested:
+        pg_metadata_ready: Any = "not_checked"
+        formal_control_execution_ready = all_required_artifacts_present
+    else:
+        pg_metadata_ready = required_pg_env_visible and pg_client_available and all(
+            record["validation_schema_metadata_status"] == "exists" for record in records
+        )
+        formal_control_execution_ready = all_required_artifacts_present and bool(pg_metadata_ready)
+
+    route_readiness_counts = count_plain_values(
+        [str(record.get("execution_preflight_status") or "unknown") for record in records]
+    )
+
+    payload = {
+        "command": "formal-common-core-control-exec-preflight",
+        "ok": (
+            all(record["source_sql_exists"] and record["manifest_exists"] and record["candidate_sql_exists"] for record in records)
+            and all(
+                record["artifact_claim_boundary"] == "formal_control_exec_preflight_only_no_case_sql_execution"
+                for record in records
+            )
+        ),
+        "ran_at_utc": utc_now(),
+        "output_path": f"reports/formal_common_core/{output_name}",
+        "denominator_case_count": len(selected_case_ids),
+        "route_count": 3,
+        "total_records": len(records),
+        "ready_for_execution_count": sum(1 for record in records if record["execution_preflight_status"] == "ready_for_execution"),
+        "ready_artifact_only_metadata_not_checked_count": sum(
+            1 for record in records if record["execution_preflight_status"] == "ready_artifact_only_metadata_not_checked"
+        ),
+        "partial_record_count": sum(1 for record in records if record["execution_preflight_status"] == "partial_missing_optional_evidence"),
+        "blocked_record_count": sum(
+            1
+            for record in records
+            if record["execution_preflight_status"]
+            in {"blocked_missing_required_input", "blocked_missing_validation_schema", "blocked_pg_env"}
+        ),
+        "pg_metadata_check_requested": pg_metadata_check_requested,
+        "pg_env_visible": required_pg_env_visible,
+        "pg_client_available": pg_client_available,
+        "pg_metadata_ready": pg_metadata_ready,
+        "formal_control_execution_ready": formal_control_execution_ready,
+        "validation_schema_exists_count": sum(1 for record in records if record["validation_schema_metadata_status"] == "exists"),
+        "validation_schema_missing_count": sum(1 for record in records if record["validation_schema_metadata_status"] == "missing"),
+        "validation_schema_not_checked_count": sum(1 for record in records if record["validation_schema_metadata_status"] == "not_checked"),
+        "required_candidate_sql_present_count": sum(1 for record in records if record["candidate_sql_exists"]),
+        "existing_result_artifact_present_count": sum(1 for record in records if record["existing_result_artifact_count"] > 0),
+        "existing_plan_artifact_present_count": sum(1 for record in records if record["existing_plan_artifact_count"] > 0),
+        "timeout_policy_status": "default_timeout_configured",
+        "repeat_count_policy": "not_frozen",
+        "runtime_measurement_policy": "not_frozen",
+        "warmup_policy": "not_frozen",
+        "route_readiness_counts": route_readiness_counts,
+        "records": records,
+        "issues": issues,
+        "guardrails": {
+            "database_workload_execution": "disabled",
+            "case_sql_execution": "disabled",
+            "sql_execution": "metadata_only_if_check_pg_metadata",
+            "model_api_call": "disabled",
+            "sqlglot_generation": "disabled",
+            "plan_collection": "disabled",
+            "result_scoring": "disabled",
+            "case_artifact_write": "disabled",
+            "registry_writeback": "disabled",
+        },
+        "claim_boundary": "formal_control_exec_preflight_only_not_execution_or_scoring",
+    }
+
+    if pg_metadata_check_requested and (
+        not required_pg_env_visible or not pg_client_available or any(issue["type"] == "pg_metadata_connection_failed" for issue in issues)
+    ):
+        payload["output_path"] = "reports/formal_common_core/control_exec_preflight_pg_env_blocked_v0.json"
+        write_formal_common_core_report("control_exec_preflight_pg_env_blocked_v0.json", payload)
+        return print_and_exit(payload, 1)
+
+    write_formal_common_core_report(output_name, payload)
+    return print_and_exit(payload, 0 if payload["ok"] else 1)
+
+
 def cmd_baseline_smoke_llm_call_canary(args: argparse.Namespace) -> int:
     default_output_name = "llm_direct_rewrite_call_canary_v0.json"
     output_name = normalize_baseline_smoke_output_name(default_output_name)
@@ -14541,6 +14918,17 @@ def build_parser() -> argparse.ArgumentParser:
     )
     formal_common_core_control_summary_parser.add_argument("--execute", action="store_true", default=False)
     formal_common_core_control_summary_parser.set_defaults(func=cmd_formal_common_core_control_summary)
+
+    formal_common_core_control_exec_preflight_parser = subparsers.add_parser("formal-common-core-control-exec-preflight")
+    formal_common_core_control_exec_preflight_parser.add_argument("--case-id", action="append", default=[])
+    formal_common_core_control_exec_preflight_parser.add_argument(
+        "--output",
+        default="control_exec_preflight_v0.json",
+    )
+    formal_common_core_control_exec_preflight_parser.add_argument("--check-pg-metadata", action="store_true", default=False)
+    formal_common_core_control_exec_preflight_parser.add_argument("--statement-timeout-ms", type=int, default=30000)
+    formal_common_core_control_exec_preflight_parser.add_argument("--execute", action="store_true", default=False)
+    formal_common_core_control_exec_preflight_parser.set_defaults(func=cmd_formal_common_core_control_exec_preflight)
 
     sqlglot_transpile_summary_parser = subparsers.add_parser("baseline-smoke-sqlglot-transpile-summary")
     sqlglot_transpile_summary_parser.add_argument(
