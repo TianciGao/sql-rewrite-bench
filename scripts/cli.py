@@ -3372,6 +3372,307 @@ def cmd_baseline_smoke_sqlglot_summary(args: argparse.Namespace) -> int:
     return print_and_exit(payload, 0 if ok else 1)
 
 
+def cmd_baseline_smoke_llm_canary_summary(args: argparse.Namespace) -> int:
+    output_name = normalize_baseline_smoke_output_name(args.output)
+    input_paths = {
+        "call": resolve_repo_path(args.call_report),
+        "pg": resolve_repo_path(args.pg_report),
+    }
+    input_report_refs = {name: relative_to_root(path) for name, path in input_paths.items()}
+
+    if args.execute:
+        payload = {
+            "command": "baseline-smoke-llm-canary-summary",
+            "cwd": str(ROOT),
+            "ok": False,
+            "ran_at_utc": utc_now(),
+            "input_reports": input_report_refs,
+            "output_path": f"reports/baseline_smoke/{normalize_baseline_smoke_output_name('llm_direct_rewrite_canary_summary_execute_refused_v0.json')}",
+            "claim_boundary": "llm_canary_summary_only_not_correctness_or_speedup_scoring",
+            "message": "Execution is not supported for the LLM canary summary. This command only summarizes existing reports.",
+            "issues": [
+                {
+                    "type": "execution_not_supported",
+                    "message": "baseline-smoke-llm-canary-summary is read-only and never executes baselines",
+                }
+            ],
+        }
+        write_baseline_smoke_report("llm_direct_rewrite_canary_summary_execute_refused_v0.json", payload)
+        return print_and_exit(payload, 1)
+
+    reports: dict[str, dict[str, Any]] = {}
+    issues: list[dict[str, Any]] = []
+    required_fields = {
+        "call": [
+            "records",
+            "call_success_count",
+            "call_failed_count",
+            "env_blocked_count",
+            "extracted_sql_count",
+            "needs_manual_review_count",
+            "model_label",
+            "provider_mode",
+        ],
+        "pg": [
+            "records",
+            "success_count",
+            "failed_count",
+            "executed_count",
+        ],
+    }
+
+    for name, path in input_paths.items():
+        if not path.is_file():
+            issues.append(
+                {
+                    "type": "missing_input",
+                    "report": name,
+                    "path": relative_to_root(path),
+                }
+            )
+            continue
+        try:
+            report = load_json(path)
+        except (json.JSONDecodeError, OSError) as exc:
+            issues.append(
+                {
+                    "type": "malformed_input",
+                    "report": name,
+                    "path": relative_to_root(path),
+                    "detail": str(exc),
+                }
+            )
+            continue
+        missing_fields = [field for field in required_fields[name] if field not in report]
+        if missing_fields:
+            issues.append(
+                {
+                    "type": "missing_required_fields",
+                    "report": name,
+                    "path": relative_to_root(path),
+                    "fields": missing_fields,
+                }
+            )
+            continue
+        if not isinstance(report.get("records"), list):
+            issues.append(
+                {
+                    "type": "malformed_input",
+                    "report": name,
+                    "path": relative_to_root(path),
+                    "detail": "records field is not a list",
+                }
+            )
+            continue
+        reports[name] = report
+
+    def index_records(report: dict[str, Any] | None) -> dict[str, dict[str, Any]]:
+        if not report:
+            return {}
+        return {
+            record.get("case_id", ""): record
+            for record in report.get("records", [])
+            if isinstance(record, dict) and record.get("case_id")
+        }
+
+    call_records = index_records(reports.get("call"))
+    pg_records = index_records(reports.get("pg"))
+    all_case_ids = sorted(set(call_records) | set(pg_records))
+
+    case_summaries: list[dict[str, Any]] = []
+    canary_layer_values: list[str] = []
+    extracted_sql_status_values: list[str] = []
+    pg_execution_status_values: list[str] = []
+    row_count_observation_values: list[str] = []
+
+    for case_id in all_case_ids:
+        call = call_records.get(case_id)
+        pg = pg_records.get(case_id)
+        pool = ((call or {}).get("pool") or (pg or {}).get("pool") or "")
+        anomaly_notes: list[str] = []
+
+        call_status = (call or {}).get("call_status", "")
+        extracted_sql_status = (call or {}).get("extracted_sql_status", "")
+        pg_execution_status = (pg or {}).get("execution_status", "")
+        pg_failure_category = (pg or {}).get("failure_category", "")
+        pg_row_count = (pg or {}).get("row_count")
+
+        if call is None:
+            canary_layer_status = "missing_call_record"
+            anomaly_notes.append("missing call record")
+        elif pg is None:
+            canary_layer_status = "missing_pg_record"
+            anomaly_notes.append("missing pg record")
+        elif call_status != "success":
+            canary_layer_status = "call_failed"
+        elif pg_execution_status != "success":
+            canary_layer_status = "call_succeeded_pg_failed"
+        elif call_status == "success" and extracted_sql_status == "extracted" and pg_execution_status == "success":
+            canary_layer_status = "call_and_pg_execution_succeeded"
+        else:
+            canary_layer_status = "mixed"
+
+        if pg_execution_status == "success":
+            if pg_row_count is None:
+                row_count_observation = "missing_row_count"
+                anomaly_notes.append("pg row count missing")
+            else:
+                row_count_observation = "llm_generated_row_count_recorded"
+        elif pg is None:
+            row_count_observation = "not_scored"
+        else:
+            row_count_observation = "not_scored"
+
+        if pg and not pg.get("validation_schema"):
+            anomaly_notes.append("pg missing validation_schema")
+        if pg and not pg.get("artifact_claim_boundary"):
+            anomaly_notes.append("pg missing artifact_claim_boundary")
+        if call and not call.get("artifact_claim_boundary"):
+            anomaly_notes.append("call missing artifact_claim_boundary")
+        if pg and not pg.get("search_path_after_set"):
+            anomaly_notes.append("pg missing search_path_after_set")
+
+        row = {
+            "case_id": case_id,
+            "pool": pool,
+            "model_label": (call or {}).get("model_label", ""),
+            "provider_mode": (call or {}).get("provider_mode", ""),
+            "call_status": call_status,
+            "extracted_sql_status": extracted_sql_status,
+            "token_usage_input": (call or {}).get("token_usage_input"),
+            "token_usage_output": (call or {}).get("token_usage_output"),
+            "token_usage_total": (call or {}).get("token_usage_total"),
+            "pg_execution_status": pg_execution_status,
+            "pg_failure_category": pg_failure_category,
+            "pg_row_count": pg_row_count,
+            "pg_runtime_ms": (pg or {}).get("runtime_ms"),
+            "validation_schema": (pg or {}).get("validation_schema", ""),
+            "search_path_after_set": (pg or {}).get("search_path_after_set", ""),
+            "canary_layer_status": canary_layer_status,
+            "row_count_observation": row_count_observation,
+            "anomaly_notes": anomaly_notes,
+        }
+        case_summaries.append(row)
+        canary_layer_values.append(canary_layer_status)
+        extracted_sql_status_values.append(extracted_sql_status or "missing")
+        pg_execution_status_values.append(pg_execution_status or "missing")
+        row_count_observation_values.append(row_count_observation)
+
+    for row in case_summaries:
+        if row["canary_layer_status"] in {"missing_call_record", "missing_pg_record"}:
+            issues.append(
+                {
+                    "type": row["canary_layer_status"],
+                    "case_id": row["case_id"],
+                }
+            )
+        if row["call_status"] != "success":
+            issues.append(
+                {
+                    "type": "call_not_success",
+                    "case_id": row["case_id"],
+                    "actual": row["call_status"],
+                }
+            )
+        if row["extracted_sql_status"] != "extracted":
+            issues.append(
+                {
+                    "type": "extracted_sql_not_extracted",
+                    "case_id": row["case_id"],
+                    "actual": row["extracted_sql_status"],
+                }
+            )
+        if row["pg_execution_status"] != "success":
+            issues.append(
+                {
+                    "type": "pg_execution_not_success",
+                    "case_id": row["case_id"],
+                    "actual": row["pg_execution_status"],
+                }
+            )
+        if not row["validation_schema"]:
+            issues.append(
+                {
+                    "type": "missing_validation_schema",
+                    "case_id": row["case_id"],
+                }
+            )
+
+    call_report = reports.get("call") or {}
+    pg_report = reports.get("pg") or {}
+    call_and_pg_execution_succeeded_count = sum(
+        1 for row in case_summaries if row["canary_layer_status"] == "call_and_pg_execution_succeeded"
+    )
+    missing_call_record_count = sum(1 for row in case_summaries if row["canary_layer_status"] == "missing_call_record")
+    missing_pg_record_count = sum(1 for row in case_summaries if row["canary_layer_status"] == "missing_pg_record")
+
+    model_labels = sorted(
+        {
+            row.get("model_label")
+            for row in case_summaries
+            if row.get("model_label")
+        }
+    )
+    provider_modes = sorted(
+        {
+            row.get("provider_mode")
+            for row in case_summaries
+            if row.get("provider_mode")
+        }
+    )
+    token_usage_total_if_available = sum(
+        row["token_usage_total"]
+        for row in case_summaries
+        if isinstance(row.get("token_usage_total"), int)
+    ) or None
+
+    ok = (
+        len(reports) == 2
+        and not issues
+        and len(case_summaries) > 0
+        and call_and_pg_execution_succeeded_count == len(case_summaries)
+    )
+
+    payload = {
+        "command": "baseline-smoke-llm-canary-summary",
+        "ok": ok,
+        "ran_at_utc": utc_now(),
+        "input_reports": input_report_refs,
+        "output_path": f"reports/baseline_smoke/{output_name}",
+        "case_count": len(case_summaries),
+        "call_success_count": int(call_report.get("call_success_count", 0)),
+        "call_failed_count": int(call_report.get("call_failed_count", 0)),
+        "extracted_sql_count": int(call_report.get("extracted_sql_count", 0)),
+        "needs_manual_review_count": int(call_report.get("needs_manual_review_count", 0)),
+        "pg_execution_success_count": int(pg_report.get("success_count", 0)),
+        "pg_execution_failed_count": int(pg_report.get("failed_count", 0)),
+        "call_and_pg_execution_succeeded_count": call_and_pg_execution_succeeded_count,
+        "missing_call_record_count": missing_call_record_count,
+        "missing_pg_record_count": missing_pg_record_count,
+        "counts_by_canary_layer_status": count_plain_values(canary_layer_values),
+        "counts_by_extracted_sql_status": count_plain_values(extracted_sql_status_values),
+        "counts_by_pg_execution_status": count_plain_values(pg_execution_status_values),
+        "counts_by_row_count_observation": count_plain_values(row_count_observation_values),
+        "token_usage_total_if_available": token_usage_total_if_available,
+        "model_labels": model_labels,
+        "provider_modes": provider_modes,
+        "case_summaries": case_summaries,
+        "issues": issues,
+        "guardrails": {
+            "model_api_call": "disabled_for_summary",
+            "database_execution": "disabled_for_summary",
+            "mysql_execution": "disabled",
+            "spark_execution": "disabled",
+            "sqlglot_generation": "disabled",
+            "generated_sql_execution": "disabled_for_summary",
+            "case_artifact_write": "disabled",
+        },
+        "claim_boundary": "llm_canary_summary_only_not_correctness_or_speedup_scoring",
+    }
+    write_baseline_smoke_report(output_name, payload)
+    return print_and_exit(payload, 0 if ok else 1)
+
+
 def cmd_baseline_smoke_sqlglot_transpile_summary(args: argparse.Namespace) -> int:
     output_name = normalize_baseline_smoke_output_name(args.output)
     input_paths = {
@@ -8651,6 +8952,22 @@ def build_parser() -> argparse.ArgumentParser:
     )
     sqlglot_summary_parser.add_argument("--execute", action="store_true", default=False)
     sqlglot_summary_parser.set_defaults(func=cmd_baseline_smoke_sqlglot_summary)
+
+    llm_canary_summary_parser = subparsers.add_parser("baseline-smoke-llm-canary-summary")
+    llm_canary_summary_parser.add_argument(
+        "--call-report",
+        default="reports/baseline_smoke/llm_direct_rewrite_call_canary_v0.json",
+    )
+    llm_canary_summary_parser.add_argument(
+        "--pg-report",
+        default="reports/baseline_smoke/llm_direct_rewrite_pg_canary_v0.json",
+    )
+    llm_canary_summary_parser.add_argument(
+        "--output",
+        default="llm_direct_rewrite_canary_summary_v0.json",
+    )
+    llm_canary_summary_parser.add_argument("--execute", action="store_true", default=False)
+    llm_canary_summary_parser.set_defaults(func=cmd_baseline_smoke_llm_canary_summary)
 
     sqlglot_transpile_summary_parser = subparsers.add_parser("baseline-smoke-sqlglot-transpile-summary")
     sqlglot_transpile_summary_parser.add_argument(
