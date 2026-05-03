@@ -35,6 +35,25 @@ SQLGLOT_PG_CANARY_DEFAULT_CASES = ["PERF_0006", "PERF_0008"]
 SQLGLOT_TRANSPILE_DEFAULT_CASES = ["PORT_0004", "PORT_0012", "PORT_0022"]
 SQLGLOT_TRANSPILE_PG_CANARY_DEFAULT_CASES = ["PORT_0004", "PORT_0022"]
 LLM_CALL_CANARY_DEFAULT_CASES = ["PERF_0006"]
+CALCITE_HEP_FIRST_SUBSET_CASES = [
+    "CONS_0007",
+    "CONS_0012",
+    "PERF_0006",
+    "PERF_0008",
+    "PERF_0033",
+    "PERF_0054",
+]
+CALCITE_HEP_PG_NATIVE_9_CASES = [
+    "PERF_0006",
+    "PERF_0008",
+    "PERF_0013",
+    "PERF_0017",
+    "PERF_0024",
+    "PERF_0033",
+    "PERF_0054",
+    "CONS_0007",
+    "CONS_0012",
+]
 HUMAN_POSITIVE_PG_DEFAULT_CASES = [
     "PERF_0006",
     "PERF_0008",
@@ -237,6 +256,11 @@ def manifest_source_dialect_hint(manifest_text: str) -> str:
     return match.group(1) if match else ""
 
 
+def manifest_source_family_hint(manifest_text: str) -> str:
+    match = re.search(r"(?m)^source_family:\s*([A-Za-z0-9_+-]+)\s*$", manifest_text)
+    return match.group(1) if match else ""
+
+
 def source_dialect_candidate_order(source_dialect_hint: str, requested: str) -> list[str]:
     default_order = ["mysql", "postgres", "spark"]
     if requested != "auto":
@@ -265,6 +289,91 @@ def baseline_inventory_token_cost_class(baseline_id: str) -> str:
             if row.get("baseline_id") == baseline_id:
                 return row.get("token_cost_class") or "unknown"
     return "unknown"
+
+
+def calcite_hep_candidate_case_ids(candidate_set: str) -> list[str]:
+    if candidate_set == "first-subset":
+        return list(CALCITE_HEP_FIRST_SUBSET_CASES)
+    if candidate_set == "pg-native-9":
+        return list(CALCITE_HEP_PG_NATIVE_9_CASES)
+    raise ValueError(f"unsupported Calcite HEP candidate set: {candidate_set}")
+
+
+def calcite_hep_static_risk_signals(sql_text: str) -> dict[str, bool]:
+    upper = sql_text.upper()
+    compact = sql_text
+    return {
+        "has_comments": "--" in compact or "/*" in compact,
+        "has_date_literal": bool(re.search(r"\bDATE\s*'", upper)),
+        "has_interval_literal": bool(re.search(r"\bINTERVAL\s*'", upper)),
+        "has_limit": bool(re.search(r"\bLIMIT\b", upper)),
+        "has_offset": bool(re.search(r"\bOFFSET\b", upper)),
+        "has_exists": bool(re.search(r"\bEXISTS\b", upper)),
+        "has_nested_select": len(re.findall(r"\bSELECT\b", upper)) > 1,
+        "has_correlated_subquery_risk": bool(re.search(r"\bEXISTS\b|\bIN\s*\(\s*SELECT\b", upper)),
+        "has_quoted_identifiers": '"' in compact,
+        "has_postgres_cast_syntax": "::" in compact,
+        "has_tpc_ds_style_tables": bool(re.search(r"\b(STORE_SALES|DATE_DIM|ITEM|CUSTOMER_DEMOGRAPHICS|WEB_SALES)\b", upper)),
+        "has_tpc_h_style_tables": bool(re.search(r"\b(LINEITEM|ORDERS|CUSTOMER|PARTSUPP|SUPPLIER|NATION|REGION|PART)\b", upper)),
+    }
+
+
+def calcite_hep_readiness_assessment(case_id: str, pool: str, signals: dict[str, bool]) -> tuple[str, str, str, str]:
+    if case_id in {"CONS_0007", "CONS_0012", "PERF_0006", "PERF_0008", "PERF_0033", "PERF_0054"}:
+        if pool == "consistency":
+            return (
+                "low",
+                "high",
+                "first_subset_candidate",
+                "Calcite-derived or compact SQL shape aligned with the first no-execution subset.",
+            )
+        return (
+            "low",
+            "medium",
+            "first_subset_candidate",
+            "Straightforward aggregate/join/order shape fits the best-first subset from the readiness audit.",
+        )
+    if case_id in {"PERF_0013", "PERF_0017"}:
+        return (
+            "medium",
+            "medium",
+            "maybe_later",
+            "Interval literal normalization increases likely parser/dialect handling risk for an early Calcite subset.",
+        )
+    if case_id == "PERF_0024":
+        return (
+            "medium",
+            "high",
+            "maybe_later",
+            "Nested correlated subqueries make it rewrite-interesting but riskier for a first scaffold subset.",
+        )
+    if pool == "portability":
+        return (
+            "high",
+            "low",
+            "exclude_from_first_calcite_scaffold",
+            "PORT cases are not a good first denominator for Calcite HEP readiness because source-dialect handling is already the main risk.",
+        )
+    if signals["has_interval_literal"] or signals["has_postgres_cast_syntax"]:
+        return (
+            "medium",
+            "medium",
+            "maybe_later",
+            "Static syntax signals suggest dialect-sensitive handling beyond the first bounded subset.",
+        )
+    if pool == "consistency":
+        return (
+            "medium",
+            "high",
+            "maybe_later",
+            "Consistency cases are likely useful for Calcite, but this case is outside the best-first audited subset.",
+        )
+    return (
+        "unknown",
+        "unknown",
+        "exclude_from_first_calcite_scaffold",
+        "No audited first-subset recommendation is available for this case.",
+    )
 
 
 def build_llm_prompt_package(case_spec: dict[str, Any], target_dialect: str, model_label: str) -> dict[str, Any]:
@@ -4410,6 +4519,186 @@ def cmd_baseline_smoke_llm_rollup(args: argparse.Namespace) -> int:
             "case_artifact_write": "disabled",
         },
         "claim_boundary": "execution_layer_rollup_only_not_correctness_or_speedup_scoring",
+    }
+    write_baseline_smoke_report(output_name, payload)
+    return print_and_exit(payload, 0 if payload["ok"] else 1)
+
+
+def cmd_baseline_smoke_calcite_readiness(args: argparse.Namespace) -> int:
+    output_name = normalize_baseline_smoke_output_name(args.output)
+    config_path = resolve_repo_path(args.config)
+    config = load_json(config_path)
+
+    if args.execute:
+        payload = {
+            "command": "baseline-smoke-calcite-readiness",
+            "cwd": str(ROOT),
+            "ok": False,
+            "ran_at_utc": utc_now(),
+            "baseline_id": "CALCITE_HEP_RULES",
+            "output_path": "reports/baseline_smoke/calcite_hep_parse_readiness_execute_refused_v0.json",
+            "claim_boundary": "calcite_parse_readiness_only_not_actual_parse_or_rewrite",
+            "message": "This scaffold does not execute Calcite. It only emits a static readiness report.",
+            "issues": [
+                {
+                    "type": "execution_not_supported",
+                    "message": "baseline-smoke-calcite-readiness is read-only and never executes Calcite",
+                }
+            ],
+            "guardrails": {
+                "calcite_execution": "disabled",
+                "java_build": "disabled",
+                "database_execution": "disabled",
+                "mysql_execution": "disabled",
+                "spark_execution": "disabled",
+                "sqlglot_generation": "disabled",
+                "llm_execution": "disabled",
+                "case_artifact_write": "disabled",
+            },
+        }
+        write_baseline_smoke_report("calcite_hep_parse_readiness_execute_refused_v0.json", payload)
+        return print_and_exit(payload, 1)
+
+    case_index = {case["case_id"]: case for case in config.get("cases", [])}
+    selected_case_ids = args.case_id or calcite_hep_candidate_case_ids(args.candidate_set)
+    records: list[dict[str, Any]] = []
+    issues: list[dict[str, Any]] = []
+
+    for case_id in selected_case_ids:
+        case_spec = case_index.get(case_id)
+        if case_spec is None:
+            records.append(
+                {
+                    "baseline_id": "CALCITE_HEP_RULES",
+                    "case_id": case_id,
+                    "pool": "",
+                    "source_sql_path": "",
+                    "source_sql_exists": False,
+                    "manifest_path": "",
+                    "manifest_exists": False,
+                    "source_family": "",
+                    "calcite_adapter_available": False,
+                    "calcite_build_path_available": False,
+                    "calcite_dependency_available": False,
+                    "calcite_parse_attempted": False,
+                    "calcite_rewrite_attempted": False,
+                    "parse_status": "not_attempted_adapter_missing",
+                    "rewrite_status": "not_attempted_adapter_missing",
+                    "static_risk_signals": {},
+                    "likely_calcite_parse_risk": "unknown",
+                    "likely_hep_rewrite_usefulness": "unknown",
+                    "recommended_status": "exclude_from_first_calcite_scaffold",
+                    "reason": "Case is not present in the baseline smoke config.",
+                    "artifact_claim_boundary": "calcite_readiness_only_no_parse_no_execution",
+                    "notes": ["selection refused: case is outside the current smoke config"],
+                }
+            )
+            issues.append({"type": "case_not_in_smoke_config", "case_id": case_id})
+            continue
+
+        pool = case_spec["pool"]
+        case_root = pool_case_root(pool) / case_id
+        source_sql_path = case_root / "source.sql"
+        manifest_path = case_root / "manifest.yaml"
+        source_sql_exists = source_sql_path.is_file()
+        manifest_exists = manifest_path.is_file()
+        manifest_text = manifest_path.read_text(encoding="utf-8") if manifest_exists else ""
+        source_sql_text = source_sql_path.read_text(encoding="utf-8") if source_sql_exists else ""
+        source_family = manifest_source_family_hint(manifest_text) or case_spec.get("source_family", "")
+        signals = calcite_hep_static_risk_signals(source_sql_text) if source_sql_exists else {}
+        risk, usefulness, recommended_status, reason = calcite_hep_readiness_assessment(case_id, pool, signals)
+
+        notes = []
+        if source_family:
+            notes.append(f"source_family={source_family}")
+        if signals.get("has_interval_literal"):
+            notes.append("interval literal detected")
+        if signals.get("has_nested_select"):
+            notes.append("nested SELECT detected")
+        if signals.get("has_offset"):
+            notes.append("OFFSET detected")
+        if pool == "portability":
+            notes.append("PORT pool is outside the preferred first Calcite subset")
+
+        if not source_sql_exists:
+            issues.append({"type": "missing_source_sql", "case_id": case_id, "path": relative_to_root(source_sql_path)})
+        if not manifest_exists:
+            issues.append({"type": "missing_manifest", "case_id": case_id, "path": relative_to_root(manifest_path)})
+
+        records.append(
+            {
+                "baseline_id": "CALCITE_HEP_RULES",
+                "case_id": case_id,
+                "pool": pool,
+                "source_sql_path": relative_to_root(source_sql_path),
+                "source_sql_exists": source_sql_exists,
+                "manifest_path": relative_to_root(manifest_path),
+                "manifest_exists": manifest_exists,
+                "source_family": source_family,
+                "calcite_adapter_available": False,
+                "calcite_build_path_available": False,
+                "calcite_dependency_available": False,
+                "calcite_parse_attempted": False,
+                "calcite_rewrite_attempted": False,
+                "parse_status": "not_attempted_adapter_missing",
+                "rewrite_status": "not_attempted_adapter_missing",
+                "static_risk_signals": signals,
+                "likely_calcite_parse_risk": risk,
+                "likely_hep_rewrite_usefulness": usefulness,
+                "recommended_status": recommended_status,
+                "reason": reason,
+                "artifact_claim_boundary": "calcite_readiness_only_no_parse_no_execution",
+                "notes": notes,
+            }
+        )
+
+    payload = {
+        "command": "baseline-smoke-calcite-readiness",
+        "ok": (
+            all(record["source_sql_exists"] and record["manifest_exists"] for record in records)
+            and all(record["calcite_parse_attempted"] is False for record in records)
+            and all(record["calcite_rewrite_attempted"] is False for record in records)
+            and all(record["parse_status"] == "not_attempted_adapter_missing" for record in records)
+            and all(record["artifact_claim_boundary"] == "calcite_readiness_only_no_parse_no_execution" for record in records)
+        ),
+        "ran_at_utc": utc_now(),
+        "baseline_id": "CALCITE_HEP_RULES",
+        "config_path": relative_to_root(config_path),
+        "candidate_set": args.candidate_set if not args.case_id else "case_id_override",
+        "case_count": len(records),
+        "calcite_adapter_available": False,
+        "calcite_build_path_available": False,
+        "calcite_dependency_available": False,
+        "parse_attempted_count": 0,
+        "rewrite_attempted_count": 0,
+        "first_subset_candidate_count": sum(1 for record in records if record["recommended_status"] == "first_subset_candidate"),
+        "maybe_later_count": sum(1 for record in records if record["recommended_status"] == "maybe_later"),
+        "exclude_from_first_calcite_scaffold_count": sum(
+            1 for record in records if record["recommended_status"] == "exclude_from_first_calcite_scaffold"
+        ),
+        "counts_by_likely_calcite_parse_risk": count_plain_values(
+            [str(record.get("likely_calcite_parse_risk") or "unknown") for record in records]
+        ),
+        "counts_by_likely_hep_rewrite_usefulness": count_plain_values(
+            [str(record.get("likely_hep_rewrite_usefulness") or "unknown") for record in records]
+        ),
+        "counts_by_recommended_status": count_plain_values(
+            [str(record.get("recommended_status") or "unknown") for record in records]
+        ),
+        "records": records,
+        "issues": issues,
+        "output_path": f"reports/baseline_smoke/{output_name}",
+        "guardrails": {
+            "calcite_execution": "disabled",
+            "java_build": "disabled",
+            "database_execution": "disabled",
+            "mysql_execution": "disabled",
+            "spark_execution": "disabled",
+            "sqlglot_generation": "disabled",
+            "llm_execution": "disabled",
+            "case_artifact_write": "disabled",
+        },
+        "claim_boundary": "calcite_parse_readiness_only_not_actual_parse_or_rewrite",
     }
     write_baseline_smoke_report(output_name, payload)
     return print_and_exit(payload, 0 if payload["ok"] else 1)
@@ -9455,6 +9744,24 @@ def build_parser() -> argparse.ArgumentParser:
     )
     llm_rollup_parser.add_argument("--execute", action="store_true", default=False)
     llm_rollup_parser.set_defaults(func=cmd_baseline_smoke_llm_rollup)
+
+    calcite_readiness_parser = subparsers.add_parser("baseline-smoke-calcite-readiness")
+    calcite_readiness_parser.add_argument(
+        "--config",
+        default="docs/_scratch/baseline_smoke_common_core_v0.json",
+    )
+    calcite_readiness_parser.add_argument("--case-id", action="append", default=[])
+    calcite_readiness_parser.add_argument(
+        "--candidate-set",
+        choices=["first-subset", "pg-native-9"],
+        default="first-subset",
+    )
+    calcite_readiness_parser.add_argument(
+        "--output",
+        default="calcite_hep_parse_readiness_v0.json",
+    )
+    calcite_readiness_parser.add_argument("--execute", action="store_true", default=False)
+    calcite_readiness_parser.set_defaults(func=cmd_baseline_smoke_calcite_readiness)
 
     sqlglot_transpile_summary_parser = subparsers.add_parser("baseline-smoke-sqlglot-transpile-summary")
     sqlglot_transpile_summary_parser.add_argument(
