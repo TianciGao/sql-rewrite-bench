@@ -13319,6 +13319,343 @@ def cmd_formal_common_core_method_plan_collection_preflight(args: argparse.Names
     return print_and_exit(payload, 0 if payload["ok"] else 1)
 
 
+def cmd_formal_common_core_method_result_checker_preflight(args: argparse.Namespace) -> int:
+    output_name = normalize_formal_common_core_output_name(args.output)
+    if args.execute:
+        payload = {
+            "command": "formal-common-core-method-result-checker-preflight",
+            "ok": False,
+            "ran_at_utc": utc_now(),
+            "output_path": "reports/formal_common_core/method_result_checker_preflight_execute_refused_v0.json",
+            "claim_boundary": "method_result_checker_preflight_only_not_consistency_scoring",
+            "message": "This command is read-existing-reports-only and does not support --execute.",
+            "issues": [
+                {
+                    "type": "invalid_execute_flag",
+                    "message": "formal-common-core-method-result-checker-preflight does not support --execute",
+                }
+            ],
+            "guardrails": {
+                "database_execution": "disabled",
+                "sql_execution": "disabled",
+                "checker_execution": "disabled",
+                "model_api_call": "disabled",
+                "sqlglot_generation": "disabled",
+                "plan_collection": "disabled",
+                "speedup_scoring": "disabled",
+                "case_artifact_write": "disabled",
+                "registry_writeback": "disabled",
+            },
+        }
+        write_formal_common_core_report("method_result_checker_preflight_execute_refused_v0.json", payload)
+        return print_and_exit(payload, 1)
+
+    issues: list[dict[str, Any]] = []
+    case_ids = formal_common_core_case_ids()
+    denominator_case_count = len(case_ids)
+
+    native_execution_path = FORMAL_COMMON_CORE_REPORT_DIR / "native_identity_execution_v0.json"
+    sqlglot_execution_path = FORMAL_COMMON_CORE_REPORT_DIR / "sqlglot_opt_same_dialect_execution_v0.json"
+    llm_execution_path = FORMAL_COMMON_CORE_REPORT_DIR / "llm_direct_rewrite_execution_v0.json"
+    sqlglot_scoring_path = FORMAL_COMMON_CORE_REPORT_DIR / "sqlglot_opt_same_dialect_scoring_v0.json"
+    llm_scoring_path = FORMAL_COMMON_CORE_REPORT_DIR / "llm_direct_rewrite_scoring_v0.json"
+    method_consistency_path = FORMAL_COMMON_CORE_REPORT_DIR / "method_consistency_scoring_v0.json"
+    control_scoring_path = FORMAL_COMMON_CORE_REPORT_DIR / "control_scoring_v0.json"
+
+    native_execution_report = load_json_if_present(native_execution_path)
+    sqlglot_execution_report = load_json_if_present(sqlglot_execution_path)
+    llm_execution_report = load_json_if_present(llm_execution_path)
+    sqlglot_scoring_report = load_json_if_present(sqlglot_scoring_path)
+    llm_scoring_report = load_json_if_present(llm_scoring_path)
+    method_consistency_report = load_json_if_present(method_consistency_path)
+    control_scoring_report = load_json_if_present(control_scoring_path)
+
+    for issue_type, path, report in [
+        ("missing_native_execution_report", native_execution_path, native_execution_report),
+        ("missing_sqlglot_execution_report", sqlglot_execution_path, sqlglot_execution_report),
+        ("missing_llm_execution_report", llm_execution_path, llm_execution_report),
+        ("missing_sqlglot_scoring_report", sqlglot_scoring_path, sqlglot_scoring_report),
+        ("missing_llm_scoring_report", llm_scoring_path, llm_scoring_report),
+        ("missing_method_consistency_report", method_consistency_path, method_consistency_report),
+        ("missing_control_scoring_report", control_scoring_path, control_scoring_report),
+    ]:
+        if report is None:
+            issues.append({"type": issue_type, "path": relative_to_root(path)})
+
+    native_record_map = {
+        str(record.get("case_id", "")).strip(): record
+        for record in (native_execution_report or {}).get("records", [])
+        if record.get("case_id")
+    }
+    sqlglot_record_map = {
+        str(record.get("case_id", "")).strip(): record
+        for record in (sqlglot_execution_report or {}).get("records", [])
+        if record.get("case_id")
+    }
+    llm_record_map = {
+        str(record.get("case_id", "")).strip(): record
+        for record in (llm_execution_report or {}).get("records", [])
+        if record.get("case_id")
+    }
+
+    result_materialization_root = FORMAL_COMMON_CORE_REPORT_DIR / "result_materialization"
+    method_result_checks_root = FORMAL_COMMON_CORE_REPORT_DIR / "method_result_checks"
+
+    def resolve_llm_candidate_sql_source(method_record: dict[str, Any] | None, case_id: str) -> tuple[bool, str]:
+        method_record = method_record or {}
+        extracted_sql_text = str(method_record.get("extracted_sql_text") or "").strip()
+        if extracted_sql_text:
+            return True, "formal_execution.extracted_sql_text"
+
+        raw_output_text = str(method_record.get("raw_output_text") or "").strip()
+        if raw_output_text:
+            return True, "formal_execution.raw_output_text"
+
+        call_report_path = BASELINE_SMOKE_REPORT_DIR / f"llm_direct_rewrite_call_{case_id.lower()}_v0.json"
+        call_report = load_json_if_present(call_report_path)
+        call_record = ((call_report or {}).get("records") or [{}])[0]
+
+        baseline_extracted_sql_text = str(call_record.get("extracted_sql_text") or "").strip()
+        if baseline_extracted_sql_text:
+            return True, "baseline_call.extracted_sql_text"
+
+        baseline_raw_output_text = str(call_record.get("raw_output_text") or "").strip()
+        if baseline_raw_output_text:
+            return True, "baseline_call.raw_output_text"
+
+        return False, "not_available"
+
+    def build_route_records(baseline_id: str, route: str) -> tuple[dict[str, Any], list[dict[str, Any]]]:
+        if baseline_id == "SQLGLOT_OPT_SAME_DIALECT":
+            method_record_map = sqlglot_record_map
+            method_exec_field = "execution_status"
+            method_row_field = "row_count"
+            method_sql_path_kind = "sqlglot_opt_same_dialect"
+        else:
+            method_record_map = llm_record_map
+            method_exec_field = "pg_execution_status"
+            method_row_field = "pg_row_count"
+            method_sql_path_kind = "llm_direct_rewrite"
+
+        route_records: list[dict[str, Any]] = []
+        candidate_sql_available_count = 0
+        existing_method_checker_count = 0
+        ready_existing_checker_count = 0
+        ready_for_future_materialization_count = 0
+        blocked_missing_candidate_sql_count = 0
+        blocked_missing_checker_config_count = 0
+
+        for case_id in case_ids:
+            inferred = case_root_for_case_id(case_id)
+            pool = inferred[0] if inferred else "unknown"
+            case_root = inferred[1] if inferred else None
+            source_sql_path = case_root / "source.sql" if case_root else Path("")
+            source_sql_exists = source_sql_path.is_file() if case_root else False
+
+            native_record = native_record_map.get(case_id)
+            method_record = method_record_map.get(case_id)
+            native_execution_success = str((native_record or {}).get("execution_status", "")) == "success"
+            method_execution_success = str((method_record or {}).get(method_exec_field, "")) == "success"
+            native_row_count = (native_record or {}).get("row_count")
+            method_row_count = (method_record or {}).get(method_row_field)
+            row_count_matches_native = (
+                bool(native_row_count == method_row_count)
+                if native_row_count is not None and method_row_count is not None
+                else "unknown"
+            )
+
+            if baseline_id == "SQLGLOT_OPT_SAME_DIALECT":
+                generated_sql_text = str((method_record or {}).get("generated_sql_text") or "").strip()
+                method_candidate_sql_available = bool(generated_sql_text)
+                method_candidate_sql_source_field = (
+                    "formal_execution.generated_sql_text" if method_candidate_sql_available else "not_available"
+                )
+            else:
+                method_candidate_sql_available, method_candidate_sql_source_field = resolve_llm_candidate_sql_source(
+                    method_record, case_id
+                )
+            if method_candidate_sql_available:
+                candidate_sql_available_count += 1
+
+            checker_config_path = case_root / "validation" / "checker.yaml" if case_root else Path("")
+            case_checker_config_exists = checker_config_path.is_file() if case_root else False
+            if not case_checker_config_exists:
+                blocked_missing_checker_config_count += 1
+
+            existing_case_result_check_paths = []
+            if case_root:
+                for path in [
+                    case_root / "runs" / "pg" / "result_check.json",
+                    case_root / "runs" / "result_check.json",
+                ]:
+                    if path.is_file():
+                        existing_case_result_check_paths.append(relative_to_root(path))
+
+            source_result_materialization_path = case_root / "runs" / "pg" / "source.tsv" if case_root else Path("")
+            source_result_materialization_exists = source_result_materialization_path.is_file() if case_root else False
+
+            method_result_materialization_path = result_materialization_root / method_sql_path_kind / f"{case_id.lower()}.tsv"
+            method_result_materialization_exists = method_result_materialization_path.is_file()
+
+            existing_method_result_check_artifact_path = method_result_checks_root / method_sql_path_kind / f"{case_id.lower()}.json"
+            existing_method_result_check_artifact_exists = existing_method_result_check_artifact_path.is_file()
+            if existing_method_result_check_artifact_exists:
+                existing_method_checker_count += 1
+
+            future_report_local_source_result_path = result_materialization_root / "source" / f"{case_id.lower()}.tsv"
+            future_report_local_method_result_path = result_materialization_root / method_sql_path_kind / f"{case_id.lower()}.tsv"
+            future_report_local_checker_output_path = method_result_checks_root / method_sql_path_kind / f"{case_id.lower()}.json"
+
+            blockers: list[str] = []
+            warnings: list[str] = []
+
+            if existing_case_result_check_paths:
+                warnings.append("existing_case_result_checks_are_source_or_witness_artifacts_not_method_specific")
+            if row_count_matches_native is True:
+                warnings.append("row_count_match_is_not_semantic_equivalence")
+
+            if existing_method_result_check_artifact_exists:
+                checker_preflight_status = "ready_existing_method_checker_artifact"
+                ready_existing_checker_count += 1
+            elif not method_candidate_sql_available:
+                checker_preflight_status = "blocked_missing_candidate_sql"
+                blocked_missing_candidate_sql_count += 1
+                blockers.append("missing_method_candidate_sql")
+            elif not native_execution_success:
+                checker_preflight_status = "blocked_missing_native_execution"
+                blockers.append("missing_native_execution_success")
+            elif not method_execution_success:
+                checker_preflight_status = "blocked_missing_method_execution"
+                blockers.append("missing_method_execution_success")
+            elif not case_checker_config_exists:
+                checker_preflight_status = "blocked_missing_checker_config"
+                blockers.append("missing_case_checker_config")
+            elif not future_report_local_source_result_path.parent:
+                checker_preflight_status = "blocked_missing_source_result_materialization_policy"
+                blockers.append("missing_source_result_materialization_policy")
+            else:
+                checker_preflight_status = "ready_for_future_report_local_result_materialization"
+                ready_for_future_materialization_count += 1
+                blockers.append("future_report_local_result_materialization_and_checker_output_not_yet_built")
+
+            route_records.append(
+                {
+                    "case_id": case_id,
+                    "pool": pool,
+                    "baseline_id": baseline_id,
+                    "route": route,
+                    "source_sql_path": relative_to_root(source_sql_path) if str(source_sql_path) else "",
+                    "source_sql_exists": source_sql_exists,
+                    "method_candidate_sql_available": method_candidate_sql_available,
+                    "method_candidate_sql_source_field": method_candidate_sql_source_field,
+                    "native_execution_success": native_execution_success,
+                    "method_execution_success": method_execution_success,
+                    "native_row_count": native_row_count,
+                    "method_row_count": method_row_count,
+                    "row_count_matches_native": row_count_matches_native,
+                    "case_checker_config_exists": case_checker_config_exists,
+                    "case_checker_config_path": relative_to_root(checker_config_path) if str(checker_config_path) else "",
+                    "existing_case_result_check_artifacts": existing_case_result_check_paths,
+                    "existing_case_result_check_artifact_count": len(existing_case_result_check_paths),
+                    "source_result_materialization_exists": source_result_materialization_exists,
+                    "source_result_materialization_path": (
+                        relative_to_root(source_result_materialization_path) if source_result_materialization_exists else ""
+                    ),
+                    "method_result_materialization_exists": method_result_materialization_exists,
+                    "method_result_materialization_path": (
+                        relative_to_root(method_result_materialization_path) if method_result_materialization_exists else ""
+                    ),
+                    "existing_method_result_check_artifact_exists": existing_method_result_check_artifact_exists,
+                    "existing_method_result_check_artifact_path": (
+                        relative_to_root(existing_method_result_check_artifact_path)
+                        if existing_method_result_check_artifact_exists
+                        else ""
+                    ),
+                    "future_report_local_source_result_path": relative_to_root(future_report_local_source_result_path),
+                    "future_report_local_method_result_path": relative_to_root(future_report_local_method_result_path),
+                    "future_report_local_checker_output_path": relative_to_root(future_report_local_checker_output_path),
+                    "checker_preflight_status": checker_preflight_status,
+                    "blockers": blockers,
+                    "warnings": warnings,
+                    "artifact_claim_boundary": "method_result_checker_preflight_only_no_sql_no_checker_execution",
+                }
+            )
+
+        route_summary = {
+            "baseline_id": baseline_id,
+            "route": route,
+            "candidate_sql_available_count": candidate_sql_available_count,
+            "existing_method_checker_count": existing_method_checker_count,
+            "ready_existing_checker_count": ready_existing_checker_count,
+            "ready_for_future_materialization_count": ready_for_future_materialization_count,
+            "blocked_missing_candidate_sql_count": blocked_missing_candidate_sql_count,
+            "blocked_missing_checker_config_count": blocked_missing_checker_config_count,
+        }
+        return route_summary, route_records
+
+    sqlglot_summary, sqlglot_records = build_route_records("SQLGLOT_OPT_SAME_DIALECT", "sqlglot_opt_same_dialect")
+    llm_summary, llm_records = build_route_records("LLM_DIRECT_REWRITE_STRONG", "llm_direct_rewrite")
+
+    source_result_materialization_policy_ready = True
+    method_result_checker_preflight_ready = (
+        sqlglot_summary["ready_existing_checker_count"] + sqlglot_summary["ready_for_future_materialization_count"] > 0
+        and llm_summary["ready_existing_checker_count"] + llm_summary["ready_for_future_materialization_count"] > 0
+    )
+
+    payload = {
+        "command": "formal-common-core-method-result-checker-preflight",
+        "ok": (
+            native_execution_report is not None
+            and sqlglot_execution_report is not None
+            and llm_execution_report is not None
+            and sqlglot_scoring_report is not None
+            and llm_scoring_report is not None
+            and method_consistency_report is not None
+            and control_scoring_report is not None
+        ),
+        "ran_at_utc": utc_now(),
+        "output_path": f"reports/formal_common_core/{output_name}",
+        "denominator_case_count": denominator_case_count,
+        "routes_inspected": ["SQLGLOT_OPT_SAME_DIALECT", "LLM_DIRECT_REWRITE_STRONG"],
+        "sqlglot_candidate_sql_available_count": sqlglot_summary["candidate_sql_available_count"],
+        "llm_candidate_sql_available_count": llm_summary["candidate_sql_available_count"],
+        "sqlglot_existing_method_checker_count": sqlglot_summary["existing_method_checker_count"],
+        "llm_existing_method_checker_count": llm_summary["existing_method_checker_count"],
+        "sqlglot_ready_existing_checker_count": sqlglot_summary["ready_existing_checker_count"],
+        "llm_ready_existing_checker_count": llm_summary["ready_existing_checker_count"],
+        "sqlglot_ready_for_future_materialization_count": sqlglot_summary["ready_for_future_materialization_count"],
+        "llm_ready_for_future_materialization_count": llm_summary["ready_for_future_materialization_count"],
+        "blocked_missing_candidate_sql_count": (
+            sqlglot_summary["blocked_missing_candidate_sql_count"] + llm_summary["blocked_missing_candidate_sql_count"]
+        ),
+        "blocked_missing_checker_config_count": (
+            sqlglot_summary["blocked_missing_checker_config_count"] + llm_summary["blocked_missing_checker_config_count"]
+        ),
+        "source_result_materialization_policy_ready": source_result_materialization_policy_ready,
+        "method_result_checker_preflight_ready": method_result_checker_preflight_ready,
+        "formal_method_consistency_currently_computable": (
+            sqlglot_summary["ready_existing_checker_count"] == denominator_case_count
+            and llm_summary["ready_existing_checker_count"] == denominator_case_count
+        ),
+        "records": sqlglot_records + llm_records,
+        "issues": issues,
+        "guardrails": {
+            "database_execution": "disabled",
+            "sql_execution": "disabled",
+            "checker_execution": "disabled",
+            "model_api_call": "disabled",
+            "sqlglot_generation": "disabled",
+            "plan_collection": "disabled",
+            "speedup_scoring": "disabled",
+            "case_artifact_write": "disabled",
+            "registry_writeback": "disabled",
+        },
+        "claim_boundary": "method_result_checker_preflight_only_not_consistency_scoring",
+    }
+    write_formal_common_core_report(output_name, payload)
+    return print_and_exit(payload, 0 if payload["ok"] else 1)
+
+
 def cmd_formal_common_core_method_plan_collection(args: argparse.Namespace) -> int:
     output_name = normalize_formal_common_core_output_name(args.output)
     selected_route = str(args.route or "").strip().upper()
@@ -20507,6 +20844,14 @@ def build_parser() -> argparse.ArgumentParser:
     )
     formal_common_core_exploratory_method_speedup_appendix_parser.add_argument("--execute", action="store_true", default=False)
     formal_common_core_exploratory_method_speedup_appendix_parser.set_defaults(func=cmd_formal_common_core_exploratory_method_speedup_appendix)
+
+    formal_common_core_method_result_checker_preflight_parser = subparsers.add_parser("formal-common-core-method-result-checker-preflight")
+    formal_common_core_method_result_checker_preflight_parser.add_argument(
+        "--output",
+        default="method_result_checker_preflight_v0.json",
+    )
+    formal_common_core_method_result_checker_preflight_parser.add_argument("--execute", action="store_true", default=False)
+    formal_common_core_method_result_checker_preflight_parser.set_defaults(func=cmd_formal_common_core_method_result_checker_preflight)
 
     formal_common_core_method_plan_collection_preflight_parser = subparsers.add_parser("formal-common-core-method-plan-collection-preflight")
     formal_common_core_method_plan_collection_preflight_parser.add_argument(
