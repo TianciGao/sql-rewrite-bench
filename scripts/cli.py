@@ -11160,6 +11160,44 @@ def inspect_port_reference_sql_issue(case_id: str) -> dict[str, Any]:
     }
 
 
+def normalize_port_0012_reference_sql_for_postgres(sql_text: str) -> tuple[str, dict[str, Any]]:
+    normalized = sql_text.strip()
+    transformations: list[str] = []
+    issues: list[str] = []
+
+    double_pattern = re.compile(r"\bAS\s+DOUBLE\b(?!\s+PRECISION\b)", re.IGNORECASE)
+    if double_pattern.search(normalized):
+        normalized = double_pattern.sub("AS DOUBLE PRECISION", normalized)
+        transformations.append("CAST(... AS DOUBLE) -> CAST(... AS DOUBLE PRECISION)")
+
+    year_pattern = re.compile(r"\bYEAR\s*\(\s*(.*?)\s*\)", re.IGNORECASE)
+
+    def replace_year(match: re.Match[str]) -> str:
+        inner = match.group(1).strip()
+        return f"EXTRACT(YEAR FROM {inner})"
+
+    if year_pattern.search(normalized):
+        normalized = year_pattern.sub(replace_year, normalized)
+        transformations.append("YEAR(x) -> EXTRACT(YEAR FROM x)")
+
+    if re.search(r"\bAS\s+DOUBLE\b(?!\s+PRECISION\b)", normalized, re.IGNORECASE):
+        issues.append("unresolved_as_double_cast")
+    if re.search(r"\bYEAR\s*\(", normalized, re.IGNORECASE):
+        issues.append("unresolved_year_function")
+
+    status = "normalized"
+    if issues:
+        status = "ambiguous"
+    elif not transformations:
+        status = "no_change_needed"
+
+    return normalized, {
+        "reference_normalization_status": status,
+        "transformations": transformations,
+        "issues": issues,
+    }
+
+
 def cmd_formal_port_pg_translation_consistency_preflight(args: argparse.Namespace) -> int:
     output_name = normalize_formal_port_output_name(args.output)
     if args.execute:
@@ -11728,6 +11766,201 @@ def cmd_formal_port_pg_consistency_diagnostic(args: argparse.Namespace) -> int:
             "registry_writeback": "disabled",
         },
         "claim_boundary": "diagnostic_only_not_translation_correctness",
+    }
+    write_formal_port_report(output_name, payload)
+    return print_and_exit(payload, 0 if payload["ok"] else 1)
+
+
+def cmd_formal_port_port0012_pg_reference_normalization_check(args: argparse.Namespace) -> int:
+    output_name = normalize_formal_port_output_name(args.output)
+    case_id = "PORT_0012"
+    route = "LLM_DIRECT_TRANSLATE"
+    validation_schema = validation_schema_hint(case_id)
+    reference_sql_path = PORT_CASE_ROOT / case_id / "rewrite_pos_01.sql"
+    normalized_reference_sql_path = FORMAL_PORT_REPORT_DIR / "reference_sql_pg" / f"{case_id.lower()}.sql"
+    reference_tsv_path = FORMAL_PORT_REPORT_DIR / "result_materialization" / "reference_pg_normalized" / f"{case_id.lower()}.tsv"
+    llm_tsv_path = FORMAL_PORT_REPORT_DIR / "result_materialization" / "llm_direct_translate" / f"{case_id.lower()}.tsv"
+    checker_output_path = FORMAL_PORT_REPORT_DIR / "result_checks" / "llm_direct_translate" / f"{case_id.lower()}_pg_normalized_reference.json"
+
+    targeted_call_report = load_json_if_present(FORMAL_PORT_REPORT_DIR / "llm_translate_port_0012_targeted_call_v0.json") or {}
+    targeted_summary_report = load_json_if_present(FORMAL_PORT_REPORT_DIR / "llm_translate_port_0012_targeted_summary_v0.json") or {}
+    call_record = next(
+        (record for record in targeted_call_report.get("records", []) if str(record.get("case_id", "")).strip() == case_id),
+        {},
+    )
+    llm_sql = str(call_record.get("extracted_sql_text") or "").strip()
+    token_usage_total = call_record.get("token_usage_total", targeted_summary_report.get("token_usage_total"))
+    original_reference_sql = reference_sql_path.read_text(encoding="utf-8") if reference_sql_path.is_file() else ""
+    normalized_reference_sql, normalization_meta = normalize_port_0012_reference_sql_for_postgres(original_reference_sql)
+
+    dry_run_payload = {
+        "command": "formal-port-port0012-pg-reference-normalization-check",
+        "ok": (
+            reference_sql_path.is_file()
+            and bool(llm_sql)
+            and normalization_meta["reference_normalization_status"] in {"normalized", "no_change_needed"}
+        ),
+        "ran_at_utc": utc_now(),
+        "output_path": f"reports/formal_port/{output_name}",
+        "case_id": case_id,
+        "reference_normalization_status": normalization_meta["reference_normalization_status"],
+        "normalized_reference_sql_path": relative_to_root(normalized_reference_sql_path),
+        "reference_sql_exists": reference_sql_path.is_file(),
+        "llm_candidate_sql_available": bool(llm_sql),
+        "llm_candidate_sql_source": "reports/formal_port/llm_translate_port_0012_targeted_call_v0.json.records[0].extracted_sql_text" if llm_sql else "not_available",
+        "normalized_reference_execution_status": "not_requested",
+        "llm_candidate_execution_status": "not_requested",
+        "row_count_reference": None,
+        "row_count_llm": None,
+        "byte_equal": None,
+        "normalized_equal": None,
+        "checker_status": "planned" if reference_sql_path.is_file() and bool(llm_sql) else "blocked",
+        "token_usage_total": token_usage_total,
+        "issues": normalization_meta["issues"],
+        "guardrails": {
+            "database_execution": "enabled_only_with_execute",
+            "sql_execution": "enabled_only_with_execute",
+            "model_api_call": "disabled",
+            "sqlglot_generation": "disabled",
+            "checker_execution": "disabled",
+            "case_artifact_write": "disabled",
+            "registry_writeback": "disabled",
+        },
+        "claim_boundary": "port_0012_pg_normalized_reference_check_not_full_translation_correctness",
+    }
+
+    if not args.execute:
+        write_formal_port_report(output_name, dry_run_payload)
+        return print_and_exit(dry_run_payload, 0 if dry_run_payload["ok"] else 1)
+
+    issues: list[dict[str, Any]] = []
+    if not reference_sql_path.is_file():
+        issues.append({"type": "missing_reference_sql", "path": relative_to_root(reference_sql_path)})
+    if not llm_sql:
+        issues.append({"type": "missing_llm_candidate_sql", "path": "reports/formal_port/llm_translate_port_0012_targeted_call_v0.json"})
+    if normalization_meta["reference_normalization_status"] == "ambiguous":
+        issues.append({"type": "ambiguous_reference_normalization", "signals": normalization_meta["issues"]})
+
+    env_visibility = pg_env_visibility()
+    required_pg_env_visible = all(env_visibility[name] for name in ["PGHOST", "PGPORT", "PGDATABASE", "PGUSER"])
+    if not required_pg_env_visible:
+        issues.append({"type": "missing_pg_env", "message": "required env: PGHOST, PGPORT, PGDATABASE, PGUSER"})
+    try:
+        psycopg = importlib.import_module("psycopg")
+    except ModuleNotFoundError as exc:
+        psycopg = None
+        issues.append({"type": "psycopg_unavailable", "message": str(exc)})
+
+    row_count_reference = None
+    row_count_llm = None
+    byte_equal = None
+    normalized_equal = None
+    row_count_equal = None
+    checker_status = "reference_execution_failed"
+    normalized_reference_execution_status = "not_attempted"
+    llm_candidate_execution_status = "not_attempted"
+    search_path_after_set = ""
+    failure_category = "none"
+    error_message = ""
+
+    if not issues and psycopg is not None:
+        normalized_reference_sql_path.parent.mkdir(parents=True, exist_ok=True)
+        normalized_reference_sql_path.write_text(normalized_reference_sql + "\n", encoding="utf-8")
+        try:
+            with psycopg.connect(
+                host=os.environ["PGHOST"],
+                port=os.environ["PGPORT"],
+                dbname=os.environ["PGDATABASE"],
+                user=os.environ["PGUSER"],
+                password=os.environ.get("PGPASSWORD"),
+                options="-c statement_timeout=30000 -c default_transaction_read_only=on",
+            ) as conn:
+                with conn.cursor() as cur:
+                    cur.execute("SELECT to_regnamespace(%s)", (validation_schema,))
+                    schema_name = cur.fetchone()[0]
+                    if not schema_name:
+                        raise RuntimeError(f"validation schema not found: {validation_schema}")
+                    cur.execute(
+                        psycopg.sql.SQL("SET search_path TO {}, public").format(
+                            psycopg.sql.Identifier(validation_schema)
+                        )
+                    )
+                    cur.execute("SHOW search_path")
+                    search_path_row = cur.fetchone()
+                    search_path_after_set = str(search_path_row[0]) if search_path_row else ""
+                    try:
+                        row_count_reference, _ = materialize_query_to_tsv(cur, normalized_reference_sql, reference_tsv_path)
+                        normalized_reference_execution_status = "success"
+                    except Exception as exc:
+                        normalized_reference_execution_status = "failed"
+                        failure_category = type(exc).__name__
+                        error_message = str(exc)
+                    if normalized_reference_execution_status == "success":
+                        try:
+                            row_count_llm, _ = materialize_query_to_tsv(cur, llm_sql, llm_tsv_path)
+                            llm_candidate_execution_status = "success"
+                        except Exception as exc:
+                            llm_candidate_execution_status = "failed"
+                            failure_category = type(exc).__name__
+                            error_message = str(exc)
+        except Exception as exc:
+            normalized_reference_execution_status = "failed"
+            failure_category = type(exc).__name__
+            error_message = str(exc)
+
+        if normalized_reference_execution_status == "success" and llm_candidate_execution_status == "success":
+            row_count_equal = row_count_reference == row_count_llm
+            byte_equal = reference_tsv_path.read_bytes() == llm_tsv_path.read_bytes()
+            normalized_equal = normalize_tsv_lines(read_tsv_lines_if_present(reference_tsv_path) or []) == normalize_tsv_lines(read_tsv_lines_if_present(llm_tsv_path) or [])
+            checker_status = "consistent" if byte_equal else "inconsistent"
+        elif normalized_reference_execution_status != "success":
+            checker_status = "reference_execution_failed"
+        else:
+            checker_status = "candidate_execution_failed"
+
+    checker_payload = {
+        "case_id": case_id,
+        "route": route,
+        "normalized_reference_sql_path": relative_to_root(normalized_reference_sql_path),
+        "reference_result_path": relative_to_root(reference_tsv_path),
+        "candidate_result_path": relative_to_root(llm_tsv_path),
+        "reference_normalization_status": normalization_meta["reference_normalization_status"],
+        "normalization_transformations": normalization_meta["transformations"],
+        "validation_schema": validation_schema,
+        "search_path_after_set": search_path_after_set,
+        "row_count_reference": row_count_reference,
+        "row_count_llm": row_count_llm,
+        "row_count_equal": row_count_equal,
+        "byte_equal": byte_equal,
+        "normalized_equal": normalized_equal,
+        "checker_status": checker_status,
+        "normalized_reference_execution_status": normalized_reference_execution_status,
+        "llm_candidate_execution_status": llm_candidate_execution_status,
+        "failure_category": failure_category,
+        "error_message": error_message,
+        "token_usage_total": token_usage_total,
+        "claim_boundary": "port_0012_pg_normalized_reference_check_not_full_translation_correctness",
+    }
+    checker_output_path.parent.mkdir(parents=True, exist_ok=True)
+    checker_output_path.write_text(json.dumps(checker_payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+
+    payload = {
+        "command": "formal-port-port0012-pg-reference-normalization-check",
+        "ok": not issues and checker_status in {"consistent", "inconsistent"},
+        "ran_at_utc": utc_now(),
+        "output_path": f"reports/formal_port/{output_name}",
+        "case_id": case_id,
+        "reference_normalization_status": normalization_meta["reference_normalization_status"],
+        "normalized_reference_execution_status": normalized_reference_execution_status,
+        "llm_candidate_execution_status": llm_candidate_execution_status,
+        "row_count_reference": row_count_reference,
+        "row_count_llm": row_count_llm,
+        "byte_equal": byte_equal,
+        "normalized_equal": normalized_equal,
+        "checker_status": checker_status,
+        "token_usage_total": token_usage_total,
+        "issues": issues,
+        "claim_boundary": "port_0012_pg_normalized_reference_check_not_full_translation_correctness",
     }
     write_formal_port_report(output_name, payload)
     return print_and_exit(payload, 0 if payload["ok"] else 1)
@@ -24374,6 +24607,18 @@ def build_parser() -> argparse.ArgumentParser:
     )
     formal_port_pg_consistency_diagnostic_parser.add_argument("--execute", action="store_true", default=False)
     formal_port_pg_consistency_diagnostic_parser.set_defaults(func=cmd_formal_port_pg_consistency_diagnostic)
+
+    formal_port_port0012_pg_reference_normalization_check_parser = subparsers.add_parser(
+        "formal-port-port0012-pg-reference-normalization-check"
+    )
+    formal_port_port0012_pg_reference_normalization_check_parser.add_argument(
+        "--output",
+        default="port_0012_pg_reference_normalization_check_v0.json",
+    )
+    formal_port_port0012_pg_reference_normalization_check_parser.add_argument("--execute", action="store_true", default=False)
+    formal_port_port0012_pg_reference_normalization_check_parser.set_defaults(
+        func=cmd_formal_port_port0012_pg_reference_normalization_check
+    )
 
     formal_common_core_method_consistency_scoring_parser = subparsers.add_parser("formal-common-core-method-consistency-scoring")
     formal_common_core_method_consistency_scoring_parser.add_argument(

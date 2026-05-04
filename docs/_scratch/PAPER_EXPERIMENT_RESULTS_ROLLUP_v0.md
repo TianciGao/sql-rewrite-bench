@@ -140,6 +140,13 @@ LLM Translate:
   - inconsistent: `1`
   - execution failed: `1`
   - checked-record consistency rate: `0.5`
+- `PORT_0012` normalized-reference follow-up:
+  - report-local PostgreSQL reference variant executed successfully
+  - Direct LLM candidate executed successfully
+  - row count: `1 / 1`
+  - byte equal: `true`
+  - normalized equal: `true`
+  - checker status: `consistent`
 - `PORT_0012` remains holdout failure-analysis / stress case
 
 Interpretation:
@@ -152,6 +159,9 @@ Interpretation:
   - SQLGlot failed on PostgreSQL with `InvalidDatetimeFormat`
   - Direct LLM succeeded on PostgreSQL in both the targeted canary and the bounded PG route matrix
   - PG reference consistency still did not close because the current positive reference SQL failed on PostgreSQL during the LLM exact-TSV check
+- a bounded PostgreSQL-normalized-reference follow-up now shows:
+  - the earlier `PORT_0012` LLM exact-TSV failure was a reference-layer compatibility issue
+  - with a report-local PostgreSQL-normalized reference variant, the existing Direct LLM candidate matches exactly
 - exact-TSV reference checking also exposed value mismatches on executable cases:
   - SQLGlot mismatched reference output on both executable cases
   - Direct LLM matched exactly on `PORT_0004` but mismatched on `PORT_0022`
@@ -202,6 +212,7 @@ The following paper-facing tables can now be drafted from existing artifacts:
 - PORT current snapshot is not full portability closure
 - current PORT route-matrix evidence is PG-only, not translation correctness, and not a cross-engine matrix
 - current PORT translation-consistency evidence is PG-side reference consistency only and uses exact TSV matching
+- the `PORT_0012` follow-up uses a report-local PostgreSQL-normalized reference variant and does not modify the original case file
 
 ## Recommended Next Use
 

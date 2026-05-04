@@ -31,7 +31,9 @@ Reports and references used:
 - `reports/formal_port/port_pg_route_matrix_v0.json`
 - `reports/formal_port/port_pg_translation_consistency_preflight_v0.json`
 - `reports/formal_port/port_pg_translation_consistency_run_v0.json`
+- `reports/formal_port/port_0012_pg_reference_normalization_check_v0.json`
 - `docs/_scratch/FORMAL_PORT_PG_TRANSLATION_CONSISTENCY_SUMMARY_v0.md`
+- `docs/_scratch/PORT_0012_PG_REFERENCE_NORMALIZATION_CHECK_v0.md`
 - `docs/_scratch/PORT_0012_FAILURE_ANALYSIS_PACKET_v0.md`
 - `docs/_scratch/PORT_0012_LLM_TRANSLATE_TARGETED_CANARY_v0.md`
 - `docs/_scratch/PAPER_EXPERIMENT_DENOMINATOR_FREEZE_PLAN_v0.md`
@@ -112,6 +114,13 @@ Current LLM translate bounded snapshot:
   - inconsistent: `1`
   - execution failed: `1`
   - checked-record consistency rate: `0.5`
+- `PORT_0012` normalized-reference follow-up:
+  - report-local PostgreSQL reference variant executed successfully
+  - Direct LLM candidate executed successfully
+  - row count: `1 / 1`
+  - byte equal: `true`
+  - normalized equal: `true`
+  - checker status: `consistent`
 
 Interpretation:
 
@@ -121,6 +130,10 @@ Interpretation:
   - `PORT_0004` matched exactly
   - `PORT_0022` executed but mismatched the current PG reference output
   - `PORT_0012` did not close because the current PG reference SQL failed during the checker run
+- a bounded `PORT_0012` follow-up with a report-local PostgreSQL-normalized reference variant now succeeds:
+  - the normalized reference executed
+  - the existing Direct LLM candidate executed
+  - the resulting TSVs matched exactly
 - this is still route evidence only, not translation correctness or denominator expansion by itself
 
 ## 6. PORT_0012 Holdout / Failure-Analysis Status
@@ -158,6 +171,12 @@ Current `PORT_0012` status:
   - `checker_status=execution_failed`
   - failure category: `UndefinedObject`
   - blocker moved to the current PostgreSQL reference SQL layer, not the LLM route execution layer
+- PG normalized-reference follow-up:
+  - report-local PostgreSQL reference variant status: `success`
+  - Direct LLM candidate status: `success`
+  - `byte_equal=true`
+  - `normalized_equal=true`
+  - this resolves the PostgreSQL reference-layer blocker for the bounded report-local check only
 - clean subset inclusion:
   - false
 
@@ -178,6 +197,10 @@ Current RQ3-facing interpretation:
     - `PORT_0004` matched exactly
     - `PORT_0022` mismatched under exact TSV comparison
     - `PORT_0012` reference checking failed because the current positive reference SQL was not PostgreSQL-executable
+  - a narrower `PORT_0012` PostgreSQL-normalized-reference follow-up now shows:
+    - report-local normalized reference execution success
+    - Direct LLM candidate execution success
+    - exact TSV consistency success
   - `PORT_0012` therefore remains intentionally outside the clean denominator
 
 This means:
@@ -192,6 +215,7 @@ This means:
 
 - not translation correctness
 - PG-only
+- report-local PostgreSQL-normalized reference used for the `PORT_0012` follow-up
 - not cross-engine matrix
 - exact TSV PG reference checks only
 - not speedup
