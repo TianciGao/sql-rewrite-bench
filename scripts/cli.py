@@ -11094,6 +11094,191 @@ def cmd_formal_common_core_runtime_observation_snapshot(args: argparse.Namespace
     return print_and_exit(payload, 0 if payload["ok"] else 1)
 
 
+def cmd_formal_common_core_plan_operator_delta_summary(args: argparse.Namespace) -> int:
+    output_name = normalize_formal_common_core_output_name(args.output)
+    if args.execute:
+        payload = {
+            "command": "formal-common-core-plan-operator-delta-summary",
+            "ok": False,
+            "ran_at_utc": utc_now(),
+            "output_path": "reports/formal_common_core/plan_operator_delta_summary_execute_refused_v0.json",
+            "claim_boundary": "formal_plan_operator_delta_summary_only_not_attribution_or_speedup",
+            "message": "This command is read-existing-reports-only and does not support --execute.",
+            "issues": [
+                {
+                    "type": "invalid_execute_flag",
+                    "message": "formal-common-core-plan-operator-delta-summary does not support --execute",
+                }
+            ],
+            "guardrails": {
+                "database_execution": "disabled",
+                "sql_execution": "disabled",
+                "explain_execution": "disabled",
+                "plan_collection": "disabled",
+                "model_api_call": "disabled",
+                "sqlglot_generation": "disabled",
+                "checker_execution": "disabled",
+                "speedup_scoring": "disabled",
+                "attribution_scoring": "disabled",
+                "case_artifact_write": "disabled",
+                "registry_writeback": "disabled",
+            },
+        }
+        write_formal_common_core_report("plan_operator_delta_summary_execute_refused_v0.json", payload)
+        return print_and_exit(payload, 1)
+
+    input_path = FORMAL_COMMON_CORE_REPORT_DIR / "plan_operator_delta_preflight_v0.json"
+    report = load_json_if_present(input_path)
+    issues: list[dict[str, Any]] = []
+    if report is None:
+        issues.append({"type": "missing_input_report", "path": relative_to_root(input_path)})
+        payload = {
+            "command": "formal-common-core-plan-operator-delta-summary",
+            "ok": False,
+            "ran_at_utc": utc_now(),
+            "output_path": f"reports/formal_common_core/{output_name}",
+            "pair_summaries": [],
+            "issues": issues,
+            "guardrails": {
+                "database_execution": "disabled",
+                "sql_execution": "disabled",
+                "explain_execution": "disabled",
+                "plan_collection": "disabled",
+                "model_api_call": "disabled",
+                "sqlglot_generation": "disabled",
+                "checker_execution": "disabled",
+                "speedup_scoring": "disabled",
+                "attribution_scoring": "disabled",
+                "case_artifact_write": "disabled",
+                "registry_writeback": "disabled",
+            },
+            "claim_boundary": "formal_plan_operator_delta_summary_only_not_attribution_or_speedup",
+        }
+        write_formal_common_core_report(output_name, payload)
+        return print_and_exit(payload, 1)
+
+    records = list(report.get("records") or [])
+    pair_order = [
+        ("source_positive", "source-positive"),
+        ("source_negative", "source-negative"),
+        ("source_sqlglot", "source-SQLGlot"),
+        ("source_llm", "source-LLM"),
+    ]
+
+    def representative_examples(items: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        sorted_items = sorted(
+            items,
+            key=lambda item: (
+                0 if item.get("top_node_changed") else 1,
+                -len(item.get("added_node_types") or []),
+                -abs(int(item.get("node_count_delta") or 0)),
+                str(item.get("case_id") or ""),
+            ),
+        )
+        chosen: list[dict[str, Any]] = []
+        seen_case_ids: set[str] = set()
+        for item in sorted_items:
+            case_id = str(item.get("case_id") or "")
+            if not case_id or case_id in seen_case_ids:
+                continue
+            seen_case_ids.add(case_id)
+            chosen.append(
+                {
+                    "case_id": case_id,
+                    "top_node_changed": bool(item.get("top_node_changed")),
+                    "source_top_node_type": item.get("source_top_node_type", ""),
+                    "candidate_top_node_type": item.get("candidate_top_node_type", ""),
+                    "node_count_delta": item.get("node_count_delta"),
+                    "added_node_types": item.get("added_node_types", []),
+                    "removed_node_types": item.get("removed_node_types", []),
+                }
+            )
+            if len(chosen) >= 3:
+                break
+        return chosen
+
+    pair_summaries: list[dict[str, Any]] = []
+    for pair_key, pair_display in pair_order:
+        pair_records = [record for record in records if record.get("pair_label") == pair_key]
+        ready_records = [record for record in pair_records if record.get("pair_delta_status") == "ready"]
+        node_count_deltas = [
+            int(record["node_count_delta"])
+            for record in ready_records
+            if isinstance(record.get("node_count_delta"), int)
+        ]
+        added_counter: Counter[str] = Counter()
+        removed_counter: Counter[str] = Counter()
+        cases_with_added_node_types: list[str] = []
+        cases_with_removed_node_types: list[str] = []
+        for record in ready_records:
+            added = list(record.get("added_node_types") or [])
+            removed = list(record.get("removed_node_types") or [])
+            if added:
+                cases_with_added_node_types.append(str(record.get("case_id") or ""))
+            if removed:
+                cases_with_removed_node_types.append(str(record.get("case_id") or ""))
+            added_counter.update(added)
+            removed_counter.update(removed)
+
+        pair_count = len(pair_records)
+        ready_pair_count = len(ready_records)
+        top_node_changed_count = sum(1 for record in ready_records if record.get("top_node_changed"))
+        top_node_changed_rate = (top_node_changed_count / pair_count) if pair_count else 0.0
+        if node_count_deltas:
+            node_count_delta_min = min(node_count_deltas)
+            node_count_delta_max = max(node_count_deltas)
+            node_count_delta_mean = sum(node_count_deltas) / len(node_count_deltas)
+        else:
+            node_count_delta_min = None
+            node_count_delta_max = None
+            node_count_delta_mean = None
+
+        pair_summaries.append(
+            {
+                "pair_label": pair_key,
+                "pair_display": pair_display,
+                "pair_count": pair_count,
+                "ready_pair_count": ready_pair_count,
+                "top_node_changed_count": top_node_changed_count,
+                "top_node_changed_rate": top_node_changed_rate,
+                "node_count_delta_min": node_count_delta_min,
+                "node_count_delta_max": node_count_delta_max,
+                "node_count_delta_mean": node_count_delta_mean,
+                "cases_with_added_node_types": cases_with_added_node_types,
+                "cases_with_removed_node_types": cases_with_removed_node_types,
+                "most_common_added_node_types": added_counter.most_common(5),
+                "most_common_removed_node_types": removed_counter.most_common(5),
+                "representative_examples": representative_examples(ready_records),
+            }
+        )
+
+    payload = {
+        "command": "formal-common-core-plan-operator-delta-summary",
+        "ok": True,
+        "ran_at_utc": utc_now(),
+        "input_report_path": relative_to_root(input_path),
+        "output_path": f"reports/formal_common_core/{output_name}",
+        "pair_summaries": pair_summaries,
+        "issues": issues,
+        "guardrails": {
+            "database_execution": "disabled",
+            "sql_execution": "disabled",
+            "explain_execution": "disabled",
+            "plan_collection": "disabled",
+            "model_api_call": "disabled",
+            "sqlglot_generation": "disabled",
+            "checker_execution": "disabled",
+            "speedup_scoring": "disabled",
+            "attribution_scoring": "disabled",
+            "case_artifact_write": "disabled",
+            "registry_writeback": "disabled",
+        },
+        "claim_boundary": "formal_plan_operator_delta_summary_only_not_attribution_or_speedup",
+    }
+    write_formal_common_core_report(output_name, payload)
+    return print_and_exit(payload, 0 if payload["ok"] else 1)
+
+
 def cmd_formal_common_core_method_plan_collection_preflight(args: argparse.Namespace) -> int:
     output_name = normalize_formal_common_core_output_name(args.output)
     if args.execute:
@@ -18473,6 +18658,14 @@ def build_parser() -> argparse.ArgumentParser:
     )
     formal_common_core_runtime_observation_snapshot_parser.add_argument("--execute", action="store_true", default=False)
     formal_common_core_runtime_observation_snapshot_parser.set_defaults(func=cmd_formal_common_core_runtime_observation_snapshot)
+
+    formal_common_core_plan_operator_delta_summary_parser = subparsers.add_parser("formal-common-core-plan-operator-delta-summary")
+    formal_common_core_plan_operator_delta_summary_parser.add_argument(
+        "--output",
+        default="plan_operator_delta_summary_v0.json",
+    )
+    formal_common_core_plan_operator_delta_summary_parser.add_argument("--execute", action="store_true", default=False)
+    formal_common_core_plan_operator_delta_summary_parser.set_defaults(func=cmd_formal_common_core_plan_operator_delta_summary)
 
     formal_common_core_method_plan_collection_preflight_parser = subparsers.add_parser("formal-common-core-method-plan-collection-preflight")
     formal_common_core_method_plan_collection_preflight_parser.add_argument(
