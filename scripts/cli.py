@@ -25,6 +25,7 @@ REPORT_DIR = ROOT / "reports" / "cli"
 BASELINE_SMOKE_REPORT_DIR = ROOT / "reports" / "baseline_smoke"
 FORMAL_COMMON_CORE_REPORT_DIR = ROOT / "reports" / "formal_common_core"
 FORMAL_PORT_REPORT_DIR = ROOT / "reports" / "formal_port"
+FORMAL_EXPANSION_REPORT_DIR = ROOT / "reports" / "formal_expansion"
 ENV_VARS = ["PGHOST", "MYSQL_HOST", "SPARK_LOCAL_IP"]
 SOURCE_REGISTRY = ROOT / "inventory" / "source_registry.csv"
 CASE_REGISTRY = ROOT / "inventory" / "case_registry.csv"
@@ -163,6 +164,8 @@ PORT_TEMPLATE_CASE_ID = "PORT_0002"
 PORT_TEMPLATE_DIR = ROOT / "cases" / "PORT" / PORT_TEMPLATE_CASE_ID
 PORT_CASE_ROOT = ROOT / "cases" / "PORT"
 CONS_CASE_ROOT = ROOT / "cases" / "CONS"
+LONGTAIL_CASE_ID_RE = re.compile(r"^LONGTAIL_\d{4}$")
+LONGTAIL_CASE_ROOT = ROOT / "cases" / "LONGTAIL"
 PORT_TRANSLATE_SOURCE_DIALECT_FALLBACKS = {
     "PORT_0004": "mysql",
     "PORT_0012": "postgres",
@@ -311,6 +314,17 @@ def write_formal_port_report(report_name: str, payload: dict[str, Any]) -> Path:
     return report_path
 
 
+def write_formal_expansion_report(report_name: str, payload: dict[str, Any]) -> Path:
+    FORMAL_EXPANSION_REPORT_DIR.mkdir(parents=True, exist_ok=True)
+    report_path = FORMAL_EXPANSION_REPORT_DIR / report_name
+    payload["report_path"] = str(report_path.relative_to(ROOT))
+    report_path.write_text(
+        json.dumps(payload, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    return report_path
+
+
 def write_json_report_to_dir(output_dir: Path, report_name: str, payload: dict[str, Any]) -> Path:
     output_dir.mkdir(parents=True, exist_ok=True)
     report_path = output_dir / report_name
@@ -371,6 +385,13 @@ def normalize_formal_common_core_output_name(value: str) -> str:
 def normalize_formal_port_output_name(value: str) -> str:
     path = Path(value)
     if path.parts[:2] == ("reports", "formal_port"):
+        return path.name
+    return value
+
+
+def normalize_formal_expansion_output_name(value: str) -> str:
+    path = Path(value)
+    if path.parts[:2] == ("reports", "formal_expansion"):
         return path.name
     return value
 
@@ -518,6 +539,8 @@ def case_root_for_case_id(case_id: str) -> tuple[str, Path] | None:
         return "consistency", CONS_CASE_ROOT / case_id
     if PORT_CASE_ID_RE.fullmatch(case_id):
         return "portability", PORT_CASE_ROOT / case_id
+    if LONGTAIL_CASE_ID_RE.fullmatch(case_id):
+        return "longtail", LONGTAIL_CASE_ROOT / case_id
     return None
 
 
@@ -16892,6 +16915,359 @@ def cmd_formal_experiment_taxonomy_slicing(args: argparse.Namespace) -> int:
     return print_and_exit(payload, 0 if payload["ok"] else 1)
 
 
+def cmd_formal_denominator_expansion_preflight(args: argparse.Namespace) -> int:
+    output_name = normalize_formal_expansion_output_name(args.output)
+    if args.execute:
+        payload = {
+            "command": "formal-denominator-expansion-preflight",
+            "ok": False,
+            "ran_at_utc": utc_now(),
+            "output_path": "reports/formal_expansion/denominator_expansion_preflight_execute_refused_v0.json",
+            "message": "This command reads existing registry and artifact state only and does not support --execute.",
+            "issues": [
+                {
+                    "type": "invalid_execute_flag",
+                    "message": "formal-denominator-expansion-preflight does not support --execute",
+                }
+            ],
+            "guardrails": {
+                "database_execution": "disabled",
+                "sql_execution": "disabled",
+                "model_api_call": "disabled",
+                "sqlglot_generation": "disabled",
+                "checker_execution": "disabled",
+                "plan_collection": "disabled",
+                "registry_writeback": "disabled",
+                "case_artifact_write": "disabled",
+            },
+            "claim_boundary": "denominator_expansion_preflight_only_not_admission_or_formal_protocol",
+        }
+        write_formal_expansion_report("denominator_expansion_preflight_execute_refused_v0.json", payload)
+        return print_and_exit(payload, 1)
+
+    issues: list[dict[str, Any]] = []
+    warnings: list[str] = []
+    yaml_module: Any | None = None
+    try:
+        yaml_module = importlib.import_module("yaml")
+    except ModuleNotFoundError:
+        warnings.append("PyYAML not available; manifest and taxonomy metadata parsing will be limited")
+
+    _, case_registry_rows = read_registry(CASE_REGISTRY)
+    target_rows = [
+        row for row in case_registry_rows
+        if row.get("primary_pool") in {"performance", "consistency", "portability", "longtail"}
+    ]
+
+    seed_common_core = set(FORMAL_COMMON_CORE_CASES)
+    seed_port = {"PORT_0004", "PORT_0012", "PORT_0022"}
+    special_extended_candidates = {
+        "PERF_0038",
+        "PERF_0076",
+        "CONS_0005",
+        "CONS_0037",
+        "PORT_0012",
+        "LONGTAIL_0022",
+        "LONGTAIL_0023",
+        "LONGTAIL_0024",
+    }
+    known_port_policy_candidates = {
+        "PORT_0003",
+        "PORT_0006",
+        "PORT_0013",
+        "PORT_0014",
+        "PORT_0016",
+        "PORT_0017",
+        "PORT_0018",
+        "PORT_0023",
+        "PORT_0024",
+        "PORT_0025",
+        "PORT_0028",
+    }
+    known_cons_batch2_addon = {"CONS_0024", "CONS_0031", "CONS_0034"}
+
+    ready_perf_case_ids: list[str] = []
+    ready_cons_case_ids: list[str] = []
+    minor_backfill_case_ids: list[str] = []
+    ready_port_case_ids: list[str] = []
+    port_policy_case_ids: list[str] = []
+    extended_case_ids: list[str] = []
+    not_ready_case_ids: list[str] = []
+    records: list[dict[str, Any]] = []
+
+    def dedupe_values(values: list[str]) -> list[str]:
+        deduped: list[str] = []
+        seen: set[str] = set()
+        for value in values:
+            if value not in seen:
+                seen.add(value)
+                deduped.append(value)
+        return deduped
+
+    def load_yaml_object(path: Path) -> Any | None:
+        if not path.is_file() or yaml_module is None:
+            return None
+        try:
+            return yaml_module.safe_load(path.read_text(encoding="utf-8"))
+        except Exception:
+            warnings.append(f"failed_to_parse_yaml:{relative_to_root(path)}")
+            return None
+
+    def taxonomy_metadata_status(case_root: Path) -> str:
+        taxonomy_paths = sorted(case_root.glob("taxonomy_trial*.yaml"))
+        if not taxonomy_paths:
+            return "taxonomy_trial_missing"
+        taxonomy_obj = load_yaml_object(taxonomy_paths[0])
+        if not isinstance(taxonomy_obj, dict):
+            return "taxonomy_trial_unknown"
+        status_value = str(taxonomy_obj.get("status", "")).strip()
+        if status_value == "draft_trial_only":
+            return "taxonomy_trial_provisional"
+        if status_value == "p0_taxonomy_hardened_draft":
+            return "taxonomy_trial_hardened_draft"
+        if not any(
+            key in taxonomy_obj
+            for key in [
+                "sql_feature_tags",
+                "rewrite_opportunity_tags",
+                "portability_tags",
+                "workload_realism_tags",
+                "plan_operator_tags",
+            ]
+        ):
+            return "taxonomy_trial_placeholder_or_empty"
+        return "taxonomy_trial_present"
+
+    def classify_case(row: dict[str, str]) -> dict[str, Any]:
+        case_id = str(row.get("case_id", "")).strip()
+        inferred = case_root_for_case_id(case_id)
+        case_root = inferred[1] if inferred else None
+        manifest_path = case_root / "manifest.yaml" if case_root else ROOT / "__missing__"
+        source_sql_path = case_root / "source.sql" if case_root else ROOT / "__missing__"
+        positive_sql_path = case_root / "rewrite_pos_01.sql" if case_root else ROOT / "__missing__"
+        negative_sql_path = case_root / "rewrite_neg_01.sql" if case_root else ROOT / "__missing__"
+        checker_yaml_path = case_root / "validation" / "checker.yaml" if case_root else ROOT / "__missing__"
+        result_check_path = case_root / "runs" / "result_check.json" if case_root else ROOT / "__missing__"
+        pg_result_check_path = case_root / "runs" / "pg" / "result_check.json" if case_root else ROOT / "__missing__"
+        source_plan_path = case_root / "runs" / "pg" / "plans" / "source.json" if case_root else ROOT / "__missing__"
+        positive_plan_path = case_root / "runs" / "pg" / "plans" / "rewrite_pos_01.json" if case_root else ROOT / "__missing__"
+        negative_plan_path = case_root / "runs" / "pg" / "plans" / "rewrite_neg_01.json" if case_root else ROOT / "__missing__"
+        plan_check_path = case_root / "runs" / "pg" / "plans" / "plan_check.json" if case_root else ROOT / "__missing__"
+
+        manifest_exists = manifest_path.is_file()
+        source_sql_exists = source_sql_path.is_file()
+        positive_rewrite_exists = positive_sql_path.is_file()
+        negative_rewrite_exists = negative_sql_path.is_file()
+        checker_yaml_exists = checker_yaml_path.is_file()
+        result_check_exists = result_check_path.is_file()
+        pg_result_check_exists = pg_result_check_path.is_file()
+        source_plan_exists = source_plan_path.is_file()
+        positive_plan_exists = positive_plan_path.is_file()
+        negative_plan_exists = negative_plan_path.is_file()
+        plan_check_exists = plan_check_path.is_file()
+
+        pool = str(row.get("primary_pool", "")).strip()
+        benchmark_line = str(row.get("benchmark_line", "")).strip()
+        current_role = str(row.get("current_role", "")).strip()
+        admission_status = str(row.get("admission_status", "")).strip()
+        promotion_status = str(row.get("promotion_status", "")).strip()
+        formal_skeleton_status = str(row.get("formal_skeleton_status", "")).strip()
+        tri_engine_closure = str(row.get("tri_engine_closure", "")).strip()
+        admission_blockers = str(row.get("admission_blockers", "")).strip()
+        source_family = str(row.get("source_family", "")).strip()
+        if not source_family and manifest_exists:
+            source_family = manifest_source_family_hint(manifest_path.read_text(encoding="utf-8"))
+        taxonomy_status = taxonomy_metadata_status(case_root) if case_root else "missing_case_root"
+
+        fully_packaged = source_sql_exists and positive_rewrite_exists and negative_rewrite_exists
+        has_pg_evidence = pg_result_check_exists
+        has_plan_evidence = source_plan_exists and positive_plan_exists and negative_plan_exists and plan_check_exists
+        registry_staged_complete = benchmark_line == "staged" and formal_skeleton_status == "complete" and tri_engine_closure == "yes"
+        only_missing_checker = (
+            fully_packaged
+            and result_check_exists
+            and pg_result_check_exists
+            and has_plan_evidence
+            and not checker_yaml_exists
+        )
+
+        blockers: list[str] = []
+        caveats: list[str] = []
+        candidate_category = "not_ready"
+        recommended_next_action = "defer_from_batch2"
+
+        if not manifest_exists:
+            blockers.append("missing_manifest")
+        if not source_sql_exists:
+            blockers.append("missing_source_sql")
+        if not positive_rewrite_exists:
+            blockers.append("missing_positive_rewrite")
+        if not negative_rewrite_exists:
+            blockers.append("missing_negative_rewrite")
+        if not pg_result_check_exists:
+            blockers.append("missing_pg_result_check")
+        if not plan_check_exists:
+            blockers.append("missing_plan_check")
+        if not source_plan_exists:
+            caveats.append("missing_source_plan")
+        if not positive_plan_exists:
+            caveats.append("missing_positive_plan")
+        if not negative_plan_exists:
+            caveats.append("missing_negative_plan")
+        if not result_check_exists:
+            caveats.append("missing_top_level_result_check")
+        if taxonomy_status in {"taxonomy_trial_missing", "taxonomy_trial_placeholder_or_empty", "taxonomy_trial_provisional"}:
+            caveats.append(taxonomy_status)
+        if admission_blockers:
+            caveats.append(f"registry_admission_blockers={admission_blockers}")
+
+        is_seed_reference = case_id in seed_common_core or case_id in seed_port
+        if is_seed_reference:
+            candidate_category = "not_ready"
+            blockers.append("already_in_seed_denominator")
+            recommended_next_action = "retain_as_seed_reference"
+        elif case_id in special_extended_candidates:
+            candidate_category = "extended_diagnostic_candidate"
+            recommended_next_action = "retain_for_extended_or_diagnostic_lane"
+            if case_id == "PERF_0038":
+                blockers.append("positive_rewrite_not_clean_for_denominator")
+            if case_id == "PERF_0076":
+                caveats.append("extended_characterization_only")
+            if case_id == "PORT_0012":
+                blockers.append("active_port_holdout_requires_denominator_policy_decision")
+        elif pool == "performance":
+            if registry_staged_complete and fully_packaged and has_pg_evidence and has_plan_evidence and checker_yaml_exists:
+                candidate_category = "common_core_batch2_ready"
+                recommended_next_action = "run_artifact_execution_preflight_in_batch2"
+            elif formal_skeleton_status == "complete" and fully_packaged and has_pg_evidence and has_plan_evidence and checker_yaml_exists:
+                candidate_category = "common_core_batch2_needs_minor_backfill"
+                blockers.append("registry_governance_fields_not_yet_staged")
+                recommended_next_action = "backfill_governance_state_then_run_batch2_preflight"
+        elif pool == "consistency":
+            if case_id in known_cons_batch2_addon and registry_staged_complete and only_missing_checker:
+                candidate_category = "common_core_batch2_needs_minor_backfill"
+                blockers.append("missing_checker_yaml")
+                recommended_next_action = "add_report_local_checker_policy_or_checker_backfill_then_run_batch2_preflight"
+            elif registry_staged_complete and fully_packaged and has_pg_evidence and has_plan_evidence and checker_yaml_exists:
+                candidate_category = "common_core_batch2_ready"
+                recommended_next_action = "run_artifact_execution_preflight_in_batch2"
+            elif formal_skeleton_status == "complete" and fully_packaged and has_pg_evidence and has_plan_evidence:
+                candidate_category = "common_core_batch2_needs_minor_backfill"
+                if not checker_yaml_exists:
+                    blockers.append("missing_checker_yaml")
+                recommended_next_action = "complete_minor_consistency_backfill_then_run_batch2_preflight"
+        elif pool == "portability":
+            if registry_staged_complete and fully_packaged and pg_result_check_exists and checker_yaml_exists:
+                candidate_category = "port_batch2_ready"
+                recommended_next_action = "run_pg_route_preflight_in_batch2"
+            elif case_id in known_port_policy_candidates or (formal_skeleton_status == "complete" and result_check_exists):
+                candidate_category = "port_batch2_needs_policy_or_checker"
+                if not pg_result_check_exists:
+                    blockers.append("missing_pg_route_execution_evidence")
+                if not checker_yaml_exists:
+                    blockers.append("missing_checker_yaml")
+                if case_id == "PORT_0003":
+                    caveats.append("taxonomy_exception_sql_feature_primary_empty")
+                if case_id == "PORT_0016":
+                    caveats.append("portability_interpretation_fairness_review_needed")
+                recommended_next_action = "freeze_port_policy_and_checker_scope_before_batch2_execution"
+        elif pool == "longtail":
+            if tri_engine_closure == "yes" and fully_packaged and has_pg_evidence and has_plan_evidence:
+                candidate_category = "extended_diagnostic_candidate"
+                recommended_next_action = "retain_for_extended_diagnostic_batch_not_clean_denominator"
+
+        return {
+            "case_id": case_id,
+            "pool": pool,
+            "source_family": source_family or None,
+            "benchmark_line": benchmark_line or None,
+            "current_role": current_role or None,
+            "admission_status": admission_status or None,
+            "promotion_status": promotion_status or None,
+            "tri_engine_closure": tri_engine_closure or None,
+            "formal_skeleton_status": formal_skeleton_status or None,
+            "admission_blockers": admission_blockers or None,
+            "manifest_exists": manifest_exists,
+            "source_sql_exists": source_sql_exists,
+            "positive_rewrite_exists": positive_rewrite_exists,
+            "negative_rewrite_exists": negative_rewrite_exists,
+            "checker_yaml_exists": checker_yaml_exists,
+            "result_check_exists": result_check_exists,
+            "pg_result_check_exists": pg_result_check_exists,
+            "source_plan_exists": source_plan_exists,
+            "positive_plan_exists": positive_plan_exists,
+            "negative_plan_exists": negative_plan_exists,
+            "plan_check_exists": plan_check_exists,
+            "taxonomy_metadata_status": taxonomy_status,
+            "known_blockers_or_caveats": dedupe_values([*blockers, *caveats]),
+            "candidate_category": candidate_category,
+            "recommended_next_action": recommended_next_action,
+            "claim_boundary": "denominator_expansion_preflight_only_not_admission_or_formal_protocol",
+        }
+
+    for row in target_rows:
+        record = classify_case(row)
+        records.append(record)
+        case_id = record["case_id"]
+        category = record["candidate_category"]
+        if category == "common_core_batch2_ready":
+            if record["pool"] == "performance":
+                ready_perf_case_ids.append(case_id)
+            else:
+                ready_cons_case_ids.append(case_id)
+        elif category == "common_core_batch2_needs_minor_backfill":
+            minor_backfill_case_ids.append(case_id)
+        elif category == "port_batch2_ready":
+            ready_port_case_ids.append(case_id)
+        elif category == "port_batch2_needs_policy_or_checker":
+            port_policy_case_ids.append(case_id)
+        elif category == "extended_diagnostic_candidate":
+            extended_case_ids.append(case_id)
+        else:
+            not_ready_case_ids.append(case_id)
+
+    recommended_common_core_batch2_cases = ready_perf_case_ids + ready_cons_case_ids
+    payload = {
+        "command": "formal-denominator-expansion-preflight",
+        "ok": not issues,
+        "ran_at_utc": utc_now(),
+        "output_path": f"reports/formal_expansion/{output_name}",
+        "total_cases_seen": len(target_rows),
+        "perf_cases_seen": sum(1 for row in target_rows if row.get("primary_pool") == "performance"),
+        "cons_cases_seen": sum(1 for row in target_rows if row.get("primary_pool") == "consistency"),
+        "port_cases_seen": sum(1 for row in target_rows if row.get("primary_pool") == "portability"),
+        "longtail_cases_seen": sum(1 for row in target_rows if row.get("primary_pool") == "longtail"),
+        "seed_common_core_case_count": len(seed_common_core),
+        "seed_port_case_count": len(seed_port),
+        "common_core_batch2_ready_count": len(recommended_common_core_batch2_cases),
+        "common_core_batch2_needs_minor_backfill_count": len(minor_backfill_case_ids),
+        "port_batch2_ready_count": len(ready_port_case_ids),
+        "port_batch2_needs_policy_or_checker_count": len(port_policy_case_ids),
+        "extended_diagnostic_candidate_count": len(extended_case_ids),
+        "not_ready_count": len(not_ready_case_ids),
+        "recommended_common_core_batch2_cases": recommended_common_core_batch2_cases,
+        "recommended_port_batch2_cases": ready_port_case_ids,
+        "recommended_minor_backfill_cases": minor_backfill_case_ids,
+        "recommended_extended_diagnostic_cases": extended_case_ids,
+        "records": records,
+        "issues": issues,
+        "warnings": warnings,
+        "guardrails": {
+            "database_execution": "disabled",
+            "sql_execution": "disabled",
+            "model_api_call": "disabled",
+            "sqlglot_generation": "disabled",
+            "checker_execution": "disabled",
+            "plan_collection": "disabled",
+            "registry_writeback": "disabled",
+            "case_artifact_write": "disabled",
+        },
+        "claim_boundary": "denominator_expansion_preflight_only_not_admission_or_formal_protocol",
+    }
+    write_formal_expansion_report(output_name, payload)
+    return print_and_exit(payload, 0 if payload["ok"] else 1)
+
+
 def cmd_formal_common_core_method_result_checker_run(args: argparse.Namespace) -> int:
     output_name = normalize_formal_common_core_output_name(args.output)
     valid_routes = {
@@ -24762,6 +25138,14 @@ def build_parser() -> argparse.ArgumentParser:
     )
     formal_experiment_taxonomy_slicing_parser.add_argument("--execute", action="store_true", default=False)
     formal_experiment_taxonomy_slicing_parser.set_defaults(func=cmd_formal_experiment_taxonomy_slicing)
+
+    formal_denominator_expansion_preflight_parser = subparsers.add_parser("formal-denominator-expansion-preflight")
+    formal_denominator_expansion_preflight_parser.add_argument(
+        "--output",
+        default="denominator_expansion_preflight_v0.json",
+    )
+    formal_denominator_expansion_preflight_parser.add_argument("--execute", action="store_true", default=False)
+    formal_denominator_expansion_preflight_parser.set_defaults(func=cmd_formal_denominator_expansion_preflight)
 
     formal_common_core_method_plan_collection_preflight_parser = subparsers.add_parser("formal-common-core-method-plan-collection-preflight")
     formal_common_core_method_plan_collection_preflight_parser.add_argument(
