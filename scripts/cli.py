@@ -738,6 +738,10 @@ def sqlsolver_verieql_support_candidate_case_ids(candidate_set: str) -> list[str
     raise ValueError(f"unsupported SQLSolver / VeriEQL support candidate set: {candidate_set}")
 
 
+def remaining_prior_baselines_feasibility_case_ids() -> list[str]:
+    return ["PERF_0006", "PERF_0008", "PERF_0033", "PERF_0054", "CONS_0007", "CONS_0012"]
+
+
 def formal_common_core_case_ids() -> list[str]:
     return list(FORMAL_COMMON_CORE_CASES)
 
@@ -9565,6 +9569,284 @@ def cmd_baseline_smoke_sqlsolver_verieql_readiness(args: argparse.Namespace) -> 
     }
     write_baseline_smoke_report(output_name, payload)
     return print_and_exit(payload, 0 if payload["ok"] else 1)
+
+
+def cmd_formal_remaining_prior_baselines_feasibility(args: argparse.Namespace) -> int:
+    selected_case_ids = [str(case_id).strip().upper() for case_id in (args.case_id or []) if str(case_id).strip()]
+    if not selected_case_ids:
+        selected_case_ids = remaining_prior_baselines_feasibility_case_ids()
+
+    learnedrewrite_report = load_json_if_present(ROOT / "reports" / "baseline_smoke" / "learnedrewrite_input_readiness_v0.json") or {}
+    genrewrite_report = load_json_if_present(ROOT / "reports" / "baseline_smoke" / "genrewrite_input_cost_readiness_v0.json") or {}
+    rbot_llmr2_report = load_json_if_present(ROOT / "reports" / "baseline_smoke" / "rbot_llmr2_retrieval_readiness_v0.json") or {}
+    sqlsolver_verieql_report = load_json_if_present(ROOT / "reports" / "baseline_smoke" / "sqlsolver_verieql_support_readiness_v0.json") or {}
+
+    learnedrewrite_record_map = {
+        str(record.get("case_id", "")).strip().upper(): record
+        for record in learnedrewrite_report.get("records", [])
+        if record.get("case_id")
+    }
+    genrewrite_record_map = {
+        str(record.get("case_id", "")).strip().upper(): record
+        for record in genrewrite_report.get("records", [])
+        if record.get("case_id")
+    }
+    rbot_llmr2_record_map = {
+        str(record.get("case_id", "")).strip().upper(): record
+        for record in rbot_llmr2_report.get("records", [])
+        if record.get("case_id")
+    }
+    sqlsolver_verieql_record_map = {
+        str(record.get("case_id", "")).strip().upper(): record
+        for record in sqlsolver_verieql_report.get("records", [])
+        if record.get("case_id")
+    }
+
+    def candidate_subset_from_records(
+        record_map: dict[str, dict[str, Any]], accepted_statuses: set[str], default_limit: int = 4
+    ) -> list[str]:
+        picked = [case_id for case_id in selected_case_ids if str((record_map.get(case_id, {}) or {}).get("recommended_status") or "") in accepted_statuses]
+        return picked[:default_limit]
+
+    def reusable_inputs_summary(include_speedup: bool) -> dict[str, bool]:
+        return {
+            "source_sql": True,
+            "schema_ddl_pg": True,
+            "validation_checker_yaml": True,
+            "pg_checker_path": True,
+            "pg_speedup_path": include_speedup,
+        }
+
+    verieql_root = ROOT / "datasets" / "raw" / "verieql" / "staged" / "VeriEQL"
+    verieql_readme = verieql_root / "README.md"
+    verieql_requirements = verieql_root / "requirements.txt"
+    verieql_entrypoint = verieql_root / "__main__.py"
+    sqlsolver_root = ROOT / "datasets" / "raw" / "sqlsolver"
+
+    records = [
+        {
+            "baseline": "LearnedRewrite",
+            "current_status": "preflight_only",
+            "runnable_now": False,
+            "repo_signals": {
+                "readiness_report_present": bool(learnedrewrite_report),
+                "adapter_available": bool(learnedrewrite_report.get("learnedrewrite_adapter_available")),
+                "checkpoint_available": bool(learnedrewrite_report.get("learnedrewrite_checkpoint_available")),
+                "inference_entrypoint_available": bool(learnedrewrite_report.get("learnedrewrite_inference_entrypoint_available")),
+                "dependency_file_available": bool(learnedrewrite_report.get("dependency_file_available")),
+            },
+            "missing_components": [
+                "runner_adapter",
+                "checkpoint_or_model_artifact",
+                "inference_entrypoint",
+                "canonical_representation_bridge",
+                "repo-local dependency/runtime contract",
+            ],
+            "exact_blocker_category": "artifact_stack_missing",
+            "candidate_subset": candidate_subset_from_records(learnedrewrite_record_map, {"first_subset_candidate"}),
+            "expected_metrics_if_runnable": ["generation", "PG execution", "checker consistency", "speedup"],
+            "belongs_to": "backlog only",
+            "reusable_paths": reusable_inputs_summary(include_speedup=True),
+            "recommended_next_action": "keep as readiness-only unless a repo-local adapter, checkpoint, and inference path are added",
+        },
+        {
+            "baseline": "GenRewrite",
+            "current_status": "preflight_only",
+            "runnable_now": False,
+            "repo_signals": {
+                "readiness_report_present": bool(genrewrite_report),
+                "runner_available": bool(genrewrite_report.get("genrewrite_runner_available")),
+                "correction_loop_available": bool(genrewrite_report.get("correction_loop_available")),
+                "verifier_loop_available": bool(genrewrite_report.get("verifier_loop_available")),
+                "executor_feedback_loop_available": bool(genrewrite_report.get("executor_feedback_loop_available")),
+                "prompt_rule_library_available": bool(genrewrite_report.get("prompt_rule_library_available")),
+                "retry_policy_frozen": bool(genrewrite_report.get("retry_policy_frozen")),
+                "pricing_snapshot_frozen": bool(genrewrite_report.get("pricing_snapshot_frozen")),
+            },
+            "missing_components": [
+                "runner",
+                "correction_loop",
+                "verifier_loop",
+                "executor_feedback_loop",
+                "prompt_rule_library",
+                "retry_policy",
+                "correction_round_budget",
+                "pricing_snapshot",
+            ],
+            "exact_blocker_category": "missing_genrewrite_control_stack",
+            "candidate_subset": candidate_subset_from_records(genrewrite_record_map, {"first_subset_candidate"}),
+            "expected_metrics_if_runnable": ["generation", "PG execution", "checker consistency", "speedup", "token usage"],
+            "belongs_to": "backlog only",
+            "reusable_paths": reusable_inputs_summary(include_speedup=True),
+            "recommended_next_action": "keep in backlog until a bounded correction/verifier loop with frozen budget and prompt controls exists",
+        },
+        {
+            "baseline": "R-Bot",
+            "current_status": "preflight_only",
+            "runnable_now": False,
+            "repo_signals": {
+                "readiness_report_present": bool(rbot_llmr2_report),
+                "runner_available": bool(rbot_llmr2_report.get("rbot_runner_available")),
+                "retrieval_module_available": bool(rbot_llmr2_report.get("retrieval_module_available")),
+                "retrieval_corpus_available": bool(rbot_llmr2_report.get("retrieval_corpus_available")),
+                "rule_pool_available": bool(rbot_llmr2_report.get("rule_pool_available")),
+                "demo_selector_available": bool(rbot_llmr2_report.get("demo_selector_available")),
+                "fair_comparison_contract_available": bool(rbot_llmr2_report.get("fair_comparison_contract_available")),
+            },
+            "missing_components": [
+                "runner",
+                "retrieval_module",
+                "retrieval_corpus_or_index",
+                "demo_selector",
+                "rule_pool",
+                "rerank_path",
+                "fair_comparison_contract",
+                "contamination_policy",
+            ],
+            "exact_blocker_category": "missing_retrieval_control_stack",
+            "candidate_subset": candidate_subset_from_records(rbot_llmr2_record_map, {"first_subset_candidate"}),
+            "expected_metrics_if_runnable": ["generation", "PG execution", "checker consistency", "speedup", "token usage"],
+            "belongs_to": "backlog only",
+            "reusable_paths": reusable_inputs_summary(include_speedup=True),
+            "recommended_next_action": "keep in backlog until a reproducible retrieval corpus, demo policy, and rule-selection path exist",
+        },
+        {
+            "baseline": "LLM-R2",
+            "current_status": "preflight_only",
+            "runnable_now": False,
+            "repo_signals": {
+                "readiness_report_present": bool(rbot_llmr2_report),
+                "runner_available": bool(rbot_llmr2_report.get("llmr2_runner_available")),
+                "retrieval_module_available": bool(rbot_llmr2_report.get("retrieval_module_available")),
+                "retrieval_corpus_available": bool(rbot_llmr2_report.get("retrieval_corpus_available")),
+                "rule_pool_available": bool(rbot_llmr2_report.get("rule_pool_available")),
+                "demo_selector_available": bool(rbot_llmr2_report.get("demo_selector_available")),
+                "fair_comparison_contract_available": bool(rbot_llmr2_report.get("fair_comparison_contract_available")),
+            },
+            "missing_components": [
+                "runner",
+                "demonstration_pool",
+                "rule_applier",
+                "retrieval_or_embedding_path",
+                "rerank_path",
+                "demo_policy",
+                "fair_comparison_contract",
+            ],
+            "exact_blocker_category": "missing_retrieval_control_stack",
+            "candidate_subset": candidate_subset_from_records(rbot_llmr2_record_map, {"first_subset_candidate"}),
+            "expected_metrics_if_runnable": ["generation", "PG execution", "checker consistency", "speedup", "token usage"],
+            "belongs_to": "backlog only",
+            "reusable_paths": reusable_inputs_summary(include_speedup=True),
+            "recommended_next_action": "keep in backlog until demonstration selection and rule-application paths are explicit and reproducible",
+        },
+        {
+            "baseline": "SlabCity",
+            "current_status": "blocked",
+            "runnable_now": False,
+            "repo_signals": {
+                "local_runner_present": False,
+                "service_contract_present": False,
+                "adapter_present": False,
+                "repo_specific_artifacts_present": False,
+            },
+            "missing_components": [
+                "local_runner",
+                "adapter",
+                "synthesis_engine",
+                "verifier_or_solver_stack",
+                "reproducible_service_runtime_contract",
+            ],
+            "exact_blocker_category": "no_local_runner_or_service_contract",
+            "candidate_subset": ["PERF_0006", "PERF_0008", "PERF_0033", "PERF_0054"],
+            "expected_metrics_if_runnable": ["generation", "PG execution", "checker consistency", "speedup"],
+            "belongs_to": "backlog only",
+            "reusable_paths": reusable_inputs_summary(include_speedup=True),
+            "recommended_next_action": "keep blocked unless a local runner or reproducible service contract is added first",
+        },
+        {
+            "baseline": "SQLSolver",
+            "current_status": "not_integrated",
+            "runnable_now": False,
+            "repo_signals": {
+                "readiness_report_present": bool(sqlsolver_verieql_report),
+                "repo_checkout_present": sqlsolver_root.exists(),
+                "runner_available": bool(sqlsolver_verieql_report.get("sqlsolver_runner_available")),
+                "solver_dependency_available": bool(sqlsolver_verieql_report.get("solver_dependency_available")),
+                "schema_constraint_extraction_available": False,
+            },
+            "missing_components": [
+                "repo_checkout_or_binary",
+                "runner_wrapper",
+                "solver_dependencies",
+                "schema_constraint_extraction",
+                "subset_policy",
+                "timeout_policy",
+            ],
+            "exact_blocker_category": "solver_wrapper_and_dependency_missing",
+            "candidate_subset": ["CONS_0007"],
+            "expected_metrics_if_runnable": ["verifier support verdict", "unknown rate", "timeout rate"],
+            "belongs_to": "verifier/support table",
+            "reusable_paths": {
+                "source_sql": True,
+                "schema_ddl_pg": True,
+                "validation_checker_yaml": True,
+                "pg_checker_path": False,
+                "pg_speedup_path": False,
+            },
+            "recommended_next_action": "keep as support-only backlog unless a repo-local SQLSolver checkout and wrapper are added",
+        },
+        {
+            "baseline": "VeriEQL",
+            "current_status": "not_integrated",
+            "runnable_now": False,
+            "repo_signals": {
+                "readiness_report_present": bool(sqlsolver_verieql_report),
+                "repo_checkout_present": verieql_root.is_dir(),
+                "readme_present": verieql_readme.is_file(),
+                "requirements_present": verieql_requirements.is_file(),
+                "entrypoint_present": verieql_entrypoint.is_file(),
+                "runner_available": bool(sqlsolver_verieql_report.get("verieql_runner_available")),
+            },
+            "missing_components": [
+                "repo-local wrapper",
+                "dependency_materialization",
+                "case_to_verifier_pair_adapter",
+                "subset_policy",
+                "timeout_policy",
+                "constraint_and_schema_bridge",
+            ],
+            "exact_blocker_category": "wrapper_and_subset_policy_missing",
+            "candidate_subset": ["CONS_0007"],
+            "expected_metrics_if_runnable": ["verifier support verdict", "unknown rate", "timeout rate"],
+            "belongs_to": "verifier/support table",
+            "reusable_paths": {
+                "source_sql": True,
+                "schema_ddl_pg": True,
+                "validation_checker_yaml": True,
+                "pg_checker_path": False,
+                "pg_speedup_path": False,
+            },
+            "recommended_next_action": "if any remaining prior-method line is advanced next, start with a bounded VeriEQL support wrapper on CONS_0007 only",
+        },
+    ]
+
+    payload = {
+        "command": "formal-remaining-prior-baselines-feasibility",
+        "ok": True,
+        "ran_at_utc": utc_now(),
+        "selected_case_ids": selected_case_ids,
+        "records": records,
+        "summary": {
+            "runnable_now_yes_count": sum(1 for record in records if record["runnable_now"] is True),
+            "runnable_now_no_count": sum(1 for record in records if record["runnable_now"] is False),
+            "main_same_engine_ready_now_count": 0,
+            "support_table_candidate_count": sum(1 for record in records if record["belongs_to"] == "verifier/support table"),
+            "backlog_only_count": sum(1 for record in records if record["belongs_to"] == "backlog only"),
+            "best_next_bounded_candidate": "VeriEQL support on CONS_0007 only",
+        },
+        "claim_boundary": "feasibility_audit_only_not_execution_not_checker_not_speedup",
+    }
+    return print_and_exit(payload, 0)
 
 
 def cmd_formal_common_core_preflight(args: argparse.Namespace) -> int:
@@ -35043,6 +35325,12 @@ def build_parser() -> argparse.ArgumentParser:
     )
     sqlsolver_verieql_readiness_parser.add_argument("--execute", action="store_true", default=False)
     sqlsolver_verieql_readiness_parser.set_defaults(func=cmd_baseline_smoke_sqlsolver_verieql_readiness)
+
+    formal_remaining_prior_baselines_feasibility_parser = subparsers.add_parser(
+        "formal-remaining-prior-baselines-feasibility"
+    )
+    formal_remaining_prior_baselines_feasibility_parser.add_argument("--case-id", action="append", default=[])
+    formal_remaining_prior_baselines_feasibility_parser.set_defaults(func=cmd_formal_remaining_prior_baselines_feasibility)
 
     formal_common_core_preflight_parser = subparsers.add_parser("formal-common-core-preflight")
     formal_common_core_preflight_parser.add_argument("--case-id", action="append", default=[])
