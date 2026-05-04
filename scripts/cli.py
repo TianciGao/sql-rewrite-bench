@@ -558,6 +558,10 @@ def calcite_hep_speedup_preflight_case_ids() -> list[str]:
     return list(CALCITE_HEP_REAL_ROUTE_CANARY_CASES)
 
 
+def calcite_hep_speedup_run_case_ids() -> list[str]:
+    return list(CALCITE_HEP_REAL_ROUTE_CANARY_CASES)
+
+
 def calcite_hep_perf0006_numeric_mismatch_case_id() -> str:
     return "PERF_0006"
 
@@ -7536,6 +7540,482 @@ def cmd_formal_calcite_hep_speedup_preflight(args: argparse.Namespace) -> int:
         },
         "claim_boundary": "calcite_hep_speedup_preflight_only_not_speedup_not_final_baseline",
     }
+    write_formal_expansion_report(output_name, payload)
+    return print_and_exit(payload, 0 if payload["ok"] else 1)
+
+
+def cmd_formal_calcite_hep_speedup_run(args: argparse.Namespace) -> int:
+    output_name = normalize_formal_expansion_output_name(args.output)
+    execute_refused_name = "calcite_hep_speedup_run_execute_refused_v0.json"
+    valid_case_ids = set(calcite_hep_speedup_run_case_ids())
+
+    selected_case_ids = [str(case_id).strip().upper() for case_id in (args.case_id or []) if str(case_id).strip()]
+    if not selected_case_ids:
+        selected_case_ids = calcite_hep_speedup_run_case_ids()
+
+    invalid_case_ids = [case_id for case_id in selected_case_ids if case_id not in valid_case_ids]
+    if invalid_case_ids and args.execute:
+        payload = {
+            "command": "formal-calcite-hep-speedup-run",
+            "ok": False,
+            "ran_at_utc": utc_now(),
+            "output_path": f"reports/formal_expansion/{execute_refused_name}",
+            "issues": [{"type": "unsupported_case_id", "case_id": case_id} for case_id in invalid_case_ids],
+            "guardrails": {
+                "database_execution": "enabled_only_with_execute",
+                "postgres_execution": "postgres_only_bounded_calcite_hep_subset",
+                "checker_execution": "sanity_gate_read_only_existing_checker_artifacts",
+                "runtime_rerun": "enabled_only_with_execute",
+                "speedup_scoring": "enabled_only_for_bounded_calcite_hep_subset",
+                "case_artifact_write": "disabled",
+                "registry_writeback": "disabled",
+                "formal_review_writeback": "disabled",
+            },
+            "claim_boundary": "calcite_hep_speedup_postgres_only_bounded_subset_not_final_baseline",
+        }
+        write_formal_expansion_report(execute_refused_name, payload)
+        return print_and_exit(payload, 1)
+
+    selected_case_ids = [case_id for case_id in selected_case_ids if case_id in valid_case_ids]
+
+    env_visibility = pg_env_visibility()
+    required_env_visible = all(env_visibility[name] for name in ["PGHOST", "PGPORT", "PGDATABASE", "PGUSER"])
+    pg_password_present = env_visibility["PGPASSWORD"]
+    psql_available = subprocess.run(["bash", "-lc", "command -v psql >/dev/null 2>&1"], capture_output=True, text=True).returncode == 0
+    psycopg_available = True
+    issues: list[dict[str, Any]] = []
+    issues.extend({"type": "unsupported_case_id", "case_id": case_id} for case_id in invalid_case_ids)
+
+    if args.execute and not required_env_visible:
+        issues.append({"type": "missing_pg_env", "message": "required env: PGHOST, PGPORT, PGDATABASE, PGUSER"})
+
+    psycopg = None
+    if args.execute:
+        try:
+            psycopg = importlib.import_module("psycopg")
+        except Exception as exc:
+            psycopg_available = False
+            issues.append({"type": "psycopg_import_error", "message": str(exc)})
+
+    preflight_report = load_json_if_present(FORMAL_EXPANSION_REPORT_DIR / "calcite_hep_speedup_preflight_v0.json") or {}
+    real_route_report = load_json_if_present(FORMAL_EXPANSION_REPORT_DIR / "calcite_hep_real_route_canary_v0.json") or {}
+    checker_run_report = load_json_if_present(FORMAL_EXPANSION_REPORT_DIR / "calcite_hep_pg_checker_run_v0.json") or {}
+    if not preflight_report:
+        issues.append(
+            {
+                "type": "missing_speedup_preflight_report",
+                "path": "reports/formal_expansion/calcite_hep_speedup_preflight_v0.json",
+            }
+        )
+    if not real_route_report:
+        issues.append(
+            {
+                "type": "missing_real_route_report",
+                "path": "reports/formal_expansion/calcite_hep_real_route_canary_v0.json",
+            }
+        )
+    if not checker_run_report:
+        issues.append(
+            {
+                "type": "missing_checker_run_report",
+                "path": "reports/formal_expansion/calcite_hep_pg_checker_run_v0.json",
+            }
+        )
+
+    preflight_record_map = {
+        str(record.get("case_id", "")).strip().upper(): record
+        for record in preflight_report.get("records", [])
+        if record.get("case_id")
+    }
+    real_route_record_map = {
+        str(record.get("case_id", "")).strip().upper(): record
+        for record in real_route_report.get("records", [])
+        if record.get("case_id")
+    }
+    checker_run_record_map = {
+        str(record.get("case_id", "")).strip().upper(): record
+        for record in checker_run_report.get("records", [])
+        if record.get("case_id")
+    }
+
+    repeat_count = 5
+    warmup_count = 1
+    statement_timeout_ms = 30000
+    primary_statistic = "median"
+    tie_threshold = 0.05
+    regression_threshold = 1.2
+
+    payload = {
+        "command": "formal-calcite-hep-speedup-run",
+        "ran_at_utc": utc_now(),
+        "output_path": f"reports/formal_expansion/{output_name}",
+        "case_count": len(selected_case_ids),
+        "repeat_count": repeat_count,
+        "warmup_count": warmup_count,
+        "statement_timeout_ms": statement_timeout_ms,
+        "primary_statistic": primary_statistic,
+        "tie_threshold": tie_threshold,
+        "regression_threshold": regression_threshold,
+        "baseline_id": "CALCITE_HEP",
+        "engine_scope": "postgres",
+        "pg_env_visible": required_env_visible,
+        "pg_password_present": pg_password_present,
+        "psycopg_available": psycopg_available,
+        "psql_available": psql_available,
+        "guardrails": {
+            "database_execution": "enabled_only_with_execute",
+            "postgres_execution": "postgres_only_bounded_calcite_hep_subset",
+            "checker_execution": "sanity_gate_read_only_existing_checker_artifacts",
+            "runtime_rerun": "enabled_only_with_execute",
+            "speedup_scoring": "enabled_only_for_bounded_calcite_hep_subset",
+            "case_artifact_write": "disabled",
+            "registry_writeback": "disabled",
+            "formal_review_writeback": "disabled",
+        },
+        "claim_boundary": "calcite_hep_speedup_postgres_only_bounded_subset_not_final_baseline",
+    }
+
+    def runtime_stats(values: list[float]) -> tuple[float | None, float | None, float | None]:
+        if not values:
+            return None, None, None
+        return float(statistics.median(values)), min(values), float(sum(values) / len(values))
+
+    def geometric_mean(values: list[float]) -> float | None:
+        positive_values = [value for value in values if isinstance(value, (int, float)) and value > 0]
+        if not positive_values:
+            return None
+        return float(math.exp(sum(math.log(value) for value in positive_values) / len(positive_values)))
+
+    def execute_sql(cur: Any, sql_text: str) -> tuple[int | None, float]:
+        start_ns = time.perf_counter_ns()
+        cur.execute(sql_text)
+        elapsed_ns = time.perf_counter_ns() - start_ns
+        runtime_ms = elapsed_ns / 1_000_000
+        if cur.description is not None:
+            rows = cur.fetchall()
+            row_count = len(rows)
+        else:
+            row_count = cur.rowcount if cur.rowcount >= 0 else None
+        return row_count, runtime_ms
+
+    records: list[dict[str, Any]] = []
+    failure_categories: Counter[str] = Counter()
+
+    for case_id in selected_case_ids:
+        inferred = case_root_for_case_id(case_id)
+        validation_schema = validation_schema_hint(case_id)
+        if inferred is None:
+            records.append(
+                {
+                    "case_id": case_id,
+                    "route": "calcite_rel_to_sql",
+                    "baseline_id": "CALCITE_HEP",
+                    "validation_schema": validation_schema,
+                    "search_path_after_set": "",
+                    "source_warmup_runtime_ms": None,
+                    "candidate_warmup_runtime_ms": None,
+                    "source_runtime_ms_values": [],
+                    "candidate_runtime_ms_values": [],
+                    "source_median_runtime_ms": None,
+                    "candidate_median_runtime_ms": None,
+                    "source_min_runtime_ms": None,
+                    "candidate_min_runtime_ms": None,
+                    "source_mean_runtime_ms": None,
+                    "candidate_mean_runtime_ms": None,
+                    "speedup_ratio": None,
+                    "win_tie_loss": "unknown",
+                    "regression_20pct": None,
+                    "source_row_count": None,
+                    "candidate_row_count": None,
+                    "row_count_match": None,
+                    "candidate_sql_source": "",
+                    "candidate_sql_output_path": "",
+                    "candidate_sql_character_count": None,
+                    "execution_status": "failed",
+                    "failure_category": "case_not_resolved",
+                    "error_message": "could not resolve case root from case_id",
+                    "artifact_claim_boundary": "calcite_hep_speedup_postgres_only_bounded_subset_not_final_baseline",
+                }
+            )
+            failure_categories["case_not_resolved"] += 1
+            continue
+
+        pool, case_root = inferred
+        source_sql_path = case_root / "source.sql"
+        source_sql_exists = source_sql_path.is_file()
+        source_sql = source_sql_path.read_text(encoding="utf-8") if source_sql_exists else ""
+
+        preflight_record = preflight_record_map.get(case_id, {})
+        real_route_record = real_route_record_map.get(case_id, {})
+        checker_run_record = checker_run_record_map.get(case_id, {})
+        checker_json_path = calcite_hep_pg_preflight_checker_json_path(case_id)
+        checker_json = load_json_if_present(checker_json_path) or {}
+
+        candidate_sql_output_path_str = str(
+            real_route_record.get("output_sql_path", "")
+            or preflight_record.get("candidate_sql_output_path", "")
+            or checker_run_record.get("generated_sql_output_path", "")
+            or ""
+        ).strip()
+        candidate_sql_output_path = (
+            Path(candidate_sql_output_path_str) if candidate_sql_output_path_str else calcite_hep_real_route_output_sql_path(case_id)
+        )
+        candidate_sql_source = "calcite_hep_real_route_output"
+        candidate_sql = candidate_sql_output_path.read_text(encoding="utf-8").strip() if candidate_sql_output_path.is_file() else ""
+        candidate_sql_character_count = len(candidate_sql) if candidate_sql else None
+
+        checker_status = str(
+            checker_json.get("checker_status", "") or checker_run_record.get("checker_status", "") or ""
+        ).strip()
+        checker_consistent = checker_status == "consistent"
+        source_row_count: int | None = None
+        candidate_row_count: int | None = None
+        source_warmup_runtime_ms: float | None = None
+        candidate_warmup_runtime_ms: float | None = None
+        source_runtime_ms_values: list[float] = []
+        candidate_runtime_ms_values: list[float] = []
+        speedup_ratio: float | None = None
+        win_tie_loss = "unknown"
+        regression_20pct: bool | None = None
+        row_count_match: bool | None = None
+        failure_category = "none"
+        error_message = ""
+        execution_status = "dry_run_only"
+        search_path_after_set = ""
+
+        blockers: list[str] = []
+        if not source_sql_exists:
+            blockers.append("missing_source_sql")
+        if str(preflight_record.get("preflight_status", "")) != "ready_for_speedup_run":
+            blockers.append("preflight_not_ready")
+        if str(real_route_record.get("emitted_sql_mode", "")) != "calcite_rel_to_sql":
+            blockers.append("not_calcite_rel_to_sql")
+        if not bool(real_route_record.get("emitted_sql_is_calcite_generated") is True):
+            blockers.append("not_marked_calcite_generated")
+        if not candidate_sql:
+            blockers.append("missing_candidate_sql")
+        if not checker_json_path.is_file():
+            blockers.append("missing_checker_json")
+        if not checker_consistent:
+            blockers.append("checker_not_consistent")
+        if not bool(checker_json.get("row_count_equal") is True or checker_run_record.get("row_count_equal") is True):
+            blockers.append("row_count_mismatch")
+        if not validation_schema:
+            blockers.append("missing_validation_schema")
+
+        blockers = list(dict.fromkeys(blockers))
+
+        if not args.execute:
+            records.append(
+                {
+                    "case_id": case_id,
+                    "pool": pool,
+                    "route": "calcite_rel_to_sql",
+                    "baseline_id": "CALCITE_HEP",
+                    "validation_schema": validation_schema,
+                    "search_path_after_set": search_path_after_set,
+                    "checker_status": checker_status,
+                    "checker_consistent": checker_consistent,
+                    "source_warmup_runtime_ms": source_warmup_runtime_ms,
+                    "candidate_warmup_runtime_ms": candidate_warmup_runtime_ms,
+                    "source_runtime_ms_values": source_runtime_ms_values,
+                    "candidate_runtime_ms_values": candidate_runtime_ms_values,
+                    "source_median_runtime_ms": None,
+                    "candidate_median_runtime_ms": None,
+                    "source_min_runtime_ms": None,
+                    "candidate_min_runtime_ms": None,
+                    "source_mean_runtime_ms": None,
+                    "candidate_mean_runtime_ms": None,
+                    "speedup_ratio": speedup_ratio,
+                    "win_tie_loss": win_tie_loss,
+                    "regression_20pct": regression_20pct,
+                    "source_row_count": source_row_count,
+                    "candidate_row_count": candidate_row_count,
+                    "row_count_match": row_count_match,
+                    "candidate_sql_source": candidate_sql_source,
+                    "candidate_sql_output_path": str(candidate_sql_output_path),
+                    "candidate_sql_character_count": candidate_sql_character_count,
+                    "execution_status": execution_status,
+                    "failure_category": failure_category,
+                    "error_message": error_message,
+                    "blockers": blockers,
+                    "artifact_claim_boundary": "calcite_hep_speedup_postgres_only_bounded_subset_not_final_baseline",
+                }
+            )
+            continue
+
+        if issues:
+            execution_status = "blocked_invalid_selection"
+            failure_category = "invalid_selection_or_environment"
+            error_message = "; ".join(sorted({str(issue.get('type', 'issue')) for issue in issues}))
+        elif blockers:
+            execution_status = "blocked_preflight"
+            failure_category = "preflight_blocked"
+            error_message = "; ".join(blockers)
+        else:
+            try:
+                with psycopg.connect(
+                    host=os.environ["PGHOST"],
+                    port=os.environ["PGPORT"],
+                    dbname=os.environ["PGDATABASE"],
+                    user=os.environ["PGUSER"],
+                    password=os.environ.get("PGPASSWORD"),
+                    options=(f"-c statement_timeout={statement_timeout_ms} " "-c default_transaction_read_only=on"),
+                    autocommit=False,
+                ) as conn:
+                    with conn.cursor() as cur:
+                        cur.execute("SELECT to_regnamespace(%s)", (validation_schema,))
+                        schema_row = cur.fetchone()
+                        schema_name = schema_row[0] if schema_row else None
+                        if not schema_name:
+                            execution_status = "failed"
+                            failure_category = "missing_validation_schema"
+                            error_message = f"validation schema not found: {validation_schema}"
+                        else:
+                            cur.execute(
+                                psycopg.sql.SQL("SET search_path TO {}, public").format(
+                                    psycopg.sql.Identifier(validation_schema)
+                                )
+                            )
+                            search_path_after_set = f"{validation_schema}, public"
+
+                            source_row_count, source_warmup_runtime_ms = execute_sql(cur, source_sql)
+                            conn.rollback()
+
+                            cur.execute(
+                                psycopg.sql.SQL("SET search_path TO {}, public").format(
+                                    psycopg.sql.Identifier(validation_schema)
+                                )
+                            )
+                            candidate_row_count, candidate_warmup_runtime_ms = execute_sql(cur, candidate_sql)
+                            conn.rollback()
+
+                            for repeat_index in range(repeat_count):
+                                order = ["source", "candidate"] if repeat_index % 2 == 0 else ["candidate", "source"]
+                                for role in order:
+                                    cur.execute(
+                                        psycopg.sql.SQL("SET search_path TO {}, public").format(
+                                            psycopg.sql.Identifier(validation_schema)
+                                        )
+                                    )
+                                    sql_text = source_sql if role == "source" else candidate_sql
+                                    rc, rt = execute_sql(cur, sql_text)
+                                    conn.rollback()
+                                    if role == "source":
+                                        source_runtime_ms_values.append(rt)
+                                        if source_row_count is None:
+                                            source_row_count = rc
+                                    else:
+                                        candidate_runtime_ms_values.append(rt)
+                                        if candidate_row_count is None:
+                                            candidate_row_count = rc
+
+                            execution_status = "success"
+            except Exception as exc:
+                execution_status = "failed"
+                failure_category = exc.__class__.__name__
+                error_message = str(exc)
+
+        source_median_runtime_ms, source_min_runtime_ms, source_mean_runtime_ms = runtime_stats(source_runtime_ms_values)
+        candidate_median_runtime_ms, candidate_min_runtime_ms, candidate_mean_runtime_ms = runtime_stats(
+            candidate_runtime_ms_values
+        )
+        if (
+            isinstance(source_median_runtime_ms, (int, float))
+            and isinstance(candidate_median_runtime_ms, (int, float))
+            and source_median_runtime_ms > 0
+            and candidate_median_runtime_ms > 0
+        ):
+            speedup_ratio = float(source_median_runtime_ms / candidate_median_runtime_ms)
+            if speedup_ratio > 1.0 + tie_threshold:
+                win_tie_loss = "win"
+            elif speedup_ratio < 1.0 - tie_threshold:
+                win_tie_loss = "loss"
+            else:
+                win_tie_loss = "tie"
+            regression_20pct = bool(candidate_median_runtime_ms >= regression_threshold * source_median_runtime_ms)
+
+        if source_row_count is not None and candidate_row_count is not None:
+            row_count_match = source_row_count == candidate_row_count
+
+        if execution_status == "failed":
+            failure_categories[failure_category] += 1
+
+        records.append(
+            {
+                "case_id": case_id,
+                "pool": pool,
+                "route": "calcite_rel_to_sql",
+                "baseline_id": "CALCITE_HEP",
+                "validation_schema": validation_schema,
+                "search_path_after_set": search_path_after_set,
+                "checker_status": checker_status,
+                "checker_consistent": checker_consistent,
+                "source_warmup_runtime_ms": source_warmup_runtime_ms,
+                "candidate_warmup_runtime_ms": candidate_warmup_runtime_ms,
+                "source_runtime_ms_values": source_runtime_ms_values,
+                "candidate_runtime_ms_values": candidate_runtime_ms_values,
+                "source_median_runtime_ms": source_median_runtime_ms,
+                "candidate_median_runtime_ms": candidate_median_runtime_ms,
+                "source_min_runtime_ms": source_min_runtime_ms,
+                "candidate_min_runtime_ms": candidate_min_runtime_ms,
+                "source_mean_runtime_ms": source_mean_runtime_ms,
+                "candidate_mean_runtime_ms": candidate_mean_runtime_ms,
+                "speedup_ratio": speedup_ratio,
+                "win_tie_loss": win_tie_loss,
+                "regression_20pct": regression_20pct,
+                "source_row_count": source_row_count,
+                "candidate_row_count": candidate_row_count,
+                "row_count_match": row_count_match,
+                "candidate_sql_source": candidate_sql_source,
+                "candidate_sql_output_path": str(candidate_sql_output_path),
+                "candidate_sql_character_count": candidate_sql_character_count,
+                "execution_status": execution_status,
+                "failure_category": failure_category,
+                "error_message": error_message,
+                "blockers": blockers,
+                "artifact_claim_boundary": "calcite_hep_speedup_postgres_only_bounded_subset_not_final_baseline",
+            }
+        )
+
+    executed_count = sum(1 for record in records if record["execution_status"] in {"success", "failed"})
+    success_count = sum(1 for record in records if record["execution_status"] == "success")
+    failed_count = sum(1 for record in records if record["execution_status"] == "failed")
+    row_count_match_count = sum(1 for record in records if record.get("row_count_match") is True)
+    row_count_mismatch_count = sum(1 for record in records if record.get("row_count_match") is False)
+
+    valid_speedup_values = [
+        float(record["speedup_ratio"])
+        for record in records
+        if record["execution_status"] == "success" and isinstance(record.get("speedup_ratio"), (int, float))
+    ]
+    valid_case_count = len(valid_speedup_values)
+    win_count = sum(1 for record in records if record.get("win_tie_loss") == "win")
+    tie_count = sum(1 for record in records if record.get("win_tie_loss") == "tie")
+    loss_count = sum(1 for record in records if record.get("win_tie_loss") == "loss")
+    regression_20pct_count = sum(1 for record in records if record.get("regression_20pct") is True)
+    gm_speedup = geometric_mean(valid_speedup_values)
+    regression_20pct_rate = float(regression_20pct_count / valid_case_count) if valid_case_count else None
+
+    payload.update(
+        {
+            "ok": not issues
+            and all(record["execution_status"] == ("success" if args.execute else "dry_run_only") for record in records),
+            "executed_count": executed_count,
+            "success_count": success_count,
+            "failed_count": failed_count,
+            "valid_speedup_case_count": valid_case_count,
+            "row_count_match_count": row_count_match_count,
+            "row_count_mismatch_count": row_count_mismatch_count,
+            "GM_Speedup": gm_speedup,
+            "W/T/L": f"{win_count}/{tie_count}/{loss_count}",
+            "RegressionRate@20%": regression_20pct_rate,
+            "regression_20pct_count": regression_20pct_count,
+            "failure_categories": dict(sorted(failure_categories.items())),
+            "records": records,
+            "issues": issues,
+        }
+    )
     write_formal_expansion_report(output_name, payload)
     return print_and_exit(payload, 0 if payload["ok"] else 1)
 
@@ -35085,6 +35565,15 @@ def build_parser() -> argparse.ArgumentParser:
     )
     formal_calcite_hep_speedup_preflight_parser.add_argument("--execute", action="store_true", default=False)
     formal_calcite_hep_speedup_preflight_parser.set_defaults(func=cmd_formal_calcite_hep_speedup_preflight)
+
+    formal_calcite_hep_speedup_run_parser = subparsers.add_parser("formal-calcite-hep-speedup-run")
+    formal_calcite_hep_speedup_run_parser.add_argument("--case-id", action="append", default=[])
+    formal_calcite_hep_speedup_run_parser.add_argument(
+        "--output",
+        default="reports/formal_expansion/calcite_hep_speedup_run_v0.json",
+    )
+    formal_calcite_hep_speedup_run_parser.add_argument("--execute", action="store_true", default=False)
+    formal_calcite_hep_speedup_run_parser.set_defaults(func=cmd_formal_calcite_hep_speedup_run)
 
     formal_calcite_hep_perf0006_numeric_mismatch_diagnostic_parser = subparsers.add_parser(
         "formal-calcite-hep-perf0006-numeric-mismatch-diagnostic"
