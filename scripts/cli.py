@@ -217,6 +217,7 @@ CALCITE_CHECKOUT_ROOT = ROOT / "datasets" / "raw" / "calcite" / "calcite"
 CALCITE_HEP_WRAPPER_SOURCE = ROOT / "tools" / "calcite_hep" / "CalciteHepRewriteSmoke.java"
 CALCITE_HEP_TEMP_ROOT = Path("/tmp/calcite-hep-wrapper")
 CALCITE_HEP_GRADLE_USER_HOME = Path("/tmp/calcite-gradle-home")
+CALCITE_HEP_REAL_ROUTE_CANARY_CASES = ["PERF_0006"]
 PORT_TRANSLATE_SOURCE_DIALECT_FALLBACKS = {
     "PORT_0004": "mysql",
     "PORT_0012": "postgres",
@@ -541,6 +542,10 @@ def calcite_hep_wrapper_case_ids() -> list[str]:
     return list(CALCITE_HEP_WRAPPER_FIRST_PERF_CASES)
 
 
+def calcite_hep_real_route_canary_case_ids() -> list[str]:
+    return list(CALCITE_HEP_REAL_ROUTE_CANARY_CASES)
+
+
 def calcite_hep_wrapper_source_sql_path(case_id: str) -> Path | None:
     inferred = case_root_for_case_id(case_id)
     if inferred is None:
@@ -559,6 +564,10 @@ def calcite_hep_wrapper_ddl_path(case_id: str) -> Path | None:
 
 def calcite_hep_wrapper_output_sql_path(case_id: str) -> Path:
     return CALCITE_HEP_TEMP_ROOT / "outputs" / f"{normalize_case_id_for_filename(case_id)}.sql"
+
+
+def calcite_hep_real_route_output_sql_path(case_id: str) -> Path:
+    return CALCITE_HEP_TEMP_ROOT / "real-route" / f"{normalize_case_id_for_filename(case_id)}.sql"
 
 
 def calcite_hep_wrapper_classes_dir() -> Path:
@@ -598,13 +607,21 @@ def calcite_hep_wrapper_compile_command() -> list[str]:
     ]
 
 
-def calcite_hep_wrapper_run_command(case_id: str, source_sql_path: Path, ddl_path: Path, output_sql_path: Path) -> list[str]:
+def calcite_hep_wrapper_run_command(
+    case_id: str,
+    source_sql_path: Path,
+    ddl_path: Path,
+    output_sql_path: Path,
+    mode: str = "scaffold_parse_only",
+) -> list[str]:
     classpath = os.pathsep.join(calcite_hep_wrapper_runtime_classpath_entries())
     return [
         "java",
         "-cp",
         classpath,
         "CalciteHepRewriteSmoke",
+        "--mode",
+        mode,
         "--case-id",
         case_id,
         "--source-sql",
@@ -6754,6 +6771,269 @@ def cmd_formal_calcite_hep_wrapper_scaffold(args: argparse.Namespace) -> int:
             "formal_review_writeback": "disabled",
         },
         "claim_boundary": "calcite_hep_wrapper_scaffold_generation_only_no_db_execution",
+    }
+    write_formal_expansion_report(output_name, payload)
+    return print_and_exit(payload, 0 if payload["ok"] else 1)
+
+
+def cmd_formal_calcite_hep_real_route_canary(args: argparse.Namespace) -> int:
+    output_name = normalize_formal_expansion_output_name(args.output)
+    selected_case_ids = [str(case_id).strip().upper() for case_id in (args.case_id or []) if str(case_id).strip()]
+    if not selected_case_ids:
+        selected_case_ids = calcite_hep_real_route_canary_case_ids()
+
+    valid_case_ids = set(calcite_hep_real_route_canary_case_ids())
+    issues: list[dict[str, Any]] = []
+    for case_id in selected_case_ids:
+        if case_id not in valid_case_ids:
+            issues.append({"type": "unsupported_case_id", "case_id": case_id})
+    selected_case_ids = [case_id for case_id in selected_case_ids if case_id in valid_case_ids]
+
+    if len(selected_case_ids) != 1:
+        issues.append(
+            {
+                "type": "real_route_canary_requires_single_case",
+                "message": "formal-calcite-hep-real-route-canary supports exactly one case-id",
+            }
+        )
+
+    planned_gradle_command = [
+        "./gradlew",
+        ":core:classes",
+    ]
+    planned_compile_command = calcite_hep_wrapper_compile_command()
+
+    case_id = selected_case_ids[0] if selected_case_ids else ""
+    source_sql_path = calcite_hep_wrapper_source_sql_path(case_id) if case_id else None
+    ddl_path = calcite_hep_wrapper_ddl_path(case_id) if case_id else None
+    output_sql_path = calcite_hep_real_route_output_sql_path(case_id) if case_id else CALCITE_HEP_TEMP_ROOT / "real-route" / "unknown.sql"
+    source_sql_exists = bool(source_sql_path and source_sql_path.is_file())
+    ddl_exists = bool(ddl_path and ddl_path.is_file())
+    final_semicolon_present = False
+    if source_sql_exists and source_sql_path is not None:
+        final_semicolon_present = source_sql_path.read_text(encoding="utf-8").strip().endswith(";")
+    record = {
+        "case_id": case_id,
+        "source_sql_path": relative_to_root(source_sql_path) if source_sql_path else "",
+        "source_sql_exists": source_sql_exists,
+        "ddl_path": relative_to_root(ddl_path) if ddl_path else "",
+        "ddl_exists": ddl_exists,
+        "planned_output_sql_path": str(output_sql_path),
+        "planned_wrapper_command": (
+            calcite_hep_wrapper_run_command(
+                case_id,
+                source_sql_path,
+                ddl_path,
+                output_sql_path,
+                mode="real_route_canary",
+            )
+            if source_sql_path and ddl_path and case_id
+            else []
+        ),
+        "final_semicolon_present_in_source": final_semicolon_present,
+        "route_target": "calcite_hep_real_route_canary",
+        "artifact_claim_boundary": "calcite_hep_real_route_canary_generation_only_no_db_execution",
+    }
+
+    if not args.execute:
+        payload = {
+            "command": "formal-calcite-hep-real-route-canary",
+            "ok": not issues and source_sql_exists and ddl_exists and bool(case_id),
+            "ran_at_utc": utc_now(),
+            "output_path": f"reports/formal_expansion/{output_name}",
+            "case_id": case_id,
+            "case_count": 1 if case_id else 0,
+            "selected_case_ids": selected_case_ids,
+            "route_target": "calcite_hep_real_route_canary",
+            "java_wrapper_source_path": relative_to_root(CALCITE_HEP_WRAPPER_SOURCE),
+            "calcite_checkout_root": relative_to_root(CALCITE_CHECKOUT_ROOT),
+            "gradle_user_home": str(CALCITE_HEP_GRADLE_USER_HOME),
+            "planned_commands": {
+                "gradle_core_classes": planned_gradle_command,
+                "javac_wrapper_compile": planned_compile_command,
+            },
+            "java_wrapper_compiled": False,
+            "wrapper_execute_attempted": False,
+            "record": record,
+            "issues": issues,
+            "guardrails": {
+                "database_execution": "disabled",
+                "checker_execution": "disabled",
+                "speedup_scoring": "disabled",
+                "postgres_execution": "disabled",
+                "case_artifact_write": "disabled",
+                "registry_writeback": "disabled",
+                "formal_review_writeback": "disabled",
+            },
+            "claim_boundary": "calcite_hep_real_route_canary_generation_only_no_db_execution",
+        }
+        write_formal_expansion_report(output_name, payload)
+        return print_and_exit(payload, 0 if payload["ok"] else 1)
+
+    if issues or not source_sql_exists or not ddl_exists or not case_id:
+        payload = {
+            "command": "formal-calcite-hep-real-route-canary",
+            "ok": False,
+            "ran_at_utc": utc_now(),
+            "output_path": "reports/formal_expansion/calcite_hep_real_route_canary_execute_refused_v0.json",
+            "case_id": case_id,
+            "case_count": 1 if case_id else 0,
+            "selected_case_ids": selected_case_ids,
+            "message": "execute refused before wrapper build/invocation",
+            "record": record,
+            "issues": issues
+            + (
+                [{"type": "missing_source_sql", "case_id": case_id}] if case_id and not source_sql_exists else []
+            )
+            + ([{"type": "missing_ddl", "case_id": case_id}] if case_id and not ddl_exists else []),
+            "guardrails": {
+                "database_execution": "disabled",
+                "checker_execution": "disabled",
+                "speedup_scoring": "disabled",
+                "postgres_execution": "disabled",
+                "case_artifact_write": "disabled",
+                "registry_writeback": "disabled",
+                "formal_review_writeback": "disabled",
+            },
+            "claim_boundary": "calcite_hep_real_route_canary_generation_only_no_db_execution",
+        }
+        write_formal_expansion_report("calcite_hep_real_route_canary_execute_refused_v0.json", payload)
+        return print_and_exit(payload, 1)
+
+    output_sql_path.parent.mkdir(parents=True, exist_ok=True)
+    calcite_hep_wrapper_classes_dir().mkdir(parents=True, exist_ok=True)
+
+    gradle_result = run_captured_subprocess(
+        planned_gradle_command,
+        cwd=CALCITE_CHECKOUT_ROOT,
+        env_overrides={"GRADLE_USER_HOME": str(CALCITE_HEP_GRADLE_USER_HOME)},
+    )
+
+    compile_result: dict[str, Any] = {
+        "argv": planned_compile_command,
+        "cwd": str(ROOT),
+        "returncode": None,
+        "stdout": "",
+        "stderr": "",
+        "ok": False,
+    }
+    if gradle_result["ok"]:
+        compile_result = run_captured_subprocess(planned_compile_command, cwd=ROOT)
+
+    if output_sql_path.exists():
+        output_sql_path.unlink()
+
+    wrapper_result: dict[str, Any] = {
+        "argv": calcite_hep_wrapper_run_command(
+            case_id,
+            resolve_repo_path(record["source_sql_path"]),
+            resolve_repo_path(record["ddl_path"]),
+            output_sql_path,
+            mode="real_route_canary",
+        ),
+        "cwd": str(ROOT),
+        "returncode": None,
+        "stdout": "",
+        "stderr": "",
+        "ok": False,
+    }
+    if gradle_result["ok"] and compile_result["ok"]:
+        wrapper_result = run_captured_subprocess(wrapper_result["argv"], cwd=ROOT)
+
+    wrapper_stdout = parse_wrapper_stdout_kv(str(wrapper_result.get("stdout") or ""))
+    emitted_sql_exists = output_sql_path.is_file()
+    emitted_sql_text = output_sql_path.read_text(encoding="utf-8") if emitted_sql_exists else ""
+    source_sql_text = source_sql_path.read_text(encoding="utf-8")
+    emitted_sql_mode = wrapper_stdout.get("emission_mode", "failed")
+
+    blocker_category = ""
+    blocker_message = ""
+    if not gradle_result["ok"]:
+        blocker_category = "gradle_core_classes_failed"
+        blocker_message = str(gradle_result.get("stderr") or gradle_result.get("stdout") or "").strip()
+    elif not compile_result["ok"]:
+        blocker_category = "wrapper_compile_failed"
+        blocker_message = str(compile_result.get("stderr") or compile_result.get("stdout") or "").strip()
+    elif not wrapper_result["ok"]:
+        blocker_category = "wrapper_execute_failed"
+        blocker_message = str(wrapper_result.get("stderr") or wrapper_result.get("stdout") or "").strip()
+    elif emitted_sql_mode == "failed":
+        blocker_category = "real_route_failed"
+        blocker_message = str(wrapper_stdout.get("blocker_message") or "").strip()
+    elif not emitted_sql_exists:
+        blocker_category = "output_sql_missing"
+        blocker_message = "wrapper returned success but did not emit output SQL"
+
+    execution_record = {
+        **record,
+        "java_wrapper_compiled": compile_result["ok"],
+        "wrapper_execute_attempted": True,
+        "wrapper_execute_ok": wrapper_result["ok"],
+        "schema_ddl_ingestion_succeeded": wrapper_stdout.get("schema_ddl_ingestion_succeeded") == "true",
+        "calcite_parse_succeeded": wrapper_stdout.get("calcite_parse_succeeded") == "true",
+        "validation_succeeded": wrapper_stdout.get("validation_succeeded") == "true",
+        "sql_to_rel_succeeded": wrapper_stdout.get("sql_to_rel_succeeded") == "true",
+        "hep_planner_succeeded": wrapper_stdout.get("hep_planner_succeeded") == "true",
+        "rel_to_sql_succeeded": wrapper_stdout.get("rel_to_sql_succeeded") == "true",
+        "candidate_sql_emitted": emitted_sql_exists,
+        "emitted_sql_mode": emitted_sql_mode,
+        "emitted_sql_is_calcite_generated": wrapper_stdout.get("emitted_sql_is_calcite_generated") == "true",
+        "route_stage_reached": wrapper_stdout.get("route_stage_reached", ""),
+        "blocker_stage": wrapper_stdout.get("blocker_stage", ""),
+        "blocker_message": str(wrapper_stdout.get("blocker_message") or blocker_message).strip(),
+        "output_sql_path": str(output_sql_path),
+        "output_sql_character_count": len(emitted_sql_text) if emitted_sql_exists else 0,
+        "output_sql_matches_source_normalized": (
+            normalize_sql_for_compare(emitted_sql_text) == normalize_sql_for_compare(source_sql_text)
+            if emitted_sql_exists
+            else False
+        ),
+        "wrapper_stdout_kv": wrapper_stdout,
+        "gradle_core_classes_result": gradle_result,
+        "wrapper_compile_result": compile_result,
+        "wrapper_run_result": wrapper_result,
+        "blocker_category": blocker_category,
+    }
+
+    payload = {
+        "command": "formal-calcite-hep-real-route-canary",
+        "ok": gradle_result["ok"] and compile_result["ok"] and wrapper_result["ok"] and emitted_sql_exists,
+        "ran_at_utc": utc_now(),
+        "output_path": f"reports/formal_expansion/{output_name}",
+        "case_id": case_id,
+        "case_count": 1,
+        "selected_case_ids": [case_id],
+        "java_wrapper_source_path": relative_to_root(CALCITE_HEP_WRAPPER_SOURCE),
+        "calcite_checkout_root": relative_to_root(CALCITE_CHECKOUT_ROOT),
+        "gradle_user_home": str(CALCITE_HEP_GRADLE_USER_HOME),
+        "java_wrapper_compiled": compile_result["ok"],
+        "wrapper_execute_attempted": True,
+        "wrapper_executed": wrapper_result["ok"],
+        "schema_ddl_ingestion_succeeded": execution_record["schema_ddl_ingestion_succeeded"],
+        "calcite_parse_succeeded": execution_record["calcite_parse_succeeded"],
+        "validation_succeeded": execution_record["validation_succeeded"],
+        "sql_to_rel_succeeded": execution_record["sql_to_rel_succeeded"],
+        "hep_planner_succeeded": execution_record["hep_planner_succeeded"],
+        "rel_to_sql_succeeded": execution_record["rel_to_sql_succeeded"],
+        "candidate_sql_emitted": execution_record["candidate_sql_emitted"],
+        "emitted_sql_mode": emitted_sql_mode,
+        "emitted_sql_is_calcite_generated": execution_record["emitted_sql_is_calcite_generated"],
+        "route_stage_reached": execution_record["route_stage_reached"],
+        "blocker_stage": execution_record["blocker_stage"],
+        "blocker_category": blocker_category,
+        "blocker_message": execution_record["blocker_message"],
+        "record": execution_record,
+        "issues": issues,
+        "guardrails": {
+            "database_execution": "disabled",
+            "checker_execution": "disabled",
+            "speedup_scoring": "disabled",
+            "postgres_execution": "disabled",
+            "case_artifact_write": "disabled",
+            "registry_writeback": "disabled",
+            "formal_review_writeback": "disabled",
+        },
+        "claim_boundary": "calcite_hep_real_route_canary_generation_only_no_db_execution",
     }
     write_formal_expansion_report(output_name, payload)
     return print_and_exit(payload, 0 if payload["ok"] else 1)
@@ -33678,6 +33958,15 @@ def build_parser() -> argparse.ArgumentParser:
     )
     formal_calcite_hep_wrapper_scaffold_parser.add_argument("--execute", action="store_true", default=False)
     formal_calcite_hep_wrapper_scaffold_parser.set_defaults(func=cmd_formal_calcite_hep_wrapper_scaffold)
+
+    formal_calcite_hep_real_route_canary_parser = subparsers.add_parser("formal-calcite-hep-real-route-canary")
+    formal_calcite_hep_real_route_canary_parser.add_argument("--case-id", action="append", default=[])
+    formal_calcite_hep_real_route_canary_parser.add_argument(
+        "--output",
+        default="reports/formal_expansion/calcite_hep_real_route_canary_v0.json",
+    )
+    formal_calcite_hep_real_route_canary_parser.add_argument("--execute", action="store_true", default=False)
+    formal_calcite_hep_real_route_canary_parser.set_defaults(func=cmd_formal_calcite_hep_real_route_canary)
 
     formal_expanded_perf_direct_llm_preflight_parser = subparsers.add_parser("formal-expanded-perf-direct-llm-preflight")
     formal_expanded_perf_direct_llm_preflight_parser.add_argument(
