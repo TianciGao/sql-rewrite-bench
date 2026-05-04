@@ -11,8 +11,8 @@ It summarizes the current state of the formal common-core and PORT artifact stac
 | area | execution status | executable / ready rate | row-count / plan observation | checker-backed consistency status | token usage | speedup status | claim boundary |
 |---|---|---:|---|---|---:|---|---|
 | control routes | complete | `1.0` executable across native / human positive / hard negative | execution and control-route scoring complete | complete from existing checker artifacts | n/a | HUMAN_REFERENCE_POSITIVE PERF-only positive-control speedup complete: `GM_Speedup=0.96159127168004`, `WTL=1/2/4`, `RegressionRate@20%=0/7` | positive-control speedup only, not full leaderboard |
-| SQLGlot same-dialect | complete | `1.0` parse, generation, execution | row-count match `9 / 9`; method plans `9 / 9`; plan parse `9 / 9` | `not_computed_checker_required` | n/a | not computed | row-count match is not semantic correctness |
-| Direct LLM rewrite | complete from existing reports | `1.0` call, extraction, PG execution | row-count match `9 / 9`; method plans `9 / 9`; plan parse `9 / 9` | `not_computed_checker_required` | `5089` total formalized token usage | not computed | read-existing-reports formalization only, not semantic correctness |
+| SQLGlot same-dialect | complete | `1.0` parse, generation, execution | row-count match `9 / 9`; method plans `9 / 9`; plan parse `9 / 9` | `not_computed_checker_required` | n/a | exploratory PERF-only appendix complete: `GM=0.9709643241218479`, `WTL=1/2/4`, `RegressionRate@20%=0/7` | exploratory row-count-gated appendix only, not leaderboard |
+| Direct LLM rewrite | complete from existing reports | `1.0` call, extraction, PG execution | row-count match `9 / 9`; method plans `9 / 9`; plan parse `9 / 9` | `not_computed_checker_required` | `5089` total formalized token usage | exploratory PERF-only appendix complete: `GM=1.0023345046000625`, `WTL=1/5/1`, `RegressionRate@20%=0/7` | exploratory row-count-gated appendix only, not leaderboard |
 | PORT SQLGlot Transpile | partial | preflight `3 / 3`, PG execution `2 / 3` | `PORT_0012` failed `InvalidDatetimeFormat` | not computed | n/a | not computed | not PORT closure |
 | PORT LLM Translate | partial clean subset | prompt `3 / 3`, clean subset `2 / 2` | `PORT_0004` and `PORT_0022` passed; `PORT_0012` held out | not computed | `912` | not computed | clean subset only, not full denominator |
 
@@ -25,6 +25,7 @@ It summarizes the current state of the formal common-core and PORT artifact stac
 - SQLGlot execution and row-count observation are complete, but method checker-backed consistency is not computed
 - Direct LLM execution and row-count observation are complete, but method checker-backed consistency is not computed
 - row-count match is not semantic correctness
+- SQLGlot and Direct LLM exploratory appendix speedup now exists for PERF-only cases, but it remains row-count-gated and not correctness-gated
 
 ## RQ2 Plan Observability
 
@@ -36,7 +37,11 @@ It summarizes the current state of the formal common-core and PORT artifact stac
 - attribution is not computed
 - HUMAN_REFERENCE_POSITIVE PERF-only positive-control speedup is complete:
   `GM_Speedup=0.96159127168004`, `Win/Tie/Loss=1/2/4`, `RegressionRate@20%=0/7`
-- SQLGlot and Direct LLM speedup remain blocked from correctness-gated leaderboard scoring
+- SQLGlot PERF-only exploratory appendix:
+  `GM=0.9709643241218479`, `Win/Tie/Loss=1/2/4`, `RegressionRate@20%=0/7`
+- Direct LLM PERF-only exploratory appendix:
+  `GM=1.0023345046000625`, `Win/Tie/Loss=1/5/1`, `RegressionRate@20%=0/7`, `token_usage=4487`
+- SQLGlot and Direct LLM still remain blocked from correctness-gated leaderboard scoring
 
 Observed operator-delta highlights:
 
@@ -65,6 +70,7 @@ Observed operator-delta highlights:
 - HUMAN_REFERENCE_POSITIVE PERF-only formal speedup run
 - SQLGlot same-dialect execution and scoring snapshot
 - Direct LLM rewrite execution and scoring snapshot
+- SQLGlot / Direct LLM exploratory PERF-only speedup appendix
 - method plan collection
 - plan parse summary
 - plan operator-delta preflight
@@ -75,18 +81,18 @@ Observed operator-delta highlights:
 
 - SQLGlot method checker-backed consistency
 - Direct LLM method checker-backed consistency
-- exploratory SQLGlot / Direct LLM row-count-gated speedup appendix
 - formal operator-delta summary / attribution logic
 - final paper packet consolidation
 
 ## Recommended Next Primary Action
 
-- implement the exploratory SQLGlot / Direct LLM PERF-only row-count-gated speedup appendix while keeping those routes out of the correctness-gated leaderboard
+- decide whether to build route-specific checker-backed consistency artifacts or keep SQLGlot and Direct LLM speedup in appendix only
 
 ## Claim Boundaries
 
 - no final leaderboard
 - HUMAN_REFERENCE_POSITIVE speedup is positive-control only
+- SQLGlot and Direct LLM appendix speedup is exploratory and row-count-gated only
 - SQLGlot and Direct LLM speedup are not admitted into the correctness-gated leaderboard
 - no admission
 - no registry writeback

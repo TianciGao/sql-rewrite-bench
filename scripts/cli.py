@@ -12416,6 +12416,672 @@ def cmd_formal_common_core_human_positive_speedup_run(args: argparse.Namespace) 
     return print_and_exit(payload, 0 if payload["ok"] else 1)
 
 
+def cmd_formal_common_core_exploratory_method_speedup_appendix(args: argparse.Namespace) -> int:
+    output_name = normalize_formal_common_core_output_name(args.output)
+    selected_route = str(args.route or "").strip().upper()
+    valid_routes = {
+        "SQLGLOT_OPT_SAME_DIALECT": {
+            "baseline_id": "SQLGLOT_OPT_SAME_DIALECT",
+            "route": "sqlglot_opt_same_dialect",
+            "execution_report_path": FORMAL_COMMON_CORE_REPORT_DIR / "sqlglot_opt_same_dialect_execution_v0.json",
+            "execution_status_field": "execution_status",
+            "row_count_field": "row_count",
+            "runtime_field": "runtime_ms",
+        },
+        "LLM_DIRECT_REWRITE_STRONG": {
+            "baseline_id": "LLM_DIRECT_REWRITE_STRONG",
+            "route": "llm_direct_rewrite",
+            "execution_report_path": FORMAL_COMMON_CORE_REPORT_DIR / "llm_direct_rewrite_execution_v0.json",
+            "execution_status_field": "pg_execution_status",
+            "row_count_field": "pg_row_count",
+            "runtime_field": "pg_runtime_ms",
+        },
+    }
+    perf_case_ids = [
+        "PERF_0006",
+        "PERF_0008",
+        "PERF_0013",
+        "PERF_0017",
+        "PERF_0024",
+        "PERF_0033",
+        "PERF_0054",
+    ]
+
+    def runtime_stats(values: list[float]) -> tuple[float | None, float | None, float | None]:
+        if not values:
+            return None, None, None
+        return float(statistics.median(values)), min(values), float(sum(values) / len(values))
+
+    def geometric_mean(values: list[float]) -> float | None:
+        positive_values = [value for value in values if isinstance(value, (int, float)) and value > 0]
+        if not positive_values:
+            return None
+        return float(math.exp(sum(math.log(value) for value in positive_values) / len(positive_values)))
+
+    def execute_sql(cur: Any, sql_text: str) -> tuple[int | None, float]:
+        started = time.perf_counter()
+        cur.execute(sql_text)
+        if cur.description is not None:
+            rows = cur.fetchall()
+            row_count = len(rows)
+        else:
+            row_count = cur.rowcount if cur.rowcount >= 0 else None
+        runtime_ms = round((time.perf_counter() - started) * 1000, 3)
+        return row_count, runtime_ms
+
+    def resolve_llm_candidate_sql(
+        case_id: str,
+        execution_record: dict[str, Any] | None,
+    ) -> tuple[str, str, int | None, str, bool]:
+        execution_record = execution_record or {}
+        case_slug = case_id.lower()
+        call_report_path = BASELINE_SMOKE_REPORT_DIR / f"llm_direct_rewrite_call_{case_slug}_v0.json"
+        call_report = load_json_if_present(call_report_path)
+        call_record = ((call_report or {}).get("records") or [{}])[0]
+
+        formal_extracted_sql_text = str(execution_record.get("extracted_sql_text") or "").strip()
+        formal_raw_output_text = str(execution_record.get("raw_output_text") or "").strip()
+        formal_extracted_preview = str(execution_record.get("extracted_sql_preview") or "").strip()
+        formal_raw_output_preview = str(execution_record.get("raw_output_preview") or "").strip()
+
+        call_extracted_sql_text = str(call_record.get("extracted_sql_text") or "").strip()
+        call_raw_output_text = str(call_record.get("raw_output_text") or "").strip()
+        call_extracted_preview = str(call_record.get("extracted_sql_preview") or "").strip()
+        call_raw_output_preview = str(call_record.get("raw_output_preview") or "").strip()
+
+        formal_extracted_preview_contaminated = bool(
+            formal_extracted_sql_text
+            and call_extracted_sql_text
+            and call_extracted_preview
+            and formal_extracted_sql_text == call_extracted_preview
+            and len(call_extracted_sql_text) > len(formal_extracted_sql_text)
+        )
+        formal_raw_output_preview_contaminated = bool(
+            formal_raw_output_text
+            and formal_raw_output_preview
+            and formal_raw_output_text == formal_raw_output_preview
+            and call_raw_output_text
+            and len(call_raw_output_text) > len(formal_raw_output_text)
+        )
+        call_extracted_preview_contaminated = bool(
+            call_extracted_sql_text
+            and call_extracted_preview
+            and call_extracted_sql_text == call_extracted_preview
+        )
+        call_raw_output_preview_contaminated = bool(
+            call_raw_output_text
+            and call_raw_output_preview
+            and call_raw_output_text == call_raw_output_preview
+        )
+
+        if formal_extracted_sql_text and not formal_extracted_preview_contaminated:
+            return (
+                formal_extracted_sql_text,
+                "formal_execution.extracted_sql_text",
+                int(execution_record.get("extracted_sql_character_count") or len(formal_extracted_sql_text)),
+                formal_extracted_sql_text[:500],
+                False,
+            )
+        if formal_raw_output_text and not formal_raw_output_preview_contaminated:
+            return (
+                formal_raw_output_text,
+                "formal_execution.raw_output_text",
+                int(execution_record.get("raw_output_character_count") or len(formal_raw_output_text)),
+                formal_raw_output_text[:500],
+                False,
+            )
+        if call_extracted_sql_text and not call_extracted_preview_contaminated:
+            return (
+                call_extracted_sql_text,
+                "baseline_call.extracted_sql_text",
+                int(call_record.get("extracted_sql_character_count") or len(call_extracted_sql_text)),
+                call_extracted_sql_text[:500],
+                False,
+            )
+        if call_raw_output_text and not call_raw_output_preview_contaminated:
+            return (
+                call_raw_output_text,
+                "baseline_call.raw_output_text",
+                int(call_record.get("raw_output_character_count") or len(call_raw_output_text)),
+                call_raw_output_text[:500],
+                False,
+            )
+
+        preview_value = (
+            formal_extracted_preview
+            or formal_raw_output_preview
+            or call_extracted_preview
+            or call_raw_output_preview
+        )
+        preview_only = bool(preview_value)
+        return "", "preview_only_unusable", None, preview_value[:500], preview_only
+
+    if args.execute and selected_route not in valid_routes:
+        payload = {
+            "command": "formal-common-core-exploratory-method-speedup-appendix",
+            "ok": False,
+            "ran_at_utc": utc_now(),
+            "output_path": "reports/formal_common_core/exploratory_method_speedup_appendix_execute_refused_v0.json",
+            "route": selected_route or "",
+            "claim_boundary": "exploratory_method_speedup_appendix_only_not_correctness_gated_leaderboard",
+            "message": "This command requires an explicit --route when --execute is provided.",
+            "issues": [
+                {
+                    "type": "invalid_or_missing_route",
+                    "message": "formal-common-core-exploratory-method-speedup-appendix --execute requires --route SQLGLOT_OPT_SAME_DIALECT or --route LLM_DIRECT_REWRITE_STRONG",
+                }
+            ],
+            "guardrails": {
+                "database_execution": "enabled_only_with_execute",
+                "sql_execution": "source_and_existing_method_candidate_only",
+                "model_api_call": "disabled",
+                "sqlglot_generation": "disabled",
+                "checker_execution": "disabled",
+                "explain_execution": "disabled",
+                "plan_collection": "disabled",
+                "hard_negative_execution": "disabled",
+                "cons_cases": "disabled",
+                "case_artifact_write": "disabled",
+                "registry_writeback": "disabled",
+            },
+        }
+        write_formal_common_core_report("exploratory_method_speedup_appendix_execute_refused_v0.json", payload)
+        return print_and_exit(payload, 1)
+
+    selected_case_ids = [str(case_id).strip().upper() for case_id in (args.case_id or []) if str(case_id).strip()]
+    if not selected_case_ids:
+        selected_case_ids = list(perf_case_ids)
+
+    invalid_case_ids = [case_id for case_id in selected_case_ids if case_id not in perf_case_ids]
+    invalid_selection_present = bool(invalid_case_ids)
+    selected_routes = [selected_route] if selected_route in valid_routes else list(valid_routes)
+    issues: list[dict[str, Any]] = []
+    for case_id in invalid_case_ids:
+        issues.append(
+            {
+                "type": "unsupported_case_id",
+                "case_id": case_id,
+                "message": "formal-common-core-exploratory-method-speedup-appendix supports PERF-only cases",
+            }
+        )
+
+    if not selected_routes:
+        payload = {
+            "command": "formal-common-core-exploratory-method-speedup-appendix",
+            "ok": False,
+            "ran_at_utc": utc_now(),
+            "output_path": f"reports/formal_common_core/{output_name}",
+            "route": "",
+            "issues": [
+                {
+                    "type": "missing_route",
+                    "message": "Provide --route SQLGLOT_OPT_SAME_DIALECT or --route LLM_DIRECT_REWRITE_STRONG",
+                }
+            ],
+            "records": [],
+            "guardrails": {
+                "database_execution": "enabled_only_with_execute",
+                "sql_execution": "source_and_existing_method_candidate_only",
+                "model_api_call": "disabled",
+                "sqlglot_generation": "disabled",
+                "checker_execution": "disabled",
+                "explain_execution": "disabled",
+                "plan_collection": "disabled",
+                "hard_negative_execution": "disabled",
+                "cons_cases": "disabled",
+                "case_artifact_write": "disabled",
+                "registry_writeback": "disabled",
+            },
+            "claim_boundary": "exploratory_method_speedup_appendix_only_not_correctness_gated_leaderboard",
+        }
+        write_formal_common_core_report(output_name, payload)
+        return print_and_exit(payload, 1)
+
+    env_visibility = pg_env_visibility()
+    required_env_visible = all(env_visibility[name] for name in ["PGHOST", "PGPORT", "PGDATABASE", "PGUSER"])
+    pg_password_present = env_visibility["PGPASSWORD"]
+    pg_client_available = safe_module_available("psycopg")
+    psycopg: Any | None = None
+    if args.execute and pg_client_available:
+        try:
+            psycopg = importlib.import_module("psycopg")
+        except ModuleNotFoundError:
+            pg_client_available = False
+
+    if len(selected_routes) > 1:
+        route_config = {
+            "baseline_id": "MULTI_ROUTE_DRY_RUN",
+            "route": "multi_route_dry_run",
+            "execution_report_path": None,
+            "execution_status_field": "",
+            "row_count_field": "",
+            "runtime_field": "",
+        }
+        route_reports: dict[str, dict[str, Any] | None] = {
+            route_key: load_json_if_present(valid_routes[route_key]["execution_report_path"])
+            for route_key in selected_routes
+        }
+    else:
+        route_key = selected_routes[0]
+        route_config = valid_routes[route_key]
+        route_reports = {route_key: load_json_if_present(route_config["execution_report_path"])}
+
+    native_execution_report = load_json_if_present(FORMAL_COMMON_CORE_REPORT_DIR / "native_identity_execution_v0.json")
+    method_consistency_report = load_json_if_present(FORMAL_COMMON_CORE_REPORT_DIR / "method_consistency_scoring_v0.json")
+    speedup_preflight_report = load_json_if_present(FORMAL_COMMON_CORE_REPORT_DIR / "speedup_preflight_v0.json")
+
+    native_execution_map = {
+        str(record.get("case_id", "")).strip(): record
+        for record in (native_execution_report or {}).get("records", [])
+        if record.get("case_id")
+    }
+    route_consistency_summary_map = {
+        str(summary.get("baseline_id", "")).strip(): summary
+        for summary in (method_consistency_report or {}).get("route_summaries", [])
+        if summary.get("baseline_id")
+    }
+    speedup_preflight_records = [
+        record
+        for record in (speedup_preflight_report or {}).get("records", [])
+        if str(record.get("case_id", "")).strip().upper() in perf_case_ids
+    ]
+    plan_pair_ready_map = {
+        (str(record.get("route", "")).strip(), str(record.get("case_id", "")).strip()): bool(record.get("plan_pair_ready"))
+        for record in speedup_preflight_records
+    }
+
+    all_records: list[dict[str, Any]] = []
+    route_payloads: list[dict[str, Any]] = []
+
+    for route_key in selected_routes:
+        current_route_config = valid_routes[route_key]
+        report = route_reports.get(route_key)
+        report_record_map = {
+            str(record.get("case_id", "")).strip(): record
+            for record in (report or {}).get("records", [])
+            if record.get("case_id")
+        }
+        records: list[dict[str, Any]] = []
+
+        for case_id in selected_case_ids:
+            inferred = case_root_for_case_id(case_id)
+            validation_schema = validation_schema_hint(case_id)
+            if inferred is None:
+                records.append(
+                    {
+                        "case_id": case_id,
+                        "execution_status": "failed",
+                        "source_warmup_runtime_ms": None,
+                        "candidate_warmup_runtime_ms": None,
+                        "source_runtime_ms_values": [],
+                        "candidate_runtime_ms_values": [],
+                        "source_median_runtime_ms": None,
+                        "candidate_median_runtime_ms": None,
+                        "source_min_runtime_ms": None,
+                        "candidate_min_runtime_ms": None,
+                        "source_mean_runtime_ms": None,
+                        "candidate_mean_runtime_ms": None,
+                        "exploratory_speedup_ratio": None,
+                        "win_tie_loss_status": "unknown",
+                        "regression_20pct": None,
+                        "source_row_count": None,
+                        "candidate_row_count": None,
+                        "row_count_matches_source": None,
+                        "failure_category": "case_not_resolved",
+                        "error_message": "could not resolve case root from case_id",
+                        "candidate_sql_source": "not_available",
+                        "candidate_sql_available": False,
+                        "candidate_sql_character_count": None,
+                        "candidate_sql_preview": "",
+                        "token_usage_total": None,
+                        "validation_schema": validation_schema,
+                        "search_path_after_set": "",
+                        "artifact_claim_boundary": "exploratory_row_count_gated_method_speedup_not_leaderboard",
+                    }
+                )
+                continue
+
+            pool, case_root = inferred
+            source_sql_path = case_root / "source.sql"
+            source_sql_exists = source_sql_path.is_file()
+            source_sql = source_sql_path.read_text(encoding="utf-8") if source_sql_exists else ""
+            method_record = report_record_map.get(case_id)
+            candidate_sql = ""
+            candidate_sql_source = "not_available"
+            candidate_sql_character_count: int | None = None
+            candidate_sql_preview = ""
+            preview_only_unusable = False
+            if route_key == "SQLGLOT_OPT_SAME_DIALECT":
+                generated_sql_text = str((method_record or {}).get("generated_sql_text") or "").strip()
+                generated_sql_preview = str((method_record or {}).get("generated_sql_preview") or "").strip()
+                if generated_sql_text:
+                    candidate_sql = generated_sql_text
+                    candidate_sql_source = "formal_execution.generated_sql_text"
+                    candidate_sql_character_count = int((method_record or {}).get("generated_sql_character_count") or len(generated_sql_text))
+                    candidate_sql_preview = generated_sql_text[:500]
+                else:
+                    candidate_sql_preview = generated_sql_preview[:500]
+            else:
+                (
+                    candidate_sql,
+                    candidate_sql_source,
+                    candidate_sql_character_count,
+                    candidate_sql_preview,
+                    preview_only_unusable,
+                ) = resolve_llm_candidate_sql(case_id, method_record)
+
+            candidate_sql_available = bool(candidate_sql)
+            search_path_after_set = ""
+            source_warmup_runtime_ms: float | None = None
+            candidate_warmup_runtime_ms: float | None = None
+            source_runtime_ms_values: list[float] = []
+            candidate_runtime_ms_values: list[float] = []
+            source_row_count: int | None = None
+            candidate_row_count: int | None = None
+            failure_category = "none"
+            error_message = ""
+            execution_status = "dry_run_only"
+            row_count_matches_source: bool | None = None
+            token_usage_total = (method_record or {}).get("token_usage_total") if route_key == "LLM_DIRECT_REWRITE_STRONG" else None
+
+            blockers: list[str] = []
+            if not source_sql_exists:
+                blockers.append("missing_source_sql")
+            if method_record is None:
+                blockers.append("missing_method_execution_record")
+            if str((method_record or {}).get(current_route_config["execution_status_field"], "")) != "success":
+                blockers.append("missing_candidate_execution_success")
+            if not validation_schema:
+                blockers.append("missing_validation_schema")
+            if preview_only_unusable:
+                blockers.append("truncated_preview_only")
+            if not candidate_sql_available:
+                blockers.append("missing_full_candidate_sql")
+            if not bool(plan_pair_ready_map.get((current_route_config["route"], case_id), False)):
+                blockers.append("missing_plan_pair_ready")
+
+            if not args.execute:
+                execution_status = "dry_run_only"
+            elif invalid_selection_present:
+                execution_status = "blocked_invalid_selection"
+                failure_category = "invalid_selection"
+            elif blockers:
+                execution_status = "blocked_preflight"
+                failure_category = "truncated_preview_only" if "truncated_preview_only" in blockers else "preflight_blocked"
+                error_message = "; ".join(dict.fromkeys(blockers))
+            elif not required_env_visible:
+                execution_status = "env_blocked"
+                failure_category = "missing_pg_env"
+                error_message = "required PostgreSQL environment variables are not visible"
+            elif not pg_client_available or psycopg is None:
+                execution_status = "client_unavailable"
+                failure_category = "psycopg_unavailable"
+                error_message = "psycopg is not available"
+            else:
+                try:
+                    with psycopg.connect(
+                        host=os.environ["PGHOST"],
+                        port=os.environ["PGPORT"],
+                        dbname=os.environ["PGDATABASE"],
+                        user=os.environ["PGUSER"],
+                        password=os.environ.get("PGPASSWORD"),
+                        options=(
+                            "-c statement_timeout=30000 "
+                            "-c default_transaction_read_only=on"
+                        ),
+                        autocommit=False,
+                    ) as conn:
+                        with conn.cursor() as cur:
+                            cur.execute("SELECT to_regnamespace(%s)", (validation_schema,))
+                            schema_row = cur.fetchone()
+                            schema_name = schema_row[0] if schema_row else None
+                            if not schema_name:
+                                execution_status = "failed"
+                                failure_category = "missing_validation_schema"
+                                error_message = f"validation schema not found: {validation_schema}"
+                            else:
+                                cur.execute(
+                                    psycopg.sql.SQL("SET search_path TO {}, public").format(
+                                        psycopg.sql.Identifier(validation_schema)
+                                    )
+                                )
+                                cur.execute("SHOW search_path")
+                                search_path_after_set = str((cur.fetchone() or [""])[0])
+
+                                source_row_count, source_warmup_runtime_ms = execute_sql(cur, source_sql)
+                                conn.rollback()
+                                cur.execute(
+                                    psycopg.sql.SQL("SET search_path TO {}, public").format(
+                                        psycopg.sql.Identifier(validation_schema)
+                                    )
+                                )
+                                candidate_row_count, candidate_warmup_runtime_ms = execute_sql(cur, candidate_sql)
+                                conn.rollback()
+
+                                for repeat_index in range(1, 6):
+                                    cur.execute(
+                                        psycopg.sql.SQL("SET search_path TO {}, public").format(
+                                            psycopg.sql.Identifier(validation_schema)
+                                        )
+                                    )
+                                    if repeat_index % 2 == 1:
+                                        source_row_count, source_runtime_ms = execute_sql(cur, source_sql)
+                                        conn.rollback()
+                                        cur.execute(
+                                            psycopg.sql.SQL("SET search_path TO {}, public").format(
+                                                psycopg.sql.Identifier(validation_schema)
+                                            )
+                                        )
+                                        candidate_row_count, candidate_runtime_ms = execute_sql(cur, candidate_sql)
+                                        conn.rollback()
+                                    else:
+                                        candidate_row_count, candidate_runtime_ms = execute_sql(cur, candidate_sql)
+                                        conn.rollback()
+                                        cur.execute(
+                                            psycopg.sql.SQL("SET search_path TO {}, public").format(
+                                                psycopg.sql.Identifier(validation_schema)
+                                            )
+                                        )
+                                        source_row_count, source_runtime_ms = execute_sql(cur, source_sql)
+                                        conn.rollback()
+                                    source_runtime_ms_values.append(source_runtime_ms)
+                                    candidate_runtime_ms_values.append(candidate_runtime_ms)
+                                execution_status = "success"
+                except Exception as exc:
+                    execution_status = "failed"
+                    failure_category = type(exc).__name__
+                    error_message = str(exc)
+                    issues.append({"type": type(exc).__name__, "case_id": case_id, "route": current_route_config["route"], "message": str(exc)})
+
+            source_median_runtime_ms, source_min_runtime_ms, source_mean_runtime_ms = runtime_stats(source_runtime_ms_values)
+            candidate_median_runtime_ms, candidate_min_runtime_ms, candidate_mean_runtime_ms = runtime_stats(candidate_runtime_ms_values)
+            if (
+                isinstance(source_median_runtime_ms, (int, float))
+                and isinstance(candidate_median_runtime_ms, (int, float))
+                and candidate_median_runtime_ms > 0
+            ):
+                exploratory_speedup_ratio = float(source_median_runtime_ms / candidate_median_runtime_ms)
+                if exploratory_speedup_ratio > 1.05:
+                    win_tie_loss_status = "win"
+                elif exploratory_speedup_ratio < 0.95:
+                    win_tie_loss_status = "loss"
+                else:
+                    win_tie_loss_status = "tie"
+                regression_20pct = bool(candidate_median_runtime_ms >= 1.2 * source_median_runtime_ms)
+            else:
+                exploratory_speedup_ratio = None
+                win_tie_loss_status = "unknown"
+                regression_20pct = None
+
+            if source_row_count is not None and candidate_row_count is not None:
+                row_count_matches_source = source_row_count == candidate_row_count
+
+            records.append(
+                {
+                    "case_id": case_id,
+                    "pool": pool,
+                    "baseline_id": current_route_config["baseline_id"],
+                    "route": current_route_config["route"],
+                    "validation_schema": validation_schema,
+                    "search_path_after_set": search_path_after_set,
+                    "candidate_sql_source": candidate_sql_source,
+                    "candidate_sql_available": candidate_sql_available,
+                    "candidate_sql_character_count": candidate_sql_character_count,
+                    "candidate_sql_preview": candidate_sql_preview,
+                    "token_usage_total": token_usage_total,
+                    "source_warmup_runtime_ms": source_warmup_runtime_ms,
+                    "candidate_warmup_runtime_ms": candidate_warmup_runtime_ms,
+                    "source_runtime_ms_values": source_runtime_ms_values,
+                    "candidate_runtime_ms_values": candidate_runtime_ms_values,
+                    "source_median_runtime_ms": source_median_runtime_ms,
+                    "candidate_median_runtime_ms": candidate_median_runtime_ms,
+                    "source_min_runtime_ms": source_min_runtime_ms,
+                    "candidate_min_runtime_ms": candidate_min_runtime_ms,
+                    "source_mean_runtime_ms": source_mean_runtime_ms,
+                    "candidate_mean_runtime_ms": candidate_mean_runtime_ms,
+                    "exploratory_speedup_ratio": exploratory_speedup_ratio,
+                    "win_tie_loss_status": win_tie_loss_status,
+                    "regression_20pct": regression_20pct,
+                    "source_row_count": source_row_count,
+                    "candidate_row_count": candidate_row_count,
+                    "row_count_matches_source": row_count_matches_source,
+                    "execution_status": execution_status,
+                    "failure_category": failure_category,
+                    "error_message": error_message,
+                    "artifact_claim_boundary": "exploratory_row_count_gated_method_speedup_not_leaderboard",
+                }
+            )
+
+        executed_case_count = sum(1 for record in records if record["execution_status"] in {"success", "failed"})
+        success_count = sum(1 for record in records if record["execution_status"] == "success")
+        failed_count = sum(1 for record in records if record["execution_status"] == "failed")
+        valid_speedup_values = [
+            float(record["exploratory_speedup_ratio"])
+            for record in records
+            if isinstance(record.get("exploratory_speedup_ratio"), (int, float)) and record.get("execution_status") == "success"
+        ]
+        exploratory_gm_speedup = geometric_mean(valid_speedup_values)
+        win_count = sum(1 for record in records if record.get("win_tie_loss_status") == "win")
+        tie_count = sum(1 for record in records if record.get("win_tie_loss_status") == "tie")
+        loss_count = sum(1 for record in records if record.get("win_tie_loss_status") == "loss")
+        regression_20pct_count = sum(1 for record in records if record.get("regression_20pct") is True)
+        row_count_match_count = sum(1 for record in records if record.get("row_count_matches_source") is True)
+        row_count_mismatch_count = sum(1 for record in records if record.get("row_count_matches_source") is False)
+        total_token_usage = None
+        token_per_executed_case = None
+        if route_key == "LLM_DIRECT_REWRITE_STRONG":
+            token_values = [int(record.get("token_usage_total")) for record in records if isinstance(record.get("token_usage_total"), int)]
+            total_token_usage = sum(token_values) if token_values else 0
+            token_per_executed_case = (float(total_token_usage) / executed_case_count) if executed_case_count else None
+
+        route_payload = {
+            "command": "formal-common-core-exploratory-method-speedup-appendix",
+            "ok": (
+                not issues
+                and all(record["execution_status"] == ("success" if args.execute else "dry_run_only") for record in records)
+            ),
+            "ran_at_utc": utc_now(),
+            "output_path": f"reports/formal_common_core/{output_name}",
+            "route": current_route_config["route"],
+            "baseline_id": current_route_config["baseline_id"],
+            "speedup_scope": "PERF_only_exploratory_row_count_gated_appendix",
+            "case_count": len(records),
+            "executed_case_count": executed_case_count,
+            "success_count": success_count,
+            "failed_count": failed_count,
+            "repeat_count": 5,
+            "warmup_count": 1,
+            "statement_timeout_ms": 30000,
+            "primary_runtime_statistic": "median",
+            "tie_threshold": 0.05,
+            "regression_threshold": 1.2,
+            "row_count_match_count": row_count_match_count,
+            "row_count_mismatch_count": row_count_mismatch_count,
+            "exploratory_valid_case_count": len(valid_speedup_values),
+            "exploratory_gm_speedup": exploratory_gm_speedup,
+            "win_count": win_count,
+            "tie_count": tie_count,
+            "loss_count": loss_count,
+            "regression_20pct_count": regression_20pct_count,
+            "total_token_usage": total_token_usage,
+            "token_per_executed_case": token_per_executed_case,
+            "formal_leaderboard_eligible": False,
+            "correctness_gate_status": "not_checker_backed_row_count_gated_only",
+            "pg_env_visible": required_env_visible,
+            "pg_password_present": pg_password_present,
+            "pg_client_available": pg_client_available,
+            "records": records,
+            "issues": list(issues),
+            "guardrails": {
+                "database_execution": "enabled_only_with_execute",
+                "sql_execution": "source_and_existing_method_candidate_only",
+                "model_api_call": "disabled",
+                "sqlglot_generation": "disabled",
+                "checker_execution": "disabled",
+                "explain_execution": "disabled",
+                "plan_collection": "disabled",
+                "hard_negative_execution": "disabled",
+                "cons_cases": "disabled",
+                "case_artifact_write": "disabled",
+                "registry_writeback": "disabled",
+            },
+            "claim_boundary": "exploratory_method_speedup_appendix_only_not_correctness_gated_leaderboard",
+        }
+        route_payloads.append(route_payload)
+        all_records.extend(records)
+
+    payload = route_payloads[0] if len(route_payloads) == 1 else {
+        "command": "formal-common-core-exploratory-method-speedup-appendix",
+        "ok": all(route_payload["ok"] for route_payload in route_payloads),
+        "ran_at_utc": utc_now(),
+        "output_path": f"reports/formal_common_core/{output_name}",
+        "route": "multi_route_dry_run",
+        "baseline_id": "MULTI_ROUTE_DRY_RUN",
+        "speedup_scope": "PERF_only_exploratory_row_count_gated_appendix",
+        "case_count": len(all_records),
+        "executed_case_count": 0,
+        "success_count": 0,
+        "failed_count": 0,
+        "repeat_count": 5,
+        "warmup_count": 1,
+        "statement_timeout_ms": 30000,
+        "primary_runtime_statistic": "median",
+        "tie_threshold": 0.05,
+        "regression_threshold": 1.2,
+        "row_count_match_count": 0,
+        "row_count_mismatch_count": 0,
+        "exploratory_valid_case_count": 0,
+        "exploratory_gm_speedup": None,
+        "win_count": 0,
+        "tie_count": 0,
+        "loss_count": 0,
+        "regression_20pct_count": 0,
+        "total_token_usage": None,
+        "token_per_executed_case": None,
+        "formal_leaderboard_eligible": False,
+        "correctness_gate_status": "not_checker_backed_row_count_gated_only",
+        "records": all_records,
+        "route_summaries": route_payloads,
+        "issues": list(issues),
+        "guardrails": {
+            "database_execution": "enabled_only_with_execute",
+            "sql_execution": "source_and_existing_method_candidate_only",
+            "model_api_call": "disabled",
+            "sqlglot_generation": "disabled",
+            "checker_execution": "disabled",
+            "explain_execution": "disabled",
+            "plan_collection": "disabled",
+            "hard_negative_execution": "disabled",
+            "cons_cases": "disabled",
+            "case_artifact_write": "disabled",
+            "registry_writeback": "disabled",
+        },
+        "claim_boundary": "exploratory_method_speedup_appendix_only_not_correctness_gated_leaderboard",
+    }
+    write_formal_common_core_report(output_name, payload)
+    return print_and_exit(payload, 0 if payload["ok"] else 1)
+
+
 def cmd_formal_common_core_method_plan_collection_preflight(args: argparse.Namespace) -> int:
     output_name = normalize_formal_common_core_output_name(args.output)
     if args.execute:
@@ -19828,6 +20494,19 @@ def build_parser() -> argparse.ArgumentParser:
     )
     formal_common_core_human_positive_speedup_run_parser.add_argument("--execute", action="store_true", default=False)
     formal_common_core_human_positive_speedup_run_parser.set_defaults(func=cmd_formal_common_core_human_positive_speedup_run)
+
+    formal_common_core_exploratory_method_speedup_appendix_parser = subparsers.add_parser("formal-common-core-exploratory-method-speedup-appendix")
+    formal_common_core_exploratory_method_speedup_appendix_parser.add_argument(
+        "--route",
+        default="",
+    )
+    formal_common_core_exploratory_method_speedup_appendix_parser.add_argument("--case-id", action="append", default=[])
+    formal_common_core_exploratory_method_speedup_appendix_parser.add_argument(
+        "--output",
+        default="exploratory_method_speedup_appendix_v0.json",
+    )
+    formal_common_core_exploratory_method_speedup_appendix_parser.add_argument("--execute", action="store_true", default=False)
+    formal_common_core_exploratory_method_speedup_appendix_parser.set_defaults(func=cmd_formal_common_core_exploratory_method_speedup_appendix)
 
     formal_common_core_method_plan_collection_preflight_parser = subparsers.add_parser("formal-common-core-method-plan-collection-preflight")
     formal_common_core_method_plan_collection_preflight_parser.add_argument(
