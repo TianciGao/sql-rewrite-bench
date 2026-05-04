@@ -17848,6 +17848,262 @@ def cmd_formal_batch2a_sqlglot_failure_analysis(args: argparse.Namespace) -> int
     return print_and_exit(payload, 0)
 
 
+def cmd_formal_batch2a_sqlglot_fallback_diagnostic(args: argparse.Namespace) -> int:
+    output_name = normalize_formal_expansion_output_name(args.output)
+    available_variants = {
+        "SQLGLOT_TRANSPILE_SAME_DIALECT_NO_OPT": "sqlglot_transpile_same_dialect_no_opt",
+    }
+
+    selected_case_ids = [str(case_id).strip().upper() for case_id in (args.case_id or []) if str(case_id).strip()]
+    selected_variants = [str(variant).strip().upper() for variant in (args.variant or []) if str(variant).strip()]
+
+    analysis_path = FORMAL_EXPANSION_REPORT_DIR / "batch2a_sqlglot_failure_analysis_v0.json"
+    execution_path = FORMAL_EXPANSION_REPORT_DIR / "batch2a_pg_execution_v0.json"
+    issues: list[dict[str, Any]] = []
+
+    analysis_report = load_json_if_present(analysis_path)
+    execution_report = load_json_if_present(execution_path)
+    if analysis_report is None:
+        issues.append({"type": "missing_failure_analysis_report", "path": relative_to_root(analysis_path)})
+    if execution_report is None:
+        issues.append({"type": "missing_batch2a_execution_report", "path": relative_to_root(execution_path)})
+
+    failed_case_ids = list((analysis_report or {}).get("optimize_error_cases", [])) + list(
+        (analysis_report or {}).get("undefined_column_cases", [])
+    )
+    failed_case_ids = [str(case_id).strip().upper() for case_id in failed_case_ids if str(case_id).strip()]
+    valid_case_ids = set(failed_case_ids)
+    if not selected_case_ids:
+        selected_case_ids = failed_case_ids
+    if not selected_variants:
+        selected_variants = list(available_variants)
+
+    invalid_case_ids = [case_id for case_id in selected_case_ids if case_id not in valid_case_ids]
+    invalid_variants = [variant for variant in selected_variants if variant not in available_variants]
+    if (invalid_case_ids or invalid_variants) and args.execute:
+        payload = {
+            "command": "formal-batch2a-sqlglot-fallback-diagnostic",
+            "ok": False,
+            "ran_at_utc": utc_now(),
+            "output_path": "reports/formal_expansion/batch2a_sqlglot_fallback_diagnostic_execute_refused_v0.json",
+            "issues": [
+                *({"type": "unsupported_case_id", "case_id": case_id} for case_id in invalid_case_ids),
+                *({"type": "unsupported_variant", "variant": variant} for variant in invalid_variants),
+            ],
+            "claim_boundary": "batch2a_sqlglot_fallback_diagnostic_not_correctness_or_speedup",
+        }
+        write_formal_expansion_report("batch2a_sqlglot_fallback_diagnostic_execute_refused_v0.json", payload)
+        return print_and_exit(payload, 1)
+    issues.extend({"type": "unsupported_case_id", "case_id": case_id} for case_id in invalid_case_ids)
+    issues.extend({"type": "unsupported_variant", "variant": variant} for variant in invalid_variants)
+    selected_case_ids = [case_id for case_id in selected_case_ids if case_id in valid_case_ids]
+    selected_variants = [variant for variant in selected_variants if variant in available_variants]
+
+    env_visibility = pg_env_visibility()
+    required_env_visible = all(env_visibility[name] for name in ["PGHOST", "PGPORT", "PGDATABASE", "PGUSER"])
+    pg_password_present = env_visibility["PGPASSWORD"]
+    psycopg_available = safe_module_available("psycopg")
+    sqlglot_available = safe_module_available("sqlglot")
+    if args.execute and not required_env_visible:
+        issues.append({"type": "missing_pg_env", "message": "required env: PGHOST, PGPORT, PGDATABASE, PGUSER"})
+    if args.execute and not psycopg_available:
+        issues.append({"type": "psycopg_unavailable", "message": "psycopg is not installed"})
+    if not sqlglot_available:
+        issues.append({"type": "sqlglot_unavailable", "message": "sqlglot is not installed"})
+
+    original_failure_map: dict[str, dict[str, Any]] = {}
+    for record in (analysis_report or {}).get("records", []):
+        case_id = str(record.get("case_id", "")).strip().upper()
+        if record.get("failure_category"):
+            original_failure_map[case_id] = record
+
+    sqlglot_module = None
+    psycopg = None
+    if sqlglot_available:
+        try:
+            sqlglot_module = importlib.import_module("sqlglot")
+        except Exception as exc:
+            sqlglot_available = False
+            issues.append({"type": "sqlglot_import_error", "message": str(exc)})
+    if args.execute and psycopg_available:
+        try:
+            psycopg = importlib.import_module("psycopg")
+        except Exception as exc:
+            psycopg_available = False
+            issues.append({"type": "psycopg_import_error", "message": str(exc)})
+
+    records: list[dict[str, Any]] = []
+    generation_success_count_by_variant: Counter[str] = Counter()
+    pg_success_count_by_variant: Counter[str] = Counter()
+    pg_failed_count_by_variant: Counter[str] = Counter()
+    failure_categories: Counter[str] = Counter()
+    optimizer_specific_recovery_count = 0
+    still_failed_count = 0
+
+    for case_id in selected_case_ids:
+        inferred = case_root_for_case_id(case_id)
+        case_root = inferred[1] if inferred else None
+        source_sql_path = case_root / "source.sql" if case_root else ROOT / "__missing__"
+        source_sql_exists = source_sql_path.is_file()
+        source_sql = source_sql_path.read_text(encoding="utf-8") if source_sql_exists else ""
+        original_failure = original_failure_map.get(case_id, {})
+
+        for variant in selected_variants:
+            parse_status = "not_attempted"
+            generation_status = "not_attempted"
+            pg_execution_status = "not_requested"
+            row_count: int | None = None
+            runtime_ms: int | None = None
+            failure_category = "none"
+            error_message = ""
+            generated_sql_preview = ""
+            generated_sql_text = ""
+            diagnosis = "needs_manual_review"
+
+            if not source_sql_exists:
+                parse_status = "failed"
+                generation_status = "failed"
+                pg_execution_status = "failed" if args.execute else "skipped"
+                failure_category = "missing_source_sql"
+                error_message = "source.sql is missing"
+                diagnosis = "no_opt_generation_failure"
+            elif not sqlglot_available or sqlglot_module is None:
+                parse_status = "failed"
+                generation_status = "failed"
+                pg_execution_status = "failed" if args.execute else "skipped"
+                failure_category = "sqlglot_unavailable"
+                error_message = "sqlglot is unavailable"
+                diagnosis = "no_opt_generation_failure"
+            else:
+                try:
+                    transpiled = sqlglot_module.transpile(source_sql, read="postgres", write="postgres")
+                    parse_status = "success"
+                    generated_sql_text = str(transpiled[0]).strip() if transpiled else ""
+                    if not generated_sql_text:
+                        generation_status = "failed"
+                        failure_category = "empty_transpile_output"
+                        error_message = "sqlglot transpile returned no SQL text"
+                        diagnosis = "no_opt_generation_failure"
+                        pg_execution_status = "failed" if args.execute else "skipped"
+                    else:
+                        generation_status = "success"
+                        generated_sql_preview = batch2a_sql_preview_text(generated_sql_text)
+                        generation_success_count_by_variant[variant] += 1
+                        if not args.execute:
+                            pg_execution_status = "dry_run_only"
+                            diagnosis = "needs_manual_review"
+                        elif issues:
+                            pg_execution_status = "blocked_invalid_selection"
+                            failure_category = "environment_or_selection_blocked"
+                            diagnosis = "needs_manual_review"
+                        else:
+                            started = time.perf_counter()
+                            try:
+                                validation_schema = validation_schema_hint(case_id)
+                                with psycopg.connect(
+                                    host=os.environ["PGHOST"],
+                                    port=os.environ["PGPORT"],
+                                    dbname=os.environ["PGDATABASE"],
+                                    user=os.environ["PGUSER"],
+                                    password=os.environ.get("PGPASSWORD"),
+                                    autocommit=False,
+                                ) as conn:
+                                    with conn.cursor() as cur:
+                                        cur.execute("SET SESSION CHARACTERISTICS AS TRANSACTION READ ONLY")
+                                        cur.execute("SELECT set_config('statement_timeout', %s, false)", ("30000",))
+                                        cur.execute("SELECT to_regnamespace(%s)", (validation_schema,))
+                                        schema_row = cur.fetchone()
+                                        schema_name = schema_row[0] if schema_row else None
+                                        if not schema_name:
+                                            pg_execution_status = "failed"
+                                            failure_category = "missing_validation_schema"
+                                            error_message = f"validation schema not found: {validation_schema}"
+                                        else:
+                                            cur.execute(
+                                                psycopg.sql.SQL("SET search_path TO {}, public").format(
+                                                    psycopg.sql.Identifier(validation_schema)
+                                                )
+                                            )
+                                            cur.execute(generated_sql_text)
+                                            if cur.description is not None:
+                                                rows = cur.fetchall()
+                                                row_count = len(rows)
+                                            else:
+                                                row_count = cur.rowcount if cur.rowcount >= 0 else None
+                                            pg_execution_status = "success"
+                                        conn.rollback()
+                                runtime_ms = int((time.perf_counter() - started) * 1000)
+                            except Exception as exc:
+                                runtime_ms = int((time.perf_counter() - started) * 1000)
+                                pg_execution_status = "failed"
+                                failure_category = type(exc).__name__
+                                error_message = str(exc)
+                            if pg_execution_status == "success":
+                                diagnosis = "fallback_executes_successfully"
+                                pg_success_count_by_variant[variant] += 1
+                                optimizer_specific_recovery_count += 1
+                            else:
+                                diagnosis = "no_opt_pg_execution_failure"
+                                pg_failed_count_by_variant[variant] += 1
+                                still_failed_count += 1
+                                failure_categories[failure_category] += 1
+                except Exception as exc:
+                    parse_status = "success"
+                    generation_status = "failed"
+                    pg_execution_status = "failed" if args.execute else "skipped"
+                    failure_category = type(exc).__name__
+                    error_message = str(exc)
+                    diagnosis = "no_opt_generation_failure"
+                    failure_categories[failure_category] += 1
+                    still_failed_count += 1 if args.execute else 0
+
+            record = {
+                "case_id": case_id,
+                "original_optimize_failure_category": original_failure.get("failure_category"),
+                "original_optimize_failure_stage": original_failure.get("failure_stage"),
+                "diagnostic_variant": variant,
+                "parse_status": parse_status,
+                "generation_status": generation_status,
+                "pg_execution_status": pg_execution_status,
+                "row_count": row_count,
+                "runtime_ms": runtime_ms,
+                "failure_category": failure_category,
+                "error_message": error_message,
+                "generated_sql_preview": generated_sql_preview,
+                "diagnosis": diagnosis,
+                "artifact_claim_boundary": "batch2a_sqlglot_fallback_diagnostic_not_baseline_replacement",
+            }
+            if args.execute and pg_execution_status == "success" and original_failure.get("failure_stage") == "optimize":
+                record["diagnosis"] = "optimizer_specific_failure_likely"
+            records.append(record)
+
+    payload = {
+        "command": "formal-batch2a-sqlglot-fallback-diagnostic",
+        "ok": not issues and (not args.execute or all(r["pg_execution_status"] == "success" for r in records)),
+        "ran_at_utc": utc_now(),
+        "output_path": f"reports/formal_expansion/{output_name}",
+        "case_count": len(selected_case_ids),
+        "variant_count": len(selected_variants),
+        "total_records": len(records),
+        "execution_requested": bool(args.execute),
+        "pg_env_visible": required_env_visible,
+        "pg_password_present": pg_password_present,
+        "psycopg_available": psycopg_available,
+        "sqlglot_available": sqlglot_available,
+        "generation_success_count_by_variant": dict(generation_success_count_by_variant),
+        "pg_success_count_by_variant": dict(pg_success_count_by_variant),
+        "pg_failed_count_by_variant": dict(pg_failed_count_by_variant),
+        "optimizer_specific_recovery_count": optimizer_specific_recovery_count,
+        "still_failed_count": still_failed_count,
+        "failure_categories": dict(failure_categories),
+        "records": records,
+        "issues": issues,
+        "claim_boundary": "batch2a_sqlglot_fallback_diagnostic_not_correctness_or_speedup",
+    }
+    write_formal_expansion_report(output_name, payload)
+    return print_and_exit(payload, 0 if payload["ok"] else 1)
+
+
 def cmd_formal_common_core_method_result_checker_run(args: argparse.Namespace) -> int:
     output_name = normalize_formal_common_core_output_name(args.output)
     valid_routes = {
@@ -25748,6 +26004,16 @@ def build_parser() -> argparse.ArgumentParser:
     )
     formal_batch2a_sqlglot_failure_analysis_parser.add_argument("--execute", action="store_true", default=False)
     formal_batch2a_sqlglot_failure_analysis_parser.set_defaults(func=cmd_formal_batch2a_sqlglot_failure_analysis)
+
+    formal_batch2a_sqlglot_fallback_diagnostic_parser = subparsers.add_parser("formal-batch2a-sqlglot-fallback-diagnostic")
+    formal_batch2a_sqlglot_fallback_diagnostic_parser.add_argument("--case-id", action="append", default=[])
+    formal_batch2a_sqlglot_fallback_diagnostic_parser.add_argument("--variant", action="append", default=[])
+    formal_batch2a_sqlglot_fallback_diagnostic_parser.add_argument(
+        "--output",
+        default="batch2a_sqlglot_fallback_diagnostic_v0.json",
+    )
+    formal_batch2a_sqlglot_fallback_diagnostic_parser.add_argument("--execute", action="store_true", default=False)
+    formal_batch2a_sqlglot_fallback_diagnostic_parser.set_defaults(func=cmd_formal_batch2a_sqlglot_fallback_diagnostic)
 
     formal_common_core_method_plan_collection_preflight_parser = subparsers.add_parser("formal-common-core-method-plan-collection-preflight")
     formal_common_core_method_plan_collection_preflight_parser.add_argument(
