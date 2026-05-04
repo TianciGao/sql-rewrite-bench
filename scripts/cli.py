@@ -14599,6 +14599,20 @@ def cmd_formal_experiment_taxonomy_slicing(args: argparse.Namespace) -> int:
                 deduped.append(tag)
         return deduped
 
+    def dedupe_tags(tags: list[str]) -> list[str]:
+        deduped: list[str] = []
+        seen: set[str] = set()
+        for tag in tags:
+            if tag not in seen:
+                seen.add(tag)
+                deduped.append(tag)
+        return deduped
+
+    def extract_top_level_tag_list(source: dict[str, Any], key: str) -> tuple[list[str], bool]:
+        if not isinstance(source, dict) or key not in source:
+            return [], False
+        return dedupe_tags(normalize_tag_values(source.get(key))), True
+
     def extract_case_metadata(case_id: str) -> dict[str, Any]:
         registry_row = case_registry_index.get(case_id, {})
         inferred = case_root_for_case_id(case_id)
@@ -14611,21 +14625,74 @@ def cmd_formal_experiment_taxonomy_slicing(args: argparse.Namespace) -> int:
         manifest_tags = manifest_obj.get("tags") if isinstance(manifest_obj, dict) else {}
         taxonomy_tags = taxonomy_obj if isinstance(taxonomy_obj, dict) else {}
         sql_feature_tags = extract_tag_family(manifest_tags, "sql_feature", ["primary", "secondary"])
+        taxonomy_sql_feature_tags, taxonomy_sql_feature_present = extract_top_level_tag_list(taxonomy_tags, "sql_feature_tags")
         if not sql_feature_tags:
-            sql_feature_tags = extract_tag_family(taxonomy_tags, "sql_feature", ["primary", "secondary"])
+            if taxonomy_sql_feature_present:
+                sql_feature_tags = taxonomy_sql_feature_tags
+            else:
+                sql_feature_tags = extract_tag_family(taxonomy_tags, "sql_feature", ["primary", "secondary"])
+        sql_feature_explicit_empty = bool(
+            isinstance(taxonomy_obj, dict)
+            and taxonomy_sql_feature_present
+            and not taxonomy_sql_feature_tags
+        )
+
         rewrite_opportunity_tags = extract_tag_family(manifest_tags, "rewrite_opportunity", ["primary", "secondary"])
+        taxonomy_rewrite_tags, taxonomy_rewrite_present = extract_top_level_tag_list(taxonomy_tags, "rewrite_opportunity_tags")
         if not rewrite_opportunity_tags:
-            rewrite_opportunity_tags = extract_tag_family(taxonomy_tags, "rewrite_opportunity", ["primary", "secondary"])
+            if taxonomy_rewrite_present:
+                rewrite_opportunity_tags = taxonomy_rewrite_tags
+            else:
+                rewrite_opportunity_tags = extract_tag_family(taxonomy_tags, "rewrite_opportunity", ["primary", "secondary"])
+
         plan_operator_tags = extract_tag_family(manifest_tags, "plan_operator", ["present", "delta_relevant"])
+        if not plan_operator_tags and isinstance(taxonomy_obj, dict):
+            plan_operator_value = taxonomy_tags.get("plan_operator_tags")
+            if isinstance(plan_operator_value, dict):
+                plan_operator_tags = dedupe_tags(normalize_tag_values(plan_operator_value.get("observed_in_postgres")))
+
         portability_tags = extract_tag_family(manifest_tags, "portability", ["confirmed", "suspected"])
+        taxonomy_portability_tags, taxonomy_portability_present = extract_top_level_tag_list(taxonomy_tags, "portability_tags")
         if not portability_tags:
-            portability_tags = extract_tag_family(taxonomy_tags, "portability", ["confirmed", "suspected"])
+            if taxonomy_portability_present:
+                portability_tags = taxonomy_portability_tags
+            else:
+                portability_tags = extract_tag_family(taxonomy_tags, "portability", ["confirmed", "suspected"])
+
         workload_realism_tags = extract_tag_family(manifest_tags, "workload_realism", ["source_inherited", "case_specific"])
+        taxonomy_workload_tags, taxonomy_workload_present = extract_top_level_tag_list(taxonomy_tags, "workload_realism_tags")
+        if not workload_realism_tags:
+            if taxonomy_workload_present:
+                workload_realism_tags = taxonomy_workload_tags
+
+        taxonomy_trial_status = "missing"
+        if taxonomy_paths:
+            taxonomy_trial_status = "unknown"
+            taxonomy_status_value = str((taxonomy_obj or {}).get("status", "")).strip()
+            if taxonomy_status_value == "draft_trial_only":
+                taxonomy_trial_status = "provisional"
+            else:
+                taxonomy_has_any_tags = any(
+                    [
+                        taxonomy_sql_feature_present,
+                        taxonomy_rewrite_present,
+                        taxonomy_portability_present,
+                        taxonomy_workload_present,
+                        bool(plan_operator_tags and isinstance(taxonomy_obj, dict) and "plan_operator_tags" in taxonomy_tags),
+                        bool(extract_tag_family(taxonomy_tags, "sql_feature", ["primary", "secondary"])),
+                        bool(extract_tag_family(taxonomy_tags, "rewrite_opportunity", ["primary", "secondary"])),
+                        bool(extract_tag_family(taxonomy_tags, "portability", ["confirmed", "suspected"])),
+                    ]
+                )
+                if not taxonomy_has_any_tags:
+                    taxonomy_trial_status = "placeholder_or_empty"
+                else:
+                    taxonomy_trial_status = "usable_for_current_slicing"
 
         metadata_missing_flags: list[str] = []
         if not manifest_obj:
             metadata_missing_flags.append("manifest_missing_or_unparseable")
-        if not sql_feature_tags:
+        if not sql_feature_tags and not sql_feature_explicit_empty:
             metadata_missing_flags.append("sql_feature_tags_missing")
         if not rewrite_opportunity_tags:
             metadata_missing_flags.append("rewrite_opportunity_tags_missing")
@@ -14635,15 +14702,11 @@ def cmd_formal_experiment_taxonomy_slicing(args: argparse.Namespace) -> int:
             metadata_missing_flags.append("portability_tags_missing")
         if not workload_realism_tags:
             metadata_missing_flags.append("workload_realism_tags_missing")
-        if not taxonomy_paths:
+        if taxonomy_trial_status == "missing":
             metadata_missing_flags.append("taxonomy_trial_missing")
-        elif isinstance(taxonomy_obj, dict) and str(taxonomy_obj.get("status", "")).strip() == "draft_trial_only":
+        elif taxonomy_trial_status == "provisional":
             metadata_missing_flags.append("taxonomy_trial_provisional")
-        elif isinstance(taxonomy_obj, dict) and not any(
-            [extract_tag_family(taxonomy_tags, "sql_feature", ["primary", "secondary"]),
-             extract_tag_family(taxonomy_tags, "rewrite_opportunity", ["primary", "secondary"]),
-             extract_tag_family(taxonomy_tags, "portability", ["confirmed", "suspected"])]
-        ):
+        elif taxonomy_trial_status == "placeholder_or_empty":
             metadata_missing_flags.append("taxonomy_trial_placeholder_or_empty")
 
         benchmark_line = str(registry_row.get("benchmark_line", "")).strip() or str((manifest_obj or {}).get("expected_line", "")).strip()
@@ -14660,6 +14723,7 @@ def cmd_formal_experiment_taxonomy_slicing(args: argparse.Namespace) -> int:
             "plan_operator_tags": plan_operator_tags,
             "portability_tags": portability_tags,
             "workload_realism_tags": workload_realism_tags,
+            "taxonomy_trial_status": taxonomy_trial_status,
             "metadata_missing_flags": metadata_missing_flags,
         }
 
@@ -14793,6 +14857,7 @@ def cmd_formal_experiment_taxonomy_slicing(args: argparse.Namespace) -> int:
                 "plan_operator_tags": metadata["plan_operator_tags"],
                 "portability_tags": metadata["portability_tags"],
                 "workload_realism_tags": metadata["workload_realism_tags"],
+                "taxonomy_trial_status": metadata["taxonomy_trial_status"],
                 "metadata_missing_flags": metadata["metadata_missing_flags"],
                 "correctness_status": correctness_status,
                 "generated_method_consistency_status": generated_method_consistency_status,

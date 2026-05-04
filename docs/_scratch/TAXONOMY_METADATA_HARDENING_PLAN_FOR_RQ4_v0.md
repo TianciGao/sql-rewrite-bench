@@ -15,15 +15,16 @@ Current taxonomy slicing coverage is complete at the case level, but the evidenc
 - some cases rely mainly on manifest tags
 - some cases have missing `taxonomy_trial*.yaml`
 - some cases have placeholder or provisional taxonomy trial files
+- `taxonomy_trial_v0.3.yaml` parsing now correctly distinguishes explicit-empty tags from missing tags
 
 Before treating feature-level RQ4 rates as final paper claims, these metadata gaps need to be hardened explicitly.
 
 ## 3. Current Metadata Caveat Summary
 
-- `sql_feature_gap_count=2`
-- `portability_tag_gap_count=3`
+- `sql_feature_gap_count=0`
+- `portability_tag_gap_count=1`
 - `workload_realism_gap_count=2`
-- `taxonomy_trial_missing_count=6`
+- `taxonomy_trial_missing_count=4`
 - `taxonomy_trial_placeholder_or_empty_count=5`
 - `taxonomy_trial_provisional_count=1`
 
@@ -42,8 +43,8 @@ Interpretation:
 | `PERF_0013` | performance | `TPC-H` | `placeholder_or_empty` | none | medium | `replace_placeholder_taxonomy_trial` |
 | `PERF_0017` | performance | `TPC-H` | `placeholder_or_empty` | none | medium | `replace_placeholder_taxonomy_trial` |
 | `PERF_0024` | performance | `TPC-H` | `placeholder_or_empty` | none | medium | `replace_placeholder_taxonomy_trial` |
-| `PERF_0033` | performance | `TPC-DS` | `missing` | `sql_feature_tags`, `portability_tags` | high | `create_taxonomy_trial_from_manifest_tags`; `fill_missing_sql_feature_tags`; `fill_missing_portability_tags` |
-| `PERF_0054` | performance | `TPC-DS` | `missing` | `sql_feature_tags`, `portability_tags` | high | `create_taxonomy_trial_from_manifest_tags`; `fill_missing_sql_feature_tags`; `fill_missing_portability_tags` |
+| `PERF_0033` | performance | `TPC-DS` | `usable_for_current_slicing` | none | low | `no_action_needed` |
+| `PERF_0054` | performance | `TPC-DS` | `usable_for_current_slicing` | none | low | `no_action_needed` |
 | `CONS_0007` | consistency | `Calcite` | `missing` | `portability_tags`, `workload_realism_tags` | medium | `create_taxonomy_trial_from_manifest_tags`; `fill_missing_portability_tags`; `fill_missing_workload_realism_tags` |
 | `CONS_0012` | consistency | `Calcite` | `missing` | `workload_realism_tags` | medium | `create_taxonomy_trial_from_manifest_tags`; `fill_missing_workload_realism_tags` |
 | `PORT_0004` | portability | `PARROT` | `provisional` | none | medium | `review_provisional_taxonomy_trial` |
@@ -52,7 +53,9 @@ Interpretation:
 
 Notes:
 
-- `PERF_0033` and `PERF_0054` are the clearest P0 blockers because the current draft explicitly reports SQL-feature and portability-tag gaps.
+- `PERF_0033` and `PERF_0054` are now cleared as P0 hardening targets.
+- both cases now parse as `usable_for_current_slicing`, carry `metadata_missing_flags=[]`, and no longer contribute to portability tag gaps.
+- both cases still appear in the SQL-feature `untagged` bucket because their `sql_feature_tags=[]` is an explicit-empty assignment rather than a missing tag.
 - `CONS_0007` and `CONS_0012` do not block the current common-core correctness packet, but they still weaken final RQ4 feature-level coverage if left manifest-only.
 - `PORT_0004` already has a trial file, but it is still marked provisional and should not be treated as fully hardened metadata.
 
@@ -60,13 +63,12 @@ Notes:
 
 ### P0: Cases blocking final RQ4 feature-level rates
 
-- `PERF_0033`
-- `PERF_0054`
+- cleared in the current patch cycle
 
 Reason:
 
-- these two cases directly account for the current SQL-feature gap and part of the portability-tag gap
-- until they are hardened, feature-level bucket rates are visibly incomplete
+- no unresolved P0 blocker remains after the v0.3 parser fix plus the bounded `PERF_0033` / `PERF_0054` trial-file patch
+- the next remaining hardening pressure is on placeholder / provisional trial quality rather than P0 missing-tag gaps
 
 ### P1: Cases with placeholder or provisional taxonomy_trial
 
@@ -110,7 +112,7 @@ This keeps the hardening order aligned with the repository’s governance separa
 
 ## 7. Concrete Next Action
 
-- create a bounded taxonomy hardening patch plan for the P0 cases only, without applying it yet
+- create a bounded taxonomy hardening patch plan for the P1 placeholder / provisional cases only, without applying it yet
 
 ## 8. Claim Boundaries
 

@@ -36,6 +36,7 @@ Current caveat:
 - tag coverage exists, but quality is uneven
 - several cases rely on manifest tags without a usable taxonomy trial file
 - some taxonomy trial files are placeholders or explicitly provisional
+- `taxonomy_trial_v0.3.yaml` parsing now distinguishes explicit-empty tags from missing tags
 
 ## 4. Common-Core Slicing By Pool / Source Family
 
@@ -82,6 +83,7 @@ Current interpretation:
   - analytical predicate / join optimization cases
   - subquery / decorrelation consistency cases
   - dialect-adaptation portability cases
+- the remaining SQL-feature `untagged` bucket now corresponds to explicit-empty `sql_feature_tags` on `PERF_0033` and `PERF_0054`, not a parser miss
 
 ## 6. Plan Operator / Plan-Observability Slicing
 
@@ -117,8 +119,8 @@ Observed portability-tag buckets:
 - `datetime_semantics_gap`: `8`
 - `type_semantics_gap`: `4`
 - `identifier_quoting`: `3`
-- `limit_fetch_gap`: `1`
-- `untagged`: `3`
+- `limit_fetch_gap`: `3`
+- `untagged`: `1`
 
 Current interpretation:
 
@@ -165,17 +167,18 @@ Current interpretation:
 
 ## 10. Metadata Gaps / Taxonomy Gaps
 
-- taxonomy trial missing: `6`
+- taxonomy trial missing: `4`
 - taxonomy trial placeholder or empty: `5`
 - taxonomy trial provisional: `1`
-- SQL feature tag gaps: `2`
-- portability tag gaps: `3`
+- SQL feature tag gaps: `0`
+- portability tag gaps: `1`
 - workload realism tag gaps: `2`
 
 Important caveat:
 
 - feature-level slicing is only as complete as current manifest tags and trial tags
 - missing or provisional tags are being reported, not repaired
+- explicit-empty SQL-feature tags are no longer counted as missing
 
 ## 11. RQ4 Interpretation
 
@@ -192,7 +195,7 @@ Important caveat:
 ## 12. Remaining Work
 
 - turn the slicing output into a paper-facing RQ4 table draft
-- decide whether placeholder trial files should be ignored or normalized in later reporting
+- normalize the remaining P1 placeholder/provisional taxonomy trial files in later reporting
 - refine feature-level coverage rates after tag quality review
 - keep attribution and leaderboard packaging separate
 

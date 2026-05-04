@@ -7,7 +7,7 @@ P0 hardening was applied only for:
 - `PERF_0033`
 - `PERF_0054`
 
-The bounded case-local taxonomy trial files were created and the existing taxonomy slicing command was rerun.
+The bounded case-local taxonomy trial files were created, the `formal-experiment-taxonomy-slicing` parser was fixed for `taxonomy_trial_v0.3.yaml`, and the existing taxonomy slicing command was rerun.
 
 ## 2. Files Created
 
@@ -91,38 +91,38 @@ The existing taxonomy slicing command reran successfully and rewrote:
 
 - `reports/formal_common_core/taxonomy_slicing_v0.json`
 
-Observed counts from the new report:
+Observed counts from the corrected report:
 
 - `cases_with_taxonomy_tags_count=12`
 - `cases_missing_taxonomy_tags_count=0`
-
-The current report schema no longer emits all historical top-level gap counters directly, so the remaining gap counts below were derived from `records[*].metadata_missing_flags` in the new report:
-
-- `sql_feature_gap_count=2`
-- `portability_tag_gap_count=3`
+- `sql_feature_gap_count=0`
+- `portability_tag_gap_count=1`
 - `workload_realism_gap_count=2`
 - `taxonomy_trial_missing_count=4`
-- `taxonomy_trial_placeholder_or_empty_count=7`
+- `taxonomy_trial_placeholder_or_empty_count=5`
 - `taxonomy_trial_provisional_count=1`
 
 Bucket-level verification from the new report:
 
 - `by_sql_feature_tag.untagged.case_count=2`
 - `by_sql_feature_tag.untagged.cases=[PERF_0033, PERF_0054]`
-- `by_portability_tag.untagged.case_count=3`
-- `by_portability_tag.untagged.cases=[PERF_0033, PERF_0054, CONS_0007]`
+- `by_portability_tag.untagged.case_count=1`
+- `by_portability_tag.untagged.cases=[CONS_0007]`
+- `by_portability_tag.limit_fetch_gap.cases=[PERF_0033, PERF_0054, CONS_0012]`
 
 Interpretation:
 
 - the two new files reduced `taxonomy_trial_missing_count` from the prior 6-case state to 4
-- however, the current taxonomy slicing command still classifies `PERF_0033` and `PERF_0054` as `taxonomy_trial_placeholder_or_empty`
-- the current slicer also still leaves both cases in `sql_feature` and `portability` untagged buckets
-- this means the applied file content is present on disk, but the current reader logic does not yet fully treat this schema as a closed non-placeholder taxonomy trial for gap-clearing purposes
+- the parser fix now classifies `PERF_0033` and `PERF_0054` as `taxonomy_trial_status=usable_for_current_slicing`
+- both cases now carry `metadata_missing_flags=[]`
+- both cases remain in the SQL-feature `untagged` bucket because `sql_feature_tags=[]` is an explicit empty assignment, not a missing tag gap
+- both cases no longer remain in the portability `untagged` bucket because `limit_fetch_gap` is now parsed correctly from the v0.3 top-level field
 
 ## 7. Remaining Metadata Gaps / Caveats
 
 - P0 hardening was applied only to `PERF_0033` and `PERF_0054`
-- the current slicer still reports both P0 cases in untagged SQL-feature and portability buckets
+- the current slicer still reports both P0 cases in the SQL-feature `untagged` bucket, but this now reflects explicit-empty / no-feature classification rather than a missing-tag gap
+- the current slicer no longer reports either P0 case in the portability `untagged` bucket
 - `CONS_0007` and `CONS_0012` still remain P2 hardening items
 - `PORT_0004` remains provisional
 - placeholder P1 taxonomy trials still exist

@@ -15,6 +15,7 @@ It is not final RQ4.
 - PORT snapshot cases: `3`
 - metadata exists for all `12` currently sliced cases
 - tag quality varies across manifest tags, missing taxonomy trial files, placeholder trial files, and provisional trial files
+- `PERF_0033` and `PERF_0054` now have usable `taxonomy_trial_v0.3.yaml` files; their SQL-feature assignment is explicit-empty rather than missing
 
 ## 3. Table 1: Coverage By Pool And Source Family
 
@@ -45,7 +46,7 @@ It is not final RQ4.
 | `correlated_subquery` | `3` | concentrated in consistency and decorrelation-relevant cases |
 | `expression_complexity` | `3` | appears in analytical and portability slices |
 | `subquery_in_from` | `2` | smaller structural subquery slice |
-| `untagged` | `2` | current metadata gap; do not over-interpret feature coverage rates |
+| `untagged` | `2` | explicit-empty / no-feature bucket for `PERF_0033` and `PERF_0054`; do not interpret as a parser miss |
 
 ### 4.2 Rewrite Opportunity Tags
 
@@ -107,10 +108,10 @@ Interpretation for `PORT_0012`:
 
 | caveat | count | interpretation |
 |---|---:|---|
-| `sql_feature_gap_count` | `2` | some cases still lack complete SQL feature assignment |
-| `portability_tag_gap_count` | `3` | portability-theme coverage is incomplete outside the strongest tagged cases |
+| `sql_feature_gap_count` | `0` | explicit-empty SQL-feature assignments are no longer counted as missing |
+| `portability_tag_gap_count` | `1` | portability-theme coverage gap is now concentrated in `CONS_0007` |
 | `workload_realism_gap_count` | `2` | realism slicing is currently partial |
-| `taxonomy_trial_missing_count` | `6` | many cases depend on manifest tags without a trial file |
+| `taxonomy_trial_missing_count` | `4` | fewer cases now depend on manifest tags without a trial file |
 | `taxonomy_trial_placeholder_or_empty_count` | `5` | several trial files are scaffolds, not usable evidence |
 | `taxonomy_trial_provisional_count` | `1` | at least one case has explicit provisional trial tags |
 
@@ -122,7 +123,7 @@ Important caveat:
 
 ## 8. RQ4 Interpretation Draft
 
-The current benchmark slice spans performance, consistency, and bounded portability evidence across `12` currently aggregated cases. Date/time-oriented SQL and predicate-driven rewrite families are prominent in the present packet, while correlated-subquery and decorrelation structure anchor the smaller consistency line. The failure / blocker slicing now exposes both evidence closure and remaining blockers: common-core generated-method consistency and plan observability are closed on the current denominator, PERF-only correctness-gated speedup is closed for the current runtime packet, and `PORT_0012` provides a concrete dialect-normalization and datetime failure study. Final feature-level claims still require metadata hardening because several taxonomy trial files remain missing, placeholder, or provisional.
+The current benchmark slice spans performance, consistency, and bounded portability evidence across `12` currently aggregated cases. Date/time-oriented SQL and predicate-driven rewrite families are prominent in the present packet, while correlated-subquery and decorrelation structure anchor the smaller consistency line. The failure / blocker slicing now exposes both evidence closure and remaining blockers: common-core generated-method consistency and plan observability are closed on the current denominator, PERF-only correctness-gated speedup is closed for the current runtime packet, and `PORT_0012` provides a concrete dialect-normalization and datetime failure study. Final feature-level claims still require metadata hardening because several taxonomy trial files remain missing, placeholder, or provisional, even though the P0 `TPC-DS` taxonomy trials are now usable for current slicing.
 
 ## 9. What Cannot Yet Be Claimed
 
@@ -135,7 +136,7 @@ The current benchmark slice spans performance, consistency, and bounded portabil
 
 ## 10. Recommended Next Action
 
-- harden taxonomy metadata for cases with missing / placeholder / provisional taxonomy_trial files before treating RQ4 feature-level rates as final
+- harden the remaining P1 placeholder/provisional taxonomy_trial files before treating RQ4 feature-level rates as final
 
 ## 11. Verification / Non-Modification Note
 
