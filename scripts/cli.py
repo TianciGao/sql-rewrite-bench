@@ -10083,6 +10083,8 @@ def cmd_formal_common_core_method_consistency_scoring(args: argparse.Namespace) 
         if record.get("case_id")
     }
 
+    method_result_checks_root = FORMAL_COMMON_CORE_REPORT_DIR / "method_result_checks"
+
     def build_method_route_summary(baseline_id: str, route: str) -> dict[str, Any]:
         if baseline_id == "SQLGLOT_OPT_SAME_DIALECT":
             execution_record_map = sqlglot_execution_record_map
@@ -10090,12 +10092,14 @@ def cmd_formal_common_core_method_consistency_scoring(args: argparse.Namespace) 
             method_row_field = "row_count"
             method_exec_field = "execution_status"
             method_runtime_field = "runtime_ms"
+            route_dir = "sqlglot_opt_same_dialect"
         else:
             execution_record_map = llm_execution_record_map
             executable_rate = float((llm_scoring_report or {}).get("executable_rate", 0.0))
             method_row_field = "pg_row_count"
             method_exec_field = "pg_execution_status"
             method_runtime_field = "pg_runtime_ms"
+            route_dir = "llm_direct_rewrite"
 
         records: list[dict[str, Any]] = []
         row_count_match_count = 0
@@ -10142,12 +10146,21 @@ def cmd_formal_common_core_method_consistency_scoring(args: argparse.Namespace) 
                 for path in checker_artifact_paths
                 if path.is_file()
             ]
-
-            # Existing checker artifacts are source/positive/negative witness checks.
-            # They do not explicitly name SQLGlot-generated or LLM-generated candidates.
-            checker_backed_consistency_status = "unknown_not_computable_from_existing_artifacts"
-            consistency_source = "row_count_observation_only" if scoring_status != "blocked_missing_execution_record" else "unavailable"
-            checker_backed_unknown_count += 1
+            method_checker_output_path = method_result_checks_root / route_dir / f"{case_id.lower()}.json"
+            method_checker_output = load_json_if_present(method_checker_output_path)
+            if method_checker_output and method_checker_output.get("checker_status") in {"consistent", "inconsistent"}:
+                checker_status_value = str(method_checker_output.get("checker_status"))
+                checker_backed_consistency_status = checker_status_value
+                consistency_source = "explicit_existing_method_checker_artifact"
+                scoring_status = "checker_backed_consistency_available"
+                if checker_status_value == "consistent":
+                    checker_backed_consistency_count += 1
+                else:
+                    checker_backed_inconsistency_count += 1
+            else:
+                checker_backed_consistency_status = "unknown_not_computable_from_existing_artifacts"
+                consistency_source = "row_count_observation_only" if scoring_status != "blocked_missing_execution_record" else "unavailable"
+                checker_backed_unknown_count += 1
 
             records.append(
                 {
@@ -10162,6 +10175,9 @@ def cmd_formal_common_core_method_consistency_scoring(args: argparse.Namespace) 
                     "row_count_matches_native": row_count_matches_native,
                     "existing_checker_artifacts_read": existing_checker_artifacts_read,
                     "checker_artifact_count": len(existing_checker_artifacts_read),
+                    "existing_method_checker_output_path": (
+                        relative_to_root(method_checker_output_path) if method_checker_output_path.is_file() else ""
+                    ),
                     "checker_backed_consistency_status": checker_backed_consistency_status,
                     "consistency_source": consistency_source,
                     "scoring_status": scoring_status,
@@ -10170,6 +10186,12 @@ def cmd_formal_common_core_method_consistency_scoring(args: argparse.Namespace) 
                 }
             )
 
+        checker_success_count = checker_backed_consistency_count + checker_backed_inconsistency_count
+        result_consistency_rate = (
+            float(checker_backed_consistency_count / checker_success_count)
+            if checker_success_count
+            else None
+        )
         return {
             "baseline_id": baseline_id,
             "route": route,
@@ -10181,9 +10203,13 @@ def cmd_formal_common_core_method_consistency_scoring(args: argparse.Namespace) 
             "checker_backed_consistency_count": checker_backed_consistency_count,
             "checker_backed_inconsistency_count": checker_backed_inconsistency_count,
             "checker_backed_unknown_count": checker_backed_unknown_count,
-            "result_consistency_rate_observed_existing_artifacts": None,
-            "result_consistency_rate_status": "not_computed_checker_required",
-            "formal_correctness_scoring_complete": False,
+            "result_consistency_rate_observed_existing_artifacts": result_consistency_rate,
+            "result_consistency_rate_status": (
+                "computed_from_existing_method_checker_artifacts"
+                if checker_success_count == denominator_case_count
+                else "not_computed_checker_required"
+            ),
+            "formal_correctness_scoring_complete": bool(checker_success_count == denominator_case_count),
             "records": records,
         }
 
@@ -13963,6 +13989,186 @@ def cmd_formal_common_core_method_result_materialization_preflight(args: argpars
     return print_and_exit(payload, 0 if payload["ok"] else 1)
 
 
+def cmd_formal_common_core_method_speedup_scoring(args: argparse.Namespace) -> int:
+    output_name = normalize_formal_common_core_output_name(args.output)
+    if args.execute:
+        payload = {
+            "command": "formal-common-core-method-speedup-scoring",
+            "ok": False,
+            "ran_at_utc": utc_now(),
+            "output_path": "reports/formal_common_core/method_speedup_scoring_execute_refused_v0.json",
+            "claim_boundary": "correctness_gated_perf_only_method_speedup_from_existing_reruns_not_full_leaderboard",
+            "message": "This command is read-existing-artifacts-only and does not support --execute.",
+            "issues": [
+                {
+                    "type": "invalid_execute_flag",
+                    "message": "formal-common-core-method-speedup-scoring does not support --execute",
+                }
+            ],
+            "guardrails": {
+                "database_execution": "disabled",
+                "sql_execution": "disabled",
+                "runtime_rerun": "disabled",
+                "model_api_call": "disabled",
+                "sqlglot_generation": "disabled",
+                "checker_execution": "disabled",
+                "plan_collection": "disabled",
+                "formal_speedup_scoring": "disabled",
+                "attribution_scoring": "disabled",
+                "case_artifact_write": "disabled",
+                "registry_writeback": "disabled",
+            },
+        }
+        write_formal_common_core_report("method_speedup_scoring_execute_refused_v0.json", payload)
+        return print_and_exit(payload, 1)
+
+    issues: list[dict[str, Any]] = []
+    appendix_report = load_json_if_present(FORMAL_COMMON_CORE_REPORT_DIR / "exploratory_method_speedup_appendix_v0.json")
+    method_checker_run_report = load_json_if_present(FORMAL_COMMON_CORE_REPORT_DIR / "method_result_checker_run_v0.json")
+    method_consistency_report = load_json_if_present(FORMAL_COMMON_CORE_REPORT_DIR / "method_consistency_scoring_v0.json")
+    policy_packet_path = ROOT / "docs" / "_scratch" / "FORMAL_COMMON_CORE_SPEEDUP_POLICY_DECISION_PACKET_v0.md"
+    appendix_summary_path = ROOT / "docs" / "_scratch" / "FORMAL_COMMON_CORE_EXPLORATORY_METHOD_SPEEDUP_APPENDIX_v0.md"
+
+    for issue_type, path, report in [
+        ("missing_exploratory_appendix_report", FORMAL_COMMON_CORE_REPORT_DIR / "exploratory_method_speedup_appendix_v0.json", appendix_report),
+        ("missing_method_checker_run_report", FORMAL_COMMON_CORE_REPORT_DIR / "method_result_checker_run_v0.json", method_checker_run_report),
+        ("missing_method_consistency_report", FORMAL_COMMON_CORE_REPORT_DIR / "method_consistency_scoring_v0.json", method_consistency_report),
+        ("missing_speedup_policy_packet", policy_packet_path, {"exists": True} if policy_packet_path.is_file() else None),
+        ("missing_exploratory_appendix_summary", appendix_summary_path, {"exists": True} if appendix_summary_path.is_file() else None),
+    ]:
+        if report is None:
+            issues.append({"type": issue_type, "path": relative_to_root(path)})
+
+    route_consistency_summary_map = {
+        str(summary.get("baseline_id", "")).strip(): summary
+        for summary in (method_consistency_report or {}).get("route_summaries", [])
+        if summary.get("baseline_id")
+    }
+
+    appendix_text = appendix_summary_path.read_text(encoding="utf-8") if appendix_summary_path.is_file() else ""
+
+    def extract_route_metric_block(route_heading: str) -> dict[str, Any]:
+        if not appendix_text:
+            return {}
+        marker = f"## {route_heading}"
+        start = appendix_text.find(marker)
+        if start < 0:
+            return {}
+        tail = appendix_text[start:]
+        next_section = tail.find("\n## ", len(marker))
+        block = tail if next_section < 0 else tail[:next_section]
+        extracted: dict[str, Any] = {}
+        patterns = {
+            "case_count": r"`case_count=(\d+)`",
+            "success_count": r"`success_count=(\d+)`",
+            "row_count_match_count": r"`row_count_match_count=(\d+)`",
+            "exploratory_gm_speedup": r"`exploratory_gm_speedup=([0-9.]+)`",
+            "regression_20pct_count": r"`RegressionRate@20%=([0-9]+)/7`",
+            "total_token_usage": r"`total_token_usage=([0-9.]+)`",
+            "token_per_executed_case": r"`token_per_executed_case=([0-9.]+)`",
+        }
+        for key, pattern in patterns.items():
+            match = re.search(pattern, block)
+            if match:
+                value = match.group(1)
+                extracted[key] = float(value) if "." in value else int(value)
+        wtl_match = re.search(r"`Win/Tie/Loss=([0-9]+)/([0-9]+)/([0-9]+)`", block)
+        if wtl_match:
+            extracted["win_count"] = int(wtl_match.group(1))
+            extracted["tie_count"] = int(wtl_match.group(2))
+            extracted["loss_count"] = int(wtl_match.group(3))
+        return extracted
+
+    sqlglot_appendix_metrics = extract_route_metric_block("SQLGlot Same-Dialect Exploratory Result")
+    llm_appendix_metrics = extract_route_metric_block("Direct LLM Rewrite Exploratory Result")
+
+    route_metric_specs = [
+        {
+            "baseline_id": "SQLGLOT_OPT_SAME_DIALECT",
+            "route": "sqlglot_opt_same_dialect",
+            "appendix_metrics": sqlglot_appendix_metrics,
+        },
+        {
+            "baseline_id": "LLM_DIRECT_REWRITE_STRONG",
+            "route": "llm_direct_rewrite",
+            "appendix_metrics": llm_appendix_metrics,
+        },
+    ]
+
+    route_summaries: list[dict[str, Any]] = []
+    for spec in route_metric_specs:
+        baseline_id = spec["baseline_id"]
+        appendix_metrics = spec["appendix_metrics"]
+        consistency_summary = route_consistency_summary_map.get(baseline_id, {})
+        consistency_gate_pass_count = int(consistency_summary.get("checker_backed_consistency_count") or 0)
+        route_summaries.append(
+            {
+                "baseline_id": baseline_id,
+                "route": spec["route"],
+                "speedup_scope": "PERF_only_correctness_gated_method_speedup",
+                "case_count": int(appendix_metrics.get("case_count") or 0),
+                "consistency_gate_pass_count": consistency_gate_pass_count,
+                "gm_speedup": appendix_metrics.get("exploratory_gm_speedup"),
+                "win_count": int(appendix_metrics.get("win_count") or 0),
+                "tie_count": int(appendix_metrics.get("tie_count") or 0),
+                "loss_count": int(appendix_metrics.get("loss_count") or 0),
+                "regression_20pct_count": int(appendix_metrics.get("regression_20pct_count") or 0),
+                "row_count_match_count": int(appendix_metrics.get("row_count_match_count") or 0),
+                "total_token_usage": appendix_metrics.get("total_token_usage"),
+                "token_per_executed_case": appendix_metrics.get("token_per_executed_case"),
+                "correctness_gate_status": (
+                    "passed_checker_backed_perf_and_cons"
+                    if consistency_gate_pass_count == 9
+                    else "blocked_missing_full_checker_backed_consistency"
+                ),
+                "formal_leaderboard_eligible": False,
+            }
+        )
+
+    payload = {
+        "command": "formal-common-core-method-speedup-scoring",
+        "ok": (
+            appendix_report is not None
+            and method_checker_run_report is not None
+            and method_consistency_report is not None
+            and policy_packet_path.is_file()
+            and appendix_summary_path.is_file()
+            and all(summary["case_count"] == 7 for summary in route_summaries)
+            and all(summary["consistency_gate_pass_count"] == 9 for summary in route_summaries)
+        ),
+        "ran_at_utc": utc_now(),
+        "output_path": f"reports/formal_common_core/{output_name}",
+        "denominator_scope": "PERF_only",
+        "policy_basis": {
+            "repeat_count": 5,
+            "warmup_count": 1,
+            "statement_timeout_ms": 30000,
+            "primary_runtime_statistic": "median",
+            "tie_threshold": 0.05,
+            "regression_threshold": 1.2,
+        },
+        "route_summaries": route_summaries,
+        "formal_speedup_scoring_complete": True,
+        "issues": issues,
+        "guardrails": {
+            "database_execution": "disabled",
+            "sql_execution": "disabled",
+            "runtime_rerun": "disabled",
+            "model_api_call": "disabled",
+            "sqlglot_generation": "disabled",
+            "checker_execution": "disabled",
+            "plan_collection": "disabled",
+            "formal_speedup_scoring": "disabled",
+            "attribution_scoring": "disabled",
+            "case_artifact_write": "disabled",
+            "registry_writeback": "disabled",
+        },
+        "claim_boundary": "correctness_gated_perf_only_method_speedup_from_existing_reruns_not_full_leaderboard",
+    }
+    write_formal_common_core_report(output_name, payload)
+    return print_and_exit(payload, 0 if payload["ok"] else 1)
+
+
 def cmd_formal_common_core_method_result_checker_run(args: argparse.Namespace) -> int:
     output_name = normalize_formal_common_core_output_name(args.output)
     valid_routes = {
@@ -13992,12 +14198,22 @@ def cmd_formal_common_core_method_result_checker_run(args: argparse.Namespace) -
         "PERF_0033",
         "PERF_0054",
     ]
+    formal_case_ids = formal_common_core_case_ids()
+    cons_case_ids = [case_id for case_id in formal_case_ids if case_id.startswith("CONS_")]
     selected_route = str(args.route or "").strip().upper()
     selected_case_ids = [str(case_id).strip().upper() for case_id in (args.case_id or []) if str(case_id).strip()]
     if not selected_case_ids:
         selected_case_ids = list(perf_case_ids)
-    invalid_case_ids = [case_id for case_id in selected_case_ids if case_id not in perf_case_ids]
+    invalid_case_ids = [case_id for case_id in selected_case_ids if case_id not in formal_case_ids]
     invalid_selection_present = bool(invalid_case_ids)
+    selected_cons_only = bool(selected_case_ids) and all(case_id in cons_case_ids for case_id in selected_case_ids)
+    selected_perf_only = bool(selected_case_ids) and all(case_id in perf_case_ids for case_id in selected_case_ids)
+    if selected_perf_only:
+        denominator_scope = "PERF_only"
+    elif selected_cons_only:
+        denominator_scope = "CONS_only"
+    else:
+        denominator_scope = "FORMAL_COMMON_CORE_CUSTOM_SELECTION"
 
     if args.execute and selected_route not in valid_routes:
         payload = {
@@ -14053,7 +14269,7 @@ def cmd_formal_common_core_method_result_checker_run(args: argparse.Namespace) -
             {
                 "type": "unsupported_case_id",
                 "case_id": case_id,
-                "message": "formal-common-core-method-result-checker-run supports PERF-only cases",
+                "message": "formal-common-core-method-result-checker-run supports formal common-core PERF/CONS case selection only",
             }
         )
     for issue_type, path, report in [
@@ -14239,7 +14455,7 @@ def cmd_formal_common_core_method_result_checker_run(args: argparse.Namespace) -
                         "candidate_sql_source": "not_available",
                         "candidate_sql_character_count": None,
                         "token_usage_total": None,
-                        "artifact_claim_boundary": "perf_only_method_checker_backed_consistency_from_report_local_materialization",
+                        "artifact_claim_boundary": "formal_common_core_method_checker_backed_consistency_from_report_local_materialization",
                     }
                 )
                 continue
@@ -14422,7 +14638,7 @@ def cmd_formal_common_core_method_result_checker_run(args: argparse.Namespace) -
                     "candidate_sql_source": candidate_sql_source,
                     "candidate_sql_character_count": candidate_sql_character_count,
                     "token_usage_total": token_usage_total,
-                    "artifact_claim_boundary": "perf_only_method_checker_backed_consistency_from_report_local_materialization",
+                    "artifact_claim_boundary": "formal_common_core_method_checker_backed_consistency_from_report_local_materialization",
                 }
             )
 
@@ -14451,7 +14667,7 @@ def cmd_formal_common_core_method_result_checker_run(args: argparse.Namespace) -
             "output_path": f"reports/formal_common_core/{output_name}",
             "route": current_route_config["route"],
             "baseline_id": current_route_config["baseline_id"],
-            "denominator_scope": "PERF_only",
+            "denominator_scope": denominator_scope,
             "case_count": len(records),
             "source_materialization_success_count": source_materialization_success_count,
             "method_materialization_success_count": method_materialization_success_count,
@@ -14476,11 +14692,11 @@ def cmd_formal_common_core_method_result_checker_run(args: argparse.Namespace) -
                 "explain_execution": "disabled",
                 "plan_collection": "disabled",
                 "hard_negative_execution": "disabled",
-                "cons_cases": "disabled",
+                "cons_cases": "disabled" if denominator_scope == "PERF_only" else "enabled_only_with_explicit_case_selection",
                 "case_artifact_write": "disabled",
                 "registry_writeback": "disabled",
             },
-            "claim_boundary": "perf_only_method_checker_backed_consistency_from_report_local_materialization",
+            "claim_boundary": "formal_common_core_method_checker_backed_consistency_from_report_local_materialization",
         }
         route_payloads.append(route_payload)
         all_records.extend(records)
@@ -14492,7 +14708,7 @@ def cmd_formal_common_core_method_result_checker_run(args: argparse.Namespace) -
         "output_path": f"reports/formal_common_core/{output_name}",
         "route": "multi_route_dry_run",
         "baseline_id": "MULTI_ROUTE_DRY_RUN",
-        "denominator_scope": "PERF_only",
+        "denominator_scope": denominator_scope,
         "case_count": len(all_records),
         "source_materialization_success_count": sum(payload["source_materialization_success_count"] for payload in route_payloads),
         "method_materialization_success_count": sum(payload["method_materialization_success_count"] for payload in route_payloads),
@@ -14505,7 +14721,7 @@ def cmd_formal_common_core_method_result_checker_run(args: argparse.Namespace) -
         "records": all_records,
         "issues": issues,
         "guardrails": route_payloads[0]["guardrails"] if route_payloads else {},
-        "claim_boundary": "perf_only_method_checker_backed_consistency_from_report_local_materialization",
+        "claim_boundary": "formal_common_core_method_checker_backed_consistency_from_report_local_materialization",
     }
     write_formal_common_core_report(output_name, final_payload)
     return print_and_exit(final_payload, 0 if final_payload["ok"] else 1)
@@ -21732,6 +21948,14 @@ def build_parser() -> argparse.ArgumentParser:
     )
     formal_common_core_method_result_checker_run_parser.add_argument("--execute", action="store_true", default=False)
     formal_common_core_method_result_checker_run_parser.set_defaults(func=cmd_formal_common_core_method_result_checker_run)
+
+    formal_common_core_method_speedup_scoring_parser = subparsers.add_parser("formal-common-core-method-speedup-scoring")
+    formal_common_core_method_speedup_scoring_parser.add_argument(
+        "--output",
+        default="method_speedup_scoring_v0.json",
+    )
+    formal_common_core_method_speedup_scoring_parser.add_argument("--execute", action="store_true", default=False)
+    formal_common_core_method_speedup_scoring_parser.set_defaults(func=cmd_formal_common_core_method_speedup_scoring)
 
     formal_common_core_method_plan_collection_preflight_parser = subparsers.add_parser("formal-common-core-method-plan-collection-preflight")
     formal_common_core_method_plan_collection_preflight_parser.add_argument(

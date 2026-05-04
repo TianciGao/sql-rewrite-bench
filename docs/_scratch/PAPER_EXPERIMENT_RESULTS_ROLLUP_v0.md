@@ -24,28 +24,27 @@ Current formal common-core correctness state:
 - `false_accept_rate_observed_existing_artifacts=0.0`
 - SQLGlot same-dialect formal execution is complete with row-count match `9 / 9`
 - Direct LLM rewrite formal execution is complete with row-count match `9 / 9`
-- SQLGlot same-dialect now has PERF-only checker-backed consistency:
-  - materialized cases `7 / 7`
-  - checker consistent `7`
+- SQLGlot same-dialect now has full 9-case checker-backed consistency:
+  - materialized cases `9 / 9`
+  - checker consistent `9`
   - inconsistent `0`
   - failed `0`
   - `result_consistency_rate=1.0`
-- Direct LLM rewrite now has PERF-only checker-backed consistency:
-  - materialized cases `7 / 7`
-  - checker consistent `7`
+- Direct LLM rewrite now has full 9-case checker-backed consistency:
+  - materialized cases `9 / 9`
+  - checker consistent `9`
   - inconsistent `0`
   - failed `0`
   - `result_consistency_rate=1.0`
 - checker mode for both generated routes:
   - `exact_tsv_report_local`
-- full `9`-case generated-method checker-backed consistency remains open because `CONS_0007` and `CONS_0012` were not covered by this PERF-only checker run
 - row-count match is not semantic correctness
 
 Interpretation:
 
 - the benchmark currently has a strong correctness-control line
-- PERF-only generated-method checker-backed consistency now exists for SQLGlot and Direct LLM
-- full `9`-case common-core generated-method checker-backed closure is still not complete
+- full `9`-case common-core generated-method checker-backed consistency is now closed for SQLGlot and Direct LLM
+- correctness-gated generated-method speedup remains a separate step
 
 ## RQ2 Plan Observability And Runtime
 
@@ -83,7 +82,7 @@ Current runtime / speedup state:
 Interpretation:
 
 - positive-control speedup now exists as a bounded formal runtime result
-- SQLGlot and Direct LLM now have PERF-only checker-backed consistency, but the existing runtime appendix was introduced as explicitly exploratory material
+- SQLGlot and Direct LLM now have full 9-case checker-backed consistency, but the existing runtime appendix was introduced as explicitly exploratory material
 - SQLGlot and Direct LLM runtime appendix results remain exploratory and must not be silently promoted into the final correctness-gated leaderboard without a separate policy / promotion step
 - correctness-gated generated-method leaderboard speedup remains blocked
 
@@ -123,8 +122,6 @@ Interpretation:
 Current remaining gaps:
 
 - taxonomy and failure slicing are not yet fully computed
-- full `9`-case generated-method checker-backed consistency is not yet closed
-- `CONS_0007` / `CONS_0012` checker coverage or backfill remains open
 - formal operator-delta summary / attribution logic remains incomplete
 - final correctness-gated generated-method leaderboard still requires explicit promotion / policy beyond the current PERF-only generated-method consistency result
 - final paper packet consolidation remains incomplete
@@ -158,11 +155,10 @@ The following paper-facing tables can now be drafted from existing artifacts:
 - no registry writeback
 - no formal review update
 - SQLGlot and Direct LLM row-count match is not semantic equivalence
-- SQLGlot and Direct LLM PERF-only checker-backed consistency is not full `9`-case common-core generated-method closure
 - SQLGlot and Direct LLM appendix speedup is exploratory and row-count-gated only
 - SQLGlot and Direct LLM are not admitted into the correctness-gated speedup leaderboard
 - PORT current snapshot is not full portability closure
 
 ## Recommended Next Use
 
-- decide whether to backfill checker config for `CONS_0007` / `CONS_0012` or proceed with PERF-only generated-method consistency as the first paper-facing method-consistency result
+- promote SQLGlot and Direct LLM PERF-only speedup from exploratory appendix to a correctness-gated PERF-only method speedup summary
