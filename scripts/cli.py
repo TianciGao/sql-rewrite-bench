@@ -11700,6 +11700,284 @@ def cmd_formal_common_core_speedup_preflight(args: argparse.Namespace) -> int:
     return print_and_exit(payload, 0 if payload["ok"] else 1)
 
 
+def cmd_formal_common_core_human_positive_speedup_preflight(args: argparse.Namespace) -> int:
+    output_name = normalize_formal_common_core_output_name(args.output)
+    if args.execute:
+        payload = {
+            "command": "formal-common-core-human-positive-speedup-preflight",
+            "ok": False,
+            "ran_at_utc": utc_now(),
+            "output_path": "reports/formal_common_core/human_positive_speedup_preflight_execute_refused_v0.json",
+            "claim_boundary": "human_positive_speedup_preflight_only_not_runtime_execution_or_speedup_scoring",
+            "message": "This command is read-existing-reports-only and does not support --execute.",
+            "issues": [
+                {
+                    "type": "invalid_execute_flag",
+                    "message": "formal-common-core-human-positive-speedup-preflight does not support --execute",
+                }
+            ],
+            "guardrails": {
+                "database_execution": "disabled",
+                "sql_execution": "disabled",
+                "runtime_rerun": "disabled",
+                "explain_execution": "disabled",
+                "model_api_call": "disabled",
+                "sqlglot_generation": "disabled",
+                "checker_execution": "disabled",
+                "speedup_scoring": "disabled",
+                "case_artifact_write": "disabled",
+                "registry_writeback": "disabled",
+            },
+        }
+        write_formal_common_core_report("human_positive_speedup_preflight_execute_refused_v0.json", payload)
+        return print_and_exit(payload, 1)
+
+    issues: list[dict[str, Any]] = []
+    perf_case_ids = [
+        "PERF_0006",
+        "PERF_0008",
+        "PERF_0013",
+        "PERF_0017",
+        "PERF_0024",
+        "PERF_0033",
+        "PERF_0054",
+    ]
+    denominator_case_count = len(perf_case_ids)
+
+    policy_packet_path = ROOT / "docs" / "_scratch" / "FORMAL_COMMON_CORE_SPEEDUP_POLICY_DECISION_PACKET_v0.md"
+    control_scoring_path = FORMAL_COMMON_CORE_REPORT_DIR / "control_scoring_v0.json"
+    native_execution_path = FORMAL_COMMON_CORE_REPORT_DIR / "native_identity_execution_v0.json"
+    human_execution_path = FORMAL_COMMON_CORE_REPORT_DIR / "human_reference_positive_execution_v0.json"
+    plan_parse_summary_path = FORMAL_COMMON_CORE_REPORT_DIR / "plan_parse_summary_v0.json"
+    plan_operator_delta_summary_path = FORMAL_COMMON_CORE_REPORT_DIR / "plan_operator_delta_summary_v0.json"
+    speedup_preflight_path = FORMAL_COMMON_CORE_REPORT_DIR / "speedup_preflight_v0.json"
+
+    policy_packet_exists = policy_packet_path.is_file()
+    control_scoring_report = load_json_if_present(control_scoring_path)
+    native_execution_report = load_json_if_present(native_execution_path)
+    human_execution_report = load_json_if_present(human_execution_path)
+    plan_parse_summary_report = load_json_if_present(plan_parse_summary_path)
+    plan_operator_delta_summary_report = load_json_if_present(plan_operator_delta_summary_path)
+    speedup_preflight_report = load_json_if_present(speedup_preflight_path)
+
+    if not policy_packet_exists:
+        issues.append({"type": "missing_policy_packet", "path": relative_to_root(policy_packet_path)})
+    for issue_type, path, report in [
+        ("missing_control_scoring_report", control_scoring_path, control_scoring_report),
+        ("missing_native_execution_report", native_execution_path, native_execution_report),
+        ("missing_human_execution_report", human_execution_path, human_execution_report),
+        ("missing_plan_parse_summary_report", plan_parse_summary_path, plan_parse_summary_report),
+        ("missing_plan_operator_delta_summary_report", plan_operator_delta_summary_path, plan_operator_delta_summary_report),
+        ("missing_speedup_preflight_report", speedup_preflight_path, speedup_preflight_report),
+    ]:
+        if report is None:
+            issues.append({"type": issue_type, "path": relative_to_root(path)})
+
+    control_record_map = {
+        str(record.get("case_id", "")).strip(): record
+        for record in (control_scoring_report or {}).get("records", [])
+        if record.get("case_id")
+    }
+    native_execution_map = {
+        str(record.get("case_id", "")).strip(): record
+        for record in (native_execution_report or {}).get("records", [])
+        if record.get("case_id")
+    }
+    human_execution_map = {
+        str(record.get("case_id", "")).strip(): record
+        for record in (human_execution_report or {}).get("records", [])
+        if record.get("case_id")
+    }
+    plan_parse_map = {
+        str(record.get("case_id", "")).strip(): record
+        for record in (plan_parse_summary_report or {}).get("records", [])
+        if record.get("case_id")
+    }
+    speedup_preflight_map = {
+        (
+            str(record.get("case_id", "")).strip(),
+            str(record.get("baseline_id", "")).strip(),
+        ): record
+        for record in (speedup_preflight_report or {}).get("records", [])
+        if record.get("case_id") and record.get("baseline_id")
+    }
+
+    ready_case_count = 0
+    blocked_case_count = 0
+    source_sql_present_count = 0
+    positive_sql_present_count = 0
+    native_execution_success_count = 0
+    human_positive_execution_success_count = 0
+    consistency_gate_pass_count = 0
+    runtime_observation_available_count = 0
+    plan_pair_ready_count = 0
+    records: list[dict[str, Any]] = []
+
+    for case_id in perf_case_ids:
+        inferred = case_root_for_case_id(case_id)
+        pool = inferred[0] if inferred else "unknown"
+        case_root = inferred[1] if inferred else None
+        source_sql_path = case_root / "source.sql" if case_root else Path("")
+        source_sql_exists = bool(case_root and source_sql_path.is_file())
+        if source_sql_exists:
+            source_sql_present_count += 1
+
+        positive_sql_candidates = existing_case_sql_paths(case_root, "rewrite_pos_*.sql") if case_root else []
+        positive_sql_path = positive_sql_candidates[0] if positive_sql_candidates else (case_root / "rewrite_pos_01.sql" if case_root else Path(""))
+        positive_sql_exists = bool(positive_sql_candidates)
+        if positive_sql_exists:
+            positive_sql_present_count += 1
+
+        validation_schema = validation_schema_hint(case_id) if case_root else ""
+        validation_schema_hint_available = bool(validation_schema)
+
+        native_execution_status = str((native_execution_map.get(case_id) or {}).get("execution_status", "missing"))
+        native_execution_success = native_execution_status == "success"
+        if native_execution_success:
+            native_execution_success_count += 1
+
+        human_execution_status = str((human_execution_map.get(case_id) or {}).get("execution_status", "missing"))
+        human_execution_success = human_execution_status == "success"
+        if human_execution_success:
+            human_positive_execution_success_count += 1
+
+        control_record = control_record_map.get(case_id, {})
+        consistency_gate_passed = bool(control_record.get("human_positive_consistency_status_observed"))
+        if consistency_gate_passed:
+            consistency_gate_pass_count += 1
+
+        speedup_record = speedup_preflight_map.get((case_id, "HUMAN_REFERENCE_POSITIVE"), {})
+        source_runtime_available = bool(speedup_record.get("source_runtime_available"))
+        candidate_runtime_available = bool(speedup_record.get("candidate_runtime_available"))
+        runtime_observation_available = source_runtime_available and candidate_runtime_available
+        if runtime_observation_available:
+            runtime_observation_available_count += 1
+
+        plan_parse_record = plan_parse_map.get(case_id, {})
+        plan_pair_ready = bool(plan_parse_record.get("source_positive_pair_ready"))
+        if plan_pair_ready:
+            plan_pair_ready_count += 1
+
+        frozen_policy_fields_available = (
+            policy_packet_exists
+            and bool((speedup_preflight_report or {}).get("repeat_count_proposed") == 5)
+            and bool((speedup_preflight_report or {}).get("warmup_count_proposed") == 1)
+            and bool((speedup_preflight_report or {}).get("statement_timeout_ms_proposed") == 30000)
+            and str((speedup_preflight_report or {}).get("primary_statistic_proposed", "")) == "median"
+            and bool((speedup_preflight_report or {}).get("tie_threshold_proposed") == 0.05)
+            and bool((speedup_preflight_report or {}).get("regression_threshold_proposed") == 1.2)
+        )
+
+        blockers: list[str] = []
+        warnings: list[str] = []
+        if not source_sql_exists:
+            blockers.append("missing_source_sql")
+            speedup_run_preflight_status = "blocked_missing_source_sql"
+        elif not positive_sql_exists:
+            blockers.append("missing_positive_sql")
+            speedup_run_preflight_status = "blocked_missing_positive_sql"
+        elif not validation_schema_hint_available:
+            blockers.append("missing_validation_schema_hint")
+            speedup_run_preflight_status = "blocked_missing_validation_schema_hint"
+        elif not (native_execution_success and human_execution_success):
+            blockers.append("missing_execution_record")
+            speedup_run_preflight_status = "blocked_missing_execution_record"
+        elif not consistency_gate_passed:
+            blockers.append("missing_consistency_gate")
+            speedup_run_preflight_status = "blocked_missing_consistency_gate"
+        elif not plan_pair_ready:
+            blockers.append("missing_plan_pair")
+            speedup_run_preflight_status = "blocked_missing_plan_pair"
+        elif not frozen_policy_fields_available:
+            blockers.append("policy_not_frozen")
+            speedup_run_preflight_status = "blocked_policy_not_frozen"
+        else:
+            speedup_run_preflight_status = "ready_for_formal_speedup_rerun"
+
+        if speedup_run_preflight_status == "ready_for_formal_speedup_rerun":
+            ready_case_count += 1
+        else:
+            blocked_case_count += 1
+
+        if not runtime_observation_available:
+            warnings.append("runtime_observation_not_available_in_existing_preflight")
+
+        records.append(
+            {
+                "case_id": case_id,
+                "pool": pool,
+                "source_sql_exists": source_sql_exists,
+                "positive_sql_path": relative_to_root(positive_sql_path) if case_root else "",
+                "positive_sql_exists": positive_sql_exists,
+                "validation_schema_hint": validation_schema,
+                "native_execution_success": native_execution_success,
+                "human_positive_execution_success": human_execution_success,
+                "human_positive_result_consistency_gate_passed": consistency_gate_passed,
+                "source_runtime_observation_exists": source_runtime_available,
+                "human_positive_runtime_observation_exists": candidate_runtime_available,
+                "source_positive_plan_pair_ready": plan_pair_ready,
+                "frozen_policy_fields_available": frozen_policy_fields_available,
+                "speedup_run_preflight_status": speedup_run_preflight_status,
+                "blockers": blockers,
+                "warnings": warnings,
+                "artifact_claim_boundary": "human_positive_speedup_preflight_only_no_runtime_execution",
+            }
+        )
+
+    payload = {
+        "command": "formal-common-core-human-positive-speedup-preflight",
+        "ok": (
+            policy_packet_exists
+            and control_scoring_report is not None
+            and native_execution_report is not None
+            and human_execution_report is not None
+            and plan_parse_summary_report is not None
+            and plan_operator_delta_summary_report is not None
+            and speedup_preflight_report is not None
+        ),
+        "ran_at_utc": utc_now(),
+        "output_path": f"reports/formal_common_core/{output_name}",
+        "route": "human_reference_positive",
+        "baseline_id": "HUMAN_REFERENCE_POSITIVE",
+        "speedup_denominator_scope": "PERF_only",
+        "denominator_case_count": denominator_case_count,
+        "ready_case_count": ready_case_count,
+        "blocked_case_count": blocked_case_count,
+        "source_sql_present_count": source_sql_present_count,
+        "positive_sql_present_count": positive_sql_present_count,
+        "native_execution_success_count": native_execution_success_count,
+        "human_positive_execution_success_count": human_positive_execution_success_count,
+        "consistency_gate_pass_count": consistency_gate_pass_count,
+        "runtime_observation_available_count": runtime_observation_available_count,
+        "plan_pair_ready_count": plan_pair_ready_count,
+        "repeat_count": 5,
+        "warmup_count": 1,
+        "statement_timeout_ms": 30000,
+        "primary_runtime_statistic": "median",
+        "tie_threshold": 0.05,
+        "regression_threshold": 1.2,
+        "formal_speedup_rerun_ready": ready_case_count == denominator_case_count and blocked_case_count == 0,
+        "formal_speedup_scoring_complete": False,
+        "records": records,
+        "issues": issues,
+        "guardrails": {
+            "database_execution": "disabled",
+            "sql_execution": "disabled",
+            "runtime_rerun": "disabled",
+            "explain_execution": "disabled",
+            "model_api_call": "disabled",
+            "sqlglot_generation": "disabled",
+            "checker_execution": "disabled",
+            "speedup_scoring": "disabled",
+            "case_artifact_write": "disabled",
+            "registry_writeback": "disabled",
+        },
+        "claim_boundary": "human_positive_speedup_preflight_only_not_runtime_execution_or_speedup_scoring",
+    }
+    write_formal_common_core_report(output_name, payload)
+    return print_and_exit(payload, 0 if payload["ok"] else 1)
+
+
 def cmd_formal_common_core_method_plan_collection_preflight(args: argparse.Namespace) -> int:
     output_name = normalize_formal_common_core_output_name(args.output)
     if args.execute:
@@ -19095,6 +19373,14 @@ def build_parser() -> argparse.ArgumentParser:
     )
     formal_common_core_speedup_preflight_parser.add_argument("--execute", action="store_true", default=False)
     formal_common_core_speedup_preflight_parser.set_defaults(func=cmd_formal_common_core_speedup_preflight)
+
+    formal_common_core_human_positive_speedup_preflight_parser = subparsers.add_parser("formal-common-core-human-positive-speedup-preflight")
+    formal_common_core_human_positive_speedup_preflight_parser.add_argument(
+        "--output",
+        default="human_positive_speedup_preflight_v0.json",
+    )
+    formal_common_core_human_positive_speedup_preflight_parser.add_argument("--execute", action="store_true", default=False)
+    formal_common_core_human_positive_speedup_preflight_parser.set_defaults(func=cmd_formal_common_core_human_positive_speedup_preflight)
 
     formal_common_core_method_plan_collection_preflight_parser = subparsers.add_parser("formal-common-core-method-plan-collection-preflight")
     formal_common_core_method_plan_collection_preflight_parser.add_argument(
