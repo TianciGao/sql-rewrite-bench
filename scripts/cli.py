@@ -19176,6 +19176,289 @@ def cmd_formal_batch2a_speedup_run(args: argparse.Namespace) -> int:
     return print_and_exit(payload, 0 if payload["ok"] else 1)
 
 
+def cmd_formal_batch2b_cons_backfill_preflight(args: argparse.Namespace) -> int:
+    output_name = normalize_formal_expansion_output_name(args.output)
+    candidate_case_ids = ["CONS_0024", "CONS_0031", "CONS_0034"]
+
+    if args.execute:
+        payload = {
+            "command": "formal-batch2b-cons-backfill-preflight",
+            "ok": False,
+            "ran_at_utc": utc_now(),
+            "output_path": "reports/formal_expansion/batch2b_cons_backfill_preflight_execute_refused_v0.json",
+            "issues": [
+                {
+                    "type": "execute_not_supported",
+                    "message": "formal-batch2b-cons-backfill-preflight is read-existing-files-only and does not support --execute",
+                }
+            ],
+            "guardrails": {
+                "database_execution": "disabled",
+                "sql_execution": "disabled",
+                "checker_execution": "disabled",
+                "model_api_call": "disabled",
+                "sqlglot_execution": "disabled",
+                "mysql_execution": "disabled",
+                "spark_execution": "disabled",
+                "case_artifact_write": "disabled",
+                "registry_writeback": "disabled",
+            },
+            "claim_boundary": "batch2b_cons_backfill_preflight_only_not_execution_or_admission",
+        }
+        write_formal_expansion_report("batch2b_cons_backfill_preflight_execute_refused_v0.json", payload)
+        return print_and_exit(payload, 1)
+
+    _, case_registry_rows = read_registry(CASE_REGISTRY)
+    case_registry_index = {str(row.get("case_id", "")).strip().upper(): row for row in case_registry_rows if row.get("case_id")}
+    issues: list[dict[str, Any]] = []
+    warnings: list[str] = []
+
+    yaml_module = None
+    if safe_module_available("yaml"):
+        try:
+            yaml_module = importlib.import_module("yaml")
+        except Exception as exc:
+            warnings.append(f"yaml_import_error:{exc}")
+
+    def load_yaml_object(path: Path) -> Any | None:
+        if not path.is_file() or yaml_module is None:
+            return None
+        try:
+            return yaml_module.safe_load(path.read_text(encoding="utf-8"))
+        except Exception:
+            warnings.append(f"failed_to_parse_yaml:{relative_to_root(path)}")
+            return None
+
+    def taxonomy_trial_status(case_root: Path) -> str:
+        taxonomy_paths = sorted(case_root.glob("taxonomy_trial*.yaml"))
+        if not taxonomy_paths:
+            return "missing"
+        taxonomy_obj = load_yaml_object(taxonomy_paths[0])
+        if not isinstance(taxonomy_obj, dict):
+            return "unknown"
+        status_value = str(taxonomy_obj.get("status", "")).strip()
+        if status_value in {"draft_trial_only", "provisional"}:
+            return "provisional"
+        if status_value == "p0_taxonomy_hardened_draft":
+            return "usable_for_current_slicing"
+        if not any(
+            key in taxonomy_obj
+            for key in [
+                "sql_feature_tags",
+                "rewrite_opportunity_tags",
+                "portability_tags",
+                "workload_realism_tags",
+                "plan_operator_tags",
+            ]
+        ):
+            return "placeholder_or_empty"
+        return "usable_for_current_slicing"
+
+    records: list[dict[str, Any]] = []
+    ready_cases: list[str] = []
+    minor_backfill_cases: list[str] = []
+    major_blocked_cases: list[str] = []
+    diagnostic_only_cases: list[str] = []
+
+    for case_id in candidate_case_ids:
+        registry_row = case_registry_index.get(case_id, {})
+        inferred = case_root_for_case_id(case_id)
+        case_root = inferred[1] if inferred else None
+        if case_root is None:
+            issues.append({"type": "missing_case_root", "case_id": case_id})
+            continue
+
+        manifest_path = case_root / "manifest.yaml"
+        source_sql_path = case_root / "source.sql"
+        positive_rewrite_path = case_root / "rewrite_pos_01.sql"
+        negative_rewrite_path = case_root / "rewrite_neg_01.sql"
+        pg_schema_path = case_root / "schema" / "ddl_pg.sql"
+        pg_witness_data_path = case_root / "validation" / "pg_witness_data.sql"
+        checker_yaml_path = case_root / "validation" / "checker.yaml"
+        check_results_py_path = case_root / "validation" / "check_results.py"
+        root_result_check_path = case_root / "runs" / "result_check.json"
+        pg_result_check_path = case_root / "runs" / "pg" / "result_check.json"
+        source_tsv_path = case_root / "runs" / "pg" / "source.tsv"
+        positive_tsv_path = case_root / "runs" / "pg" / "rewrite_pos_01.tsv"
+        negative_tsv_path = case_root / "runs" / "pg" / "rewrite_neg_01.tsv"
+        source_plan_path = case_root / "runs" / "pg" / "plans" / "source.json"
+        positive_plan_path = case_root / "runs" / "pg" / "plans" / "rewrite_pos_01.json"
+        negative_plan_path = case_root / "runs" / "pg" / "plans" / "rewrite_neg_01.json"
+        plan_check_path = case_root / "runs" / "pg" / "plans" / "plan_check.json"
+
+        manifest_exists = manifest_path.is_file()
+        source_sql_exists = source_sql_path.is_file()
+        positive_rewrite_exists = positive_rewrite_path.is_file()
+        negative_rewrite_exists = negative_rewrite_path.is_file()
+        pg_schema_exists = pg_schema_path.is_file()
+        pg_witness_data_exists = pg_witness_data_path.is_file()
+        checker_yaml_exists = checker_yaml_path.is_file()
+        check_results_py_exists = check_results_py_path.is_file()
+        root_result_check_exists = root_result_check_path.is_file()
+        pg_result_check_exists = pg_result_check_path.is_file()
+        source_tsv_exists = source_tsv_path.is_file()
+        positive_tsv_exists = positive_tsv_path.is_file()
+        negative_tsv_exists = negative_tsv_path.is_file()
+        source_plan_exists = source_plan_path.is_file()
+        positive_plan_exists = positive_plan_path.is_file()
+        negative_plan_exists = negative_plan_path.is_file()
+        plan_check_exists = plan_check_path.is_file()
+
+        taxonomy_status = taxonomy_trial_status(case_root)
+        missing_artifacts: list[str] = []
+        recommended_backfill_actions: list[str] = []
+
+        for label, exists in [
+            ("manifest.yaml", manifest_exists),
+            ("source.sql", source_sql_exists),
+            ("rewrite_pos_01.sql", positive_rewrite_exists),
+            ("rewrite_neg_01.sql", negative_rewrite_exists),
+            ("schema/ddl_pg.sql", pg_schema_exists),
+            ("validation/pg_witness_data.sql", pg_witness_data_exists),
+        ]:
+            if not exists:
+                missing_artifacts.append(label)
+
+        core_sql_ready = source_sql_exists and positive_rewrite_exists and negative_rewrite_exists
+        pg_validation_inputs_ready = pg_schema_exists and pg_witness_data_exists
+        pg_result_evidence_ready = pg_result_check_exists and source_tsv_exists and positive_tsv_exists and negative_tsv_exists
+        pg_plan_evidence_ready = source_plan_exists and positive_plan_exists and negative_plan_exists and plan_check_exists
+
+        if not checker_yaml_exists:
+            missing_artifacts.append("validation/checker.yaml")
+            recommended_backfill_actions.append("add validation/checker.yaml to standardize checker-policy entrypoint for Batch 2B CONS runs")
+        if not check_results_py_exists:
+            missing_artifacts.append("validation/check_results.py")
+            recommended_backfill_actions.append("add validation/check_results.py so the case has a local result-check script")
+        if taxonomy_status == "missing":
+            missing_artifacts.append("taxonomy_trial*.yaml")
+            recommended_backfill_actions.append("add a bounded taxonomy_trial draft so Batch 2B CONS cases align with current taxonomy hardening expectations")
+        elif taxonomy_status in {"placeholder_or_empty", "provisional", "unknown"}:
+            missing_artifacts.append(f"taxonomy_trial_status:{taxonomy_status}")
+            recommended_backfill_actions.append("normalize taxonomy_trial metadata before Batch 2B promotion decisions")
+
+        no_major_semantic_blocker = (
+            str(registry_row.get("admission_status", "")).strip() == "staged_not_yet_admitted"
+            and str(registry_row.get("formal_skeleton_status", "")).strip() == "complete"
+            and str(registry_row.get("tri_engine_closure", "")).strip() == "yes"
+            and str(registry_row.get("admission_blockers", "")).strip() == "missing_formal_review_only"
+        )
+
+        if not core_sql_ready or not pg_validation_inputs_ready:
+            current_readiness_status = "blocked_major_missing_artifacts"
+            recommended_next_action = "backfill core SQL/schema/witness package files before any Batch 2B execution consideration"
+            major_blocked_cases.append(case_id)
+        elif not no_major_semantic_blocker:
+            current_readiness_status = "diagnostic_only"
+            recommended_next_action = "resolve governance blocker before treating this case as clean Batch 2B consistency denominator material"
+            diagnostic_only_cases.append(case_id)
+        elif checker_yaml_exists and taxonomy_status in {"usable_for_current_slicing"} and pg_result_evidence_ready:
+            current_readiness_status = "ready_for_batch2b_execution"
+            recommended_next_action = "run Batch 2B CONS PG execution/checker on this case"
+            ready_cases.append(case_id)
+        else:
+            current_readiness_status = "minor_backfill_needed"
+            recommended_next_action = "backfill validation/checker.yaml and taxonomy_trial metadata, then rerun readiness gate before execution"
+            minor_backfill_cases.append(case_id)
+
+        records.append(
+            {
+                "case_id": case_id,
+                "pool": str(registry_row.get("primary_pool", "")).strip(),
+                "source_family": str(registry_row.get("source_family", "")).strip(),
+                "benchmark_line": str(registry_row.get("benchmark_line", "")).strip(),
+                "current_role": str(registry_row.get("current_role", "")).strip(),
+                "admission_status": str(registry_row.get("admission_status", "")).strip(),
+                "promotion_status": str(registry_row.get("promotion_status", "")).strip(),
+                "manifest_exists": manifest_exists,
+                "source_sql_exists": source_sql_exists,
+                "positive_rewrite_exists": positive_rewrite_exists,
+                "negative_rewrite_exists": negative_rewrite_exists,
+                "pg_schema_exists": pg_schema_exists,
+                "pg_witness_data_exists": pg_witness_data_exists,
+                "checker_yaml_exists": checker_yaml_exists,
+                "check_results_py_exists": check_results_py_exists,
+                "root_result_check_exists": root_result_check_exists,
+                "pg_result_check_exists": pg_result_check_exists,
+                "source_tsv_exists": source_tsv_exists,
+                "positive_tsv_exists": positive_tsv_exists,
+                "negative_tsv_exists": negative_tsv_exists,
+                "source_plan_exists": source_plan_exists,
+                "positive_plan_exists": positive_plan_exists,
+                "negative_plan_exists": negative_plan_exists,
+                "plan_check_exists": plan_check_exists,
+                "taxonomy_trial_status": taxonomy_status,
+                "current_readiness_status": current_readiness_status,
+                "missing_artifacts": missing_artifacts,
+                "recommended_backfill_actions": recommended_backfill_actions,
+                "recommended_next_action": recommended_next_action,
+                "claim_boundary": "batch2b_cons_backfill_preflight_only_not_execution_or_admission",
+            }
+        )
+
+    if ready_cases and not minor_backfill_cases and not major_blocked_cases and not diagnostic_only_cases:
+        recommended_batch2b_execution_cases = list(ready_cases)
+        recommended_next_action = "run Batch 2B CONS PG execution/checker for CONS_0024, CONS_0031, and CONS_0034."
+    elif minor_backfill_cases and not major_blocked_cases:
+        recommended_batch2b_execution_cases = []
+        recommended_next_action = (
+            "Backfill validation/checker.yaml and bounded taxonomy_trial metadata for CONS_0024, CONS_0031, and CONS_0034, "
+            "then rerun this preflight before any Batch 2B execution/checker run."
+        )
+    else:
+        recommended_batch2b_execution_cases = list(ready_cases)
+        recommended_next_action = "Resolve major or diagnostic blockers before selecting a Batch 2B CONS execution subset."
+
+    payload = {
+        "command": "formal-batch2b-cons-backfill-preflight",
+        "ok": not issues,
+        "ran_at_utc": utc_now(),
+        "output_path": f"reports/formal_expansion/{output_name}",
+        "candidate_count": len(candidate_case_ids),
+        "ready_count": len(ready_cases),
+        "minor_backfill_count": len(minor_backfill_cases),
+        "major_blocked_count": len(major_blocked_cases),
+        "diagnostic_only_count": len(diagnostic_only_cases),
+        "ready_cases": ready_cases,
+        "minor_backfill_cases": minor_backfill_cases,
+        "major_blocked_cases": major_blocked_cases,
+        "diagnostic_only_cases": diagnostic_only_cases,
+        "recommended_batch2b_execution_cases": recommended_batch2b_execution_cases,
+        "recommended_backfill_plan": {
+            "CONS_0024": [
+                "add validation/checker.yaml",
+                "add bounded taxonomy_trial draft",
+            ],
+            "CONS_0031": [
+                "add validation/checker.yaml",
+                "add bounded taxonomy_trial draft",
+            ],
+            "CONS_0034": [
+                "add validation/checker.yaml",
+                "add bounded taxonomy_trial draft",
+            ],
+        },
+        "recommended_next_action": recommended_next_action,
+        "records": records,
+        "issues": issues,
+        "warnings": warnings,
+        "guardrails": {
+            "database_execution": "disabled",
+            "sql_execution": "disabled",
+            "checker_execution": "disabled",
+            "model_api_call": "disabled",
+            "sqlglot_execution": "disabled",
+            "mysql_execution": "disabled",
+            "spark_execution": "disabled",
+            "case_artifact_write": "disabled",
+            "registry_writeback": "disabled",
+        },
+        "claim_boundary": "batch2b_cons_backfill_preflight_only_not_execution_or_admission",
+    }
+    write_formal_expansion_report(output_name, payload)
+    return print_and_exit(payload, 0 if payload["ok"] else 1)
+
+
 def cmd_formal_common_core_method_result_checker_run(args: argparse.Namespace) -> int:
     output_name = normalize_formal_common_core_output_name(args.output)
     valid_routes = {
@@ -27113,6 +27396,14 @@ def build_parser() -> argparse.ArgumentParser:
     )
     formal_batch2a_speedup_run_parser.add_argument("--execute", action="store_true", default=False)
     formal_batch2a_speedup_run_parser.set_defaults(func=cmd_formal_batch2a_speedup_run)
+
+    formal_batch2b_cons_backfill_preflight_parser = subparsers.add_parser("formal-batch2b-cons-backfill-preflight")
+    formal_batch2b_cons_backfill_preflight_parser.add_argument(
+        "--output",
+        default="batch2b_cons_backfill_preflight_v0.json",
+    )
+    formal_batch2b_cons_backfill_preflight_parser.add_argument("--execute", action="store_true", default=False)
+    formal_batch2b_cons_backfill_preflight_parser.set_defaults(func=cmd_formal_batch2b_cons_backfill_preflight)
 
     formal_common_core_method_plan_collection_preflight_parser = subparsers.add_parser("formal-common-core-method-plan-collection-preflight")
     formal_common_core_method_plan_collection_preflight_parser.add_argument(
