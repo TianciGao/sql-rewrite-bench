@@ -50,6 +50,8 @@ Current expanded evidence totals:
 | `LLM_DIRECT_REWRITE_STRONG` | seed PERF `7` | `1.0023345046000625` | `1 / 5 / 1` | `0 / 7` | seed-only method runtime |
 | `HUMAN_REFERENCE_POSITIVE` | Batch 2A PERF `19` | `0.9733` | `4 / 9 / 6` | `3 / 19` | expanded PERF positive-control runtime |
 | `SQLGLOT_TRANSPILE_SAME_DIALECT_NO_OPT` | Batch 2A PERF `19` | `1.0119` | `4 / 13 / 2` | `0 / 19` | separate SQLGlot no-opt baseline candidate |
+| `HUMAN_REFERENCE_POSITIVE` | Batch 3A PERF `11` | `0.9984` | `0 / 10 / 1` | `0 / 11` | later ready-PERF runtime slice; Batch 3A route-record execution `22 / 22` with row-count match `22 / 22` |
+| `SQLGLOT_TRANSPILE_SAME_DIALECT_NO_OPT` | Batch 3A PERF `11` | `1.0023` | `2 / 7 / 2` | `0 / 11` | later ready-PERF runtime slice; still a separate SQLGlot baseline candidate |
 
 ## 6. Table 4: RQ2 Plan Observability
 
@@ -129,9 +131,10 @@ Combined current PostgreSQL-side PORT summary:
 ## 9. Cross-Cutting Interpretation Bullets
 
 - the expanded denominator exposed a major `SQLGLOT_OPT_SAME_DIALECT` capability boundary that the seed packet did not reveal
-- `SQLGLOT_TRANSPILE_SAME_DIALECT_NO_OPT` has broad execution / consistency coverage on Batch 2A, but speedup gains remain modest
+- `SQLGLOT_TRANSPILE_SAME_DIALECT_NO_OPT` remains broadly executable / consistent across Batch 2A and Batch 3A, but speedup gains remain close to neutral
 - Direct LLM shows stronger PostgreSQL-side PORT coverage than SQLGlot on the current bounded six-case sample
-- performance effects remain modest and tie-heavy rather than strongly positive
+- human positive and SQLGlot no-opt both remain close to neutral, with tie-heavy runtime behavior on the expanded PERF slices
+- the `SQLGLOT_OPT_SAME_DIALECT` capability boundary persists from Batch 2A into Batch 3A
 - feature-level slicing is already useful for paper analysis, but metadata hardening is still incomplete
 
 ## 10. Non-Claim Boundaries

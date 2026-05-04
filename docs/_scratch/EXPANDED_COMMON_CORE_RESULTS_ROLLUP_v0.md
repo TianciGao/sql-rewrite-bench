@@ -30,6 +30,13 @@ The expanded packet shows three things clearly:
 
 Batch 2B adds three checker-backed CONS cases to the expanded common-core consistency line and closes that narrow expansion cleanly.
 
+Batch 3A then extends the runtime story on the remaining ready PERF lane:
+
+- both `HUMAN_REFERENCE_POSITIVE` and `SQLGLOT_TRANSPILE_SAME_DIALECT_NO_OPT` execute `22 / 22` successfully
+- row-count alignment remains `22 / 22`
+- route-level speedup remains close to neutral and tie-heavy
+- the `SQLGLOT_OPT_SAME_DIALECT` capability boundary persists beyond Batch 2A
+
 # Denominator / Scope Table
 
 | packet | scope | case count | notes |
@@ -136,6 +143,11 @@ Interpretation:
 - the dominant problem is optimizer-stage unresolved-column failure
 - the smaller second cluster is execution-stage generated SQL bad-column reference failure
 - because all three control routes stay healthy, the observed failures are method-route capability failures rather than package-health failures
+- Batch 3A preserves the same route split on the later PERF wave:
+  - `SQLGLOT_OPT_SAME_DIALECT`: `2 / 11` success
+  - `SQLGLOT_TRANSPILE_SAME_DIALECT_NO_OPT`: `11 / 11` execution success
+
+Taken together, Batch 2A and Batch 3A show that the optimize-route boundary is persistent rather than a one-packet anomaly.
 
 # Speedup Summary
 
@@ -146,16 +158,19 @@ Interpretation:
 | `LLM_DIRECT_REWRITE_STRONG` | seed PERF-only `7` | `1.0023345046000625` | `1 / 5 / 1` | `0 / 7` | seed only; PERF-only runtime packet |
 | `HUMAN_REFERENCE_POSITIVE` | Batch 2A PERF `19` | `0.9733` | `4 / 9 / 6` | `3 / 19` | expanded PERF positive-control runtime |
 | `SQLGLOT_TRANSPILE_SAME_DIALECT_NO_OPT` | Batch 2A PERF `19` | `1.0119` | `4 / 13 / 2` | `0 / 19` | separate baseline candidate, not replacement for optimize route |
+| `HUMAN_REFERENCE_POSITIVE` | Batch 3A PERF `11` | `0.9984` | `0 / 10 / 1` | `0 / 11` | later ready-PERF runtime slice; `22 / 22` route-record execution success overall |
+| `SQLGLOT_TRANSPILE_SAME_DIALECT_NO_OPT` | Batch 3A PERF `11` | `1.0023` | `2 / 7 / 2` | `0 / 11` | later ready-PERF runtime slice; still separate from optimize route |
 
 Speedup interpretation:
 
 - performance trends remain modest and mostly tie-like
 - positive-control rewrites do not guarantee speedup
-- the no-opt SQLGlot route has broader execution/correctness coverage than optimize on Batch 2A, but runtime gains are limited
+- across Batch 2A and Batch 3A, the no-opt SQLGlot route remains broadly executable and checker-backed where evaluated, but runtime gains stay limited
+- human positive remains close to neutral as well, with the later Batch 3A slice moving even closer to `1.0`
 
 # What This Means For Paper
 
-The seed packet validated the end-to-end formal pipeline on a compact mixed common-core slice. Batch 2A then showed that the seed packet was optimistic for `SQLGLOT_OPT_SAME_DIALECT`: the expanded PERF denominator exposes a strong optimizer capability boundary that was not visible in the smaller seed. The no-opt SQLGlot route provides materially broader coverage and closes exact TSV consistency across Batch 2A, which strengthens the method capability-boundary story, but it should be reported as a separately named baseline candidate. Batch 2B adds three clean CONS cases and strengthens the expanded consistency line. Across the runtime packets, speedup results are modest and mostly tie-like, which supports the need to gate benchmark interpretation on execution, correctness/consistency, and runtime together rather than on speedup alone.
+The seed packet validated the end-to-end formal pipeline on a compact mixed common-core slice. Batch 2A then showed that the seed packet was optimistic for `SQLGLOT_OPT_SAME_DIALECT`: the expanded PERF denominator exposes a strong optimizer capability boundary that was not visible in the smaller seed. Batch 3A shows that this boundary persists on a later PERF slice rather than collapsing under additional cases. The no-opt SQLGlot route provides materially broader coverage and closes exact TSV consistency across the expanded PERF slices where evaluated, but it should still be reported as a separately named baseline candidate. Batch 2B adds three clean CONS cases and strengthens the expanded consistency line. Across the runtime packets, speedup results remain modest and mostly tie-like for both the human positive and no-opt SQLGlot routes, which supports the need to gate benchmark interpretation on execution, correctness/consistency, and runtime together rather than on speedup alone.
 
 # Boundaries / Non-Claims
 
