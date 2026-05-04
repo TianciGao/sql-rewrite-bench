@@ -1,0 +1,23 @@
+case_id: CONS_0024
+trial_version: "0.3"
+status: batch2b_taxonomy_draft
+candidate_primary_pool: consistency
+dataset_line_candidate: consistency-extension-candidate
+sql_feature_tags:
+  - correlated_subquery
+  - outer_join
+rewrite_opportunity_tags:
+  - subquery_decorrelation
+portability_tags: []
+workload_realism_tags: []
+plan_operator_tags:
+  status: provisional_from_existing_pg_plan_artifacts
+  observed_in_postgres:
+    - scan
+    - join
+    - aggregate
+    - subquery
+evidence_notes:
+  - Manifest tags and source.sql were inspected for this bounded Batch 2B backfill draft.
+  - Existing PostgreSQL plan artifacts show scan, join, aggregate, and subquery behavior on the current witness package.
+  - Tags are intentionally conservative and do not imply common-core admission or formal review completion.
