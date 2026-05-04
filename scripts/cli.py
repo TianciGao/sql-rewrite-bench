@@ -5,8 +5,10 @@ import csv
 import hashlib
 import importlib
 import json
+import math
 import os
 import re
+import statistics
 import subprocess
 import sys
 import time
@@ -11978,6 +11980,442 @@ def cmd_formal_common_core_human_positive_speedup_preflight(args: argparse.Names
     return print_and_exit(payload, 0 if payload["ok"] else 1)
 
 
+def cmd_formal_common_core_human_positive_speedup_run(args: argparse.Namespace) -> int:
+    output_name = normalize_formal_common_core_output_name(args.output)
+    if args.execute is False and str(args.output or "").strip().endswith("_execute_refused_v0.json"):
+        output_name = "human_positive_speedup_run_v0.json"
+
+    if args.execute is False:
+        selected_case_ids = [str(case_id).strip() for case_id in (args.case_id or []) if str(case_id).strip()]
+        if not selected_case_ids:
+            selected_case_ids = [
+                "PERF_0006",
+                "PERF_0008",
+                "PERF_0013",
+                "PERF_0017",
+                "PERF_0024",
+                "PERF_0033",
+                "PERF_0054",
+            ]
+    else:
+        selected_case_ids = [str(case_id).strip() for case_id in (args.case_id or []) if str(case_id).strip()]
+        if not selected_case_ids:
+            selected_case_ids = [
+                "PERF_0006",
+                "PERF_0008",
+                "PERF_0013",
+                "PERF_0017",
+                "PERF_0024",
+                "PERF_0033",
+                "PERF_0054",
+            ]
+
+    if args.execute and str(args.output or "").strip() == "human_positive_speedup_run_execute_refused_v0.json":
+        payload = {
+            "command": "formal-common-core-human-positive-speedup-run",
+            "ok": False,
+            "ran_at_utc": utc_now(),
+            "output_path": "reports/formal_common_core/human_positive_speedup_run_execute_refused_v0.json",
+            "claim_boundary": "human_positive_perf_only_formal_speedup_positive_control_not_full_leaderboard",
+            "message": "Use the default output path for execution; the execute-refused report is reserved for non-execution refusal paths.",
+            "issues": [
+                {
+                    "type": "invalid_output_for_execute",
+                    "message": "human_positive_speedup_run_execute_refused_v0.json is reserved for refusal payloads",
+                }
+            ],
+            "guardrails": {
+                "database_execution": "enabled_only_with_execute",
+                "sql_execution": "source_and_human_positive_only",
+                "model_api_call": "disabled",
+                "sqlglot_generation": "disabled",
+                "checker_execution": "disabled",
+                "explain_execution": "disabled",
+                "plan_collection": "disabled",
+                "hard_negative_execution": "disabled",
+                "cons_cases": "disabled",
+                "case_artifact_write": "disabled",
+                "registry_writeback": "disabled",
+            },
+        }
+        write_formal_common_core_report("human_positive_speedup_run_execute_refused_v0.json", payload)
+        return print_and_exit(payload, 1)
+
+    perf_case_ids = {
+        "PERF_0006",
+        "PERF_0008",
+        "PERF_0013",
+        "PERF_0017",
+        "PERF_0024",
+        "PERF_0033",
+        "PERF_0054",
+    }
+    issues: list[dict[str, Any]] = []
+
+    policy_packet_path = ROOT / "docs" / "_scratch" / "FORMAL_COMMON_CORE_SPEEDUP_POLICY_DECISION_PACKET_v0.md"
+    preflight_path = FORMAL_COMMON_CORE_REPORT_DIR / "human_positive_speedup_preflight_v0.json"
+    control_scoring_path = FORMAL_COMMON_CORE_REPORT_DIR / "control_scoring_v0.json"
+    native_execution_path = FORMAL_COMMON_CORE_REPORT_DIR / "native_identity_execution_v0.json"
+    human_execution_path = FORMAL_COMMON_CORE_REPORT_DIR / "human_reference_positive_execution_v0.json"
+
+    policy_packet_exists = policy_packet_path.is_file()
+    preflight_report = load_json_if_present(preflight_path)
+    control_scoring_report = load_json_if_present(control_scoring_path)
+    native_execution_report = load_json_if_present(native_execution_path)
+    human_execution_report = load_json_if_present(human_execution_path)
+
+    for issue_type, path, report in [
+        ("missing_policy_packet", policy_packet_path, {"exists": True} if policy_packet_exists else None),
+        ("missing_preflight_report", preflight_path, preflight_report),
+        ("missing_control_scoring_report", control_scoring_path, control_scoring_report),
+        ("missing_native_execution_report", native_execution_path, native_execution_report),
+        ("missing_human_execution_report", human_execution_path, human_execution_report),
+    ]:
+        if report is None:
+            issues.append({"type": issue_type, "path": relative_to_root(path)})
+
+    invalid_case_ids = [case_id for case_id in selected_case_ids if case_id not in perf_case_ids]
+    for case_id in invalid_case_ids:
+        issues.append(
+            {
+                "type": "unsupported_case_id",
+                "case_id": case_id,
+                "message": "formal-common-core-human-positive-speedup-run supports PERF-only cases for the first pass",
+            }
+        )
+
+    preflight_record_map = {
+        str(record.get("case_id", "")).strip(): record
+        for record in (preflight_report or {}).get("records", [])
+        if record.get("case_id")
+    }
+    control_record_map = {
+        str(record.get("case_id", "")).strip(): record
+        for record in (control_scoring_report or {}).get("records", [])
+        if record.get("case_id")
+    }
+    native_execution_map = {
+        str(record.get("case_id", "")).strip(): record
+        for record in (native_execution_report or {}).get("records", [])
+        if record.get("case_id")
+    }
+    human_execution_map = {
+        str(record.get("case_id", "")).strip(): record
+        for record in (human_execution_report or {}).get("records", [])
+        if record.get("case_id")
+    }
+
+    env_visibility = pg_env_visibility()
+    required_env_visible = all(env_visibility[name] for name in ["PGHOST", "PGPORT", "PGDATABASE", "PGUSER"])
+    pg_password_present = env_visibility["PGPASSWORD"]
+    pg_client_available = safe_module_available("psycopg")
+
+    payload = {
+        "command": "formal-common-core-human-positive-speedup-run",
+        "ran_at_utc": utc_now(),
+        "output_path": f"reports/formal_common_core/{output_name}",
+        "route": "human_reference_positive",
+        "baseline_id": "HUMAN_REFERENCE_POSITIVE",
+        "speedup_scope": "PERF_only_positive_control",
+        "case_count": len(selected_case_ids),
+        "repeat_count": 5,
+        "warmup_count": 1,
+        "statement_timeout_ms": 30000,
+        "primary_runtime_statistic": "median",
+        "tie_threshold": 0.05,
+        "regression_threshold": 1.2,
+        "pg_env_visible": required_env_visible,
+        "pg_password_present": pg_password_present,
+        "pg_client_available": pg_client_available,
+        "guardrails": {
+            "database_execution": "enabled_only_with_execute",
+            "sql_execution": "source_and_human_positive_only",
+            "model_api_call": "disabled",
+            "sqlglot_generation": "disabled",
+            "checker_execution": "disabled",
+            "explain_execution": "disabled",
+            "plan_collection": "disabled",
+            "hard_negative_execution": "disabled",
+            "cons_cases": "disabled",
+            "case_artifact_write": "disabled",
+            "registry_writeback": "disabled",
+        },
+        "claim_boundary": "human_positive_perf_only_formal_speedup_positive_control_not_full_leaderboard",
+    }
+
+    def runtime_stats(values: list[float]) -> tuple[float | None, float | None, float | None]:
+        if not values:
+            return None, None, None
+        return float(statistics.median(values)), min(values), float(sum(values) / len(values))
+
+    def geometric_mean(values: list[float]) -> float | None:
+        positive_values = [value for value in values if isinstance(value, (int, float)) and value > 0]
+        if not positive_values:
+            return None
+        return float(math.exp(sum(math.log(value) for value in positive_values) / len(positive_values)))
+
+    def execute_sql(cur: Any, sql_text: str) -> tuple[int | None, float]:
+        start = time.perf_counter()
+        cur.execute(sql_text)
+        if cur.description is not None:
+            rows = cur.fetchall()
+            row_count = len(rows)
+        else:
+            row_count = cur.rowcount if cur.rowcount >= 0 else None
+        runtime_ms = round((time.perf_counter() - start) * 1000, 3)
+        return row_count, runtime_ms
+
+    records: list[dict[str, Any]] = []
+
+    for case_id in selected_case_ids:
+        inferred = case_root_for_case_id(case_id)
+        validation_schema = validation_schema_hint(case_id)
+        if inferred is None:
+            records.append(
+                {
+                    "case_id": case_id,
+                    "execution_status": "failed",
+                    "source_warmup_runtime_ms": None,
+                    "candidate_warmup_runtime_ms": None,
+                    "source_runtime_ms_values": [],
+                    "candidate_runtime_ms_values": [],
+                    "source_median_runtime_ms": None,
+                    "candidate_median_runtime_ms": None,
+                    "source_min_runtime_ms": None,
+                    "candidate_min_runtime_ms": None,
+                    "source_mean_runtime_ms": None,
+                    "candidate_mean_runtime_ms": None,
+                    "speedup_ratio": None,
+                    "win_tie_loss_status": "unknown",
+                    "regression_20pct": None,
+                    "source_row_count": None,
+                    "candidate_row_count": None,
+                    "row_count_matches_source": None,
+                    "failure_category": "case_not_resolved",
+                    "error_message": "could not resolve case root from case_id",
+                    "validation_schema": validation_schema,
+                    "search_path_after_set": "",
+                    "artifact_claim_boundary": "human_positive_perf_speedup_run_actual_runtime_scoring_positive_control_only",
+                }
+            )
+            continue
+
+        pool, case_root = inferred
+        source_sql_path = case_root / "source.sql"
+        positive_paths = existing_case_sql_paths(case_root, "rewrite_pos_*.sql")
+        positive_sql_path = positive_paths[0] if positive_paths else (case_root / "rewrite_pos_01.sql")
+        search_path_after_set = ""
+        source_warmup_runtime_ms: float | None = None
+        candidate_warmup_runtime_ms: float | None = None
+        source_runtime_ms_values: list[float] = []
+        candidate_runtime_ms_values: list[float] = []
+        source_row_count: int | None = None
+        candidate_row_count: int | None = None
+        failure_category = "none"
+        error_message = ""
+        execution_status = "dry_run_only"
+        row_count_matches_source: bool | None = None
+
+        preflight_record = preflight_record_map.get(case_id, {})
+        blockers = list(preflight_record.get("blockers") or [])
+        if not source_sql_path.is_file():
+            blockers.append("missing_source_sql")
+        if not positive_sql_path.is_file():
+            blockers.append("missing_positive_sql")
+        if str((native_execution_map.get(case_id) or {}).get("execution_status", "")) != "success":
+            blockers.append("missing_native_execution_success")
+        if str((human_execution_map.get(case_id) or {}).get("execution_status", "")) != "success":
+            blockers.append("missing_human_execution_success")
+        if not bool((control_record_map.get(case_id) or {}).get("human_positive_consistency_status_observed")):
+            blockers.append("missing_checker_backed_consistency_gate")
+        if not args.execute:
+            execution_status = "dry_run_only"
+        elif issues:
+            execution_status = "blocked_invalid_selection"
+            failure_category = "invalid_selection"
+        elif blockers:
+            execution_status = "blocked_preflight"
+            failure_category = "preflight_blocked"
+            error_message = "; ".join(dict.fromkeys(blockers))
+        elif not required_env_visible:
+            execution_status = "env_blocked"
+            failure_category = "missing_pg_env"
+            error_message = "required PostgreSQL environment variables are not visible"
+        elif not pg_client_available:
+            execution_status = "client_unavailable"
+            failure_category = "psycopg_unavailable"
+            error_message = "psycopg is not available"
+        else:
+            source_sql = source_sql_path.read_text(encoding="utf-8")
+            candidate_sql = positive_sql_path.read_text(encoding="utf-8")
+            try:
+                psycopg = importlib.import_module("psycopg")
+                with psycopg.connect(
+                    host=os.environ["PGHOST"],
+                    port=os.environ["PGPORT"],
+                    dbname=os.environ["PGDATABASE"],
+                    user=os.environ["PGUSER"],
+                    password=os.environ.get("PGPASSWORD"),
+                    options=(
+                        f"-c statement_timeout={payload['statement_timeout_ms']} "
+                        "-c default_transaction_read_only=on"
+                    ),
+                    autocommit=False,
+                ) as conn:
+                    with conn.cursor() as cur:
+                        cur.execute("SELECT to_regnamespace(%s)", (validation_schema,))
+                        schema_row = cur.fetchone()
+                        schema_name = schema_row[0] if schema_row else None
+                        if not schema_name:
+                            execution_status = "failed"
+                            failure_category = "missing_validation_schema"
+                            error_message = f"validation schema not found: {validation_schema}"
+                        else:
+                            cur.execute(
+                                psycopg.sql.SQL("SET search_path TO {}, public").format(
+                                    psycopg.sql.Identifier(validation_schema)
+                                )
+                            )
+                            cur.execute("SHOW search_path")
+                            search_path_after_set = str((cur.fetchone() or [""])[0])
+
+                            source_row_count, source_warmup_runtime_ms = execute_sql(cur, source_sql)
+                            conn.rollback()
+                            cur.execute(
+                                psycopg.sql.SQL("SET search_path TO {}, public").format(
+                                    psycopg.sql.Identifier(validation_schema)
+                                )
+                            )
+                            candidate_row_count, candidate_warmup_runtime_ms = execute_sql(cur, candidate_sql)
+                            conn.rollback()
+
+                            for repeat_index in range(1, payload["repeat_count"] + 1):
+                                cur.execute(
+                                    psycopg.sql.SQL("SET search_path TO {}, public").format(
+                                        psycopg.sql.Identifier(validation_schema)
+                                    )
+                                )
+                                if repeat_index % 2 == 1:
+                                    source_row_count, source_runtime_ms = execute_sql(cur, source_sql)
+                                    conn.rollback()
+                                    cur.execute(
+                                        psycopg.sql.SQL("SET search_path TO {}, public").format(
+                                            psycopg.sql.Identifier(validation_schema)
+                                        )
+                                    )
+                                    candidate_row_count, candidate_runtime_ms = execute_sql(cur, candidate_sql)
+                                    conn.rollback()
+                                else:
+                                    candidate_row_count, candidate_runtime_ms = execute_sql(cur, candidate_sql)
+                                    conn.rollback()
+                                    cur.execute(
+                                        psycopg.sql.SQL("SET search_path TO {}, public").format(
+                                            psycopg.sql.Identifier(validation_schema)
+                                        )
+                                    )
+                                    source_row_count, source_runtime_ms = execute_sql(cur, source_sql)
+                                    conn.rollback()
+                                source_runtime_ms_values.append(source_runtime_ms)
+                                candidate_runtime_ms_values.append(candidate_runtime_ms)
+                            execution_status = "success"
+            except Exception as exc:
+                execution_status = "failed"
+                failure_category = type(exc).__name__
+                error_message = str(exc)
+                issues.append({"type": type(exc).__name__, "case_id": case_id, "message": str(exc)})
+
+        source_median_runtime_ms, source_min_runtime_ms, source_mean_runtime_ms = runtime_stats(source_runtime_ms_values)
+        candidate_median_runtime_ms, candidate_min_runtime_ms, candidate_mean_runtime_ms = runtime_stats(candidate_runtime_ms_values)
+        if (
+            isinstance(source_median_runtime_ms, (int, float))
+            and isinstance(candidate_median_runtime_ms, (int, float))
+            and candidate_median_runtime_ms > 0
+        ):
+            speedup_ratio = float(source_median_runtime_ms / candidate_median_runtime_ms)
+            if speedup_ratio > 1.05:
+                win_tie_loss_status = "win"
+            elif speedup_ratio < 0.95:
+                win_tie_loss_status = "loss"
+            else:
+                win_tie_loss_status = "tie"
+            regression_20pct = bool(candidate_median_runtime_ms >= 1.2 * source_median_runtime_ms)
+        else:
+            speedup_ratio = None
+            win_tie_loss_status = "unknown"
+            regression_20pct = None
+
+        if source_row_count is not None and candidate_row_count is not None:
+            row_count_matches_source = source_row_count == candidate_row_count
+
+        records.append(
+            {
+                "case_id": case_id,
+                "pool": pool,
+                "baseline_id": "HUMAN_REFERENCE_POSITIVE",
+                "route": "human_reference_positive",
+                "validation_schema": validation_schema,
+                "search_path_after_set": search_path_after_set,
+                "source_warmup_runtime_ms": source_warmup_runtime_ms,
+                "candidate_warmup_runtime_ms": candidate_warmup_runtime_ms,
+                "source_runtime_ms_values": source_runtime_ms_values,
+                "candidate_runtime_ms_values": candidate_runtime_ms_values,
+                "source_median_runtime_ms": source_median_runtime_ms,
+                "candidate_median_runtime_ms": candidate_median_runtime_ms,
+                "source_min_runtime_ms": source_min_runtime_ms,
+                "candidate_min_runtime_ms": candidate_min_runtime_ms,
+                "source_mean_runtime_ms": source_mean_runtime_ms,
+                "candidate_mean_runtime_ms": candidate_mean_runtime_ms,
+                "speedup_ratio": speedup_ratio,
+                "win_tie_loss_status": win_tie_loss_status,
+                "regression_20pct": regression_20pct,
+                "source_row_count": source_row_count,
+                "candidate_row_count": candidate_row_count,
+                "row_count_matches_source": row_count_matches_source,
+                "execution_status": execution_status,
+                "failure_category": failure_category,
+                "error_message": error_message,
+                "artifact_claim_boundary": "human_positive_perf_speedup_run_actual_runtime_scoring_positive_control_only",
+            }
+        )
+
+    executed_case_count = sum(1 for record in records if record["execution_status"] in {"success", "failed"})
+    success_count = sum(1 for record in records if record["execution_status"] == "success")
+    failed_count = sum(1 for record in records if record["execution_status"] == "failed")
+    valid_speedup_values = [float(record["speedup_ratio"]) for record in records if isinstance(record.get("speedup_ratio"), (int, float)) and record.get("execution_status") == "success"]
+    gm_speedup = geometric_mean(valid_speedup_values)
+    win_count = sum(1 for record in records if record.get("win_tie_loss_status") == "win")
+    tie_count = sum(1 for record in records if record.get("win_tie_loss_status") == "tie")
+    loss_count = sum(1 for record in records if record.get("win_tie_loss_status") == "loss")
+    regression_20pct_count = sum(1 for record in records if record.get("regression_20pct") is True)
+    row_count_match_count = sum(1 for record in records if record.get("row_count_matches_source") is True)
+    row_count_mismatch_count = sum(1 for record in records if record.get("row_count_matches_source") is False)
+
+    payload.update(
+        {
+            "ok": (
+                not issues
+                and all(record["execution_status"] == ("success" if args.execute else "dry_run_only") for record in records)
+            ),
+            "executed_case_count": executed_case_count,
+            "success_count": success_count,
+            "failed_count": failed_count,
+            "valid_speedup_case_count": len(valid_speedup_values),
+            "gm_speedup": gm_speedup,
+            "win_count": win_count,
+            "tie_count": tie_count,
+            "loss_count": loss_count,
+            "regression_20pct_count": regression_20pct_count,
+            "row_count_match_count": row_count_match_count,
+            "row_count_mismatch_count": row_count_mismatch_count,
+            "formal_speedup_scoring_complete": bool(args.execute and not issues and success_count == len(records)),
+            "records": records,
+            "issues": issues,
+        }
+    )
+    write_formal_common_core_report(output_name, payload)
+    return print_and_exit(payload, 0 if payload["ok"] else 1)
+
+
 def cmd_formal_common_core_method_plan_collection_preflight(args: argparse.Namespace) -> int:
     output_name = normalize_formal_common_core_output_name(args.output)
     if args.execute:
@@ -19381,6 +19819,15 @@ def build_parser() -> argparse.ArgumentParser:
     )
     formal_common_core_human_positive_speedup_preflight_parser.add_argument("--execute", action="store_true", default=False)
     formal_common_core_human_positive_speedup_preflight_parser.set_defaults(func=cmd_formal_common_core_human_positive_speedup_preflight)
+
+    formal_common_core_human_positive_speedup_run_parser = subparsers.add_parser("formal-common-core-human-positive-speedup-run")
+    formal_common_core_human_positive_speedup_run_parser.add_argument("--case-id", action="append", default=[])
+    formal_common_core_human_positive_speedup_run_parser.add_argument(
+        "--output",
+        default="human_positive_speedup_run_v0.json",
+    )
+    formal_common_core_human_positive_speedup_run_parser.add_argument("--execute", action="store_true", default=False)
+    formal_common_core_human_positive_speedup_run_parser.set_defaults(func=cmd_formal_common_core_human_positive_speedup_run)
 
     formal_common_core_method_plan_collection_preflight_parser = subparsers.add_parser("formal-common-core-method-plan-collection-preflight")
     formal_common_core_method_plan_collection_preflight_parser.add_argument(
