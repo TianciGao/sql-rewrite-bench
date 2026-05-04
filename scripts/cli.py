@@ -554,6 +554,10 @@ def calcite_hep_pg_checker_run_case_ids() -> list[str]:
     return list(CALCITE_HEP_REAL_ROUTE_CANARY_CASES)
 
 
+def calcite_hep_speedup_preflight_case_ids() -> list[str]:
+    return list(CALCITE_HEP_REAL_ROUTE_CANARY_CASES)
+
+
 def calcite_hep_perf0006_numeric_mismatch_case_id() -> str:
     return "PERF_0006"
 
@@ -7324,6 +7328,213 @@ def cmd_formal_calcite_hep_pg_checker_preflight(args: argparse.Namespace) -> int
             "formal_review_writeback": "disabled",
         },
         "claim_boundary": "calcite_hep_pg_checker_preflight_only_not_pg_execution_or_checker",
+    }
+    write_formal_expansion_report(output_name, payload)
+    return print_and_exit(payload, 0 if payload["ok"] else 1)
+
+
+def cmd_formal_calcite_hep_speedup_preflight(args: argparse.Namespace) -> int:
+    output_name = normalize_formal_expansion_output_name(args.output)
+    execute_refused_name = "calcite_hep_speedup_preflight_execute_refused_v0.json"
+    if args.execute:
+        payload = {
+            "command": "formal-calcite-hep-speedup-preflight",
+            "ok": False,
+            "ran_at_utc": utc_now(),
+            "output_path": f"reports/formal_expansion/{execute_refused_name}",
+            "issues": [
+                {
+                    "type": "execute_not_supported",
+                    "message": "formal-calcite-hep-speedup-preflight is preflight-only and does not support --execute",
+                }
+            ],
+            "guardrails": {
+                "database_execution": "disabled",
+                "postgres_execution": "disabled",
+                "checker_execution": "disabled",
+                "runtime_rerun": "disabled",
+                "speedup_scoring": "disabled",
+                "case_artifact_write": "disabled",
+                "registry_writeback": "disabled",
+                "formal_review_writeback": "disabled",
+            },
+            "claim_boundary": "calcite_hep_speedup_preflight_only_not_speedup_not_final_baseline",
+        }
+        write_formal_expansion_report(execute_refused_name, payload)
+        return print_and_exit(payload, 1)
+
+    selected_case_ids = calcite_hep_speedup_preflight_case_ids()
+    real_route_report_path = FORMAL_EXPANSION_REPORT_DIR / "calcite_hep_real_route_canary_v0.json"
+    checker_run_report_path = FORMAL_EXPANSION_REPORT_DIR / "calcite_hep_pg_checker_run_v0.json"
+    real_route_report = load_json_if_present(real_route_report_path)
+    checker_run_report = load_json_if_present(checker_run_report_path)
+    issues: list[dict[str, Any]] = []
+    if real_route_report is None:
+        issues.append({"type": "missing_real_route_report", "path": relative_to_root(real_route_report_path)})
+        real_route_report = {}
+    if checker_run_report is None:
+        issues.append({"type": "missing_checker_run_report", "path": relative_to_root(checker_run_report_path)})
+        checker_run_report = {}
+
+    runtime_policy = {
+        "warmup_count": 1,
+        "repeat_count": 5,
+        "statement_timeout_ms": 30000,
+        "primary_statistic": "median",
+        "tie_threshold": 0.05,
+        "regression_threshold": 1.2,
+    }
+
+    real_route_record_map = {
+        str(record.get("case_id", "")).strip().upper(): record
+        for record in (real_route_report or {}).get("records", [])
+        if record.get("case_id")
+    }
+    checker_run_record_map = {
+        str(record.get("case_id", "")).strip().upper(): record
+        for record in (checker_run_report or {}).get("records", [])
+        if record.get("case_id")
+    }
+
+    records: list[dict[str, Any]] = []
+    ready_cases: list[str] = []
+    blocked_cases: list[str] = []
+    blockers_by_type: Counter[str] = Counter()
+    checker_consistent_count = 0
+    candidate_sql_recoverable_count = 0
+    calcite_rel_to_sql_count = 0
+
+    for case_id in selected_case_ids:
+        real_route_record = real_route_record_map.get(case_id, {})
+        checker_run_record = checker_run_record_map.get(case_id, {})
+        checker_json_path = calcite_hep_pg_preflight_checker_json_path(case_id)
+        checker_json = load_json_if_present(checker_json_path) or {}
+
+        source_sql_path = calcite_hep_wrapper_source_sql_path(case_id)
+        source_sql_exists = bool(source_sql_path and source_sql_path.is_file())
+        validation_schema_expected = validation_schema_hint(case_id)
+        validation_schema_ready = bool(validation_schema_expected)
+
+        output_sql_path_str = str(real_route_record.get("output_sql_path", "") or "").strip()
+        output_sql_path = Path(output_sql_path_str) if output_sql_path_str else calcite_hep_real_route_output_sql_path(case_id)
+        output_sql_exists = output_sql_path.is_file()
+        output_sql_text = output_sql_path.read_text(encoding="utf-8") if output_sql_exists else ""
+        candidate_sql_recoverable = output_sql_exists and bool(output_sql_text.strip())
+
+        emitted_sql_mode = str(real_route_record.get("emitted_sql_mode", "") or "").strip() or "missing"
+        emitted_sql_is_calcite_generated = bool(real_route_record.get("emitted_sql_is_calcite_generated") is True)
+        checker_json_exists = checker_json_path.is_file()
+        checker_status = str(
+            checker_json.get("checker_status", "") or checker_run_record.get("checker_status", "") or ""
+        ).strip()
+        checker_consistent = checker_status == "consistent"
+        source_row_count = checker_json.get("source_row_count", checker_run_record.get("source_row_count"))
+        candidate_row_count = checker_json.get("candidate_row_count", checker_run_record.get("candidate_row_count"))
+        row_count_equal = bool(
+            checker_json.get("row_count_equal")
+            if "row_count_equal" in checker_json
+            else checker_run_record.get("row_count_equal") is True
+        )
+
+        blockers: list[str] = []
+        if not real_route_record:
+            blockers.append("missing_real_route_record")
+        if emitted_sql_mode != "calcite_rel_to_sql":
+            blockers.append("emitted_sql_mode_not_calcite_rel_to_sql")
+        if not emitted_sql_is_calcite_generated:
+            blockers.append("output_not_marked_calcite_generated")
+        if not candidate_sql_recoverable:
+            blockers.append("candidate_sql_not_recoverable")
+        if not source_sql_exists:
+            blockers.append("missing_source_sql")
+        if not validation_schema_ready:
+            blockers.append("missing_validation_schema")
+        if not checker_json_exists:
+            blockers.append("missing_checker_json")
+        if not checker_consistent:
+            blockers.append("checker_not_consistent")
+        if not row_count_equal:
+            blockers.append("row_count_mismatch")
+
+        if checker_consistent:
+            checker_consistent_count += 1
+        if candidate_sql_recoverable:
+            candidate_sql_recoverable_count += 1
+        if emitted_sql_mode == "calcite_rel_to_sql":
+            calcite_rel_to_sql_count += 1
+
+        if blockers:
+            blocked_cases.append(case_id)
+            for blocker in blockers:
+                blockers_by_type[blocker] += 1
+            preflight_status = "blocked"
+        else:
+            ready_cases.append(case_id)
+            preflight_status = "ready_for_speedup_run"
+
+        records.append(
+            {
+                "case_id": case_id,
+                "real_route_record_exists": bool(real_route_record),
+                "real_route_report_path": relative_to_root(real_route_report_path),
+                "checker_run_report_path": relative_to_root(checker_run_report_path),
+                "checker_json_path": relative_to_root(checker_json_path),
+                "checker_json_exists": checker_json_exists,
+                "emitted_sql_mode": emitted_sql_mode,
+                "emitted_sql_is_calcite_generated": emitted_sql_is_calcite_generated,
+                "candidate_sql_output_path": str(output_sql_path),
+                "candidate_sql_output_exists": output_sql_exists,
+                "candidate_sql_recoverable": candidate_sql_recoverable,
+                "candidate_sql_character_count": len(output_sql_text) if output_sql_exists else 0,
+                "output_is_passthrough": emitted_sql_mode == "original_passthrough_fallback",
+                "source_sql_path": relative_to_root(source_sql_path) if source_sql_path else "",
+                "source_sql_exists": source_sql_exists,
+                "validation_schema_expected": validation_schema_expected,
+                "validation_schema_ready": validation_schema_ready,
+                "checker_status": checker_status,
+                "checker_consistent": checker_consistent,
+                "source_row_count": source_row_count,
+                "candidate_row_count": candidate_row_count,
+                "row_count_equal": row_count_equal,
+                "runtime_policy_available": True,
+                "runtime_policy": runtime_policy,
+                "planned_speedup_output_path": "reports/formal_expansion/calcite_hep_speedup_run_v0.json",
+                "preflight_status": preflight_status,
+                "blockers": blockers,
+                "claim_boundary": "calcite_hep_speedup_preflight_only_not_speedup_not_final_baseline",
+            }
+        )
+
+    payload = {
+        "command": "formal-calcite-hep-speedup-preflight",
+        "ok": not issues and len(blocked_cases) == 0 and len(ready_cases) == len(selected_case_ids),
+        "ran_at_utc": utc_now(),
+        "output_path": f"reports/formal_expansion/{output_name}",
+        "case_count": len(selected_case_ids),
+        "ready_count": len(ready_cases),
+        "blocked_count": len(blocked_cases),
+        "ready_cases": ready_cases,
+        "blocked_cases": blocked_cases,
+        "blockers_by_type": dict(sorted(blockers_by_type.items())),
+        "checker_consistent_count": checker_consistent_count,
+        "candidate_sql_recoverable_count": candidate_sql_recoverable_count,
+        "calcite_rel_to_sql_count": calcite_rel_to_sql_count,
+        "runtime_policy": runtime_policy,
+        "planned_speedup_output_path": "reports/formal_expansion/calcite_hep_speedup_run_v0.json",
+        "speedup_run_can_proceed": len(blocked_cases) == 0 and len(ready_cases) == len(selected_case_ids),
+        "records": records,
+        "issues": issues,
+        "guardrails": {
+            "database_execution": "disabled",
+            "postgres_execution": "disabled",
+            "checker_execution": "disabled",
+            "runtime_rerun": "disabled",
+            "speedup_scoring": "disabled",
+            "case_artifact_write": "disabled",
+            "registry_writeback": "disabled",
+            "formal_review_writeback": "disabled",
+        },
+        "claim_boundary": "calcite_hep_speedup_preflight_only_not_speedup_not_final_baseline",
     }
     write_formal_expansion_report(output_name, payload)
     return print_and_exit(payload, 0 if payload["ok"] else 1)
@@ -34866,6 +35077,14 @@ def build_parser() -> argparse.ArgumentParser:
     )
     formal_calcite_hep_pg_checker_run_parser.add_argument("--execute", action="store_true", default=False)
     formal_calcite_hep_pg_checker_run_parser.set_defaults(func=cmd_formal_calcite_hep_pg_checker_run)
+
+    formal_calcite_hep_speedup_preflight_parser = subparsers.add_parser("formal-calcite-hep-speedup-preflight")
+    formal_calcite_hep_speedup_preflight_parser.add_argument(
+        "--output",
+        default="reports/formal_expansion/calcite_hep_speedup_preflight_v0.json",
+    )
+    formal_calcite_hep_speedup_preflight_parser.add_argument("--execute", action="store_true", default=False)
+    formal_calcite_hep_speedup_preflight_parser.set_defaults(func=cmd_formal_calcite_hep_speedup_preflight)
 
     formal_calcite_hep_perf0006_numeric_mismatch_diagnostic_parser = subparsers.add_parser(
         "formal-calcite-hep-perf0006-numeric-mismatch-diagnostic"
