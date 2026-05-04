@@ -10954,6 +10954,479 @@ def cmd_formal_port_pg_route_matrix(args: argparse.Namespace) -> int:
     return print_and_exit(payload, 0 if payload["ok"] or not args.execute else 1)
 
 
+def formal_port_case_ids() -> list[str]:
+    return ["PORT_0004", "PORT_0012", "PORT_0022"]
+
+
+def formal_port_route_matrix_record_maps() -> tuple[dict[str, dict[str, Any]], dict[str, dict[str, Any]]]:
+    route_matrix = load_json_if_present(FORMAL_PORT_REPORT_DIR / "port_pg_route_matrix_v0.json") or {}
+    sqlglot_map: dict[str, dict[str, Any]] = {}
+    llm_map: dict[str, dict[str, Any]] = {}
+    for record in route_matrix.get("records", []):
+        case_id = str(record.get("case_id", "")).strip()
+        route = str(record.get("route", "")).strip()
+        if not case_id:
+            continue
+        if route == "SQLGLOT_TRANSPILE":
+            sqlglot_map[case_id] = record
+        elif route == "LLM_DIRECT_TRANSLATE":
+            llm_map[case_id] = record
+    return sqlglot_map, llm_map
+
+
+def resolve_formal_port_sqlglot_candidate_sql(case_id: str) -> tuple[str, str]:
+    report = load_json_if_present(BASELINE_SMOKE_REPORT_DIR / "sqlglot_transpile_pg_canary_v0.json") or {}
+    for record in report.get("records", []):
+        if str(record.get("case_id", "")).strip() == case_id:
+            preview = str(record.get("transpiled_sql_preview") or "").strip()
+            if preview:
+                return preview, "baseline_smoke.sqlglot_transpile_pg_canary.transpiled_sql_preview"
+    return "", "not_available"
+
+
+def resolve_formal_port_llm_candidate_sql(case_id: str) -> tuple[str, str]:
+    path_candidates = [
+        BASELINE_SMOKE_REPORT_DIR / f"llm_direct_translate_call_{case_id.lower()}_v0.json",
+        FORMAL_PORT_REPORT_DIR / "llm_translate_port_0012_targeted_call_v0.json" if case_id == "PORT_0012" else None,
+    ]
+    for path in path_candidates:
+        report = load_json_if_present(path)
+        if report is None:
+            continue
+        for record in report.get("records", []):
+            if str(record.get("case_id", "")).strip() != case_id:
+                continue
+            extracted_sql_text = str(record.get("extracted_sql_text") or "").strip()
+            if extracted_sql_text:
+                return extracted_sql_text, f"{relative_to_root(path)}.records[0].extracted_sql_text"
+            raw_output_text = str(record.get("raw_output_text") or "").strip()
+            if raw_output_text:
+                return raw_output_text, f"{relative_to_root(path)}.records[0].raw_output_text"
+    return "", "not_available"
+
+
+def resolve_formal_port_sqlglot_pg_execution_status(case_id: str) -> str:
+    sqlglot_matrix_map, _ = formal_port_route_matrix_record_maps()
+    matrix_record = sqlglot_matrix_map.get(case_id, {})
+    matrix_status = str(matrix_record.get("pg_execution_status") or "").strip()
+    if matrix_status:
+        return matrix_status
+    report = load_json_if_present(BASELINE_SMOKE_REPORT_DIR / "sqlglot_transpile_pg_canary_v0.json") or {}
+    for record in report.get("records", []):
+        if str(record.get("case_id", "")).strip() == case_id:
+            return str(record.get("execution_status") or "").strip() or "unknown"
+    return "unknown"
+
+
+def resolve_formal_port_llm_pg_execution_status(case_id: str) -> str:
+    _, llm_matrix_map = formal_port_route_matrix_record_maps()
+    matrix_record = llm_matrix_map.get(case_id, {})
+    matrix_status = str(matrix_record.get("pg_execution_status") or "").strip()
+    if matrix_status:
+        return matrix_status
+    if case_id == "PORT_0012":
+        summary = load_json_if_present(FORMAL_PORT_REPORT_DIR / "llm_translate_port_0012_targeted_summary_v0.json") or {}
+        return str(summary.get("pg_execution_status") or "").strip() or "unknown"
+    return "unknown"
+
+
+def materialize_query_to_tsv(cur: Any, sql_text: str, output_path: Path) -> tuple[int, int]:
+    def serialize_tsv_value(value: Any) -> str:
+        if value is None:
+            return r"\N"
+        text = str(value)
+        return text.replace("\\", "\\\\").replace("\t", "\\t").replace("\n", "\\n").replace("\r", "\\r")
+
+    cur.execute(sql_text)
+    rows = cur.fetchall() if cur.description is not None else []
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    with output_path.open("w", encoding="utf-8", newline="") as handle:
+        for row in rows:
+            handle.write("\t".join(serialize_tsv_value(value) for value in row))
+            handle.write("\n")
+    row_count = len(rows)
+    byte_count = output_path.stat().st_size
+    return row_count, byte_count
+
+
+def cmd_formal_port_pg_translation_consistency_preflight(args: argparse.Namespace) -> int:
+    output_name = normalize_formal_port_output_name(args.output)
+    if args.execute:
+        payload = {
+            "command": "formal-port-pg-translation-consistency-preflight",
+            "ok": False,
+            "ran_at_utc": utc_now(),
+            "output_path": "reports/formal_port/port_pg_translation_consistency_preflight_execute_refused_v0.json",
+            "records": [],
+            "issues": [
+                {
+                    "type": "invalid_execute_flag",
+                    "message": "formal-port-pg-translation-consistency-preflight is read-only and does not support --execute",
+                }
+            ],
+            "guardrails": {
+                "database_execution": "disabled",
+                "sql_execution": "disabled",
+                "model_api_call": "disabled",
+                "sqlglot_generation": "disabled",
+                "checker_execution": "disabled",
+                "case_artifact_write": "disabled",
+                "registry_writeback": "disabled",
+            },
+            "claim_boundary": "port_pg_reference_consistency_not_full_translation_correctness",
+        }
+        write_formal_port_report("port_pg_translation_consistency_preflight_execute_refused_v0.json", payload)
+        return print_and_exit(payload, 1)
+
+    records: list[dict[str, Any]] = []
+    issues: list[dict[str, Any]] = []
+    ready_count = 0
+    route_configs = [
+        ("SQLGLOT_TRANSPILE", "sqlglot_transpile", resolve_formal_port_sqlglot_pg_execution_status, resolve_formal_port_sqlglot_candidate_sql),
+        ("LLM_DIRECT_TRANSLATE", "llm_direct_translate", resolve_formal_port_llm_pg_execution_status, resolve_formal_port_llm_candidate_sql),
+    ]
+
+    for case_id in formal_port_case_ids():
+        validation_schema = validation_schema_hint(case_id)
+        case_root = PORT_CASE_ROOT / case_id
+        reference_sql_path = case_root / "rewrite_pos_01.sql"
+        reference_sql_exists = reference_sql_path.is_file()
+        for route, route_dir, route_status_resolver, candidate_resolver in route_configs:
+            candidate_sql, candidate_sql_source = candidate_resolver(case_id)
+            route_pg_execution_status = route_status_resolver(case_id)
+            route_pg_executable = route_pg_execution_status == "success"
+            blockers: list[str] = []
+            warnings: list[str] = []
+            if not validation_schema:
+                preflight_status = "blocked_missing_validation_schema"
+                blockers.append("validation schema hint missing")
+            elif not reference_sql_exists:
+                preflight_status = "blocked_missing_reference_sql"
+                blockers.append("rewrite_pos_01.sql missing")
+            elif not candidate_sql.strip():
+                preflight_status = "blocked_missing_candidate_sql"
+                blockers.append("candidate SQL unavailable from existing reports")
+            elif not route_pg_executable:
+                preflight_status = "blocked_route_execution_failed"
+                blockers.append(f"route PG status from existing artifacts={route_pg_execution_status or 'unknown'}")
+            else:
+                preflight_status = "ready_for_pg_reference_check"
+                ready_count += 1
+
+            if route == "SQLGLOT_TRANSPILE" and case_id == "PORT_0012" and route_pg_execution_status == "failed":
+                warnings.append("expected SQLGlot PORT_0012 InvalidDatetimeFormat remains blocked for PG reference check")
+            records.append(
+                {
+                    "case_id": case_id,
+                    "route": route,
+                    "validation_schema": validation_schema,
+                    "reference_sql_path": relative_to_root(reference_sql_path),
+                    "reference_sql_exists": reference_sql_exists,
+                    "candidate_sql_available": bool(candidate_sql.strip()),
+                    "candidate_sql_source": candidate_sql_source,
+                    "route_pg_execution_status_from_matrix": route_pg_execution_status or "unknown",
+                    "route_pg_executable": route_pg_executable,
+                    "reference_materialization_path": f"reports/formal_port/result_materialization/reference/{case_id.lower()}.tsv",
+                    "candidate_materialization_path": f"reports/formal_port/result_materialization/{route_dir}/{case_id.lower()}.tsv",
+                    "checker_output_path": f"reports/formal_port/result_checks/{route_dir}/{case_id.lower()}.json",
+                    "preflight_status": preflight_status,
+                    "blockers": blockers,
+                    "warnings": warnings,
+                    "claim_boundary": "port_pg_reference_consistency_not_full_translation_correctness",
+                }
+            )
+
+    payload = {
+        "command": "formal-port-pg-translation-consistency-preflight",
+        "ok": not issues,
+        "ran_at_utc": utc_now(),
+        "output_path": f"reports/formal_port/{output_name}",
+        "case_count": len(formal_port_case_ids()),
+        "route_count": 2,
+        "ready_record_count": ready_count,
+        "blocked_record_count": len(records) - ready_count,
+        "records": records,
+        "issues": issues,
+        "guardrails": {
+            "database_execution": "disabled",
+            "sql_execution": "disabled",
+            "model_api_call": "disabled",
+            "sqlglot_generation": "disabled",
+            "checker_execution": "disabled",
+            "case_artifact_write": "disabled",
+            "registry_writeback": "disabled",
+        },
+        "claim_boundary": "port_pg_reference_consistency_not_full_translation_correctness",
+    }
+    write_formal_port_report(output_name, payload)
+    return print_and_exit(payload, 0 if payload["ok"] else 1)
+
+
+def cmd_formal_port_pg_translation_consistency_run(args: argparse.Namespace) -> int:
+    output_name = normalize_formal_port_output_name(args.output)
+    selected_case_ids = [str(case_id).strip().upper() for case_id in (args.case_id or []) if str(case_id).strip()]
+    selected_routes = [str(route).strip().upper() for route in (args.route or []) if str(route).strip()]
+    if not selected_case_ids:
+        selected_case_ids = formal_port_case_ids()
+    if not selected_routes:
+        selected_routes = ["SQLGLOT_TRANSPILE", "LLM_DIRECT_TRANSLATE"]
+
+    valid_case_ids = set(formal_port_case_ids())
+    valid_routes = {"SQLGLOT_TRANSPILE", "LLM_DIRECT_TRANSLATE"}
+    issues: list[dict[str, Any]] = []
+    for case_id in selected_case_ids:
+        if case_id not in valid_case_ids:
+            issues.append({"type": "unsupported_case_id", "case_id": case_id})
+    for route in selected_routes:
+        if route not in valid_routes:
+            issues.append({"type": "unsupported_route", "route": route})
+    selected_case_ids = [case_id for case_id in selected_case_ids if case_id in valid_case_ids]
+    selected_routes = [route for route in selected_routes if route in valid_routes]
+
+    preflight_report = load_json_if_present(FORMAL_PORT_REPORT_DIR / "port_pg_translation_consistency_preflight_v0.json")
+    if preflight_report is None:
+        issues.append(
+            {
+                "type": "missing_preflight_report",
+                "path": "reports/formal_port/port_pg_translation_consistency_preflight_v0.json",
+            }
+        )
+    preflight_map = {
+        (str(record.get("case_id", "")).strip(), str(record.get("route", "")).strip()): record
+        for record in (preflight_report or {}).get("records", [])
+    }
+
+    if not args.execute:
+        records: list[dict[str, Any]] = []
+        for route in selected_routes:
+            route_dir = "sqlglot_transpile" if route == "SQLGLOT_TRANSPILE" else "llm_direct_translate"
+            for case_id in selected_case_ids:
+                preflight_record = preflight_map.get((case_id, route), {})
+                records.append(
+                    {
+                        "case_id": case_id,
+                        "route": route,
+                        "preflight_status": preflight_record.get("preflight_status", "missing_preflight"),
+                        "reference_materialization_path": f"reports/formal_port/result_materialization/reference/{case_id.lower()}.tsv",
+                        "candidate_materialization_path": f"reports/formal_port/result_materialization/{route_dir}/{case_id.lower()}.tsv",
+                        "checker_output_path": f"reports/formal_port/result_checks/{route_dir}/{case_id.lower()}.json",
+                        "checker_status": "planned" if preflight_record.get("preflight_status") == "ready_for_pg_reference_check" else "blocked",
+                        "claim_boundary": "port_pg_reference_consistency_not_full_translation_correctness",
+                    }
+                )
+        payload = {
+            "command": "formal-port-pg-translation-consistency-run",
+            "ok": not issues,
+            "ran_at_utc": utc_now(),
+            "output_path": f"reports/formal_port/{output_name}",
+            "case_count": len(selected_case_ids),
+            "route_count": len(selected_routes),
+            "ready_record_count": sum(1 for r in records if r["checker_status"] == "planned"),
+            "skipped_blocked_count": sum(1 for r in records if r["checker_status"] == "blocked"),
+            "sqlglot_checked_count": 0,
+            "sqlglot_consistent_count": 0,
+            "sqlglot_inconsistent_count": 0,
+            "sqlglot_failed_count": 0,
+            "llm_checked_count": 0,
+            "llm_consistent_count": 0,
+            "llm_inconsistent_count": 0,
+            "llm_failed_count": 0,
+            "sqlglot_pg_reference_consistency_rate": None,
+            "llm_pg_reference_consistency_rate": None,
+            "sqlglot_route_pg_executable_count": sum(
+                1 for case_id in selected_case_ids
+                if preflight_map.get((case_id, "SQLGLOT_TRANSPILE"), {}).get("route_pg_executable") is True
+            ),
+            "llm_route_pg_executable_count": sum(
+                1 for case_id in selected_case_ids
+                if preflight_map.get((case_id, "LLM_DIRECT_TRANSLATE"), {}).get("route_pg_executable") is True
+            ),
+            "records": records,
+            "issues": issues,
+            "claim_boundary": "port_pg_reference_consistency_not_full_translation_correctness",
+        }
+        write_formal_port_report(output_name, payload)
+        return print_and_exit(payload, 0 if payload["ok"] else 1)
+
+    env_visibility = pg_env_visibility()
+    required_pg_env_visible = all(env_visibility[name] for name in ["PGHOST", "PGPORT", "PGDATABASE", "PGUSER"])
+    if not required_pg_env_visible:
+        issues.append({"type": "missing_pg_env", "message": "required env: PGHOST, PGPORT, PGDATABASE, PGUSER"})
+    try:
+        psycopg = importlib.import_module("psycopg")
+    except ModuleNotFoundError as exc:
+        psycopg = None
+        issues.append({"type": "psycopg_unavailable", "message": str(exc)})
+
+    route_dir_map = {
+        "SQLGLOT_TRANSPILE": "sqlglot_transpile",
+        "LLM_DIRECT_TRANSLATE": "llm_direct_translate",
+    }
+    candidate_resolver_map = {
+        "SQLGLOT_TRANSPILE": resolve_formal_port_sqlglot_candidate_sql,
+        "LLM_DIRECT_TRANSLATE": resolve_formal_port_llm_candidate_sql,
+    }
+
+    records: list[dict[str, Any]] = []
+    checked_by_route = {route: 0 for route in selected_routes}
+    consistent_by_route = {route: 0 for route in selected_routes}
+    inconsistent_by_route = {route: 0 for route in selected_routes}
+    failed_by_route = {route: 0 for route in selected_routes}
+    ready_record_count = 0
+    skipped_blocked_count = 0
+
+    for route in selected_routes:
+        route_dir = route_dir_map[route]
+        for case_id in selected_case_ids:
+            preflight_record = preflight_map.get((case_id, route), {})
+            preflight_status = str(preflight_record.get("preflight_status") or "missing_preflight")
+            reference_result_path = FORMAL_PORT_REPORT_DIR / "result_materialization" / "reference" / f"{case_id.lower()}.tsv"
+            candidate_result_path = FORMAL_PORT_REPORT_DIR / "result_materialization" / route_dir / f"{case_id.lower()}.tsv"
+            checker_output_path = FORMAL_PORT_REPORT_DIR / "result_checks" / route_dir / f"{case_id.lower()}.json"
+            if preflight_status != "ready_for_pg_reference_check" or issues:
+                skipped_blocked_count += 1
+                records.append(
+                    {
+                        "case_id": case_id,
+                        "route": route,
+                        "preflight_status": preflight_status,
+                        "reference_result_path": relative_to_root(reference_result_path),
+                        "candidate_result_path": relative_to_root(candidate_result_path),
+                        "checker_output_path": relative_to_root(checker_output_path),
+                        "checker_status": "skipped_blocked",
+                        "row_count_reference": None,
+                        "row_count_candidate": None,
+                        "row_count_equal": None,
+                        "byte_equal": None,
+                        "failure_category": "preflight_blocked" if preflight_status != "ready_for_pg_reference_check" else "environment_blocked",
+                        "error_message": "",
+                        "claim_boundary": "port_pg_reference_consistency_not_full_translation_correctness",
+                    }
+                )
+                continue
+
+            ready_record_count += 1
+            case_root = PORT_CASE_ROOT / case_id
+            reference_sql = (case_root / "rewrite_pos_01.sql").read_text(encoding="utf-8")
+            candidate_sql, candidate_sql_source = candidate_resolver_map[route](case_id)
+            validation_schema = validation_schema_hint(case_id)
+            search_path_after_set = ""
+            row_count_reference = None
+            row_count_candidate = None
+            row_count_equal = None
+            byte_equal = None
+            checker_status = "execution_failed"
+            failure_category = "none"
+            error_message = ""
+            runtime_ms = None
+            start = time.perf_counter()
+            try:
+                with psycopg.connect(
+                    host=os.environ["PGHOST"],
+                    port=os.environ["PGPORT"],
+                    dbname=os.environ["PGDATABASE"],
+                    user=os.environ["PGUSER"],
+                    password=os.environ.get("PGPASSWORD"),
+                    options="-c statement_timeout=30000 -c default_transaction_read_only=on",
+                ) as conn:
+                    with conn.cursor() as cur:
+                        cur.execute("SELECT to_regnamespace(%s)", (validation_schema,))
+                        schema_name = cur.fetchone()[0]
+                        if not schema_name:
+                            raise RuntimeError(f"validation schema not found: {validation_schema}")
+                        cur.execute(
+                            psycopg.sql.SQL("SET search_path TO {}, public").format(
+                                psycopg.sql.Identifier(validation_schema)
+                            )
+                        )
+                        cur.execute("SHOW search_path")
+                        search_path_row = cur.fetchone()
+                        search_path_after_set = str(search_path_row[0]) if search_path_row else ""
+                        row_count_reference, _ = materialize_query_to_tsv(cur, reference_sql, reference_result_path)
+                        row_count_candidate, _ = materialize_query_to_tsv(cur, candidate_sql, candidate_result_path)
+                runtime_ms = int((time.perf_counter() - start) * 1000)
+                row_count_equal = row_count_reference == row_count_candidate
+                byte_equal = reference_result_path.read_bytes() == candidate_result_path.read_bytes()
+                checker_status = "consistent" if byte_equal else "inconsistent"
+            except Exception as exc:
+                runtime_ms = int((time.perf_counter() - start) * 1000)
+                failure_category = type(exc).__name__
+                error_message = str(exc)
+                checker_status = "execution_failed"
+
+            checker_payload = {
+                "case_id": case_id,
+                "route": route,
+                "reference_result_path": relative_to_root(reference_result_path),
+                "candidate_result_path": relative_to_root(candidate_result_path),
+                "candidate_sql_source": candidate_sql_source,
+                "validation_schema": validation_schema,
+                "search_path_after_set": search_path_after_set,
+                "checker_mode": "exact_tsv_report_local",
+                "row_count_reference": row_count_reference,
+                "row_count_candidate": row_count_candidate,
+                "row_count_equal": row_count_equal,
+                "byte_equal": byte_equal,
+                "checker_status": checker_status,
+                "runtime_ms": runtime_ms,
+                "failure_category": failure_category,
+                "error_message": error_message,
+                "claim_boundary": "port_pg_reference_consistency_not_full_translation_correctness",
+            }
+            checker_output_path.parent.mkdir(parents=True, exist_ok=True)
+            checker_output_path.write_text(json.dumps(checker_payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+
+            records.append(checker_payload)
+            if checker_status in {"consistent", "inconsistent"}:
+                checked_by_route[route] += 1
+                if checker_status == "consistent":
+                    consistent_by_route[route] += 1
+                else:
+                    inconsistent_by_route[route] += 1
+            else:
+                failed_by_route[route] += 1
+
+    def route_rate(route: str) -> float | None:
+        checked = checked_by_route.get(route, 0)
+        if checked == 0:
+            return None
+        return float(consistent_by_route.get(route, 0) / checked)
+
+    payload = {
+        "command": "formal-port-pg-translation-consistency-run",
+        "ok": not issues and not any(record.get("checker_status") == "execution_failed" for record in records if record.get("checker_status") != "skipped_blocked"),
+        "ran_at_utc": utc_now(),
+        "output_path": f"reports/formal_port/{output_name}",
+        "case_count": len(selected_case_ids),
+        "route_count": len(selected_routes),
+        "ready_record_count": ready_record_count,
+        "skipped_blocked_count": skipped_blocked_count,
+        "sqlglot_checked_count": checked_by_route.get("SQLGLOT_TRANSPILE", 0),
+        "sqlglot_consistent_count": consistent_by_route.get("SQLGLOT_TRANSPILE", 0),
+        "sqlglot_inconsistent_count": inconsistent_by_route.get("SQLGLOT_TRANSPILE", 0),
+        "sqlglot_failed_count": failed_by_route.get("SQLGLOT_TRANSPILE", 0),
+        "llm_checked_count": checked_by_route.get("LLM_DIRECT_TRANSLATE", 0),
+        "llm_consistent_count": consistent_by_route.get("LLM_DIRECT_TRANSLATE", 0),
+        "llm_inconsistent_count": inconsistent_by_route.get("LLM_DIRECT_TRANSLATE", 0),
+        "llm_failed_count": failed_by_route.get("LLM_DIRECT_TRANSLATE", 0),
+        "sqlglot_pg_reference_consistency_rate": route_rate("SQLGLOT_TRANSPILE"),
+        "llm_pg_reference_consistency_rate": route_rate("LLM_DIRECT_TRANSLATE"),
+        "sqlglot_route_pg_executable_count": sum(
+            1 for case_id in selected_case_ids
+            if preflight_map.get((case_id, "SQLGLOT_TRANSPILE"), {}).get("route_pg_executable") is True
+        ),
+        "llm_route_pg_executable_count": sum(
+            1 for case_id in selected_case_ids
+            if preflight_map.get((case_id, "LLM_DIRECT_TRANSLATE"), {}).get("route_pg_executable") is True
+        ),
+        "records": records,
+        "issues": issues,
+        "claim_boundary": "port_pg_reference_consistency_not_full_translation_correctness",
+    }
+    write_formal_port_report(output_name, payload)
+    return print_and_exit(payload, 0 if payload["ok"] else 1)
+
+
 def cmd_formal_common_core_method_consistency_scoring(args: argparse.Namespace) -> int:
     output_name = normalize_formal_common_core_output_name(args.output)
     if args.execute:
@@ -23561,6 +24034,30 @@ def build_parser() -> argparse.ArgumentParser:
     formal_port_pg_route_matrix_parser.add_argument("--temperature", type=float, default=0.0)
     formal_port_pg_route_matrix_parser.add_argument("--statement-timeout-ms", type=int, default=30000)
     formal_port_pg_route_matrix_parser.set_defaults(func=cmd_formal_port_pg_route_matrix)
+
+    formal_port_pg_translation_consistency_preflight_parser = subparsers.add_parser(
+        "formal-port-pg-translation-consistency-preflight"
+    )
+    formal_port_pg_translation_consistency_preflight_parser.add_argument(
+        "--output",
+        default="port_pg_translation_consistency_preflight_v0.json",
+    )
+    formal_port_pg_translation_consistency_preflight_parser.add_argument("--execute", action="store_true", default=False)
+    formal_port_pg_translation_consistency_preflight_parser.set_defaults(
+        func=cmd_formal_port_pg_translation_consistency_preflight
+    )
+
+    formal_port_pg_translation_consistency_run_parser = subparsers.add_parser(
+        "formal-port-pg-translation-consistency-run"
+    )
+    formal_port_pg_translation_consistency_run_parser.add_argument("--route", action="append", default=[])
+    formal_port_pg_translation_consistency_run_parser.add_argument("--case-id", action="append", default=[])
+    formal_port_pg_translation_consistency_run_parser.add_argument(
+        "--output",
+        default="port_pg_translation_consistency_run_v0.json",
+    )
+    formal_port_pg_translation_consistency_run_parser.add_argument("--execute", action="store_true", default=False)
+    formal_port_pg_translation_consistency_run_parser.set_defaults(func=cmd_formal_port_pg_translation_consistency_run)
 
     formal_common_core_method_consistency_scoring_parser = subparsers.add_parser("formal-common-core-method-consistency-scoring")
     formal_common_core_method_consistency_scoring_parser.add_argument(

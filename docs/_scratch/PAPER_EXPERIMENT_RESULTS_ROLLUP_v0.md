@@ -102,6 +102,11 @@ SQLGlot Transpile:
 - PostgreSQL execution: `2 / 3`
 - `PORT_0012` failed with `InvalidDatetimeFormat`
 - bounded PG route matrix confirms the same SQLGlot outcome: `2 / 3` PostgreSQL success
+- PG reference consistency:
+  - executable cases checked: `2`
+  - consistent: `0`
+  - inconsistent: `2`
+  - `PORT_0012` remained blocked because SQLGlot PG execution had already failed
 
 LLM Translate:
 
@@ -128,6 +133,13 @@ LLM Translate:
     - `pg_execution_status=success`
     - `row_count=1`
     - `token_usage_total=455`
+- PG reference consistency:
+  - executable route cases from existing evidence: `3`
+  - checked: `2`
+  - consistent: `1`
+  - inconsistent: `1`
+  - execution failed: `1`
+  - checked-record consistency rate: `0.5`
 - `PORT_0012` remains holdout failure-analysis / stress case
 
 Interpretation:
@@ -139,6 +151,10 @@ Interpretation:
 - contrast on `PORT_0012` is now explicit:
   - SQLGlot failed on PostgreSQL with `InvalidDatetimeFormat`
   - Direct LLM succeeded on PostgreSQL in both the targeted canary and the bounded PG route matrix
+  - PG reference consistency still did not close because the current positive reference SQL failed on PostgreSQL during the LLM exact-TSV check
+- exact-TSV reference checking also exposed value mismatches on executable cases:
+  - SQLGlot mismatched reference output on both executable cases
+  - Direct LLM matched exactly on `PORT_0004` but mismatched on `PORT_0022`
 - `PORT_0012` still remains outside the clean denominator unless a separate denominator-expansion decision is taken
 - the clean denominator policy may now warrant revisit, but it should not be expanded automatically from this PG-only result
 - it is not full PORT closure
@@ -185,6 +201,7 @@ The following paper-facing tables can now be drafted from existing artifacts:
 - SQLGlot and Direct LLM are not admitted into a full benchmark speedup leaderboard because the current runtime packet is PERF-only
 - PORT current snapshot is not full portability closure
 - current PORT route-matrix evidence is PG-only, not translation correctness, and not a cross-engine matrix
+- current PORT translation-consistency evidence is PG-side reference consistency only and uses exact TSV matching
 
 ## Recommended Next Use
 

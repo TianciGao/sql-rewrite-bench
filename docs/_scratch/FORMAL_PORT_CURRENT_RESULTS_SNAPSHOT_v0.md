@@ -29,6 +29,9 @@ Reports and references used:
 - `reports/formal_port/llm_translate_port_0012_targeted_pg_v0.json`
 - `reports/formal_port/llm_translate_port_0012_targeted_summary_v0.json`
 - `reports/formal_port/port_pg_route_matrix_v0.json`
+- `reports/formal_port/port_pg_translation_consistency_preflight_v0.json`
+- `reports/formal_port/port_pg_translation_consistency_run_v0.json`
+- `docs/_scratch/FORMAL_PORT_PG_TRANSLATION_CONSISTENCY_SUMMARY_v0.md`
 - `docs/_scratch/PORT_0012_FAILURE_ANALYSIS_PACKET_v0.md`
 - `docs/_scratch/PORT_0012_LLM_TRANSLATE_TARGETED_CANARY_v0.md`
 - `docs/_scratch/PAPER_EXPERIMENT_DENOMINATOR_FREEZE_PLAN_v0.md`
@@ -69,6 +72,11 @@ Interpretation:
 - SQLGlot transpile currently shows one concrete translation failure on the bounded PORT smoke set
 - this is useful route evidence, but it is not translation correctness scoring
 - the latest bounded PostgreSQL route matrix preserves the same SQLGlot outcome: `2 / 3` PG success with `PORT_0012` failing on `InvalidDatetimeFormat`
+- PG reference consistency check:
+  - executable cases checked: `2 / 2`
+  - consistent: `0`
+  - inconsistent: `2`
+  - `PORT_0012` remained blocked because SQLGlot PG execution had already failed
 
 ## 5. LLM Translate Current Snapshot
 
@@ -98,11 +106,21 @@ Current LLM translate bounded snapshot:
   - total token usage: `1317`
   - `PORT_0012` matrix token usage: `455`
   - `PORT_0012` matrix row count: `1`
+- PG reference consistency run:
+  - route executable from existing PG evidence: `3 / 3`
+  - consistent: `1`
+  - inconsistent: `1`
+  - execution failed: `1`
+  - checked-record consistency rate: `0.5`
 
 Interpretation:
 
 - the current clean LLM translate line is the `2`-case subset only
 - the latest PG-only route matrix adds bounded three-case PostgreSQL execution evidence for Direct LLM translate
+- the PG reference-consistency layer is still mixed:
+  - `PORT_0004` matched exactly
+  - `PORT_0022` executed but mismatched the current PG reference output
+  - `PORT_0012` did not close because the current PG reference SQL failed during the checker run
 - this is still route evidence only, not translation correctness or denominator expansion by itself
 
 ## 6. PORT_0012 Holdout / Failure-Analysis Status
@@ -136,6 +154,10 @@ Current `PORT_0012` status:
   - `pg_execution_status=success`
   - `row_count=1`
   - `token_usage_total=455`
+- PG reference consistency run:
+  - `checker_status=execution_failed`
+  - failure category: `UndefinedObject`
+  - blocker moved to the current PostgreSQL reference SQL layer, not the LLM route execution layer
 - clean subset inclusion:
   - false
 
@@ -152,12 +174,17 @@ Current RQ3-facing interpretation:
   - the latest targeted run succeeded on PostgreSQL for this one-case stress canary
   - the latest bounded PostgreSQL route matrix also succeeded for Direct LLM translate on all three selected PORT cases
   - this suggests the targeted LLM route avoided the SQLGlot identifier-literal / datetime failure on this case
+  - the PG reference-consistency layer did not fully close:
+    - `PORT_0004` matched exactly
+    - `PORT_0022` mismatched under exact TSV comparison
+    - `PORT_0012` reference checking failed because the current positive reference SQL was not PostgreSQL-executable
   - `PORT_0012` therefore remains intentionally outside the clean denominator
 
 This means:
 
 - the current clean PORT denominator is still `PORT_0004 / PORT_0022`
 - the clean-denominator policy may need revisit in a later decision packet, but it should not be expanded automatically from the current matrix alone
+- the current PG reference-consistency packet is useful route/reference evidence, but it is not enough to justify denominator expansion
 - the current snapshot is useful for formal route-status reporting
 - it is not enough to claim full PORT closure
 
@@ -166,6 +193,7 @@ This means:
 - not translation correctness
 - PG-only
 - not cross-engine matrix
+- exact TSV PG reference checks only
 - not speedup
 - not final PORT leaderboard
 - not registry writeback
