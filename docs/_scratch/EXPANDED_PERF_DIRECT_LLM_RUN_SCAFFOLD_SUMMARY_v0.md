@@ -2,20 +2,34 @@
 
 ## Scope
 
-- Command added: `python -m scripts.cli formal-expanded-perf-direct-llm-run`
+- Command: `python -m scripts.cli formal-expanded-perf-direct-llm-run`
 - Benchmark line: expanded PERF Direct LLM rewrite
-- Case packet size: `34`
-- Engine scope: PostgreSQL only
+- Registered 34-case packet size remains unchanged
 - Route: `LLM_DIRECT_REWRITE_STRONG`
+- Engine scope in this scaffold: PostgreSQL only
+- This turn executed only the canary case `PERF_0007`
 
 ## Command registration status
 
+- Command registration remains ok: `yes`
 - Registered in `scripts/cli.py`: `yes`
-- Supported options:
+- Supported options remain:
   - `--case-id CASE_ID` repeatable
   - `--execute`
   - `--output reports/formal_expansion/expanded_perf_direct_llm_run_v0.json`
 - Default mode: dry-run
+
+## Behavior update completed
+
+- Report-local source materialization path now used:
+  - `reports/formal_expansion/result_materialization/expanded_perf/source/perf_0007.tsv`
+- Report-local candidate materialization path now used:
+  - `reports/formal_expansion/result_materialization/expanded_perf/llm_direct_rewrite/perf_0007.tsv`
+- Report-local checker JSON now written:
+  - `reports/formal_expansion/result_checks/expanded_perf/llm_direct_rewrite/perf_0007.json`
+- Checker mode: `exact_tsv_report_local`
+- Main report claim boundary now:
+  - `expanded_perf_direct_llm_pg_checker_not_speedup_not_final_leaderboard`
 
 ## Dry-run result
 
@@ -26,36 +40,61 @@
 - `PERF_0007` dry-run status: `ready_for_execute`
 - Report path: `reports/formal_expansion/expanded_perf_direct_llm_run_v0.json`
 
-## API env status
-
-- API key: `<set>`
-- API base URL: `<set>`
-- Provider mode: `openai_compatible_base_url`
-- Visible env family accepted by scaffold:
-  - key: `LLM_API_KEY` or `OPENAI_API_KEY`
-  - base URL: `LLM_BASE_URL` or `OPENAI_BASE_URL` or `OPENAI_API_BASE`
-
-## Canary result
+## PERF_0007 canary result
 
 - Command run:
   - `source scripts/env_postgres.sh && python -m scripts.cli formal-expanded-perf-direct-llm-run --case-id PERF_0007 --execute`
-- Result: `ok=false`
-- Call layer result: `failed`
-- Failure category: `APIConnectionError`
-- Error message: `Connection error.`
-- PostgreSQL env visible during canary: `true`
-- PostgreSQL execution result: `not_attempted`
-- Reason SQL execution did not start: model call failed before SQL extraction
-- Report JSON validation:
-  - `python -m json.tool reports/formal_expansion/expanded_perf_direct_llm_run_v0.json >/dev/null`
-  - result: `passed`
+- Result: `ok=true`
+- PERF_0007 canary model call status: `success`
+- PERF_0007 extraction status: `extracted`
+- PERF_0007 source execution status: `success`
+- PERF_0007 candidate execution status: `success`
+- PERF_0007 checker status: `consistent`
+- Source row count: `1`
+- Candidate row count: `1`
+- Row count equal: `true`
+- Byte equal: `true`
+- Search path after set: `perf_0007_validation, public`
 
-## Full 34-case run readiness
+## Summary fields now present
 
-- CLI scaffold readiness: `yes`
-- Dry-run readiness for the tested canary path: `yes`
-- Full 34-case execution readiness right now: `no`
-- Current blocking point: reachable Direct LLM API call path is not healthy in this environment because the canary failed with `APIConnectionError`
+- Existing fields retained:
+  - `call_success_count`
+  - `execution_success_count`
+  - `env_status`
+  - `token_usage_total_if_available`
+- Checker-backed fields now present:
+  - `model_call_success_count`
+  - `extraction_success_count`
+  - `source_execution_success_count`
+  - `candidate_execution_success_count`
+  - `checker_consistent_count`
+  - `checker_inconsistent_count`
+  - `checker_failed_count`
+  - `result_consistency_rate`
+  - `row_count_match_count`
+  - `row_count_mismatch_count`
+  - `total_token_usage`
+  - `token_per_consistent_rewrite`
+
+## Token usage
+
+- Input tokens: `432`
+- Output tokens: `88`
+- Total token usage: `520`
+- Token per consistent rewrite: `520.0`
+
+## Readiness
+
+- Checker-backed canary path status: `ready`
+- Full 34-case checker-backed expanded PERF run readiness: `yes`
+- Readiness basis:
+  - command registration remains ok
+  - dry-run path is healthy
+  - single-case source materialization succeeded
+  - single-case candidate materialization succeeded
+  - single-case checker JSON succeeded
+  - summary JSON and checker JSON both validated with `python -m json.tool`
 
 ## Boundaries
 
@@ -64,4 +103,4 @@
 - No formal review file changed
 - No taxonomy calibration note touched
 - No full 34-case execution was run
-- Only the single requested canary case `PERF_0007` was attempted
+- Only the single requested canary case `PERF_0007` was executed

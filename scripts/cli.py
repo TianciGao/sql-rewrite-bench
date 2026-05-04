@@ -23771,6 +23771,8 @@ def cmd_formal_expanded_perf_direct_llm_run(args: argparse.Namespace) -> int:
     client = OpenAI(**client_kwargs)
     pg_env_visible = all(os.environ.get(name) for name in ("PGHOST", "PGPORT", "PGDATABASE", "PGUSER"))
     pg_password_present = bool(os.environ.get("PGPASSWORD"))
+    result_materialization_root = FORMAL_EXPANSION_REPORT_DIR / "result_materialization" / "expanded_perf"
+    result_checks_root = FORMAL_EXPANSION_REPORT_DIR / "result_checks" / "expanded_perf" / "llm_direct_rewrite"
 
     records: list[dict[str, Any]] = []
     for dry_run_record in dry_run_records:
@@ -23793,93 +23795,153 @@ def cmd_formal_expanded_perf_direct_llm_run(args: argparse.Namespace) -> int:
         extracted_sql_status = "not_available"
         call_status = "not_attempted"
         execution_status = "not_attempted"
+        source_execution_status = "not_attempted"
+        candidate_execution_status = "not_attempted"
+        checker_status = "model_or_extraction_failed"
         failure_category = "none"
         error_message = ""
         token_usage_input = None
         token_usage_output = None
         token_usage_total = None
-        row_count = None
-        runtime_ms = None
+        source_row_count = None
+        candidate_row_count = None
+        row_count_equal = None
+        byte_equal = None
+        runtime_source_ms = None
+        runtime_candidate_ms = None
         search_path_after_set = ""
         notes = list(prompt_record.get("notes", []))
+        source_result_path = result_materialization_root / "source" / f"{case_id.lower()}.tsv"
+        candidate_result_path = result_materialization_root / "llm_direct_rewrite" / f"{case_id.lower()}.tsv"
+        checker_output_path = result_checks_root / f"{case_id.lower()}.json"
 
         if prompt_record.get("prompt_package_status") != "ready":
+            call_status = "failed"
             failure_category = str(prompt_record.get("prompt_package_status"))
             notes.append("execution skipped: prompt package not ready")
         elif not pg_env_visible:
             call_status = "not_attempted"
             execution_status = "env_blocked"
+            source_execution_status = "env_blocked"
+            candidate_execution_status = "env_blocked"
             failure_category = "missing_pg_env"
             notes.append("execution skipped: required env PGHOST/PGPORT/PGDATABASE/PGUSER not fully visible")
         else:
             prompt_package = json.loads(prompt_blob)
             try:
-                response = client.chat.completions.create(
-                    model="gpt-5.2",
-                    messages=[
-                        {"role": "system", "content": prompt_package["system_message"]},
-                        {"role": "user", "content": prompt_package["user_message"]},
-                    ],
-                    temperature=0.0,
-                    max_tokens=2048,
-                )
-                message = response.choices[0].message.content if response.choices else ""
-                raw_text = (message or "").strip()
-                extracted_sql_status, extracted_sql_text = extract_sql_like_output(raw_text)
-                call_status = "success"
-                usage = getattr(response, "usage", None)
-                if usage is not None:
-                    token_usage_input = getattr(usage, "prompt_tokens", None)
-                    token_usage_output = getattr(usage, "completion_tokens", None)
-                    token_usage_total = getattr(usage, "total_tokens", None)
+                with psycopg.connect(
+                    host=os.environ["PGHOST"],
+                    port=os.environ["PGPORT"],
+                    dbname=os.environ["PGDATABASE"],
+                    user=os.environ["PGUSER"],
+                    password=os.environ.get("PGPASSWORD"),
+                    options="-c statement_timeout=30000 -c default_transaction_read_only=on",
+                    autocommit=False,
+                ) as conn:
+                    with conn.cursor() as cur:
+                        cur.execute("SELECT to_regnamespace(%s)", (validation_schema,))
+                        schema_row = cur.fetchone()
+                        schema_name = schema_row[0] if schema_row else None
+                        if not schema_name:
+                            raise RuntimeError(f"validation schema not found: {validation_schema}")
+                        cur.execute(
+                            psycopg.sql.SQL("SET search_path TO {}, public").format(
+                                psycopg.sql.Identifier(validation_schema)
+                            )
+                        )
+                        cur.execute("SHOW search_path")
+                        search_path_row = cur.fetchone()
+                        search_path_after_set = str(search_path_row[0]) if search_path_row else ""
+                        started = time.perf_counter()
+                        source_row_count, _ = materialize_query_to_tsv(
+                            cur,
+                            Path(dry_run_record["source_sql_path"]).read_text(encoding="utf-8"),
+                            source_result_path,
+                        )
+                        runtime_source_ms = int((time.perf_counter() - started) * 1000)
+                        source_execution_status = "success"
+                        conn.rollback()
+                        cur.execute(
+                            psycopg.sql.SQL("SET search_path TO {}, public").format(
+                                psycopg.sql.Identifier(validation_schema)
+                            )
+                        )
+
+                        try:
+                            response = client.chat.completions.create(
+                                model="gpt-5.2",
+                                messages=[
+                                    {"role": "system", "content": prompt_package["system_message"]},
+                                    {"role": "user", "content": prompt_package["user_message"]},
+                                ],
+                                temperature=0.0,
+                                max_tokens=2048,
+                            )
+                            message = response.choices[0].message.content if response.choices else ""
+                            raw_text = (message or "").strip()
+                            extracted_sql_status, extracted_sql_text = extract_sql_like_output(raw_text)
+                            call_status = "success"
+                            usage = getattr(response, "usage", None)
+                            if usage is not None:
+                                token_usage_input = getattr(usage, "prompt_tokens", None)
+                                token_usage_output = getattr(usage, "completion_tokens", None)
+                                token_usage_total = getattr(usage, "total_tokens", None)
+                        except Exception as exc:
+                            call_status = "failed"
+                            failure_category = type(exc).__name__
+                            error_message = str(exc)
+
+                        if call_status == "success" and extracted_sql_status == "extracted":
+                            started = time.perf_counter()
+                            candidate_row_count, _ = materialize_query_to_tsv(cur, extracted_sql_text, candidate_result_path)
+                            runtime_candidate_ms = int((time.perf_counter() - started) * 1000)
+                            candidate_execution_status = "success"
+                            conn.rollback()
+
+                            row_count_equal = source_row_count == candidate_row_count
+                            byte_equal = source_result_path.read_bytes() == candidate_result_path.read_bytes()
+                            checker_status = "consistent" if byte_equal else "inconsistent"
+                            execution_status = "success"
+                        elif call_status == "success":
+                            execution_status = "not_attempted"
+                            candidate_execution_status = "not_attempted"
+                            checker_status = "model_or_extraction_failed"
+                            if failure_category == "none":
+                                failure_category = extracted_sql_status
+                            notes.append("SQL execution skipped because extracted SQL was not accepted automatically")
+                        else:
+                            execution_status = "not_attempted"
+                            candidate_execution_status = "not_attempted"
+                            checker_status = "model_or_extraction_failed"
             except Exception as exc:
-                call_status = "failed"
+                execution_status = "failed"
                 failure_category = type(exc).__name__
                 error_message = str(exc)
+                if source_execution_status == "success":
+                    candidate_execution_status = "candidate_execution_failed"
+                    checker_status = "candidate_execution_failed"
+                else:
+                    source_execution_status = "source_execution_failed"
+                    checker_status = "source_execution_failed"
 
-            if call_status == "success" and extracted_sql_status == "extracted":
-                start = time.perf_counter()
-                try:
-                    with psycopg.connect(
-                        host=os.environ["PGHOST"],
-                        port=os.environ["PGPORT"],
-                        dbname=os.environ["PGDATABASE"],
-                        user=os.environ["PGUSER"],
-                        password=os.environ.get("PGPASSWORD"),
-                        options="-c statement_timeout=30000 -c default_transaction_read_only=on",
-                    ) as conn:
-                        with conn.cursor() as cur:
-                            cur.execute("SELECT to_regnamespace(%s)", (validation_schema,))
-                            schema_row = cur.fetchone()
-                            schema_name = schema_row[0] if schema_row else None
-                            if not schema_name:
-                                raise RuntimeError(f"validation schema not found: {validation_schema}")
-                            cur.execute(
-                                psycopg.sql.SQL("SET search_path TO {}, public").format(
-                                    psycopg.sql.Identifier(validation_schema)
-                                )
-                            )
-                            cur.execute("SHOW search_path")
-                            search_path_row = cur.fetchone()
-                            search_path_after_set = str(search_path_row[0]) if search_path_row else ""
-                            cur.execute(extracted_sql_text)
-                            if cur.description is not None:
-                                row_count = len(cur.fetchall())
-                            else:
-                                row_count = cur.rowcount if cur.rowcount >= 0 else None
-                    runtime_ms = int((time.perf_counter() - start) * 1000)
-                    execution_status = "success"
-                except Exception as exc:
-                    runtime_ms = int((time.perf_counter() - start) * 1000)
-                    execution_status = "failed"
-                    if failure_category == "none":
-                        failure_category = type(exc).__name__
-                    error_message = str(exc)
-            elif call_status == "success":
-                execution_status = "not_attempted"
-                if failure_category == "none":
-                    failure_category = extracted_sql_status
-                notes.append("SQL execution skipped because extracted SQL was not accepted automatically")
+        checker_payload = {
+            "case_id": case_id,
+            "route": "llm_direct_rewrite",
+            "baseline_id": "LLM_DIRECT_REWRITE_STRONG",
+            "source_result_path": relative_to_root(source_result_path),
+            "candidate_result_path": relative_to_root(candidate_result_path),
+            "checker_mode": "exact_tsv_report_local",
+            "source_row_count": source_row_count,
+            "candidate_row_count": candidate_row_count,
+            "row_count_equal": row_count_equal,
+            "byte_equal": byte_equal,
+            "checker_status": checker_status,
+            "failure_category": failure_category,
+            "error_message": error_message,
+            "artifact_claim_boundary": "expanded_perf_direct_llm_pg_checker_not_speedup_not_final_leaderboard",
+        }
+        checker_output_path.parent.mkdir(parents=True, exist_ok=True)
+        checker_output_path.write_text(json.dumps(checker_payload, indent=2) + "\n", encoding="utf-8")
 
         records.append(
             {
@@ -23903,32 +23965,73 @@ def cmd_formal_expanded_perf_direct_llm_run(args: argparse.Namespace) -> int:
                 "prompt_character_count": prompt_record.get("prompt_character_count"),
                 "estimated_prompt_tokens": prompt_record.get("estimated_prompt_tokens"),
                 "call_status": call_status,
+                "model_call_status": call_status,
                 "raw_output_character_count": len(raw_text),
+                "raw_output_text": raw_text,
                 "raw_output_preview": raw_text[:700],
                 "extracted_sql_status": extracted_sql_status,
+                "extracted_sql_text": extracted_sql_text,
                 "extracted_sql_preview": extracted_sql_text[:700],
                 "extracted_sql_character_count": len(extracted_sql_text),
                 "token_usage_input": token_usage_input,
                 "token_usage_output": token_usage_output,
                 "token_usage_total": token_usage_total,
                 "execution_status": execution_status,
-                "row_count": row_count,
-                "runtime_ms": runtime_ms,
+                "source_execution_status": source_execution_status,
+                "candidate_execution_status": candidate_execution_status,
+                "source_result_path": relative_to_root(source_result_path),
+                "candidate_result_path": relative_to_root(candidate_result_path),
+                "checker_output_path": relative_to_root(checker_output_path),
+                "checker_mode": "exact_tsv_report_local",
+                "source_row_count": source_row_count,
+                "candidate_row_count": candidate_row_count,
+                "row_count_equal": row_count_equal,
+                "byte_equal": byte_equal,
+                "checker_status": checker_status,
+                "runtime_source_ms": runtime_source_ms,
+                "runtime_candidate_ms": runtime_candidate_ms,
                 "search_path_after_set": search_path_after_set,
                 "failure_category": failure_category,
                 "error_message": error_message,
                 "notes": notes,
-                "claim_boundary": "expanded_perf_direct_llm_execute_postgres_only_not_correctness_or_speedup_scoring",
+                "claim_boundary": "expanded_perf_direct_llm_pg_checker_not_speedup_not_final_leaderboard",
             }
         )
 
+    model_call_success_count = sum(1 for record in records if record["call_status"] == "success")
+    extraction_success_count = sum(1 for record in records if record["extracted_sql_status"] == "extracted")
+    source_execution_success_count = sum(1 for record in records if record["source_execution_status"] == "success")
+    candidate_execution_success_count = sum(1 for record in records if record["candidate_execution_status"] == "success")
+    checker_consistent_count = sum(1 for record in records if record["checker_status"] == "consistent")
+    checker_inconsistent_count = sum(1 for record in records if record["checker_status"] == "inconsistent")
+    checker_failed_count = sum(
+        1
+        for record in records
+        if record["checker_status"]
+        in {"source_execution_failed", "candidate_execution_failed", "model_or_extraction_failed"}
+    )
+    row_count_match_count = sum(1 for record in records if record["row_count_equal"] is True)
+    row_count_mismatch_count = sum(1 for record in records if record["row_count_equal"] is False)
+    total_token_usage = sum(record["token_usage_total"] for record in records if isinstance(record["token_usage_total"], int)) or None
+    checker_comparable_count = checker_consistent_count + checker_inconsistent_count
+    result_consistency_rate = (
+        float(checker_consistent_count / checker_comparable_count)
+        if checker_comparable_count
+        else None
+    )
+    token_per_consistent_rewrite = (
+        float(total_token_usage / checker_consistent_count)
+        if total_token_usage is not None and checker_consistent_count
+        else None
+    )
     payload = {
         "command": "formal-expanded-perf-direct-llm-run",
         "ok": (
             not invalid_case_ids
             and len(records) == len(valid_case_ids)
             and all(record["call_status"] == "success" for record in records)
-            and all(record["execution_status"] == "success" for record in records)
+            and all(record["candidate_execution_status"] == "success" for record in records)
+            and all(record["checker_status"] in {"consistent", "inconsistent"} for record in records)
         ),
         "ran_at_utc": utc_now(),
         "output_path": f"reports/formal_expansion/{output_name}",
@@ -23944,17 +24047,27 @@ def cmd_formal_expanded_perf_direct_llm_run(args: argparse.Namespace) -> int:
             "base_url": base_url_status,
             "provider_mode": env_config["provider_mode"],
         },
-        "call_success_count": sum(1 for record in records if record["call_status"] == "success"),
+        "call_success_count": model_call_success_count,
         "call_failed_count": sum(1 for record in records if record["call_status"] == "failed"),
-        "execution_success_count": sum(1 for record in records if record["execution_status"] == "success"),
+        "execution_success_count": candidate_execution_success_count,
         "execution_failed_count": sum(1 for record in records if record["execution_status"] == "failed"),
         "env_blocked_count": sum(1 for record in records if record["execution_status"] == "env_blocked"),
-        "token_usage_total_if_available": sum(
-            record["token_usage_total"] for record in records if isinstance(record["token_usage_total"], int)
-        ) or None,
+        "model_call_success_count": model_call_success_count,
+        "extraction_success_count": extraction_success_count,
+        "source_execution_success_count": source_execution_success_count,
+        "candidate_execution_success_count": candidate_execution_success_count,
+        "checker_consistent_count": checker_consistent_count,
+        "checker_inconsistent_count": checker_inconsistent_count,
+        "checker_failed_count": checker_failed_count,
+        "result_consistency_rate": result_consistency_rate,
+        "row_count_match_count": row_count_match_count,
+        "row_count_mismatch_count": row_count_mismatch_count,
+        "token_usage_total_if_available": total_token_usage,
+        "total_token_usage": total_token_usage,
+        "token_per_consistent_rewrite": token_per_consistent_rewrite,
         "records": records,
         "issues": issues,
-        "claim_boundary": "expanded_perf_direct_llm_execute_postgres_only_not_correctness_or_speedup_scoring",
+        "claim_boundary": "expanded_perf_direct_llm_pg_checker_not_speedup_not_final_leaderboard",
     }
     write_formal_expansion_report(output_name, payload)
     return print_and_exit(payload, 0 if payload["ok"] else 1)
