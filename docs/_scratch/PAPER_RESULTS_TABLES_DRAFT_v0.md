@@ -41,7 +41,7 @@ Current expanded evidence totals:
 | `LLM_DIRECT_REWRITE_STRONG` | seed common-core `9` | `9 / 9` | generated-method consistency `9 / 9` | none on seed | seed-only generated-method evidence |
 | Batch 2B CONS controls | Batch 2B CONS `3` | native `3 / 3`, positive `3 / 3`, negative `3 / 3` | `ResultConsistencyRate=1.0`, `NegativeRejectionRate=1.0`, `FalseAcceptRate=0.0` | none | consistency expansion only |
 | `SQLGLOT_TRANSPILE_SAME_DIALECT_NO_OPT` | Batch 2A PERF `19` | generation `19 / 19`, PG execution `19 / 19` | exact TSV consistency `19 / 19`, `ResultConsistencyRate=1.0` | none on Batch 2A | separate baseline candidate, not replacement |
-| `LLM_DIRECT_REWRITE_STRONG` | expanded PERF `34` | model call `34 / 34`, extraction `34 / 34`, source PG execution `34 / 34`, candidate PG execution `34 / 34` | checker consistency `34 / 34`, row-count match `34 / 34`, `ResultConsistencyRate=1.0` | none on expanded PERF | PostgreSQL-only, checker-backed, not speedup, not final leaderboard |
+| `LLM_DIRECT_REWRITE_STRONG` | expanded PERF `34` | model call `34 / 34`, extraction `34 / 34`, source PG execution `34 / 34`, candidate PG execution `34 / 34`, speedup execution `34 / 34` | checker consistency `34 / 34`, row-count match `34 / 34`, `ResultConsistencyRate=1.0`, valid speedup cases `34 / 34` | none on expanded PERF | PostgreSQL-only, checker-backed, speedup-scored, not final leaderboard |
 | `SQLGLOT_OPT_SAME_DIALECT` | Batch 2A PERF `19` | success `4 / 19`, failed `15 / 19` | capability boundary exposed rather than closed consistency | `OptimizeError=13`, `UndefinedColumn=2` | boundary evidence only |
 | Batch 3B PERF controls | Batch 3B PERF `4` | native `4 / 4`, positive `4 / 4`, negative `4 / 4` | positive equality `4 / 4`, negative differs `4 / 4` | none | paper-draft override slice only |
 | `SQLGLOT_TRANSPILE_SAME_DIALECT_NO_OPT` | Batch 3B PERF `4` | generation `4 / 4`, PG execution `4 / 4` | checker consistency `4 / 4`, `ResultConsistencyRate=1.0` | none on Batch 3B | separate baseline candidate, not replacement |
@@ -54,6 +54,7 @@ Current expanded evidence totals:
 | `HUMAN_REFERENCE_POSITIVE` | seed PERF `7` | `0.96159127168004` | `1 / 2 / 4` | `0 / 7` | seed positive-control runtime |
 | `SQLGLOT_OPT_SAME_DIALECT` | seed PERF `7` | `0.9709643241218479` | `1 / 2 / 4` | `0 / 7` | seed-only optimize route |
 | `LLM_DIRECT_REWRITE_STRONG` | seed PERF `7` | `1.0023345046000625` | `1 / 5 / 1` | `0 / 7` | seed-only method runtime |
+| `LLM_DIRECT_REWRITE_STRONG` | expanded PERF `34` | `1.0029707606749427` | `7 / 19 / 8` | `0 / 34` | PostgreSQL-only expanded PERF speedup; near-neutral and tie-heavy, not a strong speedup result |
 | `HUMAN_REFERENCE_POSITIVE` | Batch 2A PERF `19` | `0.9733` | `4 / 9 / 6` | `3 / 19` | expanded PERF positive-control runtime |
 | `SQLGLOT_TRANSPILE_SAME_DIALECT_NO_OPT` | Batch 2A PERF `19` | `1.0119` | `4 / 13 / 2` | `0 / 19` | separate SQLGlot no-opt baseline candidate |
 | `HUMAN_REFERENCE_POSITIVE` | Batch 3A PERF `11` | `0.9984` | `0 / 10 / 1` | `0 / 11` | later ready-PERF runtime slice; Batch 3A route-record execution `22 / 22` with row-count match `22 / 22` |
@@ -140,7 +141,7 @@ Combined current PostgreSQL-side PORT summary:
 
 - the expanded denominator exposed a major `SQLGLOT_OPT_SAME_DIALECT` capability boundary that the seed packet did not reveal
 - `SQLGLOT_TRANSPILE_SAME_DIALECT_NO_OPT` remains broadly executable / consistent across Batch 2A, Batch 3A, and Batch 3B, but speedup gains remain close to neutral
-- Direct LLM now has a full expanded PERF checker-backed PostgreSQL row on `34` cases, but still no expanded PERF speedup row
+- Direct LLM now has a full expanded PERF checker-backed PostgreSQL speedup row on `34` cases, with near-neutral and tie-heavy runtime effect rather than a strong speedup claim
 - Direct LLM shows stronger PostgreSQL-side PORT coverage than SQLGlot on the current bounded six-case sample
 - human positive and SQLGlot no-opt both remain close to neutral, with tie-heavy runtime behavior on the expanded PERF slices
 - the `SQLGLOT_OPT_SAME_DIALECT` capability boundary persists from Batch 2A into Batch 3A and Batch 3B

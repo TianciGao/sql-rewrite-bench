@@ -2,28 +2,29 @@
 
 ## Status
 
-This note records the current expanded PERF Direct LLM speedup runtime/scoring attempt for:
+This note records the current expanded PERF Direct LLM speedup runtime/scoring result for:
 
 - `reports/formal_expansion/expanded_perf_direct_llm_speedup_run_v0.json`
 
 Result status:
 
-- `scripts/cli.py` compiled successfully
-- canary execute attempted on `PERF_0007`
-- SQL comment-wrapping bug in the execute helper was fixed
-- runtime measurement for this runner now uses `time.perf_counter_ns()` around the actual `cur.execute(...)` call and stores high-precision `runtime_ms` floats
-- canary did not succeed
-- full 34-case execute was not started
-- canary now fails later at Python-side PostgreSQL connection setup
+- full expanded PERF PostgreSQL-side speedup run completed
+- executed: `34 / 34`
+- success: `34 / 34`
+- failed: `0 / 34`
+- valid speedup cases: `34`
+- row-count matches: `34 / 34`
+- no model calls during speedup scoring
 
 ## Scope
 
 - denominator: expanded PERF `34`
 - route: `LLM_DIRECT_REWRITE_STRONG`
 - engine: PostgreSQL only
-- token usage carried from prior Direct LLM run: `29414`
+- token usage carried from the prior Direct LLM run: `29414`
+- claim boundary: `expanded_perf_direct_llm_speedup_run_postgres_only_not_final_leaderboard`
 
-Runtime policy configured in the command:
+Runtime policy configured in the command artifact:
 
 - `warmup_count=1`
 - `repeat_count=5`
@@ -32,139 +33,65 @@ Runtime policy configured in the command:
 - `tie_threshold=0.05`
 - `regression_threshold=1.2`
 
-## Commands run
+## Reported Run State
 
-- `python -m py_compile scripts/cli.py`
-- `export PGPASSWORD='123456'`
-- `source scripts/env_postgres.sh`
-- `python -m scripts.cli formal-expanded-perf-direct-llm-speedup-run --case-id PERF_0007 --execute`
-- `python -m json.tool reports/formal_expansion/expanded_perf_direct_llm_speedup_run_v0.json >/dev/null`
-
-The full execute step was skipped because the canary execute did not succeed.
-
-## Dry-run result
-
-- status: `ok=true`
+- `ok=true`
 - denominator surfaced: `34`
-- execute mode: dry-run by default
+- executed count: `34`
+- failed count: `0`
+- `valid_speedup_case_count=34`
 - candidate SQL source: prior Direct LLM run report `extracted_sql_text`
 - no model calls
-- no runtime repeats executed in dry-run mode
-- no full 34-case speedup execute started
-
-## Canary result
-
-Canary command:
-
-- `source scripts/env_postgres.sh && python -m scripts.cli formal-expanded-perf-direct-llm-speedup-run --case-id PERF_0007 --execute`
-
-Canary outcome:
-
-- case count: `1`
-- executed count: `1`
-- success count: `0`
-- failed count: `1`
-- failed case: `PERF_0007`
-- failure category: `OperationalError`
-- reported error text now captured in full:
-- `connection is bad: no error details available`
-
-Interpretation:
-
-- the runner no longer rounds runtimes to `0.0` before execution because the timing path now measures elapsed execution time using `time.perf_counter_ns()`
-- the execute path did not clear the single-case PostgreSQL runtime canary
-- because the canary failed, the full 34-case speedup runtime/scoring step was not run
-- the earlier SQL-wrapping failure is no longer the active blocker
-- the current failure happens before source SQL or candidate SQL runtime measurement
-
-## Diagnosis
-
-Comparison against the existing speedup runners:
-
-- `formal-batch2a-speedup-run`
-- `formal-batch3a-speedup-run`
-- `formal-batch3b-perf-speedup-run`
-
-All three existing runners use the same `psycopg.connect(...)` execution path:
-
-- validate schema with `SELECT to_regnamespace(...)`
-- set `search_path` to `<case>_validation, public`
-- execute source SQL and candidate SQL inside PostgreSQL
-- collect warmup and repeat runtimes in Python
-
-Expanded Direct LLM speedup now:
-
-- reads candidate SQL from `extracted_sql_text` in `reports/formal_expansion/expanded_perf_direct_llm_run_v0.json`
-- uses the same target validation schema convention
-- sets the same runtime policy
-- executes source SQL and candidate SQL via `psycopg` cursor execution instead of collapsing SQL into a single-line `COPY (<sql>)` wrapper
-- measures runtime with `time.perf_counter_ns()` and stores `runtime_ms = elapsed_ns / 1_000_000` without integer truncation
-
-The original SQL wrapping problem was:
-
-- `execute_sql_via_psql()` normalized query text with `" ".join(...split())`
-- leading `--` comments from `source.sql` were therefore collapsed onto the same line as the query body
-- PostgreSQL then treated the wrapped `COPY (<sql>)` payload as a comment and raised `syntax error at end of input`
-
-That bug is now fixed by removing the `psql COPY` wrapper from this runner and switching to the same `psycopg` execution pattern used by the other formal speedup runners.
-
-However, in the current environment, the canary still fails after that fix because:
-
-- `psycopg.connect(...)` now fails with `OperationalError: connection is bad: no error details available`
-
-Best current diagnosis:
-
-- the SQL wrapping defect in the Direct LLM speedup runner has been repaired
-- the runtime precision defect in the Direct LLM speedup runner has been repaired in code
-- the remaining blocker is a Python-side PostgreSQL connection failure that occurs before validation-schema lookup or runtime measurement
-- because the connection fails before query execution, the canary still does not establish runtime/scoring closure
-
-## Full run result
-
-- status: not run
-- reason: canary execute still fails on `OperationalError`
-- final report path reflects the latest canary execute attempt, not a completed full execute result
-- full 34-case speedup is not ready yet because the canary does not reach runtime collection
+- no plan collection
+- no registry writeback
+- no case artifact write
 
 ## Metrics
 
-No successful runtime/scoring result was produced, so the following remain unavailable for the expanded 34-case execute:
+- `GM_Speedup=1.0029707606749427`
+- `W/T/L=7 / 19 / 8`
+- `RegressionRate@20%=0.0`
+- `total_token_usage=29414`
 
-- `GM_Speedup`
-- `W/T/L`
-- `RegressionRate@20%`
-- `source_median_runtime_ms`
-- `candidate_median_runtime_ms`
-- `speedup_unavailable_reason` for zero-median cases was added in code, but this canary did not reach execution far enough to populate it
+Interpretation:
 
-Current dry-run report fields remain:
+- Direct LLM expanded PERF is now checker-backed and speedup-scored.
+- runtime effect is near-neutral and tie-heavy.
+- no `20%` regression was observed.
+- this should not be framed as a strong speedup result.
 
-- `GM_Speedup=null`
-- `win_count=0`
-- `tie_count=0`
-- `loss_count=0`
-- `regression_20pct_rate=null`
-- `row_count_match_count=0`
+## Row-Count Match Summary
 
-## Row-count match summary
+- row-count match count: `34 / 34`
+- row-count mismatch count: `0 / 34`
+- all scored cases remained checker-aligned with the source query output cardinality
 
-- canary execute row-count match: not reached
-- full 34-case row-count match summary: not available
+## Execution Summary
 
-## Failures
-
-- `PERF_0007`: execute canary failed before runtime/scoring closure
-
-No additional expanded PERF cases were executed after the canary failure.
+- denominator: `34`
+- executed: `34 / 34`
+- success: `34 / 34`
+- failed: `0 / 34`
+- failure categories: none
+- issues reported by artifact: none
 
 ## Boundaries
 
-- no model calls
 - PostgreSQL-only
 - expanded PERF only
+- no model calls during speedup scoring
 - not a final leaderboard
 - no registry changes
 - no `docs/EXECUTION_STATUS.md` changes
 - no formal review changes
 - no case file changes
 - no taxonomy calibration note changes
+
+## Verification / Non-Modification Note
+
+- this note only records the existing formal report
+- no experiment was run for this documentation update
+- no model / LLM call was made
+- no SQL execution was performed
+- no checker execution was performed
+- no registry / status / review writeback occurred

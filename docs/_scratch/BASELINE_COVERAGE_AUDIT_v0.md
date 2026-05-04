@@ -50,7 +50,7 @@ Current status counts:
 | Hard negative guard | `implemented` | expanded common-core PG `46` | execution, negative rejection | guard only |
 | SQLGlot optimize | `implemented` | common-core PG `43` | execution, seed checker, seed speedup, failure categories | persistent `OptimizeError` boundary on later PERF waves |
 | SQLGlot no-opt / same-dialect transpile | `implemented` | expanded PERF PG `34` | execution, checker-backed consistency, speedup | separate baseline candidate only |
-| Direct LLM rewrite | `implemented_on_expanded_perf_checker_backed` | seed common-core PG `9`; expanded PERF PG `34` | call/extract/PG execution, checker-backed consistency on expanded PERF, seed speedup, token usage | remaining missing piece: expanded PERF speedup |
+| Direct LLM rewrite | `implemented_on_expanded_perf_checker_backed_and_speedup_scored` | seed common-core PG `9`; expanded PERF PG `34` | call/extract/PG execution, checker-backed consistency on expanded PERF, expanded PERF speedup, seed speedup, token usage | PostgreSQL-only expanded PERF speedup is near-neutral and tie-heavy; not a strong speedup result |
 | SQLGlot Transpile | `partially_implemented` | PORT PG-side `6` | PG execution, policy/reference consistency, failure analysis | PG-side failures on `PORT_0012`, `PORT_0013` |
 | LLM Translate | `partially_implemented` | PORT PG-side `6` | call, extraction, PG execution, policy/reference consistency, token usage | PG-only bounded slice, not cross-engine closure |
 | Calcite HEP | `preflight_only` | readiness subsets | readiness audit, subset recommendations | no runnable adapter/build path |
@@ -71,7 +71,7 @@ Current status counts:
   - checker-backed
   - speedup-scored
 - Direct LLM rewrite is now closed on expanded PERF as a PostgreSQL-only checker-backed route.
-- Direct LLM rewrite still does not have expanded PERF speedup evidence.
+- Direct LLM rewrite also now has expanded PERF PostgreSQL-only speedup evidence on `34` cases, but the aggregate runtime effect is near-neutral and tie-heavy.
 - SQLGlot Transpile and LLM Translate are both real bounded PORT baselines, but only on PostgreSQL-side evidence.
 - Calcite HEP, LearnedRewrite, GenRewrite, R-Bot, LLM-R2, SQLSolver, and VeriEQL remain backlog or support lines rather than active paper-denominator baselines.
 
@@ -79,7 +79,7 @@ Current status counts:
 
 - Direct LLM rewrite:
   - keep checker-backed PostgreSQL wording explicit
-  - next missing piece is expanded PERF speedup
+  - keep the speedup wording narrow: expanded PERF only, PostgreSQL-only, near-neutral, and not a strong speedup claim
 - SQLGlot optimize:
   - keep explicit capability-boundary language
 - SQLGlot no-opt:

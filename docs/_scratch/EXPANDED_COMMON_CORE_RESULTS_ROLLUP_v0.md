@@ -191,6 +191,7 @@ Taken together, Batch 2A, Batch 3A, and Batch 3B show that the optimize-route bo
 | `HUMAN_REFERENCE_POSITIVE` | seed PERF-only `7` | `0.96159127168004` | `1 / 2 / 4` | `0 / 7` | positive-control speedup only |
 | `SQLGLOT_OPT_SAME_DIALECT` | seed PERF-only `7` | `0.9709643241218479` | `1 / 2 / 4` | `0 / 7` | seed only; expanded PERF capability later proved narrow |
 | `LLM_DIRECT_REWRITE_STRONG` | seed PERF-only `7` | `1.0023345046000625` | `1 / 5 / 1` | `0 / 7` | seed only; PERF-only runtime packet |
+| `LLM_DIRECT_REWRITE_STRONG` | expanded PERF `34` | `1.0029707606749427` | `7 / 19 / 8` | `0 / 34` | PostgreSQL-only expanded PERF speedup; checker-backed and speedup-scored, but near-neutral and tie-heavy |
 | `HUMAN_REFERENCE_POSITIVE` | Batch 2A PERF `19` | `0.9733` | `4 / 9 / 6` | `3 / 19` | expanded PERF positive-control runtime |
 | `SQLGLOT_TRANSPILE_SAME_DIALECT_NO_OPT` | Batch 2A PERF `19` | `1.0119` | `4 / 13 / 2` | `0 / 19` | separate baseline candidate, not replacement for optimize route |
 | `HUMAN_REFERENCE_POSITIVE` | Batch 3A PERF `11` | `0.9984` | `0 / 10 / 1` | `0 / 11` | later ready-PERF runtime slice; `22 / 22` route-record execution success overall |
@@ -202,6 +203,7 @@ Speedup interpretation:
 
 - performance trends remain modest and mostly tie-like
 - positive-control rewrites do not guarantee speedup
+- the expanded PERF Direct LLM route is now checker-backed and speedup-scored on `34` PostgreSQL-side cases, but the aggregate runtime effect remains near-neutral
 - across Batch 2A, Batch 3A, and Batch 3B, the no-opt SQLGlot route remains broadly executable and checker-backed where evaluated, but runtime gains stay limited
 - human positive remains close to neutral as well across the later PERF waves
 
@@ -225,7 +227,7 @@ The seed packet validated the end-to-end formal pipeline on a compact mixed comm
 - Batch 2C PORT expansion
 - decide whether to stop at the current `46 + 6` paper-facing packet or run one last small bounded expansion
 - larger common-core scorer consolidation if needed
-- method-specific LLM expansion if API budget allows
+- method-specific LLM expansion is no longer required for expanded PERF speedup closure; any further LLM work would be follow-on expansion rather than first closure
 - final denominator freeze / protocol review
 - later registry, formal review, and admission work
 
