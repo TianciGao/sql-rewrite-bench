@@ -101,6 +101,7 @@ SQLGlot Transpile:
 - preflight parse + transpile: `3 / 3`
 - PostgreSQL execution: `2 / 3`
 - `PORT_0012` failed with `InvalidDatetimeFormat`
+- bounded PG route matrix confirms the same SQLGlot outcome: `2 / 3` PostgreSQL success
 
 LLM Translate:
 
@@ -118,14 +119,28 @@ LLM Translate:
   - `row_count=1`
   - `runtime_ms=63`
   - `token_usage_total=480`
+- bounded PG route matrix:
+  - model call success: `3 / 3`
+  - SQL extraction success: `3 / 3`
+  - PostgreSQL execution success: `3 / 3`
+  - `total_token_usage=1317`
+  - `PORT_0012` matrix result:
+    - `pg_execution_status=success`
+    - `row_count=1`
+    - `token_usage_total=455`
 - `PORT_0012` remains holdout failure-analysis / stress case
 
 Interpretation:
 
 - current RQ3 evidence is useful route-status evidence
 - the targeted `PORT_0012` Direct LLM follow-up succeeded on PostgreSQL in this one-case stress canary
+- the bounded PostgreSQL route matrix now also shows Direct LLM translate succeeded on all three selected PORT cases
 - this suggests the targeted LLM path avoided the SQLGlot identifier-literal / datetime failure on `PORT_0012`
+- contrast on `PORT_0012` is now explicit:
+  - SQLGlot failed on PostgreSQL with `InvalidDatetimeFormat`
+  - Direct LLM succeeded on PostgreSQL in both the targeted canary and the bounded PG route matrix
 - `PORT_0012` still remains outside the clean denominator unless a separate denominator-expansion decision is taken
+- the clean denominator policy may now warrant revisit, but it should not be expanded automatically from this PG-only result
 - it is not full PORT closure
 
 ## RQ4 Coverage / Failure Slicing
@@ -169,6 +184,7 @@ The following paper-facing tables can now be drafted from existing artifacts:
 - SQLGlot and Direct LLM generated-method speedup is correctness-gated for PERF-only cases
 - SQLGlot and Direct LLM are not admitted into a full benchmark speedup leaderboard because the current runtime packet is PERF-only
 - PORT current snapshot is not full portability closure
+- current PORT route-matrix evidence is PG-only, not translation correctness, and not a cross-engine matrix
 
 ## Recommended Next Use
 

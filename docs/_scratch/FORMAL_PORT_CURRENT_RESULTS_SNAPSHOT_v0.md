@@ -28,6 +28,7 @@ Reports and references used:
 - `reports/formal_port/llm_translate_port_0012_targeted_call_v0.json`
 - `reports/formal_port/llm_translate_port_0012_targeted_pg_v0.json`
 - `reports/formal_port/llm_translate_port_0012_targeted_summary_v0.json`
+- `reports/formal_port/port_pg_route_matrix_v0.json`
 - `docs/_scratch/PORT_0012_FAILURE_ANALYSIS_PACKET_v0.md`
 - `docs/_scratch/PORT_0012_LLM_TRANSLATE_TARGETED_CANARY_v0.md`
 - `docs/_scratch/PAPER_EXPERIMENT_DENOMINATOR_FREEZE_PLAN_v0.md`
@@ -67,6 +68,7 @@ Interpretation:
 
 - SQLGlot transpile currently shows one concrete translation failure on the bounded PORT smoke set
 - this is useful route evidence, but it is not translation correctness scoring
+- the latest bounded PostgreSQL route matrix preserves the same SQLGlot outcome: `2 / 3` PG success with `PORT_0012` failing on `InvalidDatetimeFormat`
 
 ## 5. LLM Translate Current Snapshot
 
@@ -89,11 +91,19 @@ Current LLM translate bounded snapshot:
   - row count: `1`
   - runtime: `63 ms`
   - token usage: `480`
+- latest bounded PostgreSQL route matrix:
+  - model call success: `3 / 3`
+  - SQL extraction success: `3 / 3`
+  - PostgreSQL execution success: `3 / 3`
+  - total token usage: `1317`
+  - `PORT_0012` matrix token usage: `455`
+  - `PORT_0012` matrix row count: `1`
 
 Interpretation:
 
 - the current clean LLM translate line is the `2`-case subset only
-- this is route evidence from existing smoke artifacts, not a new model run
+- the latest PG-only route matrix adds bounded three-case PostgreSQL execution evidence for Direct LLM translate
+- this is still route evidence only, not translation correctness or denominator expansion by itself
 
 ## 6. PORT_0012 Holdout / Failure-Analysis Status
 
@@ -120,6 +130,12 @@ Current `PORT_0012` status:
   - `model_call_status=success`
   - `extraction_status=extracted`
   - `pg_execution_status=success`
+- bounded PG route matrix:
+  - `model_call_status=success`
+  - `extraction_status=extracted`
+  - `pg_execution_status=success`
+  - `row_count=1`
+  - `token_usage_total=455`
 - clean subset inclusion:
   - false
 
@@ -134,19 +150,22 @@ Current RQ3-facing interpretation:
   - clean `2`-case execution evidence exists on `PORT_0004` and `PORT_0022`
   - a targeted `PORT_0012` Direct LLM canary path now exists
   - the latest targeted run succeeded on PostgreSQL for this one-case stress canary
+  - the latest bounded PostgreSQL route matrix also succeeded for Direct LLM translate on all three selected PORT cases
   - this suggests the targeted LLM route avoided the SQLGlot identifier-literal / datetime failure on this case
   - `PORT_0012` therefore remains intentionally outside the clean denominator
 
 This means:
 
 - the current clean PORT denominator is still `PORT_0004 / PORT_0022`
+- the clean-denominator policy may need revisit in a later decision packet, but it should not be expanded automatically from the current matrix alone
 - the current snapshot is useful for formal route-status reporting
 - it is not enough to claim full PORT closure
 
 ## 8. Claim Boundaries
 
 - not translation correctness
-- not cross-engine consistency
+- PG-only
+- not cross-engine matrix
 - not speedup
 - not final PORT leaderboard
 - not registry writeback
