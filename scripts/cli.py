@@ -18104,6 +18104,354 @@ def cmd_formal_batch2a_sqlglot_fallback_diagnostic(args: argparse.Namespace) -> 
     return print_and_exit(payload, 0 if payload["ok"] else 1)
 
 
+def cmd_formal_batch2a_sqlglot_no_opt_checker(args: argparse.Namespace) -> int:
+    output_name = normalize_formal_expansion_output_name(args.output)
+    valid_case_ids = set(FORMAL_COMMON_CORE_BATCH2A_PERF_CASES)
+    selected_case_ids = [str(case_id).strip().upper() for case_id in (args.case_id or []) if str(case_id).strip()]
+    if not selected_case_ids:
+        selected_case_ids = list(FORMAL_COMMON_CORE_BATCH2A_PERF_CASES)
+
+    invalid_case_ids = [case_id for case_id in selected_case_ids if case_id not in valid_case_ids]
+    if invalid_case_ids and args.execute:
+        payload = {
+            "command": "formal-batch2a-sqlglot-no-opt-checker",
+            "ok": False,
+            "ran_at_utc": utc_now(),
+            "output_path": "reports/formal_expansion/batch2a_sqlglot_no_opt_checker_execute_refused_v0.json",
+            "issues": [{"type": "unsupported_case_id", "case_id": case_id} for case_id in invalid_case_ids],
+            "guardrails": {
+                "database_execution": "enabled_only_with_execute",
+                "sql_execution": "postgres_only_source_and_no_opt_candidate",
+                "sqlglot_optimize": "disabled",
+                "model_api_call": "disabled",
+                "mysql_execution": "disabled",
+                "spark_execution": "disabled",
+                "port_execution": "disabled",
+                "cons_execution": "disabled",
+                "speedup_scoring": "disabled",
+                "plan_collection": "disabled",
+                "case_artifact_write": "disabled",
+                "registry_writeback": "disabled",
+            },
+            "claim_boundary": "batch2a_sqlglot_no_opt_checker_separate_baseline_candidate_not_replacement",
+        }
+        write_formal_expansion_report("batch2a_sqlglot_no_opt_checker_execute_refused_v0.json", payload)
+        return print_and_exit(payload, 1)
+    selected_case_ids = [case_id for case_id in selected_case_ids if case_id in valid_case_ids]
+
+    env_visibility = pg_env_visibility()
+    required_env_visible = all(env_visibility[name] for name in ["PGHOST", "PGPORT", "PGDATABASE", "PGUSER"])
+    pg_password_present = env_visibility["PGPASSWORD"]
+    psycopg_available = safe_module_available("psycopg")
+    sqlglot_available = safe_module_available("sqlglot")
+    issues: list[dict[str, Any]] = []
+    if args.execute and not required_env_visible:
+        issues.append({"type": "missing_pg_env", "message": "required env: PGHOST, PGPORT, PGDATABASE, PGUSER"})
+    if args.execute and not psycopg_available:
+        issues.append({"type": "psycopg_unavailable", "message": "psycopg is not installed"})
+    if not sqlglot_available:
+        issues.append({"type": "sqlglot_unavailable", "message": "sqlglot is not installed"})
+
+    sqlglot_module = None
+    psycopg = None
+    if sqlglot_available:
+        try:
+            sqlglot_module = importlib.import_module("sqlglot")
+        except Exception as exc:
+            sqlglot_available = False
+            issues.append({"type": "sqlglot_import_error", "message": str(exc)})
+    if args.execute and psycopg_available:
+        try:
+            psycopg = importlib.import_module("psycopg")
+        except Exception as exc:
+            psycopg_available = False
+            issues.append({"type": "psycopg_import_error", "message": str(exc)})
+
+    optimize_report = load_json_if_present(FORMAL_EXPANSION_REPORT_DIR / "batch2a_pg_execution_v0.json") or {}
+    optimize_records = [
+        record for record in optimize_report.get("records", []) if record.get("route") == "SQLGLOT_OPT_SAME_DIALECT"
+    ]
+    optimize_success_count = sum(1 for record in optimize_records if record.get("execution_status") == "success")
+    optimize_failed_count = sum(1 for record in optimize_records if record.get("execution_status") == "failed")
+
+    result_materialization_root = FORMAL_EXPANSION_REPORT_DIR / "result_materialization" / "batch2a"
+    result_checks_root = FORMAL_EXPANSION_REPORT_DIR / "result_checks" / "batch2a" / "sqlglot_transpile_same_dialect_no_opt"
+
+    records: list[dict[str, Any]] = []
+    generation_success_count = 0
+    generation_failed_count = 0
+    source_execution_success_count = 0
+    candidate_execution_success_count = 0
+    candidate_execution_failed_count = 0
+    checker_consistent_count = 0
+    checker_inconsistent_count = 0
+    checker_failed_count = 0
+    row_count_match_count = 0
+    row_count_mismatch_count = 0
+
+    for case_id in selected_case_ids:
+        inferred = case_root_for_case_id(case_id)
+        case_root = inferred[1] if inferred else None
+        source_sql_path = case_root / "source.sql" if case_root else ROOT / "__missing__"
+        source_sql_exists = source_sql_path.is_file()
+        source_sql = source_sql_path.read_text(encoding="utf-8") if source_sql_exists else ""
+
+        parse_status = "not_attempted"
+        generation_status = "not_attempted"
+        source_execution_status = "not_requested"
+        candidate_execution_status = "not_requested"
+        source_row_count: int | None = None
+        candidate_row_count: int | None = None
+        row_count_equal: bool | None = None
+        byte_equal: bool | None = None
+        checker_status = "checker_unavailable"
+        runtime_source_ms: int | None = None
+        runtime_candidate_ms: int | None = None
+        failure_category = "none"
+        error_message = ""
+        generated_sql_preview = ""
+        generated_sql_character_count: int | None = None
+        candidate_sql = ""
+
+        source_result_path = result_materialization_root / "source" / f"{case_id.lower()}.tsv"
+        candidate_result_path = (
+            result_materialization_root / "sqlglot_transpile_same_dialect_no_opt" / f"{case_id.lower()}.tsv"
+        )
+        checker_output_path = result_checks_root / f"{case_id.lower()}.json"
+
+        if not source_sql_exists:
+            parse_status = "failed"
+            generation_status = "failed"
+            source_execution_status = "source_execution_failed" if args.execute else "dry_run_only"
+            candidate_execution_status = "generation_failed" if args.execute else "dry_run_only"
+            checker_status = "generation_failed"
+            failure_category = "missing_source_sql"
+            error_message = "source.sql is missing"
+            generation_failed_count += 1
+        elif not sqlglot_available or sqlglot_module is None:
+            parse_status = "failed"
+            generation_status = "failed"
+            source_execution_status = "source_execution_failed" if args.execute else "dry_run_only"
+            candidate_execution_status = "generation_failed" if args.execute else "dry_run_only"
+            checker_status = "generation_failed"
+            failure_category = "sqlglot_unavailable"
+            error_message = "sqlglot is unavailable"
+            generation_failed_count += 1
+        else:
+            try:
+                transpiled = sqlglot_module.transpile(source_sql, read="postgres", write="postgres")
+                parse_status = "success"
+                candidate_sql = str(transpiled[0]).strip() if transpiled else ""
+                if not candidate_sql:
+                    generation_status = "failed"
+                    source_execution_status = "source_execution_failed" if args.execute else "dry_run_only"
+                    candidate_execution_status = "generation_failed" if args.execute else "dry_run_only"
+                    checker_status = "generation_failed"
+                    failure_category = "empty_transpile_output"
+                    error_message = "sqlglot transpile returned no SQL text"
+                    generation_failed_count += 1
+                else:
+                    generation_status = "success"
+                    generated_sql_preview = batch2a_sql_preview_text(candidate_sql)
+                    generated_sql_character_count = len(candidate_sql)
+                    generation_success_count += 1
+                    if not args.execute:
+                        source_execution_status = "dry_run_only"
+                        candidate_execution_status = "dry_run_only"
+                        checker_status = "checker_unavailable"
+                    elif issues:
+                        source_execution_status = "blocked_invalid_selection"
+                        candidate_execution_status = "blocked_invalid_selection"
+                        checker_status = "generation_failed"
+                        failure_category = "environment_or_selection_blocked"
+                    else:
+                        validation_schema = validation_schema_hint(case_id)
+                        try:
+                            with psycopg.connect(
+                                host=os.environ["PGHOST"],
+                                port=os.environ["PGPORT"],
+                                dbname=os.environ["PGDATABASE"],
+                                user=os.environ["PGUSER"],
+                                password=os.environ.get("PGPASSWORD"),
+                                options="-c statement_timeout=30000 -c default_transaction_read_only=on",
+                                autocommit=False,
+                            ) as conn:
+                                with conn.cursor() as cur:
+                                    cur.execute("SELECT to_regnamespace(%s)", (validation_schema,))
+                                    schema_row = cur.fetchone()
+                                    schema_name = schema_row[0] if schema_row else None
+                                    if not schema_name:
+                                        source_execution_status = "source_execution_failed"
+                                        candidate_execution_status = "candidate_execution_failed"
+                                        checker_status = "source_execution_failed"
+                                        failure_category = "missing_validation_schema"
+                                        error_message = f"validation schema not found: {validation_schema}"
+                                    else:
+                                        cur.execute(
+                                            psycopg.sql.SQL("SET search_path TO {}, public").format(
+                                                psycopg.sql.Identifier(validation_schema)
+                                            )
+                                        )
+                                        started = time.perf_counter()
+                                        source_row_count, _ = materialize_query_to_tsv(cur, source_sql, source_result_path)
+                                        runtime_source_ms = int((time.perf_counter() - started) * 1000)
+                                        source_execution_status = "success"
+                                        source_execution_success_count += 1
+                                        conn.rollback()
+
+                                        cur.execute(
+                                            psycopg.sql.SQL("SET search_path TO {}, public").format(
+                                                psycopg.sql.Identifier(validation_schema)
+                                            )
+                                        )
+                                        started = time.perf_counter()
+                                        candidate_row_count, _ = materialize_query_to_tsv(cur, candidate_sql, candidate_result_path)
+                                        runtime_candidate_ms = int((time.perf_counter() - started) * 1000)
+                                        candidate_execution_status = "success"
+                                        candidate_execution_success_count += 1
+                                        conn.rollback()
+
+                                        row_count_equal = source_row_count == candidate_row_count
+                                        byte_equal = source_result_path.read_bytes() == candidate_result_path.read_bytes()
+                                        checker_status = "consistent" if byte_equal else "inconsistent"
+                                        if checker_status == "consistent":
+                                            checker_consistent_count += 1
+                                        else:
+                                            checker_inconsistent_count += 1
+                                        if row_count_equal:
+                                            row_count_match_count += 1
+                                        else:
+                                            row_count_mismatch_count += 1
+
+                                        checker_output_path.parent.mkdir(parents=True, exist_ok=True)
+                                        checker_payload = {
+                                            "case_id": case_id,
+                                            "route": "sqlglot_transpile_same_dialect_no_opt",
+                                            "baseline_id": "SQLGLOT_TRANSPILE_SAME_DIALECT_NO_OPT",
+                                            "source_result_path": relative_to_root(source_result_path),
+                                            "candidate_result_path": relative_to_root(candidate_result_path),
+                                            "checker_mode": "exact_tsv_report_local",
+                                            "source_row_count": source_row_count,
+                                            "candidate_row_count": candidate_row_count,
+                                            "row_count_equal": row_count_equal,
+                                            "byte_equal": byte_equal,
+                                            "checker_status": checker_status,
+                                            "failure_category": "none",
+                                            "error_message": "",
+                                            "artifact_claim_boundary": "batch2a_sqlglot_no_opt_checker_not_speedup_not_leaderboard",
+                                        }
+                                        checker_output_path.write_text(json.dumps(checker_payload, indent=2) + "\n", encoding="utf-8")
+                        except Exception as exc:
+                            failure_category = type(exc).__name__
+                            error_message = str(exc)
+                            issues.append({"type": type(exc).__name__, "case_id": case_id, "message": str(exc)})
+                            if source_execution_status != "success":
+                                source_execution_status = "source_execution_failed"
+                                checker_status = "source_execution_failed"
+                            else:
+                                candidate_execution_status = "candidate_execution_failed"
+                                checker_status = "candidate_execution_failed"
+                                candidate_execution_failed_count += 1
+                            checker_failed_count += 1
+            except Exception as exc:
+                parse_status = "success"
+                generation_status = "failed"
+                source_execution_status = "source_execution_failed" if args.execute else "dry_run_only"
+                candidate_execution_status = "generation_failed" if args.execute else "dry_run_only"
+                checker_status = "generation_failed"
+                failure_category = type(exc).__name__
+                error_message = str(exc)
+                generation_failed_count += 1
+                checker_failed_count += 1 if args.execute else 0
+
+        if args.execute and checker_status in {"source_execution_failed", "candidate_execution_failed", "generation_failed"}:
+            checker_failed_count += 0 if failure_category == "none" else 0
+        records.append(
+            {
+                "case_id": case_id,
+                "route": "SQLGLOT_TRANSPILE_SAME_DIALECT_NO_OPT",
+                "baseline_id": "SQLGLOT_TRANSPILE_SAME_DIALECT_NO_OPT",
+                "parse_status": parse_status,
+                "generation_status": generation_status,
+                "source_execution_status": source_execution_status,
+                "candidate_execution_status": candidate_execution_status,
+                "source_row_count": source_row_count,
+                "candidate_row_count": candidate_row_count,
+                "row_count_equal": row_count_equal,
+                "byte_equal": byte_equal,
+                "checker_status": checker_status,
+                "runtime_source_ms": runtime_source_ms,
+                "runtime_candidate_ms": runtime_candidate_ms,
+                "failure_category": failure_category,
+                "error_message": error_message,
+                "generated_sql_preview": generated_sql_preview,
+                "generated_sql_character_count": generated_sql_character_count,
+                "artifact_claim_boundary": "batch2a_sqlglot_no_opt_checker_not_speedup_not_leaderboard",
+            }
+        )
+
+    if args.execute:
+        checker_failed_count = sum(
+            1
+            for record in records
+            if record["checker_status"] in {"source_execution_failed", "candidate_execution_failed", "generation_failed"}
+        )
+    result_consistency_rate = (
+        float(checker_consistent_count / (checker_consistent_count + checker_inconsistent_count))
+        if (checker_consistent_count + checker_inconsistent_count)
+        else None
+    )
+    payload = {
+        "command": "formal-batch2a-sqlglot-no-opt-checker",
+        "ok": not issues and (not args.execute or all(record["checker_status"] in {"consistent", "inconsistent"} for record in records)),
+        "ran_at_utc": utc_now(),
+        "output_path": f"reports/formal_expansion/{output_name}",
+        "case_count": len(selected_case_ids),
+        "generation_success_count": generation_success_count,
+        "generation_failed_count": generation_failed_count,
+        "source_execution_success_count": source_execution_success_count,
+        "candidate_execution_success_count": candidate_execution_success_count,
+        "candidate_execution_failed_count": candidate_execution_failed_count,
+        "checker_consistent_count": checker_consistent_count,
+        "checker_inconsistent_count": checker_inconsistent_count,
+        "checker_failed_count": checker_failed_count,
+        "result_consistency_rate": result_consistency_rate,
+        "result_consistency_rate_status": (
+            "computed_from_report_local_exact_tsv"
+            if result_consistency_rate is not None
+            else "not_computed_execute_required"
+        ),
+        "row_count_match_count": row_count_match_count,
+        "row_count_mismatch_count": row_count_mismatch_count,
+        "comparison_to_sqlglot_optimize": {
+            "optimize_success_count": optimize_success_count,
+            "optimize_failed_count": optimize_failed_count,
+            "no_opt_generation_success_count": generation_success_count,
+            "no_opt_pg_execution_success_count": candidate_execution_success_count,
+            "no_opt_checker_consistent_count": checker_consistent_count,
+        },
+        "records": records,
+        "issues": issues,
+        "guardrails": {
+            "database_execution": "enabled_only_with_execute",
+            "sql_execution": "postgres_only_source_and_no_opt_candidate",
+            "sqlglot_optimize": "disabled",
+            "model_api_call": "disabled",
+            "mysql_execution": "disabled",
+            "spark_execution": "disabled",
+            "port_execution": "disabled",
+            "cons_execution": "disabled",
+            "speedup_scoring": "disabled",
+            "plan_collection": "disabled",
+            "case_artifact_write": "disabled",
+            "registry_writeback": "disabled",
+        },
+        "claim_boundary": "batch2a_sqlglot_no_opt_checker_separate_baseline_candidate_not_replacement",
+    }
+    write_formal_expansion_report(output_name, payload)
+    return print_and_exit(payload, 0 if payload["ok"] else 1)
+
+
 def cmd_formal_common_core_method_result_checker_run(args: argparse.Namespace) -> int:
     output_name = normalize_formal_common_core_output_name(args.output)
     valid_routes = {
@@ -26014,6 +26362,15 @@ def build_parser() -> argparse.ArgumentParser:
     )
     formal_batch2a_sqlglot_fallback_diagnostic_parser.add_argument("--execute", action="store_true", default=False)
     formal_batch2a_sqlglot_fallback_diagnostic_parser.set_defaults(func=cmd_formal_batch2a_sqlglot_fallback_diagnostic)
+
+    formal_batch2a_sqlglot_no_opt_checker_parser = subparsers.add_parser("formal-batch2a-sqlglot-no-opt-checker")
+    formal_batch2a_sqlglot_no_opt_checker_parser.add_argument("--case-id", action="append", default=[])
+    formal_batch2a_sqlglot_no_opt_checker_parser.add_argument(
+        "--output",
+        default="batch2a_sqlglot_no_opt_checker_v0.json",
+    )
+    formal_batch2a_sqlglot_no_opt_checker_parser.add_argument("--execute", action="store_true", default=False)
+    formal_batch2a_sqlglot_no_opt_checker_parser.set_defaults(func=cmd_formal_batch2a_sqlglot_no_opt_checker)
 
     formal_common_core_method_plan_collection_preflight_parser = subparsers.add_parser("formal-common-core-method-plan-collection-preflight")
     formal_common_core_method_plan_collection_preflight_parser.add_argument(
