@@ -746,6 +746,10 @@ def verieql_support_bootstrap_probe_case_ids() -> list[str]:
     return ["CONS_0007"]
 
 
+def verieql_support_wrapper_scaffold_case_ids() -> list[str]:
+    return ["CONS_0007"]
+
+
 def formal_common_core_case_ids() -> list[str]:
     return list(FORMAL_COMMON_CORE_CASES)
 
@@ -1787,6 +1791,107 @@ def validate_engine_values(rows: list[dict[str, str]], errors: list[dict[str, An
 
 def relative_to_root(path: Path) -> str:
     return str(path.relative_to(ROOT))
+
+
+def split_sql_top_level_commas(value: str) -> list[str]:
+    parts: list[str] = []
+    current: list[str] = []
+    depth = 0
+    for char in value:
+        if char == "(":
+            depth += 1
+        elif char == ")" and depth > 0:
+            depth -= 1
+        if char == "," and depth == 0:
+            piece = "".join(current).strip()
+            if piece:
+                parts.append(piece)
+            current = []
+            continue
+        current.append(char)
+    tail = "".join(current).strip()
+    if tail:
+        parts.append(tail)
+    return parts
+
+
+def verieql_normalize_type_token(type_token: str) -> str:
+    base = type_token.upper().split("(", 1)[0].strip()
+    type_map = {
+        "INTEGER": "INT",
+        "INT": "INT",
+        "BIGINT": "INT",
+        "SMALLINT": "INT",
+        "DECIMAL": "DECIMAL",
+        "NUMERIC": "DECIMAL",
+        "VARCHAR": "VARCHAR",
+        "CHAR": "VARCHAR",
+        "TEXT": "VARCHAR",
+        "BOOLEAN": "BOOLEAN",
+        "BOOL": "BOOLEAN",
+        "DATE": "DATE",
+        "TIMESTAMP": "TIMESTAMP",
+        "TIME": "TIME",
+        "REAL": "FLOAT",
+        "DOUBLE": "FLOAT",
+        "FLOAT": "FLOAT",
+    }
+    return type_map.get(base, base)
+
+
+def parse_simple_pg_ddl_to_verieql_schema(ddl_text: str) -> dict[str, Any]:
+    match = re.search(
+        r"CREATE\s+TABLE\s+([A-Za-z_][A-Za-z0-9_]*)\s*\((.*)\)\s*;?\s*$",
+        ddl_text.strip(),
+        flags=re.IGNORECASE | re.DOTALL,
+    )
+    if not match:
+        return {
+            "ok": False,
+            "schema_parse_status": "create_table_not_matched",
+            "table_name": "",
+            "schema": {},
+            "column_count": 0,
+            "unmodeled_constraints": [],
+        }
+
+    table_name = match.group(1)
+    body = match.group(2).strip()
+    column_defs = split_sql_top_level_commas(body)
+    schema_columns: dict[str, str] = {}
+    unmodeled_constraints: list[str] = []
+    constraint_prefixes = ("PRIMARY ", "FOREIGN ", "UNIQUE ", "CHECK ", "CONSTRAINT ")
+
+    for column_def in column_defs:
+        compact = column_def.strip()
+        if not compact:
+            continue
+        if compact.upper().startswith(constraint_prefixes):
+            unmodeled_constraints.append(compact)
+            continue
+        parts = compact.split(None, 2)
+        if len(parts) < 2:
+            return {
+                "ok": False,
+                "schema_parse_status": "column_definition_parse_failed",
+                "table_name": table_name.upper(),
+                "schema": {},
+                "column_count": 0,
+                "unmodeled_constraints": unmodeled_constraints,
+                "failed_column_definition": compact,
+            }
+        column_name = parts[0].strip('"')
+        type_token = parts[1]
+        schema_columns[column_name.upper()] = verieql_normalize_type_token(type_token)
+
+    return {
+        "ok": bool(schema_columns),
+        "schema_parse_status": "single_table_mapped" if schema_columns else "no_columns_mapped",
+        "table_name": table_name.upper(),
+        "schema": {table_name.upper(): schema_columns} if schema_columns else {},
+        "column_count": len(schema_columns),
+        "unmodeled_constraints": unmodeled_constraints,
+    }
 
 
 def resolve_repo_path(value: str) -> Path:
@@ -10061,6 +10166,184 @@ def cmd_formal_verieql_support_bootstrap_probe(args: argparse.Namespace) -> int:
         if repo_local_code_present and entrypoint_exists and timeout_cli_exists
         else "keep support-only backlog",
         "claim_boundary": "bootstrap_probe_only_not_verification_execution_not_support_verdict",
+    }
+    write_formal_expansion_report(output_name, payload)
+    return print_and_exit(payload, 0)
+
+
+def cmd_formal_verieql_support_wrapper_scaffold(args: argparse.Namespace) -> int:
+    output_name = normalize_formal_expansion_output_name(args.output)
+    selected_case_ids = [str(case_id).strip().upper() for case_id in (args.case_id or []) if str(case_id).strip()]
+    if not selected_case_ids:
+        selected_case_ids = verieql_support_wrapper_scaffold_case_ids()
+
+    timeout_policy = {
+        "timeout_seconds": 600,
+        "bound_size": 2,
+        "pair_scope": "source_positive_and_source_negative",
+    }
+    constraint_policy = "empty_or_explicitly_unmodeled_first_pass"
+    jsonl_output_path = FORMAL_EXPANSION_REPORT_DIR / "verieql_support" / "cons_0007_pairs.jsonl"
+
+    records: list[dict[str, Any]] = []
+    jsonl_records: list[dict[str, Any]] = []
+    blockers: Counter[str] = Counter()
+
+    for case_id in selected_case_ids:
+        inferred = case_root_for_case_id(case_id)
+        if inferred is None:
+            blockers["case_not_resolved"] += 1
+            records.append(
+                {
+                    "case_id": case_id,
+                    "runnable_now": False,
+                    "schema_parse_status": "case_not_resolved",
+                    "source_positive_mapped": False,
+                    "source_negative_mapped": False,
+                    "verifier_execution_status": "not_run",
+                    "exact_blockers": ["case_not_resolved"],
+                }
+            )
+            continue
+
+        pool, case_root = inferred
+        source_sql_path = case_root / "source.sql"
+        positive_sql_path = case_root / "rewrite_pos_01.sql"
+        negative_sql_path = case_root / "rewrite_neg_01.sql"
+        ddl_path = case_root / "schema" / "ddl_pg.sql"
+
+        source_exists = source_sql_path.is_file()
+        positive_exists = positive_sql_path.is_file()
+        negative_exists = negative_sql_path.is_file()
+        ddl_exists = ddl_path.is_file()
+
+        source_sql = source_sql_path.read_text(encoding="utf-8").strip() if source_exists else ""
+        positive_sql = positive_sql_path.read_text(encoding="utf-8").strip() if positive_exists else ""
+        negative_sql = negative_sql_path.read_text(encoding="utf-8").strip() if negative_exists else ""
+        ddl_text = ddl_path.read_text(encoding="utf-8") if ddl_exists else ""
+
+        schema_parse = (
+            parse_simple_pg_ddl_to_verieql_schema(ddl_text)
+            if ddl_exists
+            else {
+                "ok": False,
+                "schema_parse_status": "missing_ddl_pg",
+                "table_name": "",
+                "schema": {},
+                "column_count": 0,
+                "unmodeled_constraints": [],
+            }
+        )
+
+        source_positive_mapped = bool(source_exists and positive_exists and schema_parse["ok"])
+        source_negative_mapped = bool(source_exists and negative_exists and schema_parse["ok"])
+
+        exact_blockers: list[str] = []
+        if not source_exists:
+            exact_blockers.append("missing_source_sql")
+        if not positive_exists:
+            exact_blockers.append("missing_positive_sql")
+        if not negative_exists:
+            exact_blockers.append("missing_negative_sql")
+        if not ddl_exists:
+            exact_blockers.append("missing_ddl_pg")
+        if not schema_parse["ok"]:
+            exact_blockers.append("schema_parse_failed")
+        exact_blockers.extend(
+            [
+                "dependency_materialization_not_attempted",
+                "verieql_verification_not_run",
+            ]
+        )
+        for blocker in exact_blockers:
+            blockers[blocker] += 1
+
+        pair_specs = [
+            ("source_positive", positive_sql_path, positive_sql, source_positive_mapped),
+            ("source_negative", negative_sql_path, negative_sql, source_negative_mapped),
+        ]
+        for index, (pair_role, comparator_path, comparator_sql, mapped) in enumerate(pair_specs, start=1):
+            if not mapped:
+                continue
+            jsonl_records.append(
+                {
+                    "index": index,
+                    "schema": schema_parse["schema"],
+                    "constraint": [],
+                    "pair": [source_sql, comparator_sql],
+                }
+            )
+            records.append(
+                {
+                    "case_id": case_id,
+                    "pool": pool,
+                    "pair_role": pair_role,
+                    "source_sql_path": relative_to_root(source_sql_path),
+                    "comparator_sql_path": relative_to_root(comparator_path),
+                    "ddl_path": relative_to_root(ddl_path),
+                    "schema_parse_status": schema_parse["schema_parse_status"],
+                    "schema_column_count": schema_parse["column_count"],
+                    "schema_object": schema_parse["schema"],
+                    "unmodeled_constraints": schema_parse["unmodeled_constraints"],
+                    "constraint_policy": constraint_policy,
+                    "timeout_policy": timeout_policy,
+                    "source_positive_mapped": source_positive_mapped,
+                    "source_negative_mapped": source_negative_mapped,
+                    "pair_record_ready": True,
+                    "verifier_execution_status": "not_run",
+                    "emitted_jsonl_record_index": index if args.execute else None,
+                    "exact_blockers_to_actual_verification": exact_blockers,
+                    "claim_boundary": "verieql_wrapper_scaffold_only_no_verification",
+                }
+            )
+
+        if not jsonl_records:
+            records.append(
+                {
+                    "case_id": case_id,
+                    "pool": pool,
+                    "pair_role": "none",
+                    "source_sql_path": relative_to_root(source_sql_path),
+                    "comparator_sql_path": "",
+                    "ddl_path": relative_to_root(ddl_path),
+                    "schema_parse_status": schema_parse["schema_parse_status"],
+                    "schema_column_count": schema_parse["column_count"],
+                    "schema_object": schema_parse["schema"],
+                    "unmodeled_constraints": schema_parse["unmodeled_constraints"],
+                    "constraint_policy": constraint_policy,
+                    "timeout_policy": timeout_policy,
+                    "source_positive_mapped": source_positive_mapped,
+                    "source_negative_mapped": source_negative_mapped,
+                    "pair_record_ready": False,
+                    "verifier_execution_status": "not_run",
+                    "emitted_jsonl_record_index": None,
+                    "exact_blockers_to_actual_verification": exact_blockers,
+                    "claim_boundary": "verieql_wrapper_scaffold_only_no_verification",
+                }
+            )
+
+    if args.execute:
+        jsonl_output_path.parent.mkdir(parents=True, exist_ok=True)
+        jsonl_output_path.write_text(
+            "".join(json.dumps(record, ensure_ascii=False) + "\n" for record in jsonl_records),
+            encoding="utf-8",
+        )
+
+    payload = {
+        "command": "formal-verieql-support-wrapper-scaffold",
+        "ok": True,
+        "ran_at_utc": utc_now(),
+        "case_ids": selected_case_ids,
+        "pair_count": len(jsonl_records),
+        "wrapper_jsonlines_path": relative_to_root(jsonl_output_path),
+        "wrapper_jsonlines_emitted": bool(args.execute),
+        "schema_mapping_result": records[0]["schema_parse_status"] if records else "no_records",
+        "constraint_policy": constraint_policy,
+        "timeout_policy": timeout_policy,
+        "verifier_execution_status": "not_run",
+        "records": records,
+        "blockers_by_type": dict(sorted(blockers.items())),
+        "claim_boundary": "verieql_wrapper_scaffold_only_no_verification",
     }
     write_formal_expansion_report(output_name, payload)
     return print_and_exit(payload, 0)
@@ -36098,6 +36381,15 @@ def build_parser() -> argparse.ArgumentParser:
         default="reports/formal_expansion/verieql_support_bootstrap_probe_v0.json",
     )
     formal_verieql_support_bootstrap_probe_parser.set_defaults(func=cmd_formal_verieql_support_bootstrap_probe)
+
+    formal_verieql_support_wrapper_scaffold_parser = subparsers.add_parser("formal-verieql-support-wrapper-scaffold")
+    formal_verieql_support_wrapper_scaffold_parser.add_argument("--case-id", action="append", default=[])
+    formal_verieql_support_wrapper_scaffold_parser.add_argument(
+        "--output",
+        default="reports/formal_expansion/verieql_support_wrapper_scaffold_v0.json",
+    )
+    formal_verieql_support_wrapper_scaffold_parser.add_argument("--execute", action="store_true", default=False)
+    formal_verieql_support_wrapper_scaffold_parser.set_defaults(func=cmd_formal_verieql_support_wrapper_scaffold)
 
     formal_expanded_perf_direct_llm_preflight_parser = subparsers.add_parser("formal-expanded-perf-direct-llm-preflight")
     formal_expanded_perf_direct_llm_preflight_parser.add_argument(
