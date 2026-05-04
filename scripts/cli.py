@@ -10011,6 +10011,483 @@ def cmd_formal_port_results_snapshot(args: argparse.Namespace) -> int:
     return print_and_exit(payload, 0 if payload["ok"] else 1)
 
 
+def load_port_0012_case_spec_for_targeted_canary() -> dict[str, Any]:
+    config_path = ROOT / "docs" / "_scratch" / "baseline_smoke_common_core_v0.json"
+    if config_path.is_file():
+        try:
+            config = load_json(config_path)
+            for case_spec in config.get("cases", []):
+                if case_spec.get("case_id") == "PORT_0012":
+                    return case_spec
+        except Exception:
+            pass
+    return {
+        "case_id": "PORT_0012",
+        "pool": "portability",
+        "why_selected": "dense PostgreSQL-reference datetime/type case; useful same-dialect and LLM smoke target",
+        "caveat": "still PARROT-derived; staged-not-admitted",
+        "smoke_role": "sqlglot_candidate",
+    }
+
+
+def formal_port_targeted_canary_report_name(kind: str) -> str:
+    name_map = {
+        "call": "llm_translate_port_0012_targeted_call_v0.json",
+        "pg": "llm_translate_port_0012_targeted_pg_v0.json",
+        "summary": "llm_translate_port_0012_targeted_summary_v0.json",
+        "refused": "llm_translate_port_0012_targeted_execute_refused_v0.json",
+    }
+    if kind not in name_map:
+        raise ValueError(f"unsupported formal port targeted canary report kind: {kind}")
+    return name_map[kind]
+
+
+def cmd_formal_port_llm_translate_targeted_canary(args: argparse.Namespace) -> int:
+    output_dir = resolve_repo_path(args.output_dir)
+    case_id = args.case_id or "PORT_0012"
+    route = "LLM_DIRECT_TRANSLATE"
+    target_dialect = "postgres"
+    summary_name = formal_port_targeted_canary_report_name("summary")
+    call_name = formal_port_targeted_canary_report_name("call")
+    pg_name = formal_port_targeted_canary_report_name("pg")
+    refused_name = formal_port_targeted_canary_report_name("refused")
+
+    if case_id != "PORT_0012":
+        payload = {
+            "command": "formal-port-llm-translate-targeted-canary",
+            "ok": False,
+            "ran_at_utc": utc_now(),
+            "output_path": str((output_dir / refused_name).relative_to(ROOT)) if (output_dir / refused_name).is_relative_to(ROOT) else str(output_dir / refused_name),
+            "case_id": case_id,
+            "route": route,
+            "claim_boundary": "targeted_port_0012_llm_translate_canary_not_translation_correctness",
+            "message": "This command is restricted to PORT_0012 only.",
+            "issues": [
+                {
+                    "type": "unsupported_case_id",
+                    "message": "formal-port-llm-translate-targeted-canary only supports --case-id PORT_0012",
+                }
+            ],
+            "guardrails": {
+                "database_execution": "enabled_only_with_execute",
+                "sql_execution": "disabled",
+                "model_api_call": "enabled_only_with_execute",
+                "sqlglot_generation": "disabled",
+                "checker_execution": "disabled",
+                "plan_collection": "disabled",
+                "speedup_scoring": "disabled",
+                "case_artifact_write": "disabled",
+                "registry_writeback": "disabled",
+            },
+        }
+        write_json_report_to_dir(output_dir, refused_name, payload)
+        return print_and_exit(payload, 1)
+
+    case_spec = load_port_0012_case_spec_for_targeted_canary()
+    preflight_report = load_json_if_present(BASELINE_SMOKE_REPORT_DIR / "sqlglot_transpile_preflight_v0.json") or {}
+    execution_report = load_json_if_present(BASELINE_SMOKE_REPORT_DIR / "sqlglot_transpile_pg_canary_v0.json") or {}
+    preflight_record = next((row for row in preflight_report.get("records", []) if row.get("case_id") == case_id), {})
+    execution_record = next((row for row in execution_report.get("records", []) if row.get("case_id") == case_id), {})
+    prompt_row = build_llm_translate_prompt_package(
+        case_spec,
+        target_dialect=target_dialect,
+        model_label=args.model_label,
+        preflight_record=preflight_record,
+        execution_record=execution_record,
+    )
+    endpoint_config = resolve_llm_endpoint_config()
+    validation_schema = native_identity_validation_schema(case_id, case_spec["pool"])
+    call_payload: dict[str, Any]
+    pg_payload: dict[str, Any]
+    summary_payload: dict[str, Any]
+
+    if not args.execute:
+        call_record = {
+            "baseline_id": route,
+            "case_id": case_id,
+            "pool": case_spec["pool"],
+            "source_dialect": prompt_row["source_dialect"],
+            "target_dialect": target_dialect,
+            "execution_mode": "targeted_prompt_dry_run",
+            "model_label": args.model_label,
+            "provider_mode": endpoint_config["provider_mode"],
+            "prompt_hash": prompt_row["prompt_hash_sha256"],
+            "prompt_character_count": prompt_row["prompt_character_count"],
+            "source_sql_path": prompt_row["source_sql_path"],
+            "source_sql_exists": prompt_row["source_sql_exists"],
+            "model_call_attempted": False,
+            "model_call_status": "not_requested",
+            "extracted_sql_status": "not_available",
+            "extracted_sql_text": "",
+            "token_usage_input": None,
+            "token_usage_output": None,
+            "token_usage_total": None,
+            "failure_category": "none" if prompt_row["prompt_package_status"] == "ready" else prompt_row["prompt_package_status"],
+            "error_message": "",
+            "artifact_claim_boundary": "targeted_port_0012_llm_translate_prompt_only_no_execution",
+            "notes": prompt_row["notes"],
+        }
+        call_payload = {
+            "command": "formal-port-llm-translate-targeted-canary",
+            "ok": prompt_row["prompt_package_status"] == "ready" and prompt_row["source_sql_exists"],
+            "ran_at_utc": utc_now(),
+            "output_path": f"reports/formal_port/{call_name}",
+            "case_id": case_id,
+            "route": route,
+            "model_call_attempted": False,
+            "model_call_status": "not_requested",
+            "extraction_status": "not_available",
+            "records": [call_record],
+            "issues": [],
+            "guardrails": {
+                "database_execution": "disabled",
+                "sql_execution": "disabled",
+                "model_api_call": "enabled_only_with_execute",
+                "sqlglot_generation": "disabled",
+                "checker_execution": "disabled",
+                "plan_collection": "disabled",
+                "speedup_scoring": "disabled",
+                "case_artifact_write": "disabled",
+                "registry_writeback": "disabled",
+            },
+            "claim_boundary": "targeted_port_0012_llm_translate_canary_not_translation_correctness",
+        }
+        pg_record = build_llm_translate_pg_record(
+            case_id=case_id,
+            pool=case_spec["pool"],
+            source_dialect=prompt_row["source_dialect"],
+            target_dialect=target_dialect,
+            input_report_path=f"reports/formal_port/{call_name}",
+            model_label=args.model_label,
+            provider_mode=endpoint_config["provider_mode"],
+            token_usage_total=None,
+            candidate_sql_source="not_available",
+            execution_mode="dry_run",
+            execution_status="not_requested",
+            validation_schema=validation_schema,
+            search_path_after_set="",
+            artifact_claim_boundary="targeted_port_0012_llm_translate_prompt_only_no_execution",
+            notes=["dry-run only; no model call and no PostgreSQL execution attempted"],
+        )
+        pg_payload = {
+            "command": "formal-port-llm-translate-targeted-canary",
+            "ok": True,
+            "ran_at_utc": utc_now(),
+            "output_path": f"reports/formal_port/{pg_name}",
+            "case_id": case_id,
+            "route": route,
+            "pg_execution_status": "not_requested",
+            "records": [pg_record],
+            "issues": [],
+            "guardrails": {
+                "database_execution": "enabled_only_with_execute",
+                "sql_execution": "disabled",
+                "model_api_call": "disabled",
+                "sqlglot_generation": "disabled",
+                "checker_execution": "disabled",
+                "plan_collection": "disabled",
+                "speedup_scoring": "disabled",
+                "case_artifact_write": "disabled",
+                "registry_writeback": "disabled",
+            },
+            "claim_boundary": "targeted_port_0012_llm_translate_canary_not_translation_correctness",
+        }
+        summary_payload = {
+            "ok": True,
+            "case_id": case_id,
+            "route": route,
+            "model_call_attempted": False,
+            "model_call_status": "not_requested",
+            "extraction_status": "not_available",
+            "pg_execution_status": "not_requested",
+            "row_count": None,
+            "runtime_ms": None,
+            "failure_category": "none",
+            "token_usage_total": None,
+            "comparison_to_sqlglot": {
+                "sqlglot_pg_execution_status": "failed",
+                "sqlglot_failure_category": "InvalidDatetimeFormat",
+                "llm_targeted_execution_status": "not_requested",
+            },
+            "claim_boundary": "targeted_port_0012_llm_translate_canary_not_translation_correctness",
+        }
+    else:
+        api_key_visible = endpoint_config["api_key_visible"]
+        try:
+            importlib.import_module("openai")
+            client_package_available = True
+        except ModuleNotFoundError:
+            client_package_available = False
+
+        raw_text = ""
+        token_usage_input = None
+        token_usage_output = None
+        token_usage_total = None
+        extracted_sql_status = "not_available"
+        extracted_sql_text = ""
+        model_call_attempted = False
+        model_call_status = "not_requested"
+        call_failure_category = "none"
+        call_error_message = ""
+
+        if prompt_row["prompt_package_status"] != "ready" or not prompt_row["source_sql_exists"]:
+            model_call_status = "blocked"
+            call_failure_category = prompt_row["prompt_package_status"]
+        elif not api_key_visible:
+            model_call_status = "env_blocked"
+            call_failure_category = "missing_api_key"
+        elif not client_package_available:
+            model_call_status = "client_unavailable"
+            call_failure_category = "client_unavailable"
+            call_error_message = "openai client package is unavailable"
+        else:
+            prompt_package = json.loads(prompt_row["prompt_blob"])
+            openai_mod = importlib.import_module("openai")
+            OpenAI = getattr(openai_mod, "OpenAI", None)
+            if OpenAI is None:
+                model_call_status = "client_unavailable"
+                call_failure_category = "client_unavailable"
+                call_error_message = "openai.OpenAI client is unavailable"
+            else:
+                client_kwargs = {"api_key": endpoint_config["api_key"]}
+                if endpoint_config["base_url_visible"]:
+                    client_kwargs["base_url"] = endpoint_config["base_url"]
+                client = OpenAI(**client_kwargs)
+                try:
+                    model_call_attempted = True
+                    response = client.chat.completions.create(
+                        model=args.model_label,
+                        messages=[
+                            {"role": "system", "content": prompt_package["system_message"]},
+                            {"role": "user", "content": prompt_package["user_message"]},
+                        ],
+                        temperature=args.temperature,
+                        max_tokens=args.max_output_tokens,
+                    )
+                    message = response.choices[0].message.content if response.choices else ""
+                    raw_text = (message or "").strip()
+                    extracted_sql_status, extracted_sql_text = extract_sql_like_output(raw_text)
+                    model_call_status = "success"
+                    usage = getattr(response, "usage", None)
+                    if usage is not None:
+                        token_usage_input = getattr(usage, "prompt_tokens", None)
+                        token_usage_output = getattr(usage, "completion_tokens", None)
+                        token_usage_total = getattr(usage, "total_tokens", None)
+                except Exception as exc:
+                    model_call_status = "failed"
+                    call_failure_category = type(exc).__name__
+                    call_error_message = str(exc)
+
+        call_record = {
+            "baseline_id": route,
+            "case_id": case_id,
+            "pool": case_spec["pool"],
+            "source_dialect": prompt_row["source_dialect"],
+            "target_dialect": target_dialect,
+            "execution_mode": "targeted_llm_translate_call",
+            "model_label": args.model_label,
+            "provider_mode": endpoint_config["provider_mode"] if api_key_visible else "env_blocked",
+            "prompt_hash": prompt_row["prompt_hash_sha256"],
+            "source_sql_path": prompt_row["source_sql_path"],
+            "source_sql_exists": prompt_row["source_sql_exists"],
+            "model_call_attempted": model_call_attempted,
+            "model_call_status": model_call_status,
+            "token_usage_input": token_usage_input,
+            "token_usage_output": token_usage_output,
+            "token_usage_total": token_usage_total,
+            "extracted_sql_status": extracted_sql_status,
+            "extracted_sql_text": extracted_sql_text,
+            "raw_output_text": raw_text,
+            "failure_category": call_failure_category,
+            "error_message": call_error_message,
+            "artifact_claim_boundary": "targeted_port_0012_llm_translate_canary_not_translation_correctness",
+            "notes": prompt_row["notes"],
+        }
+        call_payload = {
+            "command": "formal-port-llm-translate-targeted-canary",
+            "ok": model_call_status == "success" and extracted_sql_status == "extracted",
+            "ran_at_utc": utc_now(),
+            "output_path": f"reports/formal_port/{call_name}",
+            "case_id": case_id,
+            "route": route,
+            "model_call_attempted": model_call_attempted,
+            "model_call_status": model_call_status,
+            "extraction_status": extracted_sql_status,
+            "records": [call_record],
+            "issues": [],
+            "guardrails": {
+                "database_execution": "disabled",
+                "sql_execution": "disabled",
+                "model_api_call": "enabled_only_with_execute",
+                "sqlglot_generation": "disabled",
+                "checker_execution": "disabled",
+                "plan_collection": "disabled",
+                "speedup_scoring": "disabled",
+                "case_artifact_write": "disabled",
+                "registry_writeback": "disabled",
+            },
+            "claim_boundary": "targeted_port_0012_llm_translate_canary_not_translation_correctness",
+        }
+
+        pg_execution_status = "not_attempted"
+        row_count = None
+        runtime_ms = None
+        pg_failure_category = "none"
+        pg_error_message = ""
+        search_path_after_set = ""
+        candidate_sql_source = "not_available"
+
+        if model_call_status == "success" and extracted_sql_status == "extracted":
+            candidate_sql = extracted_sql_text.strip()
+            candidate_sql_source = "extracted_sql_text"
+            env_visibility = pg_env_visibility()
+            required_env_visible = all(env_visibility[name] for name in ["PGHOST", "PGPORT", "PGDATABASE", "PGUSER"])
+            if not required_env_visible:
+                pg_execution_status = "env_blocked"
+                pg_failure_category = "missing_pg_env"
+            else:
+                try:
+                    psycopg = importlib.import_module("psycopg")
+                except ModuleNotFoundError:
+                    psycopg = None
+                    pg_execution_status = "failed"
+                    pg_failure_category = "psycopg_unavailable"
+                    pg_error_message = "psycopg is unavailable"
+                if psycopg is not None:
+                    start = time.perf_counter()
+                    try:
+                        with psycopg.connect(
+                            host=os.environ["PGHOST"],
+                            port=os.environ["PGPORT"],
+                            dbname=os.environ["PGDATABASE"],
+                            user=os.environ["PGUSER"],
+                            password=os.environ.get("PGPASSWORD"),
+                            options=(
+                                f"-c statement_timeout={args.statement_timeout_ms} "
+                                "-c default_transaction_read_only=on"
+                            ),
+                        ) as conn:
+                            with conn.cursor() as cur:
+                                cur.execute("SELECT to_regnamespace(%s)", (validation_schema,))
+                                schema_name = cur.fetchone()[0]
+                                if not schema_name:
+                                    raise RuntimeError(f"validation schema not found: {validation_schema}")
+                                cur.execute(
+                                    psycopg.sql.SQL("SET search_path TO {}, public").format(
+                                        psycopg.sql.Identifier(validation_schema)
+                                    )
+                                )
+                                cur.execute("SHOW search_path")
+                                search_path_row = cur.fetchone()
+                                search_path_after_set = str(search_path_row[0]) if search_path_row else ""
+                                cur.execute(candidate_sql)
+                                if cur.description is not None:
+                                    rows = cur.fetchall()
+                                    row_count = len(rows)
+                                else:
+                                    row_count = cur.rowcount if cur.rowcount >= 0 else None
+                        runtime_ms = int((time.perf_counter() - start) * 1000)
+                        pg_execution_status = "success"
+                    except Exception as exc:
+                        runtime_ms = int((time.perf_counter() - start) * 1000)
+                        pg_execution_status = "failed"
+                        pg_failure_category = type(exc).__name__
+                        pg_error_message = str(exc)
+        else:
+            pg_failure_category = (
+                call_failure_category
+                if model_call_status != "success"
+                else "extracted_sql_not_ready"
+            )
+
+        pg_record = build_llm_translate_pg_record(
+            case_id=case_id,
+            pool=case_spec["pool"],
+            source_dialect=prompt_row["source_dialect"],
+            target_dialect=target_dialect,
+            input_report_path=f"reports/formal_port/{call_name}",
+            model_label=args.model_label,
+            provider_mode=endpoint_config["provider_mode"] if api_key_visible else "env_blocked",
+            token_usage_total=token_usage_total,
+            candidate_sql_source=candidate_sql_source,
+            execution_mode="targeted_llm_translate_pg_execute",
+            execution_status=pg_execution_status,
+            validation_schema=validation_schema,
+            search_path_after_set=search_path_after_set,
+            artifact_claim_boundary="targeted_port_0012_llm_translate_canary_not_translation_correctness",
+            notes=["PostgreSQL-only targeted stress canary", "no result rows persisted", "no checker run"],
+            row_count=row_count,
+            runtime_ms=runtime_ms,
+            failure_category=pg_failure_category,
+            error_message=pg_error_message,
+        )
+        pg_payload = {
+            "command": "formal-port-llm-translate-targeted-canary",
+            "ok": pg_execution_status == "success",
+            "ran_at_utc": utc_now(),
+            "output_path": f"reports/formal_port/{pg_name}",
+            "case_id": case_id,
+            "route": route,
+            "pg_execution_status": pg_execution_status,
+            "records": [pg_record],
+            "issues": [],
+            "guardrails": {
+                "database_execution": "enabled_only_with_execute",
+                "sql_execution": "extracted_sql_only",
+                "model_api_call": "disabled",
+                "sqlglot_generation": "disabled",
+                "checker_execution": "disabled",
+                "plan_collection": "disabled",
+                "speedup_scoring": "disabled",
+                "case_artifact_write": "disabled",
+                "registry_writeback": "disabled",
+            },
+            "claim_boundary": "targeted_port_0012_llm_translate_canary_not_translation_correctness",
+        }
+        summary_payload = {
+            "ok": model_call_status == "success" and pg_execution_status == "success",
+            "case_id": case_id,
+            "route": route,
+            "model_call_attempted": model_call_attempted,
+            "model_call_status": model_call_status,
+            "extraction_status": extracted_sql_status,
+            "pg_execution_status": pg_execution_status,
+            "row_count": row_count,
+            "runtime_ms": runtime_ms,
+            "failure_category": pg_failure_category if pg_execution_status != "success" else call_failure_category,
+            "token_usage_total": token_usage_total,
+            "comparison_to_sqlglot": {
+                "sqlglot_pg_execution_status": "failed",
+                "sqlglot_failure_category": "InvalidDatetimeFormat",
+                "llm_targeted_execution_status": pg_execution_status,
+            },
+            "claim_boundary": "targeted_port_0012_llm_translate_canary_not_translation_correctness",
+        }
+
+    write_json_report_to_dir(output_dir, call_name, call_payload)
+    write_json_report_to_dir(output_dir, pg_name, pg_payload)
+    write_json_report_to_dir(
+        output_dir,
+        summary_name,
+        {
+            "command": "formal-port-llm-translate-targeted-canary",
+            "ran_at_utc": utc_now(),
+            "output_path": f"reports/formal_port/{summary_name}",
+            **summary_payload,
+        },
+    )
+    return print_and_exit(
+        {
+            "command": "formal-port-llm-translate-targeted-canary",
+            "ok": summary_payload["ok"],
+            "ran_at_utc": utc_now(),
+            "output_path": f"reports/formal_port/{summary_name}",
+            **summary_payload,
+        },
+        0 if summary_payload["ok"] or not args.execute else 1,
+    )
+
+
 def cmd_formal_common_core_method_consistency_scoring(args: argparse.Namespace) -> int:
     output_name = normalize_formal_common_core_output_name(args.output)
     if args.execute:
@@ -22597,6 +23074,16 @@ def build_parser() -> argparse.ArgumentParser:
     )
     formal_port_results_snapshot_parser.add_argument("--execute", action="store_true", default=False)
     formal_port_results_snapshot_parser.set_defaults(func=cmd_formal_port_results_snapshot)
+
+    formal_port_llm_targeted_canary_parser = subparsers.add_parser("formal-port-llm-translate-targeted-canary")
+    formal_port_llm_targeted_canary_parser.add_argument("--case-id", default="PORT_0012")
+    formal_port_llm_targeted_canary_parser.add_argument("--execute", action="store_true", default=False)
+    formal_port_llm_targeted_canary_parser.add_argument("--output-dir", default="reports/formal_port")
+    formal_port_llm_targeted_canary_parser.add_argument("--model-label", default="gpt-5.2")
+    formal_port_llm_targeted_canary_parser.add_argument("--max-output-tokens", type=int, default=2048)
+    formal_port_llm_targeted_canary_parser.add_argument("--temperature", type=float, default=0.0)
+    formal_port_llm_targeted_canary_parser.add_argument("--statement-timeout-ms", type=int, default=30000)
+    formal_port_llm_targeted_canary_parser.set_defaults(func=cmd_formal_port_llm_translate_targeted_canary)
 
     formal_common_core_method_consistency_scoring_parser = subparsers.add_parser("formal-common-core-method-consistency-scoring")
     formal_common_core_method_consistency_scoring_parser.add_argument(

@@ -25,7 +25,11 @@ Reports and references used:
 - `reports/baseline_smoke/llm_direct_translate_pg_port_0022_v0.json`
 - `reports/baseline_smoke/llm_direct_translate_summary_port_0022_v0.json`
 - `reports/baseline_smoke/llm_direct_translate_2case_rollup_v0.json`
+- `reports/formal_port/llm_translate_port_0012_targeted_call_v0.json`
+- `reports/formal_port/llm_translate_port_0012_targeted_pg_v0.json`
+- `reports/formal_port/llm_translate_port_0012_targeted_summary_v0.json`
 - `docs/_scratch/PORT_0012_FAILURE_ANALYSIS_PACKET_v0.md`
+- `docs/_scratch/PORT_0012_LLM_TRANSLATE_TARGETED_CANARY_v0.md`
 - `docs/_scratch/PAPER_EXPERIMENT_DENOMINATOR_FREEZE_PLAN_v0.md`
 - `reports/formal_port/port_current_results_snapshot_v0.json`
 
@@ -76,8 +80,12 @@ Current LLM translate bounded snapshot:
 - total token usage:
   - `912`
 - `PORT_0012`:
-  - prompt-ready
-  - held out of the clean canary subset
+  - prompt-ready in the earlier bounded smoke route
+  - targeted canary command now exists
+  - latest targeted canary execute-path result: `env_blocked`
+  - no model call
+  - no extracted SQL
+  - no PostgreSQL execution
 
 Interpretation:
 
@@ -103,6 +111,11 @@ Current `PORT_0012` status:
   - portability translation failure
 - LLM prompt status:
   - ready
+- targeted LLM canary:
+  - attempted at command level
+  - blocked by missing model/API env
+  - `model_call_status=env_blocked`
+  - `pg_execution_status=not_attempted`
 - clean subset inclusion:
   - false
 
@@ -115,7 +128,9 @@ Current RQ3-facing interpretation:
   - one concrete failure remains on `PORT_0012`
 - LLM Translate:
   - clean `2`-case execution evidence exists on `PORT_0004` and `PORT_0022`
-  - `PORT_0012` remains intentionally outside the clean denominator
+  - a targeted `PORT_0012` Direct LLM canary path now exists
+  - the latest targeted run is blocked by missing model/API env
+  - `PORT_0012` therefore remains intentionally outside the clean denominator
 
 This means:
 
@@ -134,7 +149,7 @@ This means:
 
 ## 9. Recommended Next Action
 
-- decide whether to run a targeted `PORT_0012` LLM translate canary later, or keep the formal PORT denominator at the clean `2`-case subset for the first formal packet
+- rerun the targeted `PORT_0012` LLM translate canary only after model/API environment is available in the same execution shell, or keep the formal PORT denominator at the clean `2`-case subset for the first formal packet
 
 ## 10. Verification / Non-Modification Note
 
