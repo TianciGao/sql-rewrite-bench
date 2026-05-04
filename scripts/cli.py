@@ -14,6 +14,7 @@ import sys
 import time
 from collections import Counter
 from datetime import datetime, timezone
+from decimal import Decimal, InvalidOperation
 from pathlib import Path
 from typing import Any
 from urllib.parse import urlparse
@@ -11049,6 +11050,116 @@ def materialize_query_to_tsv(cur: Any, sql_text: str, output_path: Path) -> tupl
     return row_count, byte_count
 
 
+def read_tsv_lines_if_present(path: Path) -> list[str] | None:
+    if not path.is_file():
+        return None
+    text = path.read_text(encoding="utf-8")
+    normalized_text = text.replace("\r\n", "\n").replace("\r", "\n")
+    if not normalized_text:
+        return []
+    return normalized_text.splitlines()
+
+
+def normalize_tsv_cell(cell: str) -> str:
+    stripped = cell.rstrip()
+    if stripped == r"\N":
+        return stripped
+    if stripped == "":
+        return ""
+    numeric_candidate = stripped
+    if re.fullmatch(r"[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?", numeric_candidate):
+        try:
+            value = Decimal(numeric_candidate)
+        except InvalidOperation:
+            return stripped
+        normalized = format(value.normalize(), "f")
+        if "." in normalized:
+            normalized = normalized.rstrip("0").rstrip(".")
+        if normalized == "-0":
+            normalized = "0"
+        return normalized
+    return stripped
+
+
+def normalize_tsv_lines(lines: list[str]) -> list[str]:
+    normalized_rows: list[str] = []
+    for line in lines:
+        normalized_line = line.rstrip().replace("\r\n", "\n").replace("\r", "\n")
+        cells = normalized_line.split("\t")
+        normalized_rows.append("\t".join(normalize_tsv_cell(cell) for cell in cells))
+    if len(normalized_rows) > 1:
+        normalized_rows = sorted(normalized_rows)
+    return normalized_rows
+
+
+def normalize_tsv_lines_without_sort(lines: list[str]) -> list[str]:
+    normalized_rows: list[str] = []
+    for line in lines:
+        normalized_line = line.rstrip().replace("\r\n", "\n").replace("\r", "\n")
+        cells = normalized_line.split("\t")
+        normalized_rows.append("\t".join(normalize_tsv_cell(cell) for cell in cells))
+    return normalized_rows
+
+
+def diff_sample(left_lines: list[str] | None, right_lines: list[str] | None, cap: int = 160) -> dict[str, Any]:
+    left = left_lines or []
+    right = right_lines or []
+    first_diff_index = None
+    for index, (left_line, right_line) in enumerate(zip(left, right)):
+        if left_line != right_line:
+            first_diff_index = index
+            break
+    if first_diff_index is None and len(left) != len(right):
+        first_diff_index = min(len(left), len(right))
+    if first_diff_index is None:
+        return {"first_diff_row": None, "left_sample": "", "right_sample": ""}
+    left_sample = left[first_diff_index] if first_diff_index < len(left) else "<missing>"
+    right_sample = right[first_diff_index] if first_diff_index < len(right) else "<missing>"
+    return {
+        "first_diff_row": first_diff_index + 1,
+        "left_sample": left_sample[:cap],
+        "right_sample": right_sample[:cap],
+    }
+
+
+def guess_tsv_mismatch_reason(
+    exact_equal: bool,
+    normalized_equal: bool,
+    raw_left_lines: list[str] | None,
+    raw_right_lines: list[str] | None,
+) -> str:
+    if exact_equal:
+        return "exact_match"
+    if not normalized_equal:
+        return "true_value_difference_unknown"
+    left = raw_left_lines or []
+    right = raw_right_lines or []
+    if [line.rstrip() for line in left] == [line.rstrip() for line in right]:
+        return "whitespace_only"
+    if normalize_tsv_lines_without_sort(left) == normalize_tsv_lines_without_sort(right):
+        return "numeric_formatting_only"
+    return "ordering_or_formatting_only"
+
+
+def inspect_port_reference_sql_issue(case_id: str) -> dict[str, Any]:
+    reference_sql_path = PORT_CASE_ROOT / case_id / "rewrite_pos_01.sql"
+    sql_text = reference_sql_path.read_text(encoding="utf-8") if reference_sql_path.is_file() else ""
+    blockers: list[str] = []
+    if re.search(r"\bAS\s+DOUBLE\b(?!\s+PRECISION\b)", sql_text, re.IGNORECASE):
+        blockers.append("uses_AS_DOUBLE_cast_not_supported_by_postgres")
+    if re.search(r"\bYEAR\s*\(", sql_text, re.IGNORECASE):
+        blockers.append("uses_YEAR_function_not_native_postgres")
+    classification = "none"
+    if blockers:
+        classification = "reference_sql_not_pg_compatible"
+    return {
+        "reference_sql_path": relative_to_root(reference_sql_path),
+        "reference_sql_exists": reference_sql_path.is_file(),
+        "reference_sql_issue_classification": classification,
+        "reference_sql_issue_signals": blockers,
+    }
+
+
 def cmd_formal_port_pg_translation_consistency_preflight(args: argparse.Namespace) -> int:
     output_name = normalize_formal_port_output_name(args.output)
     if args.execute:
@@ -11422,6 +11533,201 @@ def cmd_formal_port_pg_translation_consistency_run(args: argparse.Namespace) -> 
         "records": records,
         "issues": issues,
         "claim_boundary": "port_pg_reference_consistency_not_full_translation_correctness",
+    }
+    write_formal_port_report(output_name, payload)
+    return print_and_exit(payload, 0 if payload["ok"] else 1)
+
+
+def cmd_formal_port_pg_consistency_diagnostic(args: argparse.Namespace) -> int:
+    output_name = normalize_formal_port_output_name(args.output)
+    if args.execute:
+        payload = {
+            "command": "formal-port-pg-consistency-diagnostic",
+            "ok": False,
+            "ran_at_utc": utc_now(),
+            "output_path": "reports/formal_port/port_pg_consistency_diagnostic_execute_refused_v0.json",
+            "issues": [
+                {
+                    "type": "invalid_execute_flag",
+                    "message": "formal-port-pg-consistency-diagnostic is read-only and does not support --execute",
+                }
+            ],
+            "guardrails": {
+                "database_execution": "disabled",
+                "sql_execution": "disabled",
+                "model_api_call": "disabled",
+                "sqlglot_generation": "disabled",
+                "checker_execution": "disabled",
+                "case_artifact_write": "disabled",
+                "registry_writeback": "disabled",
+            },
+            "claim_boundary": "diagnostic_only_not_translation_correctness",
+        }
+        write_formal_port_report("port_pg_consistency_diagnostic_execute_refused_v0.json", payload)
+        return print_and_exit(payload, 1)
+
+    issues: list[dict[str, Any]] = []
+    run_report = load_json_if_present(FORMAL_PORT_REPORT_DIR / "port_pg_translation_consistency_run_v0.json")
+    preflight_report = load_json_if_present(FORMAL_PORT_REPORT_DIR / "port_pg_translation_consistency_preflight_v0.json")
+    if run_report is None:
+        issues.append(
+            {
+                "type": "missing_run_report",
+                "path": "reports/formal_port/port_pg_translation_consistency_run_v0.json",
+            }
+        )
+    if preflight_report is None:
+        issues.append(
+            {
+                "type": "missing_preflight_report",
+                "path": "reports/formal_port/port_pg_translation_consistency_preflight_v0.json",
+            }
+        )
+
+    run_record_map = {
+        (str(record.get("case_id", "")).strip(), str(record.get("route", "")).strip()): record
+        for record in (run_report or {}).get("records", [])
+    }
+    preflight_record_map = {
+        (str(record.get("case_id", "")).strip(), str(record.get("route", "")).strip()): record
+        for record in (preflight_report or {}).get("records", [])
+    }
+
+    route_configs = [
+        ("SQLGLOT_TRANSPILE", "sqlglot_transpile"),
+        ("LLM_DIRECT_TRANSLATE", "llm_direct_translate"),
+    ]
+    route_case_records: list[dict[str, Any]] = []
+    exact_consistent = 0
+    exact_inconsistent = 0
+    normalized_consistent = 0
+    normalized_inconsistent = 0
+    reference_sql_issue_count = 0
+    saw_formatting_only = False
+    saw_true_difference = False
+
+    for case_id in formal_port_case_ids():
+        reference_issue = inspect_port_reference_sql_issue(case_id)
+        if reference_issue["reference_sql_issue_classification"] != "none":
+            reference_sql_issue_count += 1
+        for route, route_dir in route_configs:
+            run_record = run_record_map.get((case_id, route), {})
+            preflight_record = preflight_record_map.get((case_id, route), {})
+            reference_path = FORMAL_PORT_REPORT_DIR / "result_materialization" / "reference" / f"{case_id.lower()}.tsv"
+            candidate_path = FORMAL_PORT_REPORT_DIR / "result_materialization" / route_dir / f"{case_id.lower()}.tsv"
+            raw_reference_lines = read_tsv_lines_if_present(reference_path)
+            raw_candidate_lines = read_tsv_lines_if_present(candidate_path)
+            exact_equal = None
+            row_count_equal = None
+            normalized_equal = None
+            mismatch_reason_guess = ""
+            exact_diff = {"first_diff_row": None, "left_sample": "", "right_sample": ""}
+            normalized_diff = {"first_diff_row": None, "left_sample": "", "right_sample": ""}
+
+            if raw_reference_lines is not None and raw_candidate_lines is not None:
+                exact_equal = reference_path.read_bytes() == candidate_path.read_bytes()
+                row_count_equal = len(raw_reference_lines) == len(raw_candidate_lines)
+                normalized_reference_lines = normalize_tsv_lines(raw_reference_lines)
+                normalized_candidate_lines = normalize_tsv_lines(raw_candidate_lines)
+                normalized_equal = normalized_reference_lines == normalized_candidate_lines
+                mismatch_reason_guess = guess_tsv_mismatch_reason(
+                    bool(exact_equal),
+                    bool(normalized_equal),
+                    raw_reference_lines,
+                    raw_candidate_lines,
+                )
+                exact_diff = diff_sample(raw_reference_lines, raw_candidate_lines)
+                normalized_diff = diff_sample(normalized_reference_lines, normalized_candidate_lines)
+                if exact_equal:
+                    exact_consistent += 1
+                else:
+                    exact_inconsistent += 1
+                if normalized_equal:
+                    normalized_consistent += 1
+                else:
+                    normalized_inconsistent += 1
+                if mismatch_reason_guess in {
+                    "ordering_or_formatting_only",
+                    "numeric_formatting_only",
+                    "whitespace_only",
+                }:
+                    saw_formatting_only = True
+                if mismatch_reason_guess == "true_value_difference_unknown":
+                    saw_true_difference = True
+            else:
+                if run_record.get("checker_status") == "execution_failed" and reference_issue["reference_sql_issue_classification"] != "none":
+                    mismatch_reason_guess = "reference_sql_not_pg_compatible"
+                elif run_record.get("checker_status") == "skipped_blocked":
+                    mismatch_reason_guess = "route_execution_failed_before_check"
+                else:
+                    mismatch_reason_guess = "missing_materialized_tsv_pair"
+
+            route_case_records.append(
+                {
+                    "case_id": case_id,
+                    "route": route,
+                    "preflight_status": preflight_record.get("preflight_status", ""),
+                    "checker_status": run_record.get("checker_status", ""),
+                    "failure_category": run_record.get("failure_category", ""),
+                    "error_message": run_record.get("error_message", ""),
+                    "reference_result_path": relative_to_root(reference_path),
+                    "candidate_result_path": relative_to_root(candidate_path),
+                    "reference_tsv_exists": raw_reference_lines is not None,
+                    "candidate_tsv_exists": raw_candidate_lines is not None,
+                    "exact_byte_equal": exact_equal,
+                    "row_count_equal": row_count_equal,
+                    "normalized_equal": normalized_equal,
+                    "mismatch_reason_guess": mismatch_reason_guess,
+                    "exact_diff_sample": exact_diff,
+                    "normalized_diff_sample": normalized_diff,
+                    "reference_sql_issue": reference_issue if case_id == "PORT_0012" else {},
+                    "claim_boundary": "diagnostic_only_not_translation_correctness",
+                }
+            )
+
+    if reference_sql_issue_count > 0:
+        recommended_checker_policy = "reference_sql_pg_normalization_needed"
+    elif saw_formatting_only and not saw_true_difference:
+        recommended_checker_policy = "normalized_tsv_needed"
+    else:
+        recommended_checker_policy = "exact_tsv_only"
+
+    payload = {
+        "command": "formal-port-pg-consistency-diagnostic",
+        "ok": not issues,
+        "ran_at_utc": utc_now(),
+        "output_path": f"reports/formal_port/{output_name}",
+        "cases_inspected": formal_port_case_ids(),
+        "exact_consistency_summary": {
+            "checked_pair_count": exact_consistent + exact_inconsistent,
+            "exact_consistent_count": exact_consistent,
+            "exact_inconsistent_count": exact_inconsistent,
+        },
+        "normalized_consistency_summary": {
+            "checked_pair_count": normalized_consistent + normalized_inconsistent,
+            "normalized_consistent_count": normalized_consistent,
+            "normalized_inconsistent_count": normalized_inconsistent,
+        },
+        "reference_sql_issue_summary": {
+            "issue_case_count": reference_sql_issue_count,
+            "cases": [
+                case_id for case_id in formal_port_case_ids()
+                if inspect_port_reference_sql_issue(case_id)["reference_sql_issue_classification"] != "none"
+            ],
+        },
+        "route_case_records": route_case_records,
+        "recommended_checker_policy": recommended_checker_policy,
+        "issues": issues,
+        "guardrails": {
+            "database_execution": "disabled",
+            "sql_execution": "disabled",
+            "model_api_call": "disabled",
+            "sqlglot_generation": "disabled",
+            "checker_execution": "disabled",
+            "case_artifact_write": "disabled",
+            "registry_writeback": "disabled",
+        },
+        "claim_boundary": "diagnostic_only_not_translation_correctness",
     }
     write_formal_port_report(output_name, payload)
     return print_and_exit(payload, 0 if payload["ok"] else 1)
@@ -24058,6 +24364,16 @@ def build_parser() -> argparse.ArgumentParser:
     )
     formal_port_pg_translation_consistency_run_parser.add_argument("--execute", action="store_true", default=False)
     formal_port_pg_translation_consistency_run_parser.set_defaults(func=cmd_formal_port_pg_translation_consistency_run)
+
+    formal_port_pg_consistency_diagnostic_parser = subparsers.add_parser(
+        "formal-port-pg-consistency-diagnostic"
+    )
+    formal_port_pg_consistency_diagnostic_parser.add_argument(
+        "--output",
+        default="port_pg_consistency_diagnostic_v0.json",
+    )
+    formal_port_pg_consistency_diagnostic_parser.add_argument("--execute", action="store_true", default=False)
+    formal_port_pg_consistency_diagnostic_parser.set_defaults(func=cmd_formal_port_pg_consistency_diagnostic)
 
     formal_common_core_method_consistency_scoring_parser = subparsers.add_parser("formal-common-core-method-consistency-scoring")
     formal_common_core_method_consistency_scoring_parser.add_argument(
