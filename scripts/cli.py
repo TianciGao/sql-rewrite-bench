@@ -10488,6 +10488,472 @@ def cmd_formal_port_llm_translate_targeted_canary(args: argparse.Namespace) -> i
     )
 
 
+def cmd_formal_port_pg_route_matrix(args: argparse.Namespace) -> int:
+    output_name = normalize_formal_port_output_name(args.output)
+    execute_refused_name = "port_pg_route_matrix_execute_refused_v0.json"
+    valid_case_ids = ["PORT_0004", "PORT_0012", "PORT_0022"]
+    valid_routes = ["SQLGLOT_TRANSPILE", "LLM_DIRECT_TRANSLATE"]
+    selected_case_ids = [str(case_id).strip().upper() for case_id in (args.case_id or []) if str(case_id).strip()]
+    selected_routes = [str(route).strip().upper() for route in (args.route or []) if str(route).strip()]
+    if not selected_case_ids:
+        selected_case_ids = list(valid_case_ids)
+    if not selected_routes:
+        selected_routes = list(valid_routes)
+
+    issues: list[dict[str, Any]] = []
+    invalid_case_ids = [case_id for case_id in selected_case_ids if case_id not in valid_case_ids]
+    invalid_routes = [route for route in selected_routes if route not in valid_routes]
+    if invalid_case_ids:
+        for case_id in invalid_case_ids:
+            issues.append(
+                {
+                    "type": "unsupported_case_id",
+                    "case_id": case_id,
+                    "message": "formal-port-pg-route-matrix only supports PORT_0004, PORT_0012, PORT_0022",
+                }
+            )
+    if invalid_routes:
+        for route in invalid_routes:
+            issues.append(
+                {
+                    "type": "unsupported_route",
+                    "route": route,
+                    "message": "formal-port-pg-route-matrix only supports SQLGLOT_TRANSPILE and LLM_DIRECT_TRANSLATE",
+                }
+            )
+    if args.execute and issues:
+        payload = {
+            "command": "formal-port-pg-route-matrix",
+            "ok": False,
+            "ran_at_utc": utc_now(),
+            "output_path": f"reports/formal_port/{execute_refused_name}",
+            "case_count": len(selected_case_ids),
+            "routes": selected_routes,
+            "records": [],
+            "issues": issues,
+            "guardrails": {
+                "database_execution": "enabled_only_with_execute",
+                "sql_execution": "enabled_only_with_execute",
+                "model_api_call": "enabled_only_with_execute",
+                "mysql_execution": "disabled",
+                "spark_execution": "disabled",
+                "checker_execution": "disabled",
+                "plan_collection": "disabled",
+                "speedup_scoring": "disabled",
+                "case_artifact_write": "disabled",
+                "registry_writeback": "disabled",
+            },
+            "claim_boundary": "formal_port_pg_route_matrix_not_translation_correctness_not_cross_engine_closure",
+        }
+        write_formal_port_report(execute_refused_name, payload)
+        return print_and_exit(payload, 1)
+
+    selected_case_ids = [case_id for case_id in selected_case_ids if case_id in valid_case_ids]
+    selected_routes = [route for route in selected_routes if route in valid_routes]
+
+    baseline_smoke_config_path = ROOT / "configs" / "baseline_smoke_cases.json"
+    config = load_json_if_present(baseline_smoke_config_path) or {"cases": []}
+    case_index = {str(case.get("case_id", "")).strip(): case for case in config.get("cases", []) if case.get("case_id")}
+    port_case_specs: dict[str, dict[str, Any]] = {}
+    for case_id in valid_case_ids:
+        case_spec = case_index.get(case_id)
+        if case_spec is None:
+            inferred = case_root_for_case_id(case_id)
+            port_case_specs[case_id] = {
+                "case_id": case_id,
+                "pool": inferred[0] if inferred else "portability",
+                "smoke_role": "portability",
+                "why_selected": "",
+                "caveat": "",
+            }
+        else:
+            port_case_specs[case_id] = case_spec
+
+    endpoint_config = resolve_llm_endpoint_config()
+    env_visibility = pg_env_visibility()
+    required_pg_env_visible = all(env_visibility[name] for name in ["PGHOST", "PGPORT", "PGDATABASE", "PGUSER"])
+    pg_password_present = env_visibility["PGPASSWORD"]
+
+    sqlglot_available = True
+    sqlglot_error = ""
+    try:
+        sqlglot = importlib.import_module("sqlglot")
+    except ModuleNotFoundError as exc:
+        sqlglot_available = False
+        sqlglot_error = str(exc)
+        sqlglot = None
+
+    psycopg_available = True
+    psycopg_error = ""
+    try:
+        psycopg = importlib.import_module("psycopg")
+    except ModuleNotFoundError as exc:
+        psycopg_available = False
+        psycopg_error = str(exc)
+        psycopg = None
+
+    def route_case_root(case_id: str) -> Path:
+        return pool_case_root("portability") / case_id
+
+    def sqlglot_case_record(
+        case_id: str,
+        execute: bool,
+    ) -> dict[str, Any]:
+        case_spec = port_case_specs[case_id]
+        case_root = route_case_root(case_id)
+        source_sql_path = case_root / "source.sql"
+        manifest_path = case_root / "manifest.yaml"
+        source_sql_exists = source_sql_path.is_file()
+        source_dialect_hint = ""
+        if manifest_path.is_file():
+            source_dialect_hint = manifest_source_dialect_hint(manifest_path.read_text(encoding="utf-8"))
+        candidates_tried = source_dialect_candidate_order(source_dialect_hint, "auto")
+        validation_schema = native_identity_validation_schema(case_id, case_spec["pool"])
+        record: dict[str, Any] = {
+            "case_id": case_id,
+            "route": "SQLGLOT_TRANSPILE",
+            "generation_or_call_status": "not_requested" if not execute else "planned",
+            "extraction_or_transpile_status": "not_requested" if not execute else "planned",
+            "pg_execution_status": "not_requested" if not execute else "not_attempted",
+            "row_count": None,
+            "runtime_ms": None,
+            "failure_category": "none",
+            "error_message": "",
+            "token_usage_total": None,
+            "claim_boundary": "formal_port_pg_route_matrix_not_translation_correctness_not_cross_engine_closure",
+            "preflight_parse_status": "skipped",
+            "transpile_status": "skipped",
+            "generated_sql_preview": "",
+            "source_sql_path": relative_to_root(source_sql_path),
+            "source_sql_exists": source_sql_exists,
+            "source_dialect_used": "",
+            "source_dialect_candidates_tried": candidates_tried,
+            "validation_schema": validation_schema,
+            "search_path_after_set": "",
+        }
+        if not source_sql_exists:
+            record["generation_or_call_status"] = "failed"
+            record["extraction_or_transpile_status"] = "failed"
+            record["pg_execution_status"] = "failed" if execute else "not_requested"
+            record["failure_category"] = "missing_source_sql"
+            return record
+        if not sqlglot_available:
+            record["generation_or_call_status"] = "failed"
+            record["extraction_or_transpile_status"] = "failed"
+            record["pg_execution_status"] = "failed" if execute else "not_requested"
+            record["failure_category"] = "sqlglot_unavailable"
+            record["error_message"] = sqlglot_error
+            return record
+
+        source_sql = source_sql_path.read_text(encoding="utf-8")
+        parsed = None
+        last_exc: Exception | None = None
+        source_dialect_successes: list[str] = []
+        for candidate in candidates_tried:
+            try:
+                parsed = sqlglot.parse_one(source_sql, dialect=candidate)
+                source_dialect_successes.append(candidate)
+                if not record["source_dialect_used"]:
+                    record["source_dialect_used"] = candidate
+            except Exception as exc:
+                last_exc = exc
+        if not source_dialect_successes:
+            record["generation_or_call_status"] = "failed"
+            record["extraction_or_transpile_status"] = "failed"
+            record["pg_execution_status"] = "failed" if execute else "not_requested"
+            record["preflight_parse_status"] = "failed"
+            record["transpile_status"] = "skipped"
+            record["failure_category"] = type(last_exc).__name__ if last_exc else "parse_failed"
+            record["error_message"] = str(last_exc) if last_exc else "no source dialect candidate parsed"
+            return record
+
+        record["preflight_parse_status"] = "success"
+        try:
+            transpiled_sql = parsed.sql(dialect="postgres")
+            record["generation_or_call_status"] = "success"
+            record["extraction_or_transpile_status"] = "success"
+            record["transpile_status"] = "success"
+            record["generated_sql_preview"] = transpiled_sql[:500]
+        except Exception as exc:
+            record["generation_or_call_status"] = "failed"
+            record["extraction_or_transpile_status"] = "failed"
+            record["pg_execution_status"] = "failed" if execute else "not_requested"
+            record["transpile_status"] = "failed"
+            record["failure_category"] = type(exc).__name__
+            record["error_message"] = str(exc)
+            return record
+
+        if not execute:
+            record["pg_execution_status"] = "planned"
+            return record
+        if not required_pg_env_visible:
+            record["pg_execution_status"] = "env_blocked"
+            record["failure_category"] = "missing_pg_env"
+            return record
+        if not psycopg_available:
+            record["pg_execution_status"] = "failed"
+            record["failure_category"] = "psycopg_unavailable"
+            record["error_message"] = psycopg_error
+            return record
+
+        start = time.perf_counter()
+        try:
+            with psycopg.connect(
+                host=os.environ["PGHOST"],
+                port=os.environ["PGPORT"],
+                dbname=os.environ["PGDATABASE"],
+                user=os.environ["PGUSER"],
+                password=os.environ.get("PGPASSWORD"),
+                options=(
+                    f"-c statement_timeout={args.statement_timeout_ms} "
+                    "-c default_transaction_read_only=on"
+                ),
+            ) as conn:
+                with conn.cursor() as cur:
+                    cur.execute("SELECT to_regnamespace(%s)", (validation_schema,))
+                    schema_name = cur.fetchone()[0]
+                    if not schema_name:
+                        raise RuntimeError(f"validation schema not found: {validation_schema}")
+                    cur.execute(
+                        psycopg.sql.SQL("SET search_path TO {}, public").format(
+                            psycopg.sql.Identifier(validation_schema)
+                        )
+                    )
+                    cur.execute("SHOW search_path")
+                    search_path_row = cur.fetchone()
+                    record["search_path_after_set"] = str(search_path_row[0]) if search_path_row else ""
+                    cur.execute(transpiled_sql)
+                    if cur.description is not None:
+                        rows = cur.fetchall()
+                        record["row_count"] = len(rows)
+                    else:
+                        record["row_count"] = cur.rowcount if cur.rowcount >= 0 else None
+            record["runtime_ms"] = int((time.perf_counter() - start) * 1000)
+            record["pg_execution_status"] = "success"
+        except Exception as exc:
+            record["runtime_ms"] = int((time.perf_counter() - start) * 1000)
+            record["pg_execution_status"] = "failed"
+            record["failure_category"] = type(exc).__name__
+            record["error_message"] = str(exc)
+        return record
+
+    def llm_case_record(
+        case_id: str,
+        execute: bool,
+    ) -> dict[str, Any]:
+        case_spec = port_case_specs[case_id]
+        preflight_report = load_json_if_present(BASELINE_SMOKE_REPORT_DIR / "sqlglot_transpile_preflight_v0.json") or {}
+        execution_report = load_json_if_present(BASELINE_SMOKE_REPORT_DIR / "sqlglot_transpile_pg_canary_v0.json") or {}
+        preflight_record = next((row for row in preflight_report.get("records", []) if row.get("case_id") == case_id), {})
+        execution_record = next((row for row in execution_report.get("records", []) if row.get("case_id") == case_id), {})
+        prompt_row = build_llm_translate_prompt_package(
+            case_spec,
+            target_dialect="postgres",
+            model_label=args.model_label,
+            preflight_record=preflight_record,
+            execution_record=execution_record,
+        )
+        validation_schema = native_identity_validation_schema(case_id, case_spec["pool"])
+        record: dict[str, Any] = {
+            "case_id": case_id,
+            "route": "LLM_DIRECT_TRANSLATE",
+            "generation_or_call_status": "not_requested" if not execute else "planned",
+            "extraction_or_transpile_status": "not_requested" if not execute else "planned",
+            "pg_execution_status": "not_requested" if not execute else "not_attempted",
+            "row_count": None,
+            "runtime_ms": None,
+            "failure_category": "none",
+            "error_message": "",
+            "token_usage_total": None,
+            "claim_boundary": "formal_port_pg_route_matrix_not_translation_correctness_not_cross_engine_closure",
+            "model_call_status": "not_requested" if not execute else "planned",
+            "extraction_status": "not_requested" if not execute else "planned",
+            "token_usage_input": None,
+            "token_usage_output": None,
+            "source_dialect": prompt_row["source_dialect"],
+            "validation_schema": validation_schema,
+            "search_path_after_set": "",
+        }
+        if prompt_row["prompt_package_status"] != "ready" or not prompt_row["source_sql_exists"]:
+            record["generation_or_call_status"] = "blocked"
+            record["model_call_status"] = "blocked"
+            record["extraction_or_transpile_status"] = "not_available"
+            record["extraction_status"] = "not_available"
+            record["pg_execution_status"] = "not_attempted" if execute else "not_requested"
+            record["failure_category"] = prompt_row["prompt_package_status"]
+            return record
+        if not execute:
+            record["generation_or_call_status"] = "ready"
+            record["model_call_status"] = "ready"
+            record["extraction_or_transpile_status"] = "planned"
+            record["extraction_status"] = "planned"
+            record["pg_execution_status"] = "planned"
+            return record
+        if not endpoint_config["api_key_visible"]:
+            record["generation_or_call_status"] = "env_blocked"
+            record["model_call_status"] = "env_blocked"
+            record["extraction_or_transpile_status"] = "not_available"
+            record["extraction_status"] = "not_available"
+            record["pg_execution_status"] = "not_attempted"
+            record["failure_category"] = "missing_api_key"
+            return record
+
+        try:
+            openai_mod = importlib.import_module("openai")
+            OpenAI = getattr(openai_mod, "OpenAI", None)
+        except ModuleNotFoundError:
+            OpenAI = None
+        if OpenAI is None:
+            record["generation_or_call_status"] = "client_unavailable"
+            record["model_call_status"] = "client_unavailable"
+            record["extraction_or_transpile_status"] = "not_available"
+            record["extraction_status"] = "not_available"
+            record["pg_execution_status"] = "not_attempted"
+            record["failure_category"] = "client_unavailable"
+            record["error_message"] = "openai.OpenAI client is unavailable"
+            return record
+
+        prompt_package = json.loads(prompt_row["prompt_blob"])
+        client_kwargs = {"api_key": endpoint_config["api_key"]}
+        if endpoint_config["base_url_visible"]:
+            client_kwargs["base_url"] = endpoint_config["base_url"]
+        client = OpenAI(**client_kwargs)
+        extracted_sql_text = ""
+        try:
+            response = client.chat.completions.create(
+                model=args.model_label,
+                messages=[
+                    {"role": "system", "content": prompt_package["system_message"]},
+                    {"role": "user", "content": prompt_package["user_message"]},
+                ],
+                temperature=args.temperature,
+                max_tokens=args.max_output_tokens,
+            )
+            message = response.choices[0].message.content if response.choices else ""
+            raw_text = (message or "").strip()
+            extraction_status, extracted_sql_text = extract_sql_like_output(raw_text)
+            record["generation_or_call_status"] = "success"
+            record["model_call_status"] = "success"
+            record["extraction_or_transpile_status"] = extraction_status
+            record["extraction_status"] = extraction_status
+            usage = getattr(response, "usage", None)
+            if usage is not None:
+                record["token_usage_input"] = getattr(usage, "prompt_tokens", None)
+                record["token_usage_output"] = getattr(usage, "completion_tokens", None)
+                record["token_usage_total"] = getattr(usage, "total_tokens", None)
+        except Exception as exc:
+            record["generation_or_call_status"] = "failed"
+            record["model_call_status"] = "failed"
+            record["extraction_or_transpile_status"] = "not_available"
+            record["extraction_status"] = "not_available"
+            record["pg_execution_status"] = "not_attempted"
+            record["failure_category"] = type(exc).__name__
+            record["error_message"] = str(exc)
+            return record
+
+        if record["extraction_status"] != "extracted":
+            record["pg_execution_status"] = "not_attempted"
+            record["failure_category"] = "extracted_sql_not_ready"
+            return record
+        if not required_pg_env_visible:
+            record["pg_execution_status"] = "env_blocked"
+            record["failure_category"] = "missing_pg_env"
+            return record
+        if not psycopg_available:
+            record["pg_execution_status"] = "failed"
+            record["failure_category"] = "psycopg_unavailable"
+            record["error_message"] = psycopg_error
+            return record
+
+        start = time.perf_counter()
+        try:
+            with psycopg.connect(
+                host=os.environ["PGHOST"],
+                port=os.environ["PGPORT"],
+                dbname=os.environ["PGDATABASE"],
+                user=os.environ["PGUSER"],
+                password=os.environ.get("PGPASSWORD"),
+                options=(
+                    f"-c statement_timeout={args.statement_timeout_ms} "
+                    "-c default_transaction_read_only=on"
+                ),
+            ) as conn:
+                with conn.cursor() as cur:
+                    cur.execute("SELECT to_regnamespace(%s)", (validation_schema,))
+                    schema_name = cur.fetchone()[0]
+                    if not schema_name:
+                        raise RuntimeError(f"validation schema not found: {validation_schema}")
+                    cur.execute(
+                        psycopg.sql.SQL("SET search_path TO {}, public").format(
+                            psycopg.sql.Identifier(validation_schema)
+                        )
+                    )
+                    cur.execute("SHOW search_path")
+                    search_path_row = cur.fetchone()
+                    record["search_path_after_set"] = str(search_path_row[0]) if search_path_row else ""
+                    cur.execute(extracted_sql_text)
+                    if cur.description is not None:
+                        rows = cur.fetchall()
+                        record["row_count"] = len(rows)
+                    else:
+                        record["row_count"] = cur.rowcount if cur.rowcount >= 0 else None
+            record["runtime_ms"] = int((time.perf_counter() - start) * 1000)
+            record["pg_execution_status"] = "success"
+        except Exception as exc:
+            record["runtime_ms"] = int((time.perf_counter() - start) * 1000)
+            record["pg_execution_status"] = "failed"
+            record["failure_category"] = type(exc).__name__
+            record["error_message"] = str(exc)
+        return record
+
+    records: list[dict[str, Any]] = []
+    for route in selected_routes:
+        for case_id in selected_case_ids:
+            if route == "SQLGLOT_TRANSPILE":
+                records.append(sqlglot_case_record(case_id, execute=args.execute))
+            else:
+                records.append(llm_case_record(case_id, execute=args.execute))
+
+    sqlglot_records = [record for record in records if record["route"] == "SQLGLOT_TRANSPILE"]
+    llm_records = [record for record in records if record["route"] == "LLM_DIRECT_TRANSLATE"]
+    payload = {
+        "command": "formal-port-pg-route-matrix",
+        "ok": (
+            not issues
+            and all(record["pg_execution_status"] in {"planned", "success"} for record in records)
+        ),
+        "ran_at_utc": utc_now(),
+        "output_path": f"reports/formal_port/{output_name}",
+        "case_count": len(selected_case_ids),
+        "routes": selected_routes,
+        "sqlglot_preflight_success_count": sum(1 for record in sqlglot_records if record.get("preflight_parse_status") == "success"),
+        "sqlglot_pg_success_count": sum(1 for record in sqlglot_records if record["pg_execution_status"] == "success"),
+        "sqlglot_pg_failed_count": sum(1 for record in sqlglot_records if record["pg_execution_status"] == "failed"),
+        "llm_call_success_count": sum(1 for record in llm_records if record.get("model_call_status") == "success"),
+        "llm_extraction_success_count": sum(1 for record in llm_records if record.get("extraction_status") == "extracted"),
+        "llm_pg_success_count": sum(1 for record in llm_records if record["pg_execution_status"] == "success"),
+        "llm_pg_failed_count": sum(1 for record in llm_records if record["pg_execution_status"] == "failed"),
+        "total_llm_token_usage": sum(int(record.get("token_usage_total") or 0) for record in llm_records),
+        "records": records,
+        "issues": issues,
+        "guardrails": {
+            "database_execution": "enabled_only_with_execute",
+            "sql_execution": "postgres_only_selected_routes_and_cases",
+            "model_api_call": "enabled_only_with_execute_for_llm_route",
+            "mysql_execution": "disabled",
+            "spark_execution": "disabled",
+            "checker_execution": "disabled",
+            "plan_collection": "disabled",
+            "speedup_scoring": "disabled",
+            "case_artifact_write": "disabled",
+            "registry_writeback": "disabled",
+        },
+        "claim_boundary": "formal_port_pg_route_matrix_not_translation_correctness_not_cross_engine_closure",
+    }
+    write_formal_port_report(output_name, payload)
+    return print_and_exit(payload, 0 if payload["ok"] or not args.execute else 1)
+
+
 def cmd_formal_common_core_method_consistency_scoring(args: argparse.Namespace) -> int:
     output_name = normalize_formal_common_core_output_name(args.output)
     if args.execute:
@@ -23084,6 +23550,17 @@ def build_parser() -> argparse.ArgumentParser:
     formal_port_llm_targeted_canary_parser.add_argument("--temperature", type=float, default=0.0)
     formal_port_llm_targeted_canary_parser.add_argument("--statement-timeout-ms", type=int, default=30000)
     formal_port_llm_targeted_canary_parser.set_defaults(func=cmd_formal_port_llm_translate_targeted_canary)
+
+    formal_port_pg_route_matrix_parser = subparsers.add_parser("formal-port-pg-route-matrix")
+    formal_port_pg_route_matrix_parser.add_argument("--execute", action="store_true", default=False)
+    formal_port_pg_route_matrix_parser.add_argument("--case-id", action="append", default=[])
+    formal_port_pg_route_matrix_parser.add_argument("--route", action="append", default=[])
+    formal_port_pg_route_matrix_parser.add_argument("--output", default="port_pg_route_matrix_v0.json")
+    formal_port_pg_route_matrix_parser.add_argument("--model-label", default="gpt-5.2")
+    formal_port_pg_route_matrix_parser.add_argument("--max-output-tokens", type=int, default=2048)
+    formal_port_pg_route_matrix_parser.add_argument("--temperature", type=float, default=0.0)
+    formal_port_pg_route_matrix_parser.add_argument("--statement-timeout-ms", type=int, default=30000)
+    formal_port_pg_route_matrix_parser.set_defaults(func=cmd_formal_port_pg_route_matrix)
 
     formal_common_core_method_consistency_scoring_parser = subparsers.add_parser("formal-common-core-method-consistency-scoring")
     formal_common_core_method_consistency_scoring_parser.add_argument(
