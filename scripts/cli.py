@@ -14175,6 +14175,299 @@ def cmd_formal_common_core_method_speedup_scoring(args: argparse.Namespace) -> i
     return print_and_exit(payload, 0 if payload["ok"] else 1)
 
 
+def cmd_formal_experiment_failure_slicing_preflight(args: argparse.Namespace) -> int:
+    output_name = normalize_formal_common_core_output_name(args.output)
+    if args.execute:
+        payload = {
+            "command": "formal-experiment-failure-slicing-preflight",
+            "ok": False,
+            "ran_at_utc": utc_now(),
+            "output_path": "reports/formal_common_core/failure_slicing_preflight_execute_refused_v0.json",
+            "message": "This command reads existing results only and does not support --execute.",
+            "issues": [
+                {
+                    "type": "invalid_execute_flag",
+                    "message": "formal-experiment-failure-slicing-preflight does not support --execute",
+                }
+            ],
+            "guardrails": {
+                "database_execution": "disabled",
+                "sql_execution": "disabled",
+                "explain_execution": "disabled",
+                "model_api_call": "disabled",
+                "sqlglot_generation": "disabled",
+                "checker_execution": "disabled",
+                "metric_recomputation": "disabled",
+                "case_artifact_write": "disabled",
+                "registry_writeback": "disabled",
+            },
+            "claim_boundary": "failure_slicing_preflight_from_existing_results_only_not_final_taxonomy_or_leaderboard",
+        }
+        write_formal_common_core_report("failure_slicing_preflight_execute_refused_v0.json", payload)
+        return print_and_exit(payload, 1)
+
+    issues: list[dict[str, Any]] = []
+    control_scoring_path = FORMAL_COMMON_CORE_REPORT_DIR / "control_scoring_v0.json"
+    method_consistency_path = FORMAL_COMMON_CORE_REPORT_DIR / "method_consistency_scoring_v0.json"
+    method_speedup_path = FORMAL_COMMON_CORE_REPORT_DIR / "method_speedup_scoring_v0.json"
+    plan_operator_delta_path = FORMAL_COMMON_CORE_REPORT_DIR / "plan_operator_delta_summary_v0.json"
+    port_snapshot_path = FORMAL_PORT_REPORT_DIR / "port_current_results_snapshot_v0.json"
+
+    control_scoring_report = load_json_if_present(control_scoring_path)
+    method_consistency_report = load_json_if_present(method_consistency_path)
+    method_speedup_report = load_json_if_present(method_speedup_path)
+    plan_operator_delta_report = load_json_if_present(plan_operator_delta_path)
+    port_snapshot_report = load_json_if_present(port_snapshot_path)
+
+    for issue_type, path, report in [
+        ("missing_control_scoring_report", control_scoring_path, control_scoring_report),
+        ("missing_method_consistency_report", method_consistency_path, method_consistency_report),
+        ("missing_method_speedup_report", method_speedup_path, method_speedup_report),
+        ("missing_plan_operator_delta_summary_report", plan_operator_delta_path, plan_operator_delta_report),
+        ("missing_port_current_results_snapshot_report", port_snapshot_path, port_snapshot_report),
+    ]:
+        if report is None:
+            issues.append({"type": issue_type, "path": relative_to_root(path)})
+
+    _, case_registry_rows = read_registry(CASE_REGISTRY)
+    case_registry_index = {row["case_id"]: row for row in case_registry_rows if row.get("case_id")}
+
+    control_record_index = {
+        str(record.get("case_id", "")).strip(): record
+        for record in (control_scoring_report or {}).get("records", [])
+        if record.get("case_id")
+    }
+    method_consistency_index: dict[str, dict[str, dict[str, Any]]] = {}
+    for route_summary in (method_consistency_report or {}).get("route_summaries", []):
+        baseline_id = str(route_summary.get("baseline_id", "")).strip()
+        method_consistency_index[baseline_id] = {
+            str(record.get("case_id", "")).strip(): record
+            for record in route_summary.get("records", [])
+            if record.get("case_id")
+        }
+
+    method_speedup_index = {
+        str(route_summary.get("baseline_id", "")).strip(): route_summary
+        for route_summary in (method_speedup_report or {}).get("route_summaries", [])
+        if route_summary.get("baseline_id")
+    }
+    pair_delta_index = {
+        str(summary.get("pair_label", "")).strip(): summary
+        for summary in (plan_operator_delta_report or {}).get("pair_summaries", [])
+        if summary.get("pair_label")
+    }
+    port_record_index = {
+        str(record.get("case_id", "")).strip(): record
+        for record in (port_snapshot_report or {}).get("records", [])
+        if record.get("case_id")
+    }
+
+    def manifest_source_family(case_id: str) -> str:
+        inferred = case_root_for_case_id(case_id)
+        if not inferred:
+            return ""
+        manifest_path = inferred[1] / "manifest.yaml"
+        if not manifest_path.is_file():
+            return ""
+        text = manifest_path.read_text(encoding="utf-8")
+        match = re.search(r"(?m)^source_family:\s*(.+?)\s*$", text)
+        return match.group(1).strip() if match else ""
+
+    common_core_case_ids = formal_common_core_case_ids()
+    perf_speedup_case_ids = ["PERF_0006", "PERF_0008", "PERF_0013", "PERF_0017", "PERF_0024", "PERF_0033", "PERF_0054"]
+    cons_case_ids = ["CONS_0007", "CONS_0012"]
+    port_case_ids = ["PORT_0004", "PORT_0012", "PORT_0022"]
+
+    claim_eligibility_counts: Counter[str] = Counter()
+    blocker_bucket_counts: Counter[str] = Counter()
+    port_failure_bucket_counts: Counter[str] = Counter()
+    common_core_by_pool: Counter[str] = Counter()
+    generated_method_consistency_closed_count = 0
+    generated_method_consistency_open_count = 0
+    records: list[dict[str, Any]] = []
+
+    sqlglot_perf_speedup_summary = method_speedup_index.get("SQLGLOT_OPT_SAME_DIALECT", {})
+    llm_perf_speedup_summary = method_speedup_index.get("LLM_DIRECT_REWRITE_STRONG", {})
+
+    for case_id in common_core_case_ids:
+        registry_row = case_registry_index.get(case_id, {})
+        pool = str(registry_row.get("primary_pool", "")).strip() or (case_root_for_case_id(case_id) or ("unknown", ROOT))[0]
+        source_family = str(registry_row.get("source_family", "")).strip() or manifest_source_family(case_id)
+        common_core_by_pool[pool] += 1
+
+        if case_id in perf_speedup_case_ids:
+            denominator_role = "perf_speedup_denominator"
+        else:
+            denominator_role = "consistency_semantic_only"
+
+        control_record = control_record_index.get(case_id, {})
+        sqlglot_record = method_consistency_index.get("SQLGLOT_OPT_SAME_DIALECT", {}).get(case_id, {})
+        llm_record = method_consistency_index.get("LLM_DIRECT_REWRITE_STRONG", {}).get(case_id, {})
+
+        sqlglot_status = str(sqlglot_record.get("checker_backed_consistency_status", "unknown")).strip() or "unknown"
+        llm_status = str(llm_record.get("checker_backed_consistency_status", "unknown")).strip() or "unknown"
+        if sqlglot_status == "consistent" and llm_status == "consistent":
+            generated_method_consistency_closed_count += 1
+        else:
+            generated_method_consistency_open_count += 1
+
+        eligibility: list[str] = ["main_table_correctness", "plan_observability"]
+        if case_id in perf_speedup_case_ids:
+            eligibility.append("main_table_perf_speedup")
+        else:
+            eligibility.append("not_yet_claimable")
+
+        speedup_exclusion_reason = ""
+        speedup_eligibility_status = "eligible_perf_only"
+        failure_or_blocker_buckets: list[str] = [
+            "generated_method_checker_backed_consistency_closed",
+            "operator_delta_observed_not_attribution",
+            "registry_admission_not_claimed",
+        ]
+        if case_id in perf_speedup_case_ids:
+            failure_or_blocker_buckets.append("perf_only_speedup_completed")
+            failure_or_blocker_buckets.append("speedup_policy_frozen")
+        else:
+            speedup_eligibility_status = "excluded_from_gm_speedup"
+            speedup_exclusion_reason = "CONS excluded from first-pass GM_Speedup"
+            failure_or_blocker_buckets.append("cons_excluded_from_gm_speedup")
+        failure_or_blocker_buckets.append("attribution_not_computed")
+
+        blockers: list[str] = []
+        operator_delta_summary = {
+            "source_positive_top_node_changed_count": pair_delta_index.get("source_positive", {}).get("top_node_changed_count"),
+            "source_negative_top_node_changed_count": pair_delta_index.get("source_negative", {}).get("top_node_changed_count"),
+            "source_sqlglot_top_node_changed_count": pair_delta_index.get("source_sqlglot", {}).get("top_node_changed_count"),
+            "source_llm_top_node_changed_count": pair_delta_index.get("source_llm", {}).get("top_node_changed_count"),
+        }
+        plan_pair_ready_status = "ready"
+
+        for tag in eligibility:
+            claim_eligibility_counts[tag] += 1
+        for bucket in failure_or_blocker_buckets:
+            blocker_bucket_counts[bucket] += 1
+        control_consistency_status = control_record.get("human_positive_consistency_status_observed", "unknown")
+        if control_consistency_status is True:
+            control_consistency_status = "passed_checker_backed_control"
+        elif control_consistency_status is False:
+            control_consistency_status = "failed_checker_backed_control"
+        else:
+            control_consistency_status = str(control_consistency_status).strip() or "unknown"
+
+        records.append(
+            {
+                "case_id": case_id,
+                "pool": pool,
+                "source_family": source_family or None,
+                "current_denominator_role": denominator_role,
+                "current_result_eligibility": eligibility,
+                "control_consistency_status": control_consistency_status,
+                "generated_method_consistency_status": {
+                    "sqlglot_opt_same_dialect": sqlglot_status,
+                    "llm_direct_rewrite": llm_status,
+                },
+                "speedup_eligibility_status": speedup_eligibility_status,
+                "speedup_exclusion_reason": speedup_exclusion_reason,
+                "operator_delta_summary": operator_delta_summary,
+                "plan_pair_ready_status": plan_pair_ready_status,
+                "blockers": blockers,
+                "failure_or_blocker_buckets": failure_or_blocker_buckets,
+                "claim_boundary": "failure_slicing_preflight_from_existing_results_only_not_final_taxonomy_or_leaderboard",
+            }
+        )
+
+    for case_id in port_case_ids:
+        registry_row = case_registry_index.get(case_id, {})
+        source_family = str(registry_row.get("source_family", "")).strip() or manifest_source_family(case_id)
+        port_record = port_record_index.get(case_id, {})
+        denominator_role = str(port_record.get("denominator_role", "")).strip() or (
+            "holdout_failure_analysis" if case_id in FORMAL_PORT_HOLDOUT_CASES else "clean_port_denominator"
+        )
+        failure_category = str(port_record.get("failure_category", "none")).strip() or "none"
+        blockers: list[str] = []
+        failure_bucket: list[str] = []
+        claim_eligibility = "current_port_snapshot"
+        if denominator_role == "holdout_failure_analysis":
+            claim_eligibility = "failure_case_study"
+            failure_bucket.extend(
+                [
+                    "port_invalid_datetime_format",
+                    "quoted_identifier_vs_string_literal_confusion",
+                    "datetime_timestamp_formatting",
+                    "dialect_normalization_failure",
+                    "portability_translation_failure",
+                    "port_holdout_failure_analysis",
+                    "full_port_closure_not_claimed",
+                    "registry_admission_not_claimed",
+                ]
+            )
+        else:
+            claim_eligibility = "current_port_snapshot"
+            failure_bucket.extend(["full_port_closure_not_claimed", "registry_admission_not_claimed"])
+
+        for bucket in port_record.get("failure_bucket", []) if isinstance(port_record.get("failure_bucket"), list) else []:
+            if bucket not in failure_bucket:
+                failure_bucket.append(str(bucket))
+        for bucket in failure_bucket:
+            port_failure_bucket_counts[bucket] += 1
+        claim_eligibility_counts[claim_eligibility] += 1
+
+        records.append(
+            {
+                "case_id": case_id,
+                "pool": "portability",
+                "source_family": source_family or None,
+                "denominator_role": denominator_role,
+                "sqlglot_transpile_status": str(port_record.get("sqlglot_pg_execution_status", "unknown")).strip() or "unknown",
+                "llm_translate_status": str(port_record.get("llm_pg_execution_status", port_record.get("llm_prompt_status", "unknown"))).strip() or "unknown",
+                "failure_category": failure_category,
+                "failure_bucket": failure_bucket,
+                "claim_eligibility": claim_eligibility,
+                "blockers": blockers,
+                "claim_boundary": "failure_slicing_preflight_from_existing_results_only_not_final_taxonomy_or_leaderboard",
+            }
+        )
+
+    payload = {
+        "command": "formal-experiment-failure-slicing-preflight",
+        "ok": len(issues) == 0,
+        "ran_at_utc": utc_now(),
+        "output_path": f"reports/formal_common_core/{output_name}",
+        "common_core_case_count": len(common_core_case_ids),
+        "port_case_count": len(port_case_ids),
+        "common_core_by_pool": dict(common_core_by_pool),
+        "claim_eligibility_counts": dict(claim_eligibility_counts),
+        "blocker_bucket_counts": dict(blocker_bucket_counts),
+        "port_failure_bucket_counts": dict(port_failure_bucket_counts),
+        "speedup_denominator_case_count": len(perf_speedup_case_ids),
+        "consistency_semantic_only_case_count": len(cons_case_ids),
+        "generated_method_consistency_closed_count": generated_method_consistency_closed_count,
+        "generated_method_consistency_open_count": generated_method_consistency_open_count,
+        "port_clean_case_count": len(FORMAL_PORT_CLEAN_CASES),
+        "port_holdout_case_count": len(FORMAL_PORT_HOLDOUT_CASES),
+        "rq1_status_summary": "controls and generated methods have checker-backed common-core consistency closed",
+        "rq2_status_summary": "plan observability and operator-delta observations exist; PERF-only speedup exists; attribution is not computed",
+        "rq3_status_summary": "PORT clean subset exists; PORT_0012 remains holdout failure-analysis; full PORT closure is not claimed",
+        "rq4_status_summary": "first blocker and failure bucket aggregation now exists; taxonomy bucket aggregation is not final; feature-level failure-rate slicing remains future work",
+        "records": records,
+        "issues": issues,
+        "guardrails": {
+            "database_execution": "disabled",
+            "sql_execution": "disabled",
+            "explain_execution": "disabled",
+            "model_api_call": "disabled",
+            "sqlglot_generation": "disabled",
+            "checker_execution": "disabled",
+            "metric_recomputation": "disabled",
+            "case_artifact_write": "disabled",
+            "registry_writeback": "disabled",
+        },
+        "claim_boundary": "failure_slicing_preflight_from_existing_results_only_not_final_taxonomy_or_leaderboard",
+    }
+    write_formal_common_core_report(output_name, payload)
+    return print_and_exit(payload, 0 if payload["ok"] else 1)
+
+
 def cmd_formal_common_core_method_result_checker_run(args: argparse.Namespace) -> int:
     output_name = normalize_formal_common_core_output_name(args.output)
     valid_routes = {
@@ -21962,6 +22255,14 @@ def build_parser() -> argparse.ArgumentParser:
     )
     formal_common_core_method_speedup_scoring_parser.add_argument("--execute", action="store_true", default=False)
     formal_common_core_method_speedup_scoring_parser.set_defaults(func=cmd_formal_common_core_method_speedup_scoring)
+
+    formal_experiment_failure_slicing_preflight_parser = subparsers.add_parser("formal-experiment-failure-slicing-preflight")
+    formal_experiment_failure_slicing_preflight_parser.add_argument(
+        "--output",
+        default="failure_slicing_preflight_v0.json",
+    )
+    formal_experiment_failure_slicing_preflight_parser.add_argument("--execute", action="store_true", default=False)
+    formal_experiment_failure_slicing_preflight_parser.set_defaults(func=cmd_formal_experiment_failure_slicing_preflight)
 
     formal_common_core_method_plan_collection_preflight_parser = subparsers.add_parser("formal-common-core-method-plan-collection-preflight")
     formal_common_core_method_plan_collection_preflight_parser.add_argument(
