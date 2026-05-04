@@ -11279,6 +11279,427 @@ def cmd_formal_common_core_plan_operator_delta_summary(args: argparse.Namespace)
     return print_and_exit(payload, 0 if payload["ok"] else 1)
 
 
+def cmd_formal_common_core_speedup_preflight(args: argparse.Namespace) -> int:
+    output_name = normalize_formal_common_core_output_name(args.output)
+    if args.execute:
+        payload = {
+            "command": "formal-common-core-speedup-preflight",
+            "ok": False,
+            "ran_at_utc": utc_now(),
+            "output_path": "reports/formal_common_core/speedup_preflight_execute_refused_v0.json",
+            "claim_boundary": "formal_speedup_preflight_only_not_speedup_scoring_or_leaderboard",
+            "message": "This command is read-existing-reports-only and does not support --execute.",
+            "issues": [
+                {
+                    "type": "invalid_execute_flag",
+                    "message": "formal-common-core-speedup-preflight does not support --execute",
+                }
+            ],
+            "guardrails": {
+                "database_execution": "disabled",
+                "sql_execution": "disabled",
+                "runtime_rerun": "disabled",
+                "model_api_call": "disabled",
+                "sqlglot_generation": "disabled",
+                "checker_execution": "disabled",
+                "plan_collection": "disabled",
+                "formal_speedup_scoring": "disabled",
+                "attribution_scoring": "disabled",
+                "case_artifact_write": "disabled",
+                "registry_writeback": "disabled",
+            },
+        }
+        write_formal_common_core_report("speedup_preflight_execute_refused_v0.json", payload)
+        return print_and_exit(payload, 1)
+
+    issues: list[dict[str, Any]] = []
+    case_ids = formal_common_core_case_ids()
+    denominator_case_count = len(case_ids)
+
+    runtime_snapshot_path = FORMAL_COMMON_CORE_REPORT_DIR / "runtime_observation_snapshot_v0.json"
+    control_scoring_path = FORMAL_COMMON_CORE_REPORT_DIR / "control_scoring_v0.json"
+    sqlglot_scoring_path = FORMAL_COMMON_CORE_REPORT_DIR / "sqlglot_opt_same_dialect_scoring_v0.json"
+    llm_scoring_path = FORMAL_COMMON_CORE_REPORT_DIR / "llm_direct_rewrite_scoring_v0.json"
+    method_consistency_path = FORMAL_COMMON_CORE_REPORT_DIR / "method_consistency_scoring_v0.json"
+    plan_parse_summary_path = FORMAL_COMMON_CORE_REPORT_DIR / "plan_parse_summary_v0.json"
+    plan_operator_delta_summary_path = FORMAL_COMMON_CORE_REPORT_DIR / "plan_operator_delta_summary_v0.json"
+    native_execution_path = FORMAL_COMMON_CORE_REPORT_DIR / "native_identity_execution_v0.json"
+    human_execution_path = FORMAL_COMMON_CORE_REPORT_DIR / "human_reference_positive_execution_v0.json"
+    sqlglot_execution_path = FORMAL_COMMON_CORE_REPORT_DIR / "sqlglot_opt_same_dialect_execution_v0.json"
+    llm_execution_path = FORMAL_COMMON_CORE_REPORT_DIR / "llm_direct_rewrite_execution_v0.json"
+
+    runtime_snapshot_report = load_json_if_present(runtime_snapshot_path)
+    control_scoring_report = load_json_if_present(control_scoring_path)
+    sqlglot_scoring_report = load_json_if_present(sqlglot_scoring_path)
+    llm_scoring_report = load_json_if_present(llm_scoring_path)
+    method_consistency_report = load_json_if_present(method_consistency_path)
+    plan_parse_summary_report = load_json_if_present(plan_parse_summary_path)
+    plan_operator_delta_summary_report = load_json_if_present(plan_operator_delta_summary_path)
+    native_execution_report = load_json_if_present(native_execution_path)
+    human_execution_report = load_json_if_present(human_execution_path)
+    sqlglot_execution_report = load_json_if_present(sqlglot_execution_path)
+    llm_execution_report = load_json_if_present(llm_execution_path)
+
+    for issue_type, path, report in [
+        ("missing_runtime_snapshot_report", runtime_snapshot_path, runtime_snapshot_report),
+        ("missing_control_scoring_report", control_scoring_path, control_scoring_report),
+        ("missing_sqlglot_scoring_report", sqlglot_scoring_path, sqlglot_scoring_report),
+        ("missing_llm_scoring_report", llm_scoring_path, llm_scoring_report),
+        ("missing_method_consistency_report", method_consistency_path, method_consistency_report),
+        ("missing_plan_parse_summary_report", plan_parse_summary_path, plan_parse_summary_report),
+        ("missing_plan_operator_delta_summary_report", plan_operator_delta_summary_path, plan_operator_delta_summary_report),
+        ("missing_native_execution_report", native_execution_path, native_execution_report),
+        ("missing_human_execution_report", human_execution_path, human_execution_report),
+        ("missing_sqlglot_execution_report", sqlglot_execution_path, sqlglot_execution_report),
+        ("missing_llm_execution_report", llm_execution_path, llm_execution_report),
+    ]:
+        if report is None:
+            issues.append({"type": issue_type, "path": relative_to_root(path)})
+
+    runtime_map = {
+        str(record.get("case_id", "")).strip(): record
+        for record in (runtime_snapshot_report or {}).get("records", [])
+        if record.get("case_id")
+    }
+    control_map = {
+        str(record.get("case_id", "")).strip(): record
+        for record in (control_scoring_report or {}).get("records", [])
+        if record.get("case_id")
+    }
+    plan_parse_map = {
+        str(record.get("case_id", "")).strip(): record
+        for record in (plan_parse_summary_report or {}).get("records", [])
+        if record.get("case_id")
+    }
+    native_execution_map = {
+        str(record.get("case_id", "")).strip(): record
+        for record in (native_execution_report or {}).get("records", [])
+        if record.get("case_id")
+    }
+    human_execution_map = {
+        str(record.get("case_id", "")).strip(): record
+        for record in (human_execution_report or {}).get("records", [])
+        if record.get("case_id")
+    }
+    sqlglot_execution_map = {
+        str(record.get("case_id", "")).strip(): record
+        for record in (sqlglot_execution_report or {}).get("records", [])
+        if record.get("case_id")
+    }
+    llm_execution_map = {
+        str(record.get("case_id", "")).strip(): record
+        for record in (llm_execution_report or {}).get("records", [])
+        if record.get("case_id")
+    }
+
+    method_route_summary_map = {
+        str(summary.get("baseline_id", "")).strip(): summary
+        for summary in (method_consistency_report or {}).get("route_summaries", [])
+        if summary.get("baseline_id")
+    }
+    method_record_map_by_baseline: dict[str, dict[str, dict[str, Any]]] = {}
+    for baseline_id, summary in method_route_summary_map.items():
+        method_record_map_by_baseline[baseline_id] = {
+            str(record.get("case_id", "")).strip(): record
+            for record in summary.get("records", [])
+            if record.get("case_id")
+        }
+
+    route_specs = [
+        {
+            "baseline_id": "NATIVE_IDENTITY",
+            "route": "native_identity",
+            "candidate_runtime_field": None,
+            "ratio_field": None,
+            "execution_map": native_execution_map,
+            "execution_status_field": "execution_status",
+            "plan_pair_field": None,
+        },
+        {
+            "baseline_id": "HUMAN_REFERENCE_POSITIVE",
+            "route": "human_reference_positive",
+            "candidate_runtime_field": "human_positive_runtime_ms",
+            "ratio_field": "human_positive_vs_native_runtime_ratio_observed_single_run",
+            "execution_map": human_execution_map,
+            "execution_status_field": "execution_status",
+            "plan_pair_field": "source_positive_pair_ready",
+        },
+        {
+            "baseline_id": "SQLGLOT_OPT_SAME_DIALECT",
+            "route": "sqlglot_opt_same_dialect",
+            "candidate_runtime_field": "sqlglot_runtime_ms",
+            "ratio_field": "sqlglot_vs_native_runtime_ratio_observed_single_run",
+            "execution_map": sqlglot_execution_map,
+            "execution_status_field": "execution_status",
+            "plan_pair_field": "source_sqlglot_pair_ready",
+        },
+        {
+            "baseline_id": "LLM_DIRECT_REWRITE_STRONG",
+            "route": "llm_direct_rewrite",
+            "candidate_runtime_field": "llm_runtime_ms",
+            "ratio_field": "llm_vs_native_runtime_ratio_observed_single_run",
+            "execution_map": llm_execution_map,
+            "execution_status_field": "pg_execution_status",
+            "plan_pair_field": "source_llm_pair_ready",
+        },
+    ]
+
+    source_runtime_available_count = 0
+    human_positive_speedup_eligible_count = 0
+    sqlglot_speedup_eligible_count = 0
+    llm_speedup_eligible_count = 0
+    human_positive_blocked_count = 0
+    sqlglot_blocked_count = 0
+    llm_blocked_count = 0
+    method_consistency_blocker_count = 0
+    policy_blocker_count = 0
+    observed_ratio_available_count_by_route = {
+        "human_reference_positive": 0,
+        "sqlglot_opt_same_dialect": 0,
+        "llm_direct_rewrite": 0,
+    }
+    plan_pair_ready_count_by_route = {
+        "human_reference_positive": 0,
+        "sqlglot_opt_same_dialect": 0,
+        "llm_direct_rewrite": 0,
+    }
+
+    records: list[dict[str, Any]] = []
+
+    for case_id in case_ids:
+        runtime_record = runtime_map.get(case_id, {})
+        native_runtime_ms = runtime_record.get("native_runtime_ms")
+        source_runtime_available = isinstance(native_runtime_ms, (int, float))
+        if source_runtime_available:
+            source_runtime_available_count += 1
+
+        inferred = case_root_for_case_id(case_id)
+        pool = inferred[0] if inferred else "unknown"
+        speedup_pool_role = (
+            "performance_speedup_candidate"
+            if pool == "performance"
+            else "consistency_semantic_only_policy_open"
+        )
+
+        control_record = control_map.get(case_id, {})
+        human_consistency_passed = bool(control_record.get("human_positive_consistency_status_observed"))
+
+        sqlglot_method_record = (method_record_map_by_baseline.get("SQLGLOT_OPT_SAME_DIALECT") or {}).get(case_id, {})
+        llm_method_record = (method_record_map_by_baseline.get("LLM_DIRECT_REWRITE_STRONG") or {}).get(case_id, {})
+
+        for spec in route_specs:
+            baseline_id = spec["baseline_id"]
+            route = spec["route"]
+            warnings: list[str] = []
+            ineligibility_reasons: list[str] = []
+            execution_record = spec["execution_map"].get(case_id, {})
+            execution_success = str(execution_record.get(spec["execution_status_field"], "")) == "success"
+
+            candidate_runtime_ms = (
+                runtime_record.get(spec["candidate_runtime_field"])
+                if spec["candidate_runtime_field"] is not None
+                else None
+            )
+            candidate_runtime_available = isinstance(candidate_runtime_ms, (int, float))
+            observed_ratio = (
+                runtime_record.get(spec["ratio_field"])
+                if spec["ratio_field"] is not None
+                else None
+            )
+            if spec["ratio_field"] is not None and isinstance(observed_ratio, (int, float)):
+                observed_ratio_available_count_by_route[route] += 1
+
+            if spec["plan_pair_field"] is None:
+                plan_pair_ready = None
+                operator_delta_available = None
+            else:
+                plan_pair_ready = bool((plan_parse_map.get(case_id) or {}).get(spec["plan_pair_field"]))
+                operator_delta_available = plan_pair_ready
+                if plan_pair_ready:
+                    plan_pair_ready_count_by_route[route] += 1
+
+            if baseline_id == "NATIVE_IDENTITY":
+                result_consistency_gate_status = "source_baseline_not_applicable"
+                eligible_for_formal_speedup = False
+                ineligibility_reasons.append("source_baseline_not_scored_speedup_method")
+            elif baseline_id == "HUMAN_REFERENCE_POSITIVE":
+                if pool != "performance":
+                    result_consistency_gate_status = "policy_open_cons_case"
+                    eligible_for_formal_speedup = False
+                    ineligibility_reasons.append("policy_open_cons_case")
+                    policy_blocker_count += 1
+                elif human_consistency_passed:
+                    result_consistency_gate_status = "passed_checker_backed"
+                    eligible_for_formal_speedup = bool(
+                        execution_success and source_runtime_available and candidate_runtime_available
+                    )
+                    if not execution_success:
+                        ineligibility_reasons.append("missing_execution_success")
+                    if not source_runtime_available:
+                        ineligibility_reasons.append("missing_source_runtime_observation")
+                    if not candidate_runtime_available:
+                        ineligibility_reasons.append("missing_candidate_runtime_observation")
+                else:
+                    result_consistency_gate_status = "blocked_missing_checker_backed_consistency"
+                    eligible_for_formal_speedup = False
+                    ineligibility_reasons.append("missing_checker_backed_consistency")
+                    method_consistency_blocker_count += 1
+            elif baseline_id == "SQLGLOT_OPT_SAME_DIALECT":
+                if pool != "performance":
+                    result_consistency_gate_status = "policy_open_cons_case"
+                    eligible_for_formal_speedup = False
+                    ineligibility_reasons.append("policy_open_cons_case")
+                    ineligibility_reasons.append("missing_checker_backed_method_consistency")
+                    policy_blocker_count += 1
+                else:
+                    result_consistency_gate_status = "blocked_missing_checker_backed_consistency"
+                    eligible_for_formal_speedup = False
+                    ineligibility_reasons.append("missing_checker_backed_method_consistency")
+                    method_consistency_blocker_count += 1
+                if sqlglot_method_record.get("row_count_matches_native") is True:
+                    warnings.append("row_count_match_is_observation_only")
+            else:
+                if pool != "performance":
+                    result_consistency_gate_status = "policy_open_cons_case"
+                    eligible_for_formal_speedup = False
+                    ineligibility_reasons.append("policy_open_cons_case")
+                    ineligibility_reasons.append("missing_checker_backed_method_consistency")
+                    policy_blocker_count += 1
+                else:
+                    result_consistency_gate_status = "blocked_missing_checker_backed_consistency"
+                    eligible_for_formal_speedup = False
+                    ineligibility_reasons.append("missing_checker_backed_method_consistency")
+                    method_consistency_blocker_count += 1
+                warnings.append("token_cost_should_be_reported_separately_from_runtime")
+                if llm_method_record.get("row_count_matches_native") is True:
+                    warnings.append("row_count_match_is_observation_only")
+
+            if baseline_id == "HUMAN_REFERENCE_POSITIVE":
+                if eligible_for_formal_speedup:
+                    human_positive_speedup_eligible_count += 1
+                else:
+                    human_positive_blocked_count += 1
+            elif baseline_id == "SQLGLOT_OPT_SAME_DIALECT":
+                if eligible_for_formal_speedup:
+                    sqlglot_speedup_eligible_count += 1
+                else:
+                    sqlglot_blocked_count += 1
+            elif baseline_id == "LLM_DIRECT_REWRITE_STRONG":
+                if eligible_for_formal_speedup:
+                    llm_speedup_eligible_count += 1
+                else:
+                    llm_blocked_count += 1
+
+            records.append(
+                {
+                    "case_id": case_id,
+                    "pool": pool,
+                    "speedup_pool_role": speedup_pool_role,
+                    "route": route,
+                    "baseline_id": baseline_id,
+                    "source_runtime_available": source_runtime_available,
+                    "candidate_runtime_available": candidate_runtime_available,
+                    "source_runtime_ms_observed_single_run": native_runtime_ms,
+                    "candidate_runtime_ms_observed_single_run": candidate_runtime_ms,
+                    "observed_single_run_runtime_ratio": observed_ratio,
+                    "execution_success": execution_success,
+                    "result_consistency_gate_status": result_consistency_gate_status,
+                    "plan_pair_ready": plan_pair_ready,
+                    "operator_delta_available": operator_delta_available,
+                    "eligible_for_formal_speedup": eligible_for_formal_speedup,
+                    "ineligibility_reasons": ineligibility_reasons,
+                    "warnings": warnings,
+                    "artifact_claim_boundary": "formal_speedup_preflight_only_no_runtime_rerun_no_speedup_scoring",
+                }
+            )
+
+    speedup_scoring_blockers: list[str] = []
+    runtime_policy_frozen = False
+    speedup_metric_policy_frozen = False
+    if not runtime_policy_frozen:
+        speedup_scoring_blockers.append("runtime_policy_not_frozen")
+    if not speedup_metric_policy_frozen:
+        speedup_scoring_blockers.append("speedup_metric_policy_not_frozen")
+    if method_consistency_blocker_count:
+        speedup_scoring_blockers.append("checker_backed_method_consistency_missing_for_generated_methods")
+    if policy_blocker_count:
+        speedup_scoring_blockers.append("consistency_pool_speedup_inclusion_policy_open")
+    speedup_scoring_blockers.append("runtime_observations_are_single_run_only")
+
+    payload = {
+        "command": "formal-common-core-speedup-preflight",
+        "ok": (
+            runtime_snapshot_report is not None
+            and control_scoring_report is not None
+            and sqlglot_scoring_report is not None
+            and llm_scoring_report is not None
+            and method_consistency_report is not None
+            and plan_parse_summary_report is not None
+            and plan_operator_delta_summary_report is not None
+            and native_execution_report is not None
+            and human_execution_report is not None
+            and sqlglot_execution_report is not None
+            and llm_execution_report is not None
+            and len(runtime_map) == denominator_case_count
+            and len(native_execution_map) == denominator_case_count
+            and len(human_execution_map) == denominator_case_count
+            and len(sqlglot_execution_map) == denominator_case_count
+            and len(llm_execution_map) == denominator_case_count
+        ),
+        "ran_at_utc": utc_now(),
+        "output_path": f"reports/formal_common_core/{output_name}",
+        "denominator_case_count": denominator_case_count,
+        "performance_speedup_candidate_case_count": 7,
+        "consistency_policy_open_case_count": 2,
+        "routes_inspected": [
+            "NATIVE_IDENTITY",
+            "HUMAN_REFERENCE_POSITIVE",
+            "SQLGLOT_OPT_SAME_DIALECT",
+            "LLM_DIRECT_REWRITE_STRONG",
+        ],
+        "runtime_policy_frozen": runtime_policy_frozen,
+        "speedup_metric_policy_frozen": speedup_metric_policy_frozen,
+        "repeat_count_proposed": 5,
+        "warmup_count_proposed": 1,
+        "statement_timeout_ms_proposed": 30000,
+        "primary_statistic_proposed": "median",
+        "tie_threshold_proposed": 0.05,
+        "regression_threshold_proposed": 1.2,
+        "source_runtime_available_count": source_runtime_available_count,
+        "human_positive_speedup_eligible_count": human_positive_speedup_eligible_count,
+        "sqlglot_speedup_eligible_count": sqlglot_speedup_eligible_count,
+        "llm_speedup_eligible_count": llm_speedup_eligible_count,
+        "human_positive_blocked_count": human_positive_blocked_count,
+        "sqlglot_blocked_count": sqlglot_blocked_count,
+        "llm_blocked_count": llm_blocked_count,
+        "method_consistency_blocker_count": method_consistency_blocker_count,
+        "policy_blocker_count": policy_blocker_count,
+        "plan_pair_ready_count_by_route": plan_pair_ready_count_by_route,
+        "observed_single_run_ratio_available_count_by_route": observed_ratio_available_count_by_route,
+        "formal_speedup_run_ready": False,
+        "formal_speedup_scoring_complete": False,
+        "speedup_scoring_blockers": speedup_scoring_blockers,
+        "records": records,
+        "issues": issues,
+        "guardrails": {
+            "database_execution": "disabled",
+            "sql_execution": "disabled",
+            "runtime_rerun": "disabled",
+            "model_api_call": "disabled",
+            "sqlglot_generation": "disabled",
+            "checker_execution": "disabled",
+            "plan_collection": "disabled",
+            "formal_speedup_scoring": "disabled",
+            "attribution_scoring": "disabled",
+            "case_artifact_write": "disabled",
+            "registry_writeback": "disabled",
+        },
+        "claim_boundary": "formal_speedup_preflight_only_not_speedup_scoring_or_leaderboard",
+    }
+    write_formal_common_core_report(output_name, payload)
+    return print_and_exit(payload, 0 if payload["ok"] else 1)
+
+
 def cmd_formal_common_core_method_plan_collection_preflight(args: argparse.Namespace) -> int:
     output_name = normalize_formal_common_core_output_name(args.output)
     if args.execute:
@@ -18666,6 +19087,14 @@ def build_parser() -> argparse.ArgumentParser:
     )
     formal_common_core_plan_operator_delta_summary_parser.add_argument("--execute", action="store_true", default=False)
     formal_common_core_plan_operator_delta_summary_parser.set_defaults(func=cmd_formal_common_core_plan_operator_delta_summary)
+
+    formal_common_core_speedup_preflight_parser = subparsers.add_parser("formal-common-core-speedup-preflight")
+    formal_common_core_speedup_preflight_parser.add_argument(
+        "--output",
+        default="speedup_preflight_v0.json",
+    )
+    formal_common_core_speedup_preflight_parser.add_argument("--execute", action="store_true", default=False)
+    formal_common_core_speedup_preflight_parser.set_defaults(func=cmd_formal_common_core_speedup_preflight)
 
     formal_common_core_method_plan_collection_preflight_parser = subparsers.add_parser("formal-common-core-method-plan-collection-preflight")
     formal_common_core_method_plan_collection_preflight_parser.add_argument(
