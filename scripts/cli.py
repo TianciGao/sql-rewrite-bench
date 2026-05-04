@@ -19979,6 +19979,536 @@ def cmd_formal_batch2c_port_preflight(args: argparse.Namespace) -> int:
     return print_and_exit(payload, 0 if payload["ok"] else 1)
 
 
+def cmd_formal_batch2c_port_pg_matrix_consistency(args: argparse.Namespace) -> int:
+    output_name = normalize_formal_expansion_output_name(args.output)
+    execute_refused_name = "batch2c_port_pg_matrix_consistency_execute_refused_v0.json"
+    valid_case_ids = ["PORT_0013", "PORT_0024", "PORT_0025"]
+    valid_routes = ["SQLGLOT_TRANSPILE", "LLM_DIRECT_TRANSLATE"]
+    selected_case_ids = [str(case_id).strip().upper() for case_id in (args.case_id or []) if str(case_id).strip()]
+    selected_routes = [str(route).strip().upper() for route in (args.route or []) if str(route).strip()]
+    if not selected_case_ids:
+        selected_case_ids = list(valid_case_ids)
+    if not selected_routes:
+        selected_routes = list(valid_routes)
+
+    issues: list[dict[str, Any]] = []
+    invalid_case_ids = [case_id for case_id in selected_case_ids if case_id not in valid_case_ids]
+    invalid_routes = [route for route in selected_routes if route not in valid_routes]
+    if invalid_case_ids:
+        for case_id in invalid_case_ids:
+            issues.append({"type": "unsupported_case_id", "case_id": case_id})
+    if invalid_routes:
+        for route in invalid_routes:
+            issues.append({"type": "unsupported_route", "route": route})
+    if args.execute and issues:
+        payload = {
+            "command": "formal-batch2c-port-pg-matrix-consistency",
+            "ok": False,
+            "ran_at_utc": utc_now(),
+            "output_path": f"reports/formal_expansion/{execute_refused_name}",
+            "issues": issues,
+            "claim_boundary": "batch2c_port_pg_matrix_consistency_not_translation_correctness",
+        }
+        write_formal_expansion_report(execute_refused_name, payload)
+        return print_and_exit(payload, 1)
+    selected_case_ids = [case_id for case_id in selected_case_ids if case_id in valid_case_ids]
+    selected_routes = [route for route in selected_routes if route in valid_routes]
+
+    route_dir_map = {
+        "SQLGLOT_TRANSPILE": "sqlglot_transpile",
+        "LLM_DIRECT_TRANSLATE": "llm_direct_translate",
+    }
+    checker_policy_map = {
+        "PORT_0013": "exact_tsv_report_local",
+        "PORT_0024": "normalized_tsv_report_local",
+        "PORT_0025": "exact_tsv_report_local",
+    }
+    reference_root = FORMAL_EXPANSION_REPORT_DIR / "port_batch2c" / "result_materialization" / "reference"
+    candidate_root_base = FORMAL_EXPANSION_REPORT_DIR / "port_batch2c" / "result_materialization"
+    check_root_base = FORMAL_EXPANSION_REPORT_DIR / "port_batch2c" / "result_checks"
+
+    endpoint_config = resolve_llm_endpoint_config()
+    env_visibility = pg_env_visibility()
+    required_pg_env_visible = all(env_visibility[name] for name in ["PGHOST", "PGPORT", "PGDATABASE", "PGUSER"])
+    pg_password_present = env_visibility["PGPASSWORD"]
+    sqlglot_available = safe_module_available("sqlglot")
+    psycopg_available = safe_module_available("psycopg")
+    openai_available = safe_module_available("openai")
+
+    sqlglot_module = None
+    psycopg = None
+    OpenAI = None
+    if sqlglot_available:
+        try:
+            sqlglot_module = importlib.import_module("sqlglot")
+        except Exception as exc:
+            sqlglot_available = False
+            issues.append({"type": "sqlglot_import_error", "message": str(exc)})
+    if args.execute and psycopg_available:
+        try:
+            psycopg = importlib.import_module("psycopg")
+        except Exception as exc:
+            psycopg_available = False
+            issues.append({"type": "psycopg_import_error", "message": str(exc)})
+    if openai_available:
+        try:
+            openai_mod = importlib.import_module("openai")
+            OpenAI = getattr(openai_mod, "OpenAI", None)
+        except Exception as exc:
+            openai_available = False
+            issues.append({"type": "openai_import_error", "message": str(exc)})
+
+    case_specs: dict[str, dict[str, Any]] = {}
+    for case_id in selected_case_ids:
+        manifest_path = PORT_CASE_ROOT / case_id / "manifest.yaml"
+        manifest_text = manifest_path.read_text(encoding="utf-8") if manifest_path.is_file() else ""
+        source_dialect = llm_translate_source_dialect(case_id, manifest_text)
+        case_specs[case_id] = {
+            "case_id": case_id,
+            "pool": "portability",
+            "why_selected": f"Batch 2C PORT bounded PostgreSQL route-matrix candidate; source_dialect={source_dialect}",
+            "caveat": "bounded PG-only matrix and reference consistency; not full translation correctness",
+            "smoke_role": "portability",
+        }
+
+    def raw_exact_equal(a_path: Path, b_path: Path) -> bool:
+        return a_path.read_bytes() == b_path.read_bytes()
+
+    records: list[dict[str, Any]] = []
+    total_llm_token_usage = 0
+    sqlglot_pg_success_count = 0
+    sqlglot_pg_failed_count = 0
+    sqlglot_consistent_count = 0
+    sqlglot_inconsistent_count = 0
+    llm_call_success_count = 0
+    llm_extraction_success_count = 0
+    llm_pg_success_count = 0
+    llm_pg_failed_count = 0
+    llm_consistent_count = 0
+    llm_inconsistent_count = 0
+
+    if not args.execute:
+        for case_id in selected_case_ids:
+            for route in selected_routes:
+                route_dir = route_dir_map[route]
+                records.append(
+                    {
+                        "case_id": case_id,
+                        "route": route,
+                        "reference_sql_source": "rewrite_pos_01.sql",
+                        "checker_policy": checker_policy_map[case_id],
+                        "reference_result_path": f"reports/formal_expansion/port_batch2c/result_materialization/reference/{case_id.lower()}.tsv",
+                        "candidate_result_path": f"reports/formal_expansion/port_batch2c/result_materialization/{route_dir}/{case_id.lower()}.tsv",
+                        "checker_output_path": f"reports/formal_expansion/port_batch2c/result_checks/{route_dir}/{case_id.lower()}.json",
+                        "model_call_status": "planned" if route == "LLM_DIRECT_TRANSLATE" else None,
+                        "extraction_status": "planned" if route == "LLM_DIRECT_TRANSLATE" else None,
+                        "pg_execution_status": "planned",
+                        "checker_status": "planned",
+                        "claim_boundary": "batch2c_port_pg_matrix_consistency_not_translation_correctness",
+                    }
+                )
+        payload = {
+            "command": "formal-batch2c-port-pg-matrix-consistency",
+            "ok": not issues,
+            "ran_at_utc": utc_now(),
+            "output_path": f"reports/formal_expansion/{output_name}",
+            "case_count": len(selected_case_ids),
+            "route_count": len(selected_routes),
+            "records": records,
+            "issues": issues,
+            "claim_boundary": "batch2c_port_pg_matrix_consistency_not_translation_correctness",
+        }
+        write_formal_expansion_report(output_name, payload)
+        return print_and_exit(payload, 0 if payload["ok"] else 1)
+
+    if not required_pg_env_visible:
+        issues.append({"type": "missing_pg_env", "message": "required env: PGHOST, PGPORT, PGDATABASE, PGUSER"})
+    if not psycopg_available:
+        issues.append({"type": "psycopg_unavailable", "message": "psycopg unavailable"})
+    if "SQLGLOT_TRANSPILE" in selected_routes and not sqlglot_available:
+        issues.append({"type": "sqlglot_unavailable", "message": "sqlglot unavailable"})
+    if "LLM_DIRECT_TRANSLATE" in selected_routes and not endpoint_config["api_key_visible"]:
+        issues.append({"type": "missing_api_key", "message": "OpenAI/LLM API key unavailable"})
+    if "LLM_DIRECT_TRANSLATE" in selected_routes and not openai_available:
+        issues.append({"type": "openai_unavailable", "message": "openai client unavailable"})
+
+    pg_ready = required_pg_env_visible and psycopg_available and psycopg is not None
+    sqlglot_route_ready = pg_ready and sqlglot_available and sqlglot_module is not None
+    llm_route_ready = pg_ready and endpoint_config["api_key_visible"] and openai_available and OpenAI is not None
+
+    for case_id in selected_case_ids:
+        case_root = PORT_CASE_ROOT / case_id
+        source_sql_path = case_root / "source.sql"
+        reference_sql_path = case_root / "rewrite_pos_01.sql"
+        reference_sql = reference_sql_path.read_text(encoding="utf-8") if reference_sql_path.is_file() else ""
+        source_sql = source_sql_path.read_text(encoding="utf-8") if source_sql_path.is_file() else ""
+        manifest_path = case_root / "manifest.yaml"
+        manifest_text = manifest_path.read_text(encoding="utf-8") if manifest_path.is_file() else ""
+        source_dialect_hint = manifest_source_dialect_hint(manifest_text)
+        validation_schema = validation_schema_hint(case_id)
+        checker_policy = checker_policy_map[case_id]
+
+        reference_result_path = reference_root / f"{case_id.lower()}.tsv"
+        reference_lines: list[str] | None = None
+        reference_row_count: int | None = None
+        reference_execution_status = "not_attempted"
+        reference_error_message = ""
+        reference_failure_category = "none"
+        search_path_after_set = ""
+
+        if pg_ready:
+            try:
+                with psycopg.connect(
+                    host=os.environ["PGHOST"],
+                    port=os.environ["PGPORT"],
+                    dbname=os.environ["PGDATABASE"],
+                    user=os.environ["PGUSER"],
+                    password=os.environ.get("PGPASSWORD"),
+                    options="-c statement_timeout=30000 -c default_transaction_read_only=on",
+                ) as conn:
+                    with conn.cursor() as cur:
+                        cur.execute("SELECT to_regnamespace(%s)", (validation_schema,))
+                        schema_name = cur.fetchone()[0]
+                        if not schema_name:
+                            raise RuntimeError(f"validation schema not found: {validation_schema}")
+                        cur.execute(
+                            psycopg.sql.SQL("SET search_path TO {}, public").format(
+                                psycopg.sql.Identifier(validation_schema)
+                            )
+                        )
+                        cur.execute("SHOW search_path")
+                        search_path_row = cur.fetchone()
+                        search_path_after_set = str(search_path_row[0]) if search_path_row else ""
+                        reference_row_count, _ = materialize_query_to_tsv(cur, reference_sql, reference_result_path)
+                        reference_lines = read_tsv_lines_if_present(reference_result_path)
+                        reference_execution_status = "success"
+                        conn.rollback()
+            except Exception as exc:
+                reference_execution_status = "failed"
+                reference_failure_category = type(exc).__name__
+                reference_error_message = str(exc)
+        else:
+            reference_execution_status = "failed"
+            reference_failure_category = "environment_blocked"
+            reference_error_message = "PostgreSQL execution prerequisites not satisfied"
+
+        for route in selected_routes:
+            route_dir = route_dir_map[route]
+            candidate_result_path = candidate_root_base / route_dir / f"{case_id.lower()}.tsv"
+            checker_output_path = check_root_base / route_dir / f"{case_id.lower()}.json"
+            model_call_status = None
+            extraction_status = None
+            token_usage_input = None
+            token_usage_output = None
+            token_usage_total = None
+            generated_sql_preview = ""
+            generated_sql_character_count = None
+            parse_status = None
+            generation_status = None
+            candidate_sql = ""
+            candidate_sql_source = ""
+            pg_execution_status = "not_attempted"
+            row_count = None
+            runtime_ms = None
+            failure_category = "none"
+            error_message = ""
+            row_count_equal = None
+            byte_equal = None
+            normalized_equal = None
+            raw_exact_status = "not_checked"
+            checker_status = "not_checked"
+
+            if reference_execution_status != "success":
+                pg_execution_status = "reference_execution_failed"
+                failure_category = reference_failure_category or "reference_execution_failed"
+                error_message = reference_error_message
+                checker_status = "reference_execution_failed"
+            elif route == "SQLGLOT_TRANSPILE":
+                parse_status = "not_attempted"
+                generation_status = "not_attempted"
+                candidates_tried = source_dialect_candidate_order(source_dialect_hint, "auto")
+                parsed = None
+                last_exc: Exception | None = None
+                source_dialect_used = ""
+                for candidate in candidates_tried:
+                    try:
+                        parsed = sqlglot_module.parse_one(source_sql, dialect=candidate)
+                        source_dialect_used = candidate
+                        break
+                    except Exception as exc:
+                        last_exc = exc
+                if not sqlglot_route_ready:
+                    parse_status = "failed"
+                    generation_status = "failed"
+                    pg_execution_status = "failed"
+                    failure_category = "sqlglot_route_blocked"
+                    error_message = "SQLGlot route prerequisites not satisfied"
+                    sqlglot_pg_failed_count += 1
+                elif parsed is None:
+                    parse_status = "failed"
+                    generation_status = "failed"
+                    pg_execution_status = "failed"
+                    failure_category = type(last_exc).__name__ if last_exc else "parse_failed"
+                    error_message = str(last_exc) if last_exc else "parse failed"
+                else:
+                    parse_status = "success"
+                    try:
+                        candidate_sql = parsed.sql(dialect="postgres")
+                        candidate_sql_source = f"sqlglot_transpile:{source_dialect_used}->postgres"
+                        generation_status = "success"
+                        generated_sql_preview = candidate_sql[:500]
+                        generated_sql_character_count = len(candidate_sql)
+                    except Exception as exc:
+                        generation_status = "failed"
+                        pg_execution_status = "failed"
+                        failure_category = type(exc).__name__
+                        error_message = str(exc)
+                if generation_status == "success":
+                    start = time.perf_counter()
+                    try:
+                        with psycopg.connect(
+                            host=os.environ["PGHOST"],
+                            port=os.environ["PGPORT"],
+                            dbname=os.environ["PGDATABASE"],
+                            user=os.environ["PGUSER"],
+                            password=os.environ.get("PGPASSWORD"),
+                            options="-c statement_timeout=30000 -c default_transaction_read_only=on",
+                        ) as conn:
+                            with conn.cursor() as cur:
+                                cur.execute(
+                                    psycopg.sql.SQL("SET search_path TO {}, public").format(
+                                        psycopg.sql.Identifier(validation_schema)
+                                    )
+                                )
+                                row_count, _ = materialize_query_to_tsv(cur, candidate_sql, candidate_result_path)
+                                conn.rollback()
+                        runtime_ms = int((time.perf_counter() - start) * 1000)
+                        pg_execution_status = "success"
+                        sqlglot_pg_success_count += 1
+                    except Exception as exc:
+                        runtime_ms = int((time.perf_counter() - start) * 1000)
+                        pg_execution_status = "failed"
+                        failure_category = type(exc).__name__
+                        error_message = str(exc)
+                        sqlglot_pg_failed_count += 1
+                else:
+                    sqlglot_pg_failed_count += 1
+            else:
+                prompt_row = build_llm_translate_prompt_package(
+                    case_specs[case_id],
+                    target_dialect="postgres",
+                    model_label=args.model_label,
+                    preflight_record={},
+                    execution_record={},
+                )
+                if prompt_row["prompt_package_status"] != "ready" or not prompt_row["source_sql_exists"]:
+                    model_call_status = "blocked"
+                    extraction_status = "not_available"
+                    pg_execution_status = "failed"
+                    failure_category = prompt_row["prompt_package_status"]
+                    error_message = "prompt package not ready"
+                    llm_pg_failed_count += 1
+                elif not llm_route_ready:
+                    model_call_status = "env_blocked" if not endpoint_config["api_key_visible"] else "client_unavailable"
+                    extraction_status = "not_available"
+                    pg_execution_status = "failed"
+                    failure_category = "missing_api_key" if not endpoint_config["api_key_visible"] else "llm_route_blocked"
+                    error_message = "LLM route prerequisites not satisfied"
+                    llm_pg_failed_count += 1
+                elif OpenAI is None:
+                    model_call_status = "client_unavailable"
+                    extraction_status = "not_available"
+                    pg_execution_status = "failed"
+                    failure_category = "client_unavailable"
+                    error_message = "openai.OpenAI client unavailable"
+                    llm_pg_failed_count += 1
+                else:
+                    client_kwargs = {"api_key": endpoint_config["api_key"]}
+                    if endpoint_config["base_url_visible"]:
+                        client_kwargs["base_url"] = endpoint_config["base_url"]
+                    client = OpenAI(**client_kwargs)
+                    try:
+                        response = client.chat.completions.create(
+                            model=args.model_label,
+                            messages=[
+                                {"role": "system", "content": json.loads(prompt_row["prompt_blob"])["system_message"]},
+                                {"role": "user", "content": json.loads(prompt_row["prompt_blob"])["user_message"]},
+                            ],
+                            temperature=args.temperature,
+                            max_tokens=args.max_output_tokens,
+                        )
+                        message = response.choices[0].message.content if response.choices else ""
+                        extraction_status, candidate_sql = extract_sql_like_output((message or "").strip())
+                        model_call_status = "success"
+                        llm_call_success_count += 1
+                        usage = getattr(response, "usage", None)
+                        if usage is not None:
+                            token_usage_input = getattr(usage, "prompt_tokens", None)
+                            token_usage_output = getattr(usage, "completion_tokens", None)
+                            token_usage_total = getattr(usage, "total_tokens", None)
+                            total_llm_token_usage += int(token_usage_total or 0)
+                        if extraction_status == "extracted":
+                            llm_extraction_success_count += 1
+                            candidate_sql_source = "llm_extracted_sql"
+                            generated_sql_preview = candidate_sql[:500]
+                            generated_sql_character_count = len(candidate_sql)
+                            start = time.perf_counter()
+                            try:
+                                with psycopg.connect(
+                                    host=os.environ["PGHOST"],
+                                    port=os.environ["PGPORT"],
+                                    dbname=os.environ["PGDATABASE"],
+                                    user=os.environ["PGUSER"],
+                                    password=os.environ.get("PGPASSWORD"),
+                                    options="-c statement_timeout=30000 -c default_transaction_read_only=on",
+                                ) as conn:
+                                    with conn.cursor() as cur:
+                                        cur.execute(
+                                            psycopg.sql.SQL("SET search_path TO {}, public").format(
+                                                psycopg.sql.Identifier(validation_schema)
+                                            )
+                                        )
+                                        row_count, _ = materialize_query_to_tsv(cur, candidate_sql, candidate_result_path)
+                                        conn.rollback()
+                                runtime_ms = int((time.perf_counter() - start) * 1000)
+                                pg_execution_status = "success"
+                                llm_pg_success_count += 1
+                            except Exception as exc:
+                                runtime_ms = int((time.perf_counter() - start) * 1000)
+                                pg_execution_status = "failed"
+                                failure_category = type(exc).__name__
+                                error_message = str(exc)
+                                llm_pg_failed_count += 1
+                        else:
+                            pg_execution_status = "failed"
+                            failure_category = "extracted_sql_not_ready"
+                            error_message = "extraction did not return executable SQL"
+                            llm_pg_failed_count += 1
+                    except Exception as exc:
+                        model_call_status = "failed"
+                        extraction_status = "not_available"
+                        pg_execution_status = "failed"
+                        failure_category = type(exc).__name__
+                        error_message = str(exc)
+                        llm_pg_failed_count += 1
+
+            if pg_execution_status == "success" and reference_lines is not None:
+                candidate_lines = read_tsv_lines_if_present(candidate_result_path) or []
+                row_count_equal = reference_row_count == row_count
+                byte_equal = raw_exact_equal(reference_result_path, candidate_result_path)
+                normalized_equal = normalize_tsv_lines(reference_lines) == normalize_tsv_lines(candidate_lines)
+                raw_exact_status = "consistent" if byte_equal else "inconsistent"
+                if checker_policy == "normalized_tsv_report_local":
+                    checker_status = "consistent" if normalized_equal else "inconsistent"
+                else:
+                    checker_status = "consistent" if byte_equal else "inconsistent"
+                if route == "SQLGLOT_TRANSPILE":
+                    if checker_status == "consistent":
+                        sqlglot_consistent_count += 1
+                    else:
+                        sqlglot_inconsistent_count += 1
+                else:
+                    if checker_status == "consistent":
+                        llm_consistent_count += 1
+                    else:
+                        llm_inconsistent_count += 1
+
+            checker_payload = {
+                "case_id": case_id,
+                "route": route,
+                "reference_sql_source": "rewrite_pos_01.sql",
+                "checker_policy": checker_policy,
+                "reference_result_path": relative_to_root(reference_result_path),
+                "candidate_result_path": relative_to_root(candidate_result_path),
+                "candidate_sql_source": candidate_sql_source,
+                "validation_schema": validation_schema,
+                "search_path_after_set": search_path_after_set,
+                "raw_exact_status": raw_exact_status,
+                "checker_mode": checker_policy,
+                "row_count_reference": reference_row_count,
+                "row_count_candidate": row_count,
+                "row_count_equal": row_count_equal,
+                "byte_equal": byte_equal,
+                "normalized_equal": normalized_equal,
+                "checker_status": checker_status,
+                "runtime_ms": runtime_ms,
+                "failure_category": failure_category,
+                "error_message": error_message,
+                "claim_boundary": "batch2c_port_pg_matrix_consistency_not_translation_correctness",
+            }
+            checker_output_path.parent.mkdir(parents=True, exist_ok=True)
+            checker_output_path.write_text(json.dumps(checker_payload, indent=2) + "\n", encoding="utf-8")
+
+            records.append(
+                {
+                    "case_id": case_id,
+                    "route": route,
+                    "reference_sql_source": "rewrite_pos_01.sql",
+                    "checker_policy": checker_policy,
+                    "parse_status": parse_status,
+                    "generation_status": generation_status,
+                    "model_call_status": model_call_status,
+                    "extraction_status": extraction_status,
+                    "pg_execution_status": pg_execution_status,
+                    "row_count": row_count,
+                    "runtime_ms": runtime_ms,
+                    "failure_category": failure_category,
+                    "error_message": error_message,
+                    "token_usage_input": token_usage_input,
+                    "token_usage_output": token_usage_output,
+                    "token_usage_total": token_usage_total,
+                    "generated_sql_preview": generated_sql_preview,
+                    "generated_sql_character_count": generated_sql_character_count,
+                    "row_count_equal": row_count_equal,
+                    "byte_equal": byte_equal,
+                    "normalized_equal": normalized_equal,
+                    "raw_exact_status": raw_exact_status,
+                    "checker_status": checker_status,
+                    "reference_result_path": relative_to_root(reference_result_path),
+                    "candidate_result_path": relative_to_root(candidate_result_path),
+                    "checker_output_path": relative_to_root(checker_output_path),
+                    "claim_boundary": "batch2c_port_pg_matrix_consistency_not_translation_correctness",
+                }
+            )
+
+    payload = {
+        "command": "formal-batch2c-port-pg-matrix-consistency",
+        "ok": not issues and all(record.get("pg_execution_status") == "success" and record.get("checker_status") in {"consistent", "inconsistent"} for record in records),
+        "ran_at_utc": utc_now(),
+        "output_path": f"reports/formal_expansion/{output_name}",
+        "case_count": len(selected_case_ids),
+        "route_count": len(selected_routes),
+        "sqlglot_pg_success_count": sqlglot_pg_success_count,
+        "sqlglot_pg_failed_count": sqlglot_pg_failed_count,
+        "sqlglot_consistent_count": sqlglot_consistent_count,
+        "sqlglot_inconsistent_count": sqlglot_inconsistent_count,
+        "llm_call_success_count": llm_call_success_count,
+        "llm_extraction_success_count": llm_extraction_success_count,
+        "llm_pg_success_count": llm_pg_success_count,
+        "llm_pg_failed_count": llm_pg_failed_count,
+        "llm_consistent_count": llm_consistent_count,
+        "llm_inconsistent_count": llm_inconsistent_count,
+        "total_llm_token_usage": total_llm_token_usage,
+        "records": records,
+        "issues": issues,
+        "guardrails": {
+            "database_execution": "enabled_only_with_execute",
+            "sql_execution": "postgres_only_selected_routes_and_cases",
+            "model_api_call": "enabled_only_with_execute_for_llm_route",
+            "mysql_execution": "disabled",
+            "spark_execution": "disabled",
+            "common_core_execution": "disabled",
+            "speedup_scoring": "disabled",
+            "checker_execution": "bounded_report_local_only",
+            "case_artifact_write": "disabled",
+            "registry_writeback": "disabled",
+        },
+        "claim_boundary": "batch2c_port_pg_matrix_consistency_not_translation_correctness",
+    }
+    write_formal_expansion_report(output_name, payload)
+    return print_and_exit(payload, 0 if payload["ok"] or not args.execute else 1)
+
+
 def cmd_formal_common_core_method_result_checker_run(args: argparse.Namespace) -> int:
     output_name = normalize_formal_common_core_output_name(args.output)
     valid_routes = {
@@ -27941,6 +28471,19 @@ def build_parser() -> argparse.ArgumentParser:
     )
     formal_batch2c_port_preflight_parser.add_argument("--execute", action="store_true", default=False)
     formal_batch2c_port_preflight_parser.set_defaults(func=cmd_formal_batch2c_port_preflight)
+
+    formal_batch2c_port_pg_matrix_consistency_parser = subparsers.add_parser("formal-batch2c-port-pg-matrix-consistency")
+    formal_batch2c_port_pg_matrix_consistency_parser.add_argument("--case-id", action="append", default=[])
+    formal_batch2c_port_pg_matrix_consistency_parser.add_argument("--route", action="append", default=[])
+    formal_batch2c_port_pg_matrix_consistency_parser.add_argument(
+        "--output",
+        default="batch2c_port_pg_matrix_consistency_v0.json",
+    )
+    formal_batch2c_port_pg_matrix_consistency_parser.add_argument("--model-label", default="gpt-5.2")
+    formal_batch2c_port_pg_matrix_consistency_parser.add_argument("--max-output-tokens", type=int, default=2048)
+    formal_batch2c_port_pg_matrix_consistency_parser.add_argument("--temperature", type=float, default=0.0)
+    formal_batch2c_port_pg_matrix_consistency_parser.add_argument("--execute", action="store_true", default=False)
+    formal_batch2c_port_pg_matrix_consistency_parser.set_defaults(func=cmd_formal_batch2c_port_pg_matrix_consistency)
 
     formal_common_core_method_plan_collection_preflight_parser = subparsers.add_parser("formal-common-core-method-plan-collection-preflight")
     formal_common_core_method_plan_collection_preflight_parser.add_argument(
