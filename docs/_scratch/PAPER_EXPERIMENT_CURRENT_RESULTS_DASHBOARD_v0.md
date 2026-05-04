@@ -11,8 +11,8 @@ It summarizes the current state of the formal common-core and PORT artifact stac
 | area | execution status | executable / ready rate | row-count / plan observation | checker-backed consistency status | token usage | speedup status | claim boundary |
 |---|---|---:|---|---|---:|---|---|
 | control routes | complete | `1.0` executable across native / human positive / hard negative | execution and control-route scoring complete | complete from existing checker artifacts | n/a | HUMAN_REFERENCE_POSITIVE PERF-only positive-control speedup complete: `GM_Speedup=0.96159127168004`, `WTL=1/2/4`, `RegressionRate@20%=0/7` | positive-control speedup only, not full leaderboard |
-| SQLGlot same-dialect | complete | `1.0` parse, generation, execution | row-count match `9 / 9`; method plans `9 / 9`; plan parse `9 / 9` | full 9-case checker-backed consistency complete: `9 / 9`, `rate=1.0` | n/a | exploratory PERF-only appendix complete: `GM=0.9709643241218479`, `WTL=1/2/4`, `RegressionRate@20%=0/7` | full 9-case checker-backed consistency complete; speedup still PERF-only and not full leaderboard |
-| Direct LLM rewrite | complete from existing reports | `1.0` call, extraction, PG execution | row-count match `9 / 9`; method plans `9 / 9`; plan parse `9 / 9` | full 9-case checker-backed consistency complete: `9 / 9`, `rate=1.0` | `5089` total formalized token usage | exploratory PERF-only appendix complete: `GM=1.0023345046000625`, `WTL=1/5/1`, `RegressionRate@20%=0/7` | full 9-case checker-backed consistency complete; speedup still PERF-only and not full leaderboard |
+| SQLGlot same-dialect | complete | `1.0` parse, generation, execution | row-count match `9 / 9`; method plans `9 / 9`; plan parse `9 / 9` | full 9-case checker-backed consistency complete: `9 / 9`, `rate=1.0` | n/a | correctness-gated PERF-only method speedup complete: `GM=0.9709643241218479`, `WTL=1/2/4`, `RegressionRate@20%=0/7` | full 9-case checker-backed consistency complete; PERF-only method speedup only, not full leaderboard |
+| Direct LLM rewrite | complete from existing reports | `1.0` call, extraction, PG execution | row-count match `9 / 9`; method plans `9 / 9`; plan parse `9 / 9` | full 9-case checker-backed consistency complete: `9 / 9`, `rate=1.0` | `5089` total formalized token usage | correctness-gated PERF-only method speedup complete: `GM=1.0023345046000625`, `WTL=1/5/1`, `RegressionRate@20%=0/7` | full 9-case checker-backed consistency complete; PERF-only method speedup only, not full leaderboard |
 | PORT SQLGlot Transpile | partial | preflight `3 / 3`, PG execution `2 / 3` | `PORT_0012` failed `InvalidDatetimeFormat` | not computed | n/a | not computed | not PORT closure |
 | PORT LLM Translate | partial clean subset | prompt `3 / 3`, clean subset `2 / 2` | `PORT_0004` and `PORT_0022` passed; `PORT_0012` held out | not computed | `912` | not computed | clean subset only, not full denominator |
 
@@ -26,7 +26,9 @@ It summarizes the current state of the formal common-core and PORT artifact stac
 - Direct LLM now has full 9-case checker-backed consistency from report-local materialization: `9 / 9`, `rate=1.0`
 - checker mode for generated methods is `exact_tsv_report_local`
 - row-count match is not semantic correctness
-- SQLGlot and Direct LLM exploratory appendix speedup now exists for PERF-only cases, but it remains row-count-gated and not correctness-gated
+- SQLGlot and Direct LLM now have full 9-case checker-backed consistency
+- SQLGlot and Direct LLM also now have correctness-gated PERF-only method speedup summaries
+- these generated-method speedup results remain PERF-only and are not the full benchmark leaderboard
 
 ## RQ2 Plan Observability
 
@@ -38,11 +40,11 @@ It summarizes the current state of the formal common-core and PORT artifact stac
 - attribution is not computed
 - HUMAN_REFERENCE_POSITIVE PERF-only positive-control speedup is complete:
   `GM_Speedup=0.96159127168004`, `Win/Tie/Loss=1/2/4`, `RegressionRate@20%=0/7`
-- SQLGlot PERF-only exploratory appendix:
+- SQLGlot PERF-only correctness-gated method speedup:
   `GM=0.9709643241218479`, `Win/Tie/Loss=1/2/4`, `RegressionRate@20%=0/7`
-- Direct LLM PERF-only exploratory appendix:
+- Direct LLM PERF-only correctness-gated method speedup:
   `GM=1.0023345046000625`, `Win/Tie/Loss=1/5/1`, `RegressionRate@20%=0/7`, `token_usage=4487`
-- SQLGlot and Direct LLM still remain blocked from correctness-gated leaderboard scoring
+- SQLGlot and Direct LLM still remain outside the full benchmark leaderboard because the current speedup packet is PERF-only
 
 Observed operator-delta highlights:
 
@@ -80,19 +82,19 @@ Observed operator-delta highlights:
 
 ## Missing Pieces
 
-- correctness-gated PERF-only generated-method speedup promotion is not yet written as a separate scoring summary
+- CONS inclusion policy for generated-method `GM_Speedup` remains out of scope for the current first-pass runtime packet
 - formal operator-delta summary / attribution logic
 - final paper packet consolidation
 
 ## Recommended Next Primary Action
 
-- promote SQLGlot and Direct LLM PERF-only speedup from exploratory appendix to a correctness-gated PERF-only method speedup summary
+- decide whether to keep generated-method runtime claims PERF-only for the paper body or add a separate CONS runtime policy decision packet
 
 ## Claim Boundaries
 
 - no final leaderboard
 - HUMAN_REFERENCE_POSITIVE speedup is positive-control only
-- SQLGlot and Direct LLM appendix speedup is exploratory and row-count-gated only
-- SQLGlot and Direct LLM speedup are not admitted into the correctness-gated leaderboard
+- SQLGlot and Direct LLM method speedup is correctness-gated for PERF-only cases
+- SQLGlot and Direct LLM are not admitted into a full benchmark leaderboard because the current speedup packet is PERF-only
 - no admission
 - no registry writeback

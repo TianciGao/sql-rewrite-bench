@@ -82,9 +82,9 @@ Current runtime / speedup state:
 Interpretation:
 
 - positive-control speedup now exists as a bounded formal runtime result
-- SQLGlot and Direct LLM now have full 9-case checker-backed consistency, but the existing runtime appendix was introduced as explicitly exploratory material
-- SQLGlot and Direct LLM runtime appendix results remain exploratory and must not be silently promoted into the final correctness-gated leaderboard without a separate policy / promotion step
-- correctness-gated generated-method leaderboard speedup remains blocked
+- SQLGlot and Direct LLM now have full 9-case checker-backed consistency
+- SQLGlot and Direct LLM now also have correctness-gated PERF-only method speedup summaries from existing reruns
+- full benchmark leaderboard promotion remains separate because the current generated-method speedup packet is PERF-only
 
 ## RQ3 Portability
 
@@ -140,9 +140,9 @@ The following paper-facing tables can now be drafted from existing artifacts:
   - source-positive, source-negative, source-SQLGlot, source-LLM top-node and node-type deltas
 - positive-control speedup table
   - HUMAN_REFERENCE_POSITIVE PERF-only `GM_Speedup`, `WTL`, `RegressionRate@20%`
-- exploratory appendix speedup table
-  - SQLGlot PERF-only row-count-gated appendix
-  - Direct LLM PERF-only row-count-gated appendix with token column
+- correctness-gated generated-method speedup table
+  - SQLGlot PERF-only `GM_Speedup`, `WTL`, `RegressionRate@20%`
+  - Direct LLM PERF-only `GM_Speedup`, `WTL`, `RegressionRate@20%`, token column
 - bounded portability snapshot table
   - SQLGlot Transpile `3/3 -> 2/3`
   - LLM Translate clean subset `2/2`
@@ -155,10 +155,10 @@ The following paper-facing tables can now be drafted from existing artifacts:
 - no registry writeback
 - no formal review update
 - SQLGlot and Direct LLM row-count match is not semantic equivalence
-- SQLGlot and Direct LLM appendix speedup is exploratory and row-count-gated only
-- SQLGlot and Direct LLM are not admitted into the correctness-gated speedup leaderboard
+- SQLGlot and Direct LLM generated-method speedup is correctness-gated for PERF-only cases
+- SQLGlot and Direct LLM are not admitted into a full benchmark speedup leaderboard because the current runtime packet is PERF-only
 - PORT current snapshot is not full portability closure
 
 ## Recommended Next Use
 
-- promote SQLGlot and Direct LLM PERF-only speedup from exploratory appendix to a correctness-gated PERF-only method speedup summary
+- decide whether to keep generated-method runtime claims PERF-only for the paper body or add a separate CONS runtime policy decision packet

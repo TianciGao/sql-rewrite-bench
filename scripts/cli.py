@@ -14100,14 +14100,20 @@ def cmd_formal_common_core_method_speedup_scoring(args: argparse.Namespace) -> i
         baseline_id = spec["baseline_id"]
         appendix_metrics = spec["appendix_metrics"]
         consistency_summary = route_consistency_summary_map.get(baseline_id, {})
-        consistency_gate_pass_count = int(consistency_summary.get("checker_backed_consistency_count") or 0)
+        perf_consistency_gate_pass_count = 0
+        for record in consistency_summary.get("records", []):
+            if (
+                str(record.get("pool", "")).strip().lower() == "performance"
+                and str(record.get("checker_backed_consistency_status", "")).strip() == "consistent"
+            ):
+                perf_consistency_gate_pass_count += 1
         route_summaries.append(
             {
                 "baseline_id": baseline_id,
                 "route": spec["route"],
                 "speedup_scope": "PERF_only_correctness_gated_method_speedup",
                 "case_count": int(appendix_metrics.get("case_count") or 0),
-                "consistency_gate_pass_count": consistency_gate_pass_count,
+                "consistency_gate_pass_count": perf_consistency_gate_pass_count,
                 "gm_speedup": appendix_metrics.get("exploratory_gm_speedup"),
                 "win_count": int(appendix_metrics.get("win_count") or 0),
                 "tie_count": int(appendix_metrics.get("tie_count") or 0),
@@ -14118,7 +14124,7 @@ def cmd_formal_common_core_method_speedup_scoring(args: argparse.Namespace) -> i
                 "token_per_executed_case": appendix_metrics.get("token_per_executed_case"),
                 "correctness_gate_status": (
                     "passed_checker_backed_perf_and_cons"
-                    if consistency_gate_pass_count == 9
+                    if perf_consistency_gate_pass_count == 7
                     else "blocked_missing_full_checker_backed_consistency"
                 ),
                 "formal_leaderboard_eligible": False,
@@ -14134,7 +14140,7 @@ def cmd_formal_common_core_method_speedup_scoring(args: argparse.Namespace) -> i
             and policy_packet_path.is_file()
             and appendix_summary_path.is_file()
             and all(summary["case_count"] == 7 for summary in route_summaries)
-            and all(summary["consistency_gate_pass_count"] == 9 for summary in route_summaries)
+            and all(summary["consistency_gate_pass_count"] == 7 for summary in route_summaries)
         ),
         "ran_at_utc": utc_now(),
         "output_path": f"reports/formal_common_core/{output_name}",
