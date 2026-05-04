@@ -19,11 +19,12 @@ The current baseline stack splits into five practical groups:
   - SQLGlot no-opt / same-dialect transpile
 - implemented LLM routes:
   - Direct LLM rewrite
+- bounded checker-backed and speedup-scored subsets:
+  - Calcite HEP
 - partially implemented PORT routes:
   - SQLGlot Transpile
   - LLM Translate
 - readiness-only baselines:
-  - Calcite HEP
   - LearnedRewrite
   - GenRewrite
   - R-Bot
@@ -36,8 +37,9 @@ The current baseline stack splits into five practical groups:
 Current status counts:
 
 - `implemented`: `6`
+- `bounded_checker_backed_and_speedup_scored_subset`: `1`
 - `partially_implemented`: `2`
-- `preflight_only`: `5`
+- `preflight_only`: `4`
 - `not_integrated`: `2`
 - `blocked`: `1`
 
@@ -53,7 +55,7 @@ Current status counts:
 | Direct LLM rewrite | `implemented_on_expanded_perf_checker_backed_and_speedup_scored` | seed common-core PG `9`; expanded PERF PG `34` | call/extract/PG execution, checker-backed consistency on expanded PERF, expanded PERF speedup, seed speedup, token usage | PostgreSQL-only expanded PERF speedup is near-neutral and tie-heavy; not a strong speedup result |
 | SQLGlot Transpile | `partially_implemented` | PORT PG-side `6` | PG execution, policy/reference consistency, failure analysis | PG-side failures on `PORT_0012`, `PORT_0013` |
 | LLM Translate | `partially_implemented` | PORT PG-side `6` | call, extraction, PG execution, policy/reference consistency, token usage | PG-only bounded slice, not cross-engine closure |
-| Calcite HEP | `preflight_only` | readiness subsets | readiness audit, subset recommendations | no runnable adapter/build path |
+| Calcite HEP | `bounded_checker_backed_and_speedup_scored_subset` | bounded PostgreSQL PERF subset `4` | real-route generation `4 / 4`, PG checker consistency `4 / 4`, speedup `4 / 4`, row-count match `4 / 4`, `GM_Speedup=0.9588741913559858`, `W/T/L=0/3/1`, `RegressionRate@20%=0.0` | bounded PostgreSQL-only 4-case subset; near-neutral to mildly negative runtime; not final Calcite HEP baseline |
 | LearnedRewrite | `preflight_only` | readiness subsets | readiness audit, input-readiness scaffold | artifact and inference path missing |
 | SlabCity | `blocked` | none | readiness audit | no local runner / service contract |
 | GenRewrite | `preflight_only` | readiness subsets | readiness audit, input/cost scaffold | correction/verifier loop missing |
@@ -72,8 +74,14 @@ Current status counts:
   - speedup-scored
 - Direct LLM rewrite is now closed on expanded PERF as a PostgreSQL-only checker-backed route.
 - Direct LLM rewrite also now has expanded PERF PostgreSQL-only speedup evidence on `34` cases, but the aggregate runtime effect is near-neutral and tie-heavy.
+- Calcite HEP has now moved beyond readiness-only status on a bounded PostgreSQL PERF subset:
+  - cases `PERF_0006`, `PERF_0008`, `PERF_0033`, `PERF_0054`
+  - real-route generation `4 / 4`
+  - PostgreSQL checker consistency `4 / 4`
+  - bounded speedup execution `4 / 4`
+  - `GM_Speedup=0.9588741913559858`, `W/T/L=0/3/1`, `RegressionRate@20%=0.0`
 - SQLGlot Transpile and LLM Translate are both real bounded PORT baselines, but only on PostgreSQL-side evidence.
-- Calcite HEP, LearnedRewrite, GenRewrite, R-Bot, LLM-R2, SQLSolver, and VeriEQL remain backlog or support lines rather than active paper-denominator baselines.
+- LearnedRewrite, GenRewrite, R-Bot, LLM-R2, SQLSolver, and VeriEQL remain backlog or support lines rather than active paper-denominator baselines.
 
 ## Recommended next actions by family
 
@@ -86,6 +94,9 @@ Current status counts:
   - keep as separate baseline candidate, not optimize replacement
 - PORT translation routes:
   - keep bounded PostgreSQL-side framing
+- Calcite HEP:
+  - keep the denominator narrow and separate from expanded common-core
+  - describe it as a bounded PostgreSQL-only 4-case checker-backed and speedup-scored subset, not a final baseline
 - non-integrated families:
   - leave them in readiness/support backlog unless a runnable adapter path appears quickly
 

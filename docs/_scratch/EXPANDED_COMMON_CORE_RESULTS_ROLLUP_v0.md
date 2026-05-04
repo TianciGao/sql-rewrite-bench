@@ -32,6 +32,28 @@ The expanded packet shows three things clearly:
 
 Batch 2B adds three checker-backed CONS cases to the expanded common-core consistency line and closes that narrow expansion cleanly.
 
+Separately from the 46-case expanded common-core packet, Calcite HEP now has a bounded method-specific PostgreSQL PERF subset:
+
+- `PERF_0006`
+- `PERF_0008`
+- `PERF_0033`
+- `PERF_0054`
+
+That bounded subset closes:
+
+- real-route generation `4 / 4`
+- PostgreSQL checker consistency `4 / 4`
+- speedup execution success `4 / 4`
+- row-count matches `4 / 4`
+- `GM_Speedup=0.9588741913559858`
+- `W/T/L=0/3/1`
+- `RegressionRate@20%=0.0`
+
+Important denominator boundary:
+
+- do not merge this Calcite HEP subset into the 46-case expanded common-core denominator
+- report it as a separate bounded method-specific baseline addition only
+
 Batch 3A then extends the runtime story on the remaining ready PERF lane:
 
 - both `HUMAN_REFERENCE_POSITIVE` and `SQLGLOT_TRANSPILE_SAME_DIALECT_NO_OPT` execute `22 / 22` successfully
@@ -56,6 +78,7 @@ Batch 3B adds a bounded four-case paper-draft PERF packet under explicit registr
 | Batch 3A | `PERF` only, PostgreSQL | `11` | later ready-PERF execution expansion and speedup |
 | Batch 3B | `PERF` only, PostgreSQL | `4` | bounded paper-draft PERF execution, no-opt checker, and speedup |
 | total current expanded evidence | mixed across the five packets | `46` | route coverage differs by batch and must not be collapsed into one uniform leaderboard denominator |
+| Calcite HEP bounded subset | `PERF` only, PostgreSQL, method-specific add-on | `4` | checker-backed and speedup-scored subset only; separate from the 46-case expanded common-core denominator |
 
 Current 46-case evidence composition:
 
@@ -204,8 +227,33 @@ Speedup interpretation:
 - performance trends remain modest and mostly tie-like
 - positive-control rewrites do not guarantee speedup
 - the expanded PERF Direct LLM route is now checker-backed and speedup-scored on `34` PostgreSQL-side cases, but the aggregate runtime effect remains near-neutral
+- the bounded Calcite HEP subset is also now checker-backed and speedup-scored on `4` PostgreSQL-side cases, but the runtime effect is near-neutral to mildly negative and the denominator remains separate
 - across Batch 2A, Batch 3A, and Batch 3B, the no-opt SQLGlot route remains broadly executable and checker-backed where evaluated, but runtime gains stay limited
 - human positive remains close to neutral as well across the later PERF waves
+
+# Method-Specific Baseline Additions
+
+Calcite HEP bounded subset:
+
+- cases:
+  - `PERF_0006`
+  - `PERF_0008`
+  - `PERF_0033`
+  - `PERF_0054`
+- real-route generation: `4 / 4`
+- PostgreSQL checker consistency: `4 / 4`
+- speedup execution success: `4 / 4`
+- valid speedup case count: `4`
+- row-count matches: `4 / 4`
+- `GM_Speedup=0.9588741913559858`
+- `W/T/L=0/3/1`
+- `RegressionRate@20%=0.0`
+
+Interpretation boundary:
+
+- this is a bounded PostgreSQL-only method-specific result
+- it should be reported alongside the expanded common-core packet, not folded into the `46`-case denominator
+- it is not yet a final Calcite HEP baseline claim
 
 # What This Means For Paper
 
@@ -217,6 +265,7 @@ The seed packet validated the end-to-end formal pipeline on a compact mixed comm
 - not admission
 - not registry writeback
 - route denominators differ and should not be collapsed into a single uniform table
+- the Calcite HEP bounded subset denominator must remain separate from the `46`-case expanded common-core packet
 - PORT remains separate from this rollup
 - `SQLGLOT_TRANSPILE_SAME_DIALECT_NO_OPT` is not a silent replacement for `SQLGLOT_OPT_SAME_DIALECT`
 - no expanded MySQL / Spark matrix yet
