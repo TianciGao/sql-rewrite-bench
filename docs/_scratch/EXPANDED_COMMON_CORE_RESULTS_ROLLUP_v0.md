@@ -16,11 +16,13 @@ It is not a protocol freeze.
 
 # Executive Summary
 
-Expanded common-core evidence has moved from the original `9`-case seed packet to a `31`-case evidence packet:
+Expanded common-core evidence has moved from the original `9`-case seed packet to a `46`-case evidence packet:
 
 - seed common-core: `9` cases
 - Batch 2A PERF expansion: `19` additional PERF cases
 - Batch 2B CONS expansion: `3` additional CONS cases
+- Batch 3A PERF expansion: `11` additional PERF cases
+- Batch 3B PERF expansion: `4` additional PERF cases
 
 The expanded packet shows three things clearly:
 
@@ -37,6 +39,13 @@ Batch 3A then extends the runtime story on the remaining ready PERF lane:
 - route-level speedup remains close to neutral and tie-heavy
 - the `SQLGLOT_OPT_SAME_DIALECT` capability boundary persists beyond Batch 2A
 
+Batch 3B adds a bounded four-case paper-draft PERF packet under explicit registry-override governance:
+
+- control routes execute `12 / 12` successfully
+- `SQLGLOT_OPT_SAME_DIALECT` succeeds on `1 / 4` and fails on `3 / 4` with `OptimizeError`
+- `SQLGLOT_TRANSPILE_SAME_DIALECT_NO_OPT` executes `4 / 4` and remains checker-consistent `4 / 4`
+- route-level speedup again stays close to neutral and tie-heavy
+
 # Denominator / Scope Table
 
 | packet | scope | case count | notes |
@@ -44,9 +53,11 @@ Batch 3A then extends the runtime story on the remaining ready PERF lane:
 | seed common-core | mixed `PERF` + `CONS`, PostgreSQL formal packet | `9` | full seed pipeline already closed |
 | Batch 2A | `PERF` only, PostgreSQL | `19` | execution expansion, SQLGlot optimize boundary, no-opt candidate, speedup |
 | Batch 2B | `CONS` only, PostgreSQL | `3` | control execution + checker-backed consistency expansion |
-| total current expanded evidence | mixed across the three packets | `31` | route coverage differs by batch and must not be collapsed into one uniform leaderboard denominator |
+| Batch 3A | `PERF` only, PostgreSQL | `11` | later ready-PERF execution expansion and speedup |
+| Batch 3B | `PERF` only, PostgreSQL | `4` | bounded paper-draft PERF execution, no-opt checker, and speedup |
+| total current expanded evidence | mixed across the five packets | `46` | route coverage differs by batch and must not be collapsed into one uniform leaderboard denominator |
 
-Current 31-case evidence composition:
+Current 46-case evidence composition:
 
 - seed:
   - `PERF_0006`
@@ -82,6 +93,23 @@ Current 31-case evidence composition:
   - `CONS_0024`
   - `CONS_0031`
   - `CONS_0034`
+- Batch 3A:
+  - `PERF_0043`
+  - `PERF_0044`
+  - `PERF_0047`
+  - `PERF_0050`
+  - `PERF_0052`
+  - `PERF_0053`
+  - `PERF_0056`
+  - `PERF_0062`
+  - `PERF_0063`
+  - `PERF_0065`
+  - `PERF_0066`
+- Batch 3B:
+  - `PERF_0027`
+  - `PERF_0028`
+  - `PERF_0030`
+  - `PERF_0031`
 
 # Correctness / Consistency Summary
 
@@ -119,6 +147,10 @@ Important route distinction:
 - `SQLGLOT_OPT_SAME_DIALECT` seed route remained fully consistent on the original `9` cases
 - Batch 2A shows that this does not generalize across the expanded PERF slice
 - `SQLGLOT_TRANSPILE_SAME_DIALECT_NO_OPT` is the route that closes Batch 2A consistency on the expanded slice
+- Batch 3B preserves the same split on a bounded paper-draft PERF slice:
+  - control equality / guard behavior: `4 / 4`
+  - `SQLGLOT_TRANSPILE_SAME_DIALECT_NO_OPT` checker consistency: `4 / 4`
+  - `SQLGLOT_OPT_SAME_DIALECT` remains execution-boundary evidence rather than a closed consistency route
 
 # Execution / Capability Boundary Summary
 
@@ -146,8 +178,11 @@ Interpretation:
 - Batch 3A preserves the same route split on the later PERF wave:
   - `SQLGLOT_OPT_SAME_DIALECT`: `2 / 11` success
   - `SQLGLOT_TRANSPILE_SAME_DIALECT_NO_OPT`: `11 / 11` execution success
+- Batch 3B preserves the same route split on the bounded paper-draft PERF wave:
+  - `SQLGLOT_OPT_SAME_DIALECT`: `1 / 4` success
+  - `SQLGLOT_TRANSPILE_SAME_DIALECT_NO_OPT`: `4 / 4` execution success
 
-Taken together, Batch 2A and Batch 3A show that the optimize-route boundary is persistent rather than a one-packet anomaly.
+Taken together, Batch 2A, Batch 3A, and Batch 3B show that the optimize-route boundary is persistent rather than a one-packet anomaly.
 
 # Speedup Summary
 
@@ -160,17 +195,19 @@ Taken together, Batch 2A and Batch 3A show that the optimize-route boundary is p
 | `SQLGLOT_TRANSPILE_SAME_DIALECT_NO_OPT` | Batch 2A PERF `19` | `1.0119` | `4 / 13 / 2` | `0 / 19` | separate baseline candidate, not replacement for optimize route |
 | `HUMAN_REFERENCE_POSITIVE` | Batch 3A PERF `11` | `0.9984` | `0 / 10 / 1` | `0 / 11` | later ready-PERF runtime slice; `22 / 22` route-record execution success overall |
 | `SQLGLOT_TRANSPILE_SAME_DIALECT_NO_OPT` | Batch 3A PERF `11` | `1.0023` | `2 / 7 / 2` | `0 / 11` | later ready-PERF runtime slice; still separate from optimize route |
+| `HUMAN_REFERENCE_POSITIVE` | Batch 3B PERF `4` | `0.9853` | `1 / 1 / 2` | `0 / 4` | bounded paper-draft runtime slice; registry unchanged |
+| `SQLGLOT_TRANSPILE_SAME_DIALECT_NO_OPT` | Batch 3B PERF `4` | `0.9841` | `1 / 2 / 1` | `0 / 4` | bounded paper-draft runtime slice; still a separate SQLGlot baseline candidate |
 
 Speedup interpretation:
 
 - performance trends remain modest and mostly tie-like
 - positive-control rewrites do not guarantee speedup
-- across Batch 2A and Batch 3A, the no-opt SQLGlot route remains broadly executable and checker-backed where evaluated, but runtime gains stay limited
-- human positive remains close to neutral as well, with the later Batch 3A slice moving even closer to `1.0`
+- across Batch 2A, Batch 3A, and Batch 3B, the no-opt SQLGlot route remains broadly executable and checker-backed where evaluated, but runtime gains stay limited
+- human positive remains close to neutral as well across the later PERF waves
 
 # What This Means For Paper
 
-The seed packet validated the end-to-end formal pipeline on a compact mixed common-core slice. Batch 2A then showed that the seed packet was optimistic for `SQLGLOT_OPT_SAME_DIALECT`: the expanded PERF denominator exposes a strong optimizer capability boundary that was not visible in the smaller seed. Batch 3A shows that this boundary persists on a later PERF slice rather than collapsing under additional cases. The no-opt SQLGlot route provides materially broader coverage and closes exact TSV consistency across the expanded PERF slices where evaluated, but it should still be reported as a separately named baseline candidate. Batch 2B adds three clean CONS cases and strengthens the expanded consistency line. Across the runtime packets, speedup results remain modest and mostly tie-like for both the human positive and no-opt SQLGlot routes, which supports the need to gate benchmark interpretation on execution, correctness/consistency, and runtime together rather than on speedup alone.
+The seed packet validated the end-to-end formal pipeline on a compact mixed common-core slice. Batch 2A then showed that the seed packet was optimistic for `SQLGLOT_OPT_SAME_DIALECT`: the expanded PERF denominator exposes a strong optimizer capability boundary that was not visible in the smaller seed. Batch 3A and Batch 3B show that this boundary persists on later PERF slices rather than collapsing under additional cases. The no-opt SQLGlot route provides materially broader coverage and closes exact TSV consistency across the expanded PERF slices where evaluated, but it should still be reported as a separately named baseline candidate. Batch 2B adds three clean CONS cases and strengthens the expanded consistency line. Across the runtime packets, speedup results remain modest and mostly tie-like for both the human positive and no-opt SQLGlot routes, which supports the need to gate benchmark interpretation on execution, correctness/consistency, and runtime together rather than on speedup alone.
 
 # Boundaries / Non-Claims
 
@@ -186,6 +223,7 @@ The seed packet validated the end-to-end formal pipeline on a compact mixed comm
 # Remaining Work
 
 - Batch 2C PORT expansion
+- decide whether to stop at the current `46 + 6` paper-facing packet or run one last small bounded expansion
 - larger common-core scorer consolidation if needed
 - method-specific LLM expansion if API budget allows
 - final denominator freeze / protocol review
@@ -193,7 +231,7 @@ The seed packet validated the end-to-end formal pipeline on a compact mixed comm
 
 # Recommended Next Action
 
-- run Batch 2C PORT candidate preflight / execution expansion, because common-core has now been expanded while PORT remains narrow
+- decide whether to stop at the current `46 + 6` packet and write, or run one last small bounded PORT or CONS expansion only if it can be completed quickly
 
 # Verification / Non-Modification Note
 
