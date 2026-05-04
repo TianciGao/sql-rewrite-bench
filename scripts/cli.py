@@ -13963,6 +13963,554 @@ def cmd_formal_common_core_method_result_materialization_preflight(args: argpars
     return print_and_exit(payload, 0 if payload["ok"] else 1)
 
 
+def cmd_formal_common_core_method_result_checker_run(args: argparse.Namespace) -> int:
+    output_name = normalize_formal_common_core_output_name(args.output)
+    valid_routes = {
+        "SQLGLOT_OPT_SAME_DIALECT": {
+            "baseline_id": "SQLGLOT_OPT_SAME_DIALECT",
+            "route": "sqlglot_opt_same_dialect",
+            "route_dir": "sqlglot_opt_same_dialect",
+            "execution_report_path": FORMAL_COMMON_CORE_REPORT_DIR / "sqlglot_opt_same_dialect_execution_v0.json",
+            "execution_status_field": "execution_status",
+            "row_count_field": "row_count",
+        },
+        "LLM_DIRECT_REWRITE_STRONG": {
+            "baseline_id": "LLM_DIRECT_REWRITE_STRONG",
+            "route": "llm_direct_rewrite",
+            "route_dir": "llm_direct_rewrite",
+            "execution_report_path": FORMAL_COMMON_CORE_REPORT_DIR / "llm_direct_rewrite_execution_v0.json",
+            "execution_status_field": "pg_execution_status",
+            "row_count_field": "pg_row_count",
+        },
+    }
+    perf_case_ids = [
+        "PERF_0006",
+        "PERF_0008",
+        "PERF_0013",
+        "PERF_0017",
+        "PERF_0024",
+        "PERF_0033",
+        "PERF_0054",
+    ]
+    selected_route = str(args.route or "").strip().upper()
+    selected_case_ids = [str(case_id).strip().upper() for case_id in (args.case_id or []) if str(case_id).strip()]
+    if not selected_case_ids:
+        selected_case_ids = list(perf_case_ids)
+    invalid_case_ids = [case_id for case_id in selected_case_ids if case_id not in perf_case_ids]
+    invalid_selection_present = bool(invalid_case_ids)
+
+    if args.execute and selected_route not in valid_routes:
+        payload = {
+            "command": "formal-common-core-method-result-checker-run",
+            "ok": False,
+            "ran_at_utc": utc_now(),
+            "output_path": "reports/formal_common_core/method_result_checker_run_execute_refused_v0.json",
+            "route": selected_route or "",
+            "claim_boundary": "perf_only_method_checker_backed_consistency_from_report_local_materialization",
+            "message": "This command requires an explicit --route when --execute is provided.",
+            "issues": [
+                {
+                    "type": "invalid_or_missing_route",
+                    "message": "formal-common-core-method-result-checker-run --execute requires --route SQLGLOT_OPT_SAME_DIALECT or --route LLM_DIRECT_REWRITE_STRONG",
+                }
+            ],
+            "guardrails": {
+                "database_execution": "enabled_only_with_execute",
+                "sql_execution": "source_and_existing_method_candidate_only",
+                "checker_execution": "enabled_only_with_execute",
+                "model_api_call": "disabled",
+                "sqlglot_generation": "disabled",
+                "explain_execution": "disabled",
+                "plan_collection": "disabled",
+                "cons_cases": "disabled",
+                "port_cases": "disabled",
+                "case_artifact_write": "disabled",
+                "registry_writeback": "disabled",
+            },
+        }
+        write_formal_common_core_report("method_result_checker_run_execute_refused_v0.json", payload)
+        return print_and_exit(payload, 1)
+
+    selected_routes = [selected_route] if selected_route in valid_routes else list(valid_routes)
+    route_config = valid_routes[selected_routes[0]] if len(selected_routes) == 1 else {
+        "baseline_id": "MULTI_ROUTE_DRY_RUN",
+        "route": "multi_route_dry_run",
+        "route_dir": "multi_route_dry_run",
+        "execution_report_path": None,
+        "execution_status_field": "",
+        "row_count_field": "",
+    }
+
+    preflight_report = load_json_if_present(FORMAL_COMMON_CORE_REPORT_DIR / "method_result_materialization_preflight_v0.json")
+    native_execution_report = load_json_if_present(FORMAL_COMMON_CORE_REPORT_DIR / "native_identity_execution_v0.json")
+    route_reports = {
+        route_key: load_json_if_present(valid_routes[route_key]["execution_report_path"])
+        for route_key in selected_routes
+    }
+    issues: list[dict[str, Any]] = []
+    for case_id in invalid_case_ids:
+        issues.append(
+            {
+                "type": "unsupported_case_id",
+                "case_id": case_id,
+                "message": "formal-common-core-method-result-checker-run supports PERF-only cases",
+            }
+        )
+    for issue_type, path, report in [
+        ("missing_preflight_report", FORMAL_COMMON_CORE_REPORT_DIR / "method_result_materialization_preflight_v0.json", preflight_report),
+        ("missing_native_execution_report", FORMAL_COMMON_CORE_REPORT_DIR / "native_identity_execution_v0.json", native_execution_report),
+    ]:
+        if report is None:
+            issues.append({"type": issue_type, "path": relative_to_root(path)})
+    for route_key in selected_routes:
+        if route_reports.get(route_key) is None:
+            issues.append(
+                {
+                    "type": "missing_route_execution_report",
+                    "route": route_key,
+                    "path": relative_to_root(valid_routes[route_key]["execution_report_path"]),
+                }
+            )
+
+    preflight_record_map = {
+        (str(record.get("baseline_id", "")).strip(), str(record.get("case_id", "")).strip()): record
+        for record in (preflight_report or {}).get("records", [])
+        if record.get("baseline_id") and record.get("case_id")
+    }
+    native_execution_map = {
+        str(record.get("case_id", "")).strip(): record
+        for record in (native_execution_report or {}).get("records", [])
+        if record.get("case_id")
+    }
+
+    env_visibility = pg_env_visibility()
+    required_env_visible = all(env_visibility[name] for name in ["PGHOST", "PGPORT", "PGDATABASE", "PGUSER"])
+    pg_password_present = env_visibility["PGPASSWORD"]
+    pg_client_available = safe_module_available("psycopg")
+    psycopg: Any | None = None
+    if args.execute and pg_client_available:
+        try:
+            psycopg = importlib.import_module("psycopg")
+        except ModuleNotFoundError:
+            pg_client_available = False
+
+    result_materialization_root = FORMAL_COMMON_CORE_REPORT_DIR / "result_materialization"
+    method_result_checks_root = FORMAL_COMMON_CORE_REPORT_DIR / "method_result_checks"
+
+    def resolve_llm_candidate_sql(
+        case_id: str,
+        execution_record: dict[str, Any] | None,
+    ) -> tuple[str, str, int | None, str, bool]:
+        execution_record = execution_record or {}
+        case_slug = case_id.lower()
+        call_report_path = BASELINE_SMOKE_REPORT_DIR / f"llm_direct_rewrite_call_{case_slug}_v0.json"
+        call_report = load_json_if_present(call_report_path)
+        call_record = ((call_report or {}).get("records") or [{}])[0]
+
+        formal_extracted_sql_text = str(execution_record.get("extracted_sql_text") or "").strip()
+        formal_raw_output_text = str(execution_record.get("raw_output_text") or "").strip()
+        formal_extracted_preview = str(execution_record.get("extracted_sql_preview") or "").strip()
+        formal_raw_output_preview = str(execution_record.get("raw_output_preview") or "").strip()
+
+        call_extracted_sql_text = str(call_record.get("extracted_sql_text") or "").strip()
+        call_raw_output_text = str(call_record.get("raw_output_text") or "").strip()
+        call_extracted_preview = str(call_record.get("extracted_sql_preview") or "").strip()
+        call_raw_output_preview = str(call_record.get("raw_output_preview") or "").strip()
+
+        formal_extracted_preview_contaminated = bool(
+            formal_extracted_sql_text
+            and call_extracted_sql_text
+            and call_extracted_preview
+            and formal_extracted_sql_text == call_extracted_preview
+            and len(call_extracted_sql_text) > len(formal_extracted_sql_text)
+        )
+        formal_raw_output_preview_contaminated = bool(
+            formal_raw_output_text
+            and formal_raw_output_preview
+            and formal_raw_output_text == formal_raw_output_preview
+            and call_raw_output_text
+            and len(call_raw_output_text) > len(formal_raw_output_text)
+        )
+        call_extracted_preview_contaminated = bool(
+            call_extracted_sql_text
+            and call_extracted_preview
+            and call_extracted_sql_text == call_extracted_preview
+        )
+        call_raw_output_preview_contaminated = bool(
+            call_raw_output_text
+            and call_raw_output_preview
+            and call_raw_output_text == call_raw_output_preview
+        )
+
+        if formal_extracted_sql_text and not formal_extracted_preview_contaminated:
+            return (
+                formal_extracted_sql_text,
+                "formal_execution.extracted_sql_text",
+                int(execution_record.get("extracted_sql_character_count") or len(formal_extracted_sql_text)),
+                formal_extracted_sql_text[:500],
+                False,
+            )
+        if formal_raw_output_text and not formal_raw_output_preview_contaminated:
+            return (
+                formal_raw_output_text,
+                "formal_execution.raw_output_text",
+                int(execution_record.get("raw_output_character_count") or len(formal_raw_output_text)),
+                formal_raw_output_text[:500],
+                False,
+            )
+        if call_extracted_sql_text and not call_extracted_preview_contaminated:
+            return (
+                call_extracted_sql_text,
+                "baseline_call.extracted_sql_text",
+                int(call_record.get("extracted_sql_character_count") or len(call_extracted_sql_text)),
+                call_extracted_sql_text[:500],
+                False,
+            )
+        if call_raw_output_text and not call_raw_output_preview_contaminated:
+            return (
+                call_raw_output_text,
+                "baseline_call.raw_output_text",
+                int(call_record.get("raw_output_character_count") or len(call_raw_output_text)),
+                call_raw_output_text[:500],
+                False,
+            )
+
+        preview_value = (
+            formal_extracted_preview
+            or formal_raw_output_preview
+            or call_extracted_preview
+            or call_raw_output_preview
+        )
+        return "", "preview_only_unusable", None, preview_value[:500], bool(preview_value)
+
+    def serialize_tsv_value(value: Any) -> str:
+        if value is None:
+            return r"\N"
+        text = str(value)
+        return text.replace("\\", "\\\\").replace("\t", "\\t").replace("\n", "\\n").replace("\r", "\\r")
+
+    def materialize_query_to_tsv(cur: Any, sql_text: str, output_path: Path) -> tuple[int, int]:
+        cur.execute(sql_text)
+        rows = cur.fetchall() if cur.description is not None else []
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        with output_path.open("w", encoding="utf-8", newline="") as handle:
+            for row in rows:
+                handle.write("\t".join(serialize_tsv_value(value) for value in row))
+                handle.write("\n")
+        row_count = len(rows)
+        byte_count = output_path.stat().st_size
+        return row_count, byte_count
+
+    all_records: list[dict[str, Any]] = []
+    route_payloads: list[dict[str, Any]] = []
+
+    for route_key in selected_routes:
+        current_route_config = valid_routes[route_key]
+        report = route_reports.get(route_key)
+        method_record_map = {
+            str(record.get("case_id", "")).strip(): record
+            for record in (report or {}).get("records", [])
+            if record.get("case_id")
+        }
+        records: list[dict[str, Any]] = []
+
+        for case_id in selected_case_ids:
+            inferred = case_root_for_case_id(case_id)
+            validation_schema = validation_schema_hint(case_id)
+            if inferred is None:
+                records.append(
+                    {
+                        "case_id": case_id,
+                        "pool": "performance",
+                        "baseline_id": current_route_config["baseline_id"],
+                        "route": current_route_config["route"],
+                        "source_result_path": "",
+                        "method_result_path": "",
+                        "checker_output_path": "",
+                        "checker_mode": "exact_tsv_report_local",
+                        "source_row_count": None,
+                        "method_row_count": None,
+                        "row_count_equal": None,
+                        "byte_equal": None,
+                        "checker_status": "execution_failed",
+                        "execution_status": "failed",
+                        "failure_category": "case_not_resolved",
+                        "error_message": "could not resolve case root from case_id",
+                        "candidate_sql_source": "not_available",
+                        "candidate_sql_character_count": None,
+                        "token_usage_total": None,
+                        "artifact_claim_boundary": "perf_only_method_checker_backed_consistency_from_report_local_materialization",
+                    }
+                )
+                continue
+
+            pool, case_root = inferred
+            source_sql_path = case_root / "source.sql"
+            source_sql_exists = source_sql_path.is_file()
+            source_sql = source_sql_path.read_text(encoding="utf-8") if source_sql_exists else ""
+            method_record = method_record_map.get(case_id)
+            source_result_path = result_materialization_root / "source" / f"{case_id.lower()}.tsv"
+            method_result_path = result_materialization_root / current_route_config["route_dir"] / f"{case_id.lower()}.tsv"
+            checker_output_path = method_result_checks_root / current_route_config["route_dir"] / f"{case_id.lower()}.json"
+            search_path_after_set = ""
+            token_usage_total = (method_record or {}).get("token_usage_total") if route_key == "LLM_DIRECT_REWRITE_STRONG" else None
+
+            if route_key == "SQLGLOT_OPT_SAME_DIALECT":
+                candidate_sql = str((method_record or {}).get("generated_sql_text") or "").strip()
+                candidate_sql_source = "formal_execution.generated_sql_text" if candidate_sql else "not_available"
+                candidate_sql_character_count = (
+                    int((method_record or {}).get("generated_sql_character_count") or len(candidate_sql))
+                    if candidate_sql
+                    else None
+                )
+                preview_only_unusable = False
+            else:
+                (
+                    candidate_sql,
+                    candidate_sql_source,
+                    candidate_sql_character_count,
+                    _candidate_sql_preview,
+                    preview_only_unusable,
+                ) = resolve_llm_candidate_sql(case_id, method_record)
+
+            source_row_count: int | None = None
+            method_row_count: int | None = None
+            row_count_equal: bool | None = None
+            byte_equal: bool | None = None
+            execution_status = "dry_run_only"
+            checker_status = "checker_unavailable"
+            failure_category = "none"
+            error_message = ""
+            blockers: list[str] = []
+
+            preflight_record = preflight_record_map.get((current_route_config["baseline_id"], case_id), {})
+            if list(preflight_record.get("blockers") or []):
+                blockers.extend(list(preflight_record.get("blockers") or []))
+            if not source_sql_exists:
+                blockers.append("missing_source_sql")
+            if method_record is None:
+                blockers.append("missing_method_execution_record")
+            if str((native_execution_map.get(case_id) or {}).get("execution_status", "")) != "success":
+                blockers.append("missing_native_execution_success")
+            if str((method_record or {}).get(current_route_config["execution_status_field"], "")) != "success":
+                blockers.append("missing_method_execution_success")
+            if not validation_schema:
+                blockers.append("missing_validation_schema")
+            if preview_only_unusable:
+                blockers.append("truncated_preview_only")
+            if not candidate_sql:
+                blockers.append("missing_full_candidate_sql")
+
+            if not args.execute:
+                execution_status = "dry_run_only"
+                checker_status = "checker_unavailable"
+            elif invalid_selection_present:
+                execution_status = "blocked_invalid_selection"
+                checker_status = "execution_failed"
+                failure_category = "invalid_selection"
+                error_message = "selected cases include non-PERF cases"
+            elif blockers:
+                execution_status = "blocked_preflight"
+                checker_status = "execution_failed"
+                failure_category = "truncated_preview_only" if "truncated_preview_only" in blockers else "preflight_blocked"
+                error_message = "; ".join(dict.fromkeys(blockers))
+            elif not required_env_visible:
+                execution_status = "env_blocked"
+                checker_status = "execution_failed"
+                failure_category = "missing_pg_env"
+                error_message = "required PostgreSQL environment variables are not visible"
+            elif not pg_client_available or psycopg is None:
+                execution_status = "client_unavailable"
+                checker_status = "execution_failed"
+                failure_category = "psycopg_unavailable"
+                error_message = "psycopg is not available"
+            else:
+                try:
+                    with psycopg.connect(
+                        host=os.environ["PGHOST"],
+                        port=os.environ["PGPORT"],
+                        dbname=os.environ["PGDATABASE"],
+                        user=os.environ["PGUSER"],
+                        password=os.environ.get("PGPASSWORD"),
+                        options="-c statement_timeout=30000 -c default_transaction_read_only=on",
+                        autocommit=False,
+                    ) as conn:
+                        with conn.cursor() as cur:
+                            cur.execute("SELECT to_regnamespace(%s)", (validation_schema,))
+                            schema_row = cur.fetchone()
+                            schema_name = schema_row[0] if schema_row else None
+                            if not schema_name:
+                                execution_status = "failed"
+                                checker_status = "execution_failed"
+                                failure_category = "missing_validation_schema"
+                                error_message = f"validation schema not found: {validation_schema}"
+                            else:
+                                cur.execute(
+                                    psycopg.sql.SQL("SET search_path TO {}, public").format(
+                                        psycopg.sql.Identifier(validation_schema)
+                                    )
+                                )
+                                cur.execute("SHOW search_path")
+                                search_path_after_set = str((cur.fetchone() or [""])[0])
+
+                                if not (source_result_path.is_file() and source_result_path.stat().st_size > 0):
+                                    source_row_count, _ = materialize_query_to_tsv(cur, source_sql, source_result_path)
+                                    conn.rollback()
+                                    cur.execute(
+                                        psycopg.sql.SQL("SET search_path TO {}, public").format(
+                                            psycopg.sql.Identifier(validation_schema)
+                                        )
+                                    )
+                                else:
+                                    source_row_count = sum(1 for _ in source_result_path.open("r", encoding="utf-8"))
+
+                                method_row_count, _ = materialize_query_to_tsv(cur, candidate_sql, method_result_path)
+                                conn.rollback()
+
+                                source_bytes = source_result_path.read_bytes()
+                                method_bytes = method_result_path.read_bytes()
+                                if source_row_count is None:
+                                    source_row_count = sum(1 for _ in source_result_path.open("r", encoding="utf-8"))
+                                row_count_equal = source_row_count == method_row_count
+                                byte_equal = source_bytes == method_bytes
+                                checker_status = "consistent" if byte_equal else "inconsistent"
+                                execution_status = "success"
+
+                                checker_output_path.parent.mkdir(parents=True, exist_ok=True)
+                                checker_payload = {
+                                    "case_id": case_id,
+                                    "route": current_route_config["route"],
+                                    "baseline_id": current_route_config["baseline_id"],
+                                    "source_result_path": relative_to_root(source_result_path),
+                                    "method_result_path": relative_to_root(method_result_path),
+                                    "checker_mode": "exact_tsv_report_local",
+                                    "source_row_count": source_row_count,
+                                    "method_row_count": method_row_count,
+                                    "row_count_equal": row_count_equal,
+                                    "byte_equal": byte_equal,
+                                    "checker_status": checker_status,
+                                    "failure_category": "none",
+                                    "error_message": "",
+                                    "artifact_claim_boundary": "perf_only_method_checker_backed_consistency_from_report_local_materialization",
+                                }
+                                checker_output_path.write_text(json.dumps(checker_payload, indent=2) + "\n", encoding="utf-8")
+                except Exception as exc:
+                    execution_status = "failed"
+                    checker_status = "execution_failed"
+                    failure_category = type(exc).__name__
+                    error_message = str(exc)
+                    issues.append({"type": type(exc).__name__, "case_id": case_id, "route": current_route_config["route"], "message": str(exc)})
+
+            records.append(
+                {
+                    "case_id": case_id,
+                    "pool": pool,
+                    "baseline_id": current_route_config["baseline_id"],
+                    "route": current_route_config["route"],
+                    "source_result_path": relative_to_root(source_result_path),
+                    "method_result_path": relative_to_root(method_result_path),
+                    "checker_output_path": relative_to_root(checker_output_path),
+                    "checker_mode": "exact_tsv_report_local",
+                    "source_row_count": source_row_count,
+                    "method_row_count": method_row_count,
+                    "row_count_equal": row_count_equal,
+                    "byte_equal": byte_equal,
+                    "checker_status": checker_status,
+                    "execution_status": execution_status,
+                    "failure_category": failure_category,
+                    "error_message": error_message,
+                    "candidate_sql_source": candidate_sql_source,
+                    "candidate_sql_character_count": candidate_sql_character_count,
+                    "token_usage_total": token_usage_total,
+                    "artifact_claim_boundary": "perf_only_method_checker_backed_consistency_from_report_local_materialization",
+                }
+            )
+
+        source_materialization_success_count = sum(
+            1 for record in records if Path(ROOT / record["source_result_path"]).is_file() and Path(ROOT / record["source_result_path"]).stat().st_size >= 0
+        )
+        method_materialization_success_count = sum(
+            1 for record in records if Path(ROOT / record["method_result_path"]).is_file() and record["execution_status"] == "success"
+        )
+        checker_success_count = sum(1 for record in records if record["checker_status"] in {"consistent", "inconsistent"})
+        checker_consistent_count = sum(1 for record in records if record["checker_status"] == "consistent")
+        checker_inconsistent_count = sum(1 for record in records if record["checker_status"] == "inconsistent")
+        checker_unavailable_count = sum(1 for record in records if record["checker_status"] == "checker_unavailable")
+        result_consistency_rate = (
+            float(checker_consistent_count / checker_success_count)
+            if checker_success_count
+            else None
+        )
+        route_payload = {
+            "command": "formal-common-core-method-result-checker-run",
+            "ok": (
+                not issues
+                and all(record["execution_status"] == ("success" if args.execute else "dry_run_only") for record in records)
+            ),
+            "ran_at_utc": utc_now(),
+            "output_path": f"reports/formal_common_core/{output_name}",
+            "route": current_route_config["route"],
+            "baseline_id": current_route_config["baseline_id"],
+            "denominator_scope": "PERF_only",
+            "case_count": len(records),
+            "source_materialization_success_count": source_materialization_success_count,
+            "method_materialization_success_count": method_materialization_success_count,
+            "checker_success_count": checker_success_count,
+            "checker_consistent_count": checker_consistent_count,
+            "checker_inconsistent_count": checker_inconsistent_count,
+            "checker_unavailable_count": checker_unavailable_count,
+            "result_consistency_rate": result_consistency_rate,
+            "result_consistency_rate_status": (
+                "computed_from_report_local_exact_tsv"
+                if checker_success_count
+                else "not_computed_checker_execution_required"
+            ),
+            "records": records,
+            "issues": issues,
+            "guardrails": {
+                "database_execution": "enabled_only_with_execute",
+                "sql_execution": "source_and_existing_method_candidate_only",
+                "checker_execution": "enabled_only_with_execute",
+                "model_api_call": "disabled",
+                "sqlglot_generation": "disabled",
+                "explain_execution": "disabled",
+                "plan_collection": "disabled",
+                "hard_negative_execution": "disabled",
+                "cons_cases": "disabled",
+                "case_artifact_write": "disabled",
+                "registry_writeback": "disabled",
+            },
+            "claim_boundary": "perf_only_method_checker_backed_consistency_from_report_local_materialization",
+        }
+        route_payloads.append(route_payload)
+        all_records.extend(records)
+
+    final_payload = route_payloads[0] if len(route_payloads) == 1 else {
+        "command": "formal-common-core-method-result-checker-run",
+        "ok": not issues and all(payload["ok"] for payload in route_payloads),
+        "ran_at_utc": utc_now(),
+        "output_path": f"reports/formal_common_core/{output_name}",
+        "route": "multi_route_dry_run",
+        "baseline_id": "MULTI_ROUTE_DRY_RUN",
+        "denominator_scope": "PERF_only",
+        "case_count": len(all_records),
+        "source_materialization_success_count": sum(payload["source_materialization_success_count"] for payload in route_payloads),
+        "method_materialization_success_count": sum(payload["method_materialization_success_count"] for payload in route_payloads),
+        "checker_success_count": sum(payload["checker_success_count"] for payload in route_payloads),
+        "checker_consistent_count": sum(payload["checker_consistent_count"] for payload in route_payloads),
+        "checker_inconsistent_count": sum(payload["checker_inconsistent_count"] for payload in route_payloads),
+        "checker_unavailable_count": sum(payload["checker_unavailable_count"] for payload in route_payloads),
+        "result_consistency_rate": None,
+        "result_consistency_rate_status": "dry_run_multi_route_summary_only",
+        "records": all_records,
+        "issues": issues,
+        "guardrails": route_payloads[0]["guardrails"] if route_payloads else {},
+        "claim_boundary": "perf_only_method_checker_backed_consistency_from_report_local_materialization",
+    }
+    write_formal_common_core_report(output_name, final_payload)
+    return print_and_exit(final_payload, 0 if final_payload["ok"] else 1)
+
+
 def cmd_formal_common_core_method_plan_collection(args: argparse.Namespace) -> int:
     output_name = normalize_formal_common_core_output_name(args.output)
     selected_route = str(args.route or "").strip().upper()
@@ -21167,6 +21715,23 @@ def build_parser() -> argparse.ArgumentParser:
     )
     formal_common_core_method_result_materialization_preflight_parser.add_argument("--execute", action="store_true", default=False)
     formal_common_core_method_result_materialization_preflight_parser.set_defaults(func=cmd_formal_common_core_method_result_materialization_preflight)
+
+    formal_common_core_method_result_checker_run_parser = subparsers.add_parser("formal-common-core-method-result-checker-run")
+    formal_common_core_method_result_checker_run_parser.add_argument(
+        "--route",
+        choices=["SQLGLOT_OPT_SAME_DIALECT", "LLM_DIRECT_REWRITE_STRONG"],
+    )
+    formal_common_core_method_result_checker_run_parser.add_argument(
+        "--case-id",
+        action="append",
+        default=[],
+    )
+    formal_common_core_method_result_checker_run_parser.add_argument(
+        "--output",
+        default="method_result_checker_run_v0.json",
+    )
+    formal_common_core_method_result_checker_run_parser.add_argument("--execute", action="store_true", default=False)
+    formal_common_core_method_result_checker_run_parser.set_defaults(func=cmd_formal_common_core_method_result_checker_run)
 
     formal_common_core_method_plan_collection_preflight_parser = subparsers.add_parser("formal-common-core-method-plan-collection-preflight")
     formal_common_core_method_plan_collection_preflight_parser.add_argument(

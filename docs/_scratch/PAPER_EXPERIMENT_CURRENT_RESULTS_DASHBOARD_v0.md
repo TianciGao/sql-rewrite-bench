@@ -11,8 +11,8 @@ It summarizes the current state of the formal common-core and PORT artifact stac
 | area | execution status | executable / ready rate | row-count / plan observation | checker-backed consistency status | token usage | speedup status | claim boundary |
 |---|---|---:|---|---|---:|---|---|
 | control routes | complete | `1.0` executable across native / human positive / hard negative | execution and control-route scoring complete | complete from existing checker artifacts | n/a | HUMAN_REFERENCE_POSITIVE PERF-only positive-control speedup complete: `GM_Speedup=0.96159127168004`, `WTL=1/2/4`, `RegressionRate@20%=0/7` | positive-control speedup only, not full leaderboard |
-| SQLGlot same-dialect | complete | `1.0` parse, generation, execution | row-count match `9 / 9`; method plans `9 / 9`; plan parse `9 / 9` | `not_computed_checker_required` | n/a | exploratory PERF-only appendix complete: `GM=0.9709643241218479`, `WTL=1/2/4`, `RegressionRate@20%=0/7` | exploratory row-count-gated appendix only, not leaderboard |
-| Direct LLM rewrite | complete from existing reports | `1.0` call, extraction, PG execution | row-count match `9 / 9`; method plans `9 / 9`; plan parse `9 / 9` | `not_computed_checker_required` | `5089` total formalized token usage | exploratory PERF-only appendix complete: `GM=1.0023345046000625`, `WTL=1/5/1`, `RegressionRate@20%=0/7` | exploratory row-count-gated appendix only, not leaderboard |
+| SQLGlot same-dialect | complete | `1.0` parse, generation, execution | row-count match `9 / 9`; method plans `9 / 9`; plan parse `9 / 9` | PERF-only checker-backed consistency now computed: `7 / 7`, `rate=1.0`; full 9-case common-core still not closed | n/a | exploratory PERF-only appendix complete: `GM=0.9709643241218479`, `WTL=1/2/4`, `RegressionRate@20%=0/7` | PERF-only checker-backed consistency plus exploratory speedup appendix; not full leaderboard |
+| Direct LLM rewrite | complete from existing reports | `1.0` call, extraction, PG execution | row-count match `9 / 9`; method plans `9 / 9`; plan parse `9 / 9` | PERF-only checker-backed consistency now computed: `7 / 7`, `rate=1.0`; full 9-case common-core still not closed | `5089` total formalized token usage | exploratory PERF-only appendix complete: `GM=1.0023345046000625`, `WTL=1/5/1`, `RegressionRate@20%=0/7` | PERF-only checker-backed consistency plus exploratory speedup appendix; not full leaderboard |
 | PORT SQLGlot Transpile | partial | preflight `3 / 3`, PG execution `2 / 3` | `PORT_0012` failed `InvalidDatetimeFormat` | not computed | n/a | not computed | not PORT closure |
 | PORT LLM Translate | partial clean subset | prompt `3 / 3`, clean subset `2 / 2` | `PORT_0004` and `PORT_0022` passed; `PORT_0012` held out | not computed | `912` | not computed | clean subset only, not full denominator |
 
@@ -22,8 +22,9 @@ It summarizes the current state of the formal common-core and PORT artifact stac
 - `result_consistency_rate_observed_existing_artifacts=1.0`
 - `negative_rejection_rate_observed_existing_artifacts=1.0`
 - `false_accept_rate_observed_existing_artifacts=0.0`
-- SQLGlot execution and row-count observation are complete, but method checker-backed consistency is not computed
-- Direct LLM execution and row-count observation are complete, but method checker-backed consistency is not computed
+- SQLGlot now has PERF-only checker-backed consistency from report-local materialization: `7 / 7`, `rate=1.0`
+- Direct LLM now has PERF-only checker-backed consistency from report-local materialization: `7 / 7`, `rate=1.0`
+- SQLGlot and Direct LLM still do not have full 9-case common-core generated-method checker-backed consistency because `CONS_0007` and `CONS_0012` remain outside this PERF-only run
 - row-count match is not semantic correctness
 - SQLGlot and Direct LLM exploratory appendix speedup now exists for PERF-only cases, but it remains row-count-gated and not correctness-gated
 
@@ -79,8 +80,8 @@ Observed operator-delta highlights:
 
 ## Missing Pieces
 
-- SQLGlot method checker-backed consistency
-- Direct LLM method checker-backed consistency
+- SQLGlot full 9-case generated-method checker-backed consistency
+- Direct LLM full 9-case generated-method checker-backed consistency
 - formal operator-delta summary / attribution logic
 - final paper packet consolidation
 
