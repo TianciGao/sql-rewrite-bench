@@ -18452,6 +18452,194 @@ def cmd_formal_batch2a_sqlglot_no_opt_checker(args: argparse.Namespace) -> int:
     return print_and_exit(payload, 0 if payload["ok"] else 1)
 
 
+def cmd_formal_batch2a_speedup_preflight(args: argparse.Namespace) -> int:
+    output_name = normalize_formal_expansion_output_name(args.output)
+    if args.execute:
+        payload = {
+            "command": "formal-batch2a-speedup-preflight",
+            "ok": False,
+            "ran_at_utc": utc_now(),
+            "output_path": "reports/formal_expansion/batch2a_speedup_preflight_execute_refused_v0.json",
+            "issues": [
+                {
+                    "type": "invalid_execute_flag",
+                    "message": "formal-batch2a-speedup-preflight is read-existing-artifacts-only and does not support --execute",
+                }
+            ],
+            "guardrails": {
+                "database_execution": "disabled",
+                "sql_execution": "disabled",
+                "model_api_call": "disabled",
+                "sqlglot_generation": "disabled",
+                "checker_execution": "disabled",
+                "runtime_rerun": "disabled",
+                "speedup_scoring": "disabled",
+                "plan_collection": "disabled",
+                "case_artifact_write": "disabled",
+                "registry_writeback": "disabled",
+            },
+            "claim_boundary": "batch2a_speedup_preflight_only_not_runtime_execution_or_speedup_scoring",
+        }
+        write_formal_expansion_report("batch2a_speedup_preflight_execute_refused_v0.json", payload)
+        return print_and_exit(payload, 1)
+
+    execution_report_path = FORMAL_EXPANSION_REPORT_DIR / "batch2a_pg_execution_v0.json"
+    no_opt_checker_path = FORMAL_EXPANSION_REPORT_DIR / "batch2a_sqlglot_no_opt_checker_v0.json"
+    issues: list[dict[str, Any]] = []
+    execution_report = load_json_if_present(execution_report_path)
+    no_opt_checker_report = load_json_if_present(no_opt_checker_path)
+    for issue_type, path, report in [
+        ("missing_batch2a_execution_report", execution_report_path, execution_report),
+        ("missing_batch2a_no_opt_checker_report", no_opt_checker_path, no_opt_checker_report),
+    ]:
+        if report is None:
+            issues.append({"type": issue_type, "path": relative_to_root(path)})
+
+    execution_map: dict[tuple[str, str], dict[str, Any]] = {}
+    for record in (execution_report or {}).get("records", []):
+        case_id = str(record.get("case_id", "")).strip().upper()
+        route = str(record.get("route", "")).strip().upper()
+        if case_id and route:
+            execution_map[(case_id, route)] = record
+
+    no_opt_checker_map = {
+        str(record.get("case_id", "")).strip().upper(): record
+        for record in (no_opt_checker_report or {}).get("records", [])
+        if record.get("case_id")
+    }
+
+    runtime_policy = {
+        "repeat_count_proposed": 5,
+        "warmup_count_proposed": 1,
+        "statement_timeout_ms_proposed": 30000,
+        "primary_statistic_proposed": "median",
+        "tie_threshold_proposed": 0.05,
+        "regression_threshold_proposed": 1.2,
+    }
+    runtime_policy_exists = True
+
+    records: list[dict[str, Any]] = []
+    ready_count_by_route: Counter[str] = Counter()
+    blocked_count_by_route: Counter[str] = Counter()
+    route_specs = [
+        {
+            "baseline_id": "HUMAN_REFERENCE_POSITIVE",
+            "route": "HUMAN_REFERENCE_POSITIVE",
+            "candidate_sql_source_label": "rewrite_pos_01.sql_or_first_rewrite_pos",
+            "candidate_sql_source_path": lambda case_root: sorted(case_root.glob("rewrite_pos_*.sql"))[0]
+            if sorted(case_root.glob("rewrite_pos_*.sql"))
+            else case_root / "rewrite_pos_01.sql",
+        },
+        {
+            "baseline_id": "SQLGLOT_TRANSPILE_SAME_DIALECT_NO_OPT",
+            "route": "SQLGLOT_TRANSPILE_SAME_DIALECT_NO_OPT",
+            "candidate_sql_source_label": "generated_from_source_via_sqlglot_transpile_no_opt",
+            "candidate_sql_source_path": lambda case_root: case_root / "source.sql",
+        },
+    ]
+
+    for case_id in FORMAL_COMMON_CORE_BATCH2A_PERF_CASES:
+        inferred = case_root_for_case_id(case_id)
+        pool = inferred[0] if inferred else "unknown"
+        case_root = inferred[1] if inferred else None
+        validation_schema = validation_schema_hint(case_id) if case_root else ""
+        validation_schema_ready = bool(validation_schema)
+        source_sql_path = case_root / "source.sql" if case_root else ROOT / "__missing__"
+        source_sql_exists = source_sql_path.is_file()
+
+        for spec in route_specs:
+            candidate_path = spec["candidate_sql_source_path"](case_root) if case_root else ROOT / "__missing__"
+            candidate_sql_source_available = candidate_path.is_file()
+            candidate_sql_source = (
+                relative_to_root(candidate_path)
+                if spec["route"] == "HUMAN_REFERENCE_POSITIVE"
+                else spec["candidate_sql_source_label"]
+            )
+            consistency_gate_passed = False
+            consistency_gate_status = ""
+            route_eligibility = "blocked"
+            blockers: list[str] = []
+
+            if spec["route"] == "HUMAN_REFERENCE_POSITIVE":
+                exec_record = execution_map.get((case_id, "HUMAN_REFERENCE_POSITIVE"), {})
+                consistency_gate_passed = str(exec_record.get("execution_status", "")) == "success"
+                consistency_gate_status = "passed_existing_pg_execution" if consistency_gate_passed else "blocked_missing_pg_execution"
+            else:
+                checker_record = no_opt_checker_map.get(case_id, {})
+                consistency_gate_passed = str(checker_record.get("checker_status", "")) == "consistent"
+                consistency_gate_status = "passed_exact_tsv_report_local" if consistency_gate_passed else "blocked_missing_exact_tsv_consistency"
+
+            if not source_sql_exists:
+                blockers.append("missing_source_sql")
+            if not candidate_sql_source_available:
+                blockers.append("missing_candidate_sql_source")
+            if not consistency_gate_passed:
+                blockers.append("consistency_gate_not_passed")
+            if not runtime_policy_exists:
+                blockers.append("runtime_policy_missing")
+            if not validation_schema_ready:
+                blockers.append("validation_schema_not_ready")
+
+            if not blockers:
+                route_eligibility = "eligible_for_batch2a_speedup_runtime"
+                ready_count_by_route[spec["route"]] += 1
+            else:
+                blocked_count_by_route[spec["route"]] += 1
+
+            records.append(
+                {
+                    "case_id": case_id,
+                    "pool": pool,
+                    "route": spec["route"],
+                    "baseline_id": spec["baseline_id"],
+                    "source_sql_exists": source_sql_exists,
+                    "candidate_sql_source": candidate_sql_source,
+                    "candidate_sql_source_available": candidate_sql_source_available,
+                    "consistency_gate_passed": consistency_gate_passed,
+                    "consistency_gate_status": consistency_gate_status,
+                    "runtime_policy_exists": runtime_policy_exists,
+                    "validation_schema_ready": validation_schema_ready,
+                    "validation_schema": validation_schema,
+                    "route_eligibility": route_eligibility,
+                    "planned_runtime_output_path": f"reports/formal_expansion/runtime_observation_batch2a_{spec['route'].lower()}.json",
+                    "planned_speedup_scoring_output_path": f"reports/formal_expansion/batch2a_speedup_scoring_{spec['route'].lower()}.json",
+                    "blockers": blockers,
+                    "artifact_claim_boundary": "batch2a_speedup_preflight_only_no_runtime_execution",
+                }
+            )
+
+    payload = {
+        "command": "formal-batch2a-speedup-preflight",
+        "ok": not issues,
+        "ran_at_utc": utc_now(),
+        "output_path": f"reports/formal_expansion/{output_name}",
+        "case_count": len(FORMAL_COMMON_CORE_BATCH2A_PERF_CASES),
+        "route_count": 2,
+        "records": records,
+        "ready_count_by_route": dict(ready_count_by_route),
+        "blocked_count_by_route": dict(blocked_count_by_route),
+        "runtime_policy": runtime_policy,
+        "runtime_policy_exists": runtime_policy_exists,
+        "recommended_next_action": "run_batch2a_repeat_runtime_for_human_reference_positive_and_sqlglot_transpile_same_dialect_no_opt",
+        "issues": issues,
+        "guardrails": {
+            "database_execution": "disabled",
+            "sql_execution": "disabled",
+            "model_api_call": "disabled",
+            "sqlglot_generation": "disabled",
+            "checker_execution": "disabled",
+            "runtime_rerun": "disabled",
+            "speedup_scoring": "disabled",
+            "plan_collection": "disabled",
+            "case_artifact_write": "disabled",
+            "registry_writeback": "disabled",
+        },
+        "claim_boundary": "batch2a_speedup_preflight_only_not_runtime_execution_or_speedup_scoring",
+    }
+    write_formal_expansion_report(output_name, payload)
+    return print_and_exit(payload, 0 if payload["ok"] else 1)
+
+
 def cmd_formal_common_core_method_result_checker_run(args: argparse.Namespace) -> int:
     output_name = normalize_formal_common_core_output_name(args.output)
     valid_routes = {
@@ -26371,6 +26559,14 @@ def build_parser() -> argparse.ArgumentParser:
     )
     formal_batch2a_sqlglot_no_opt_checker_parser.add_argument("--execute", action="store_true", default=False)
     formal_batch2a_sqlglot_no_opt_checker_parser.set_defaults(func=cmd_formal_batch2a_sqlglot_no_opt_checker)
+
+    formal_batch2a_speedup_preflight_parser = subparsers.add_parser("formal-batch2a-speedup-preflight")
+    formal_batch2a_speedup_preflight_parser.add_argument(
+        "--output",
+        default="batch2a_speedup_preflight_v0.json",
+    )
+    formal_batch2a_speedup_preflight_parser.add_argument("--execute", action="store_true", default=False)
+    formal_batch2a_speedup_preflight_parser.set_defaults(func=cmd_formal_batch2a_speedup_preflight)
 
     formal_common_core_method_plan_collection_preflight_parser = subparsers.add_parser("formal-common-core-method-plan-collection-preflight")
     formal_common_core_method_plan_collection_preflight_parser.add_argument(
