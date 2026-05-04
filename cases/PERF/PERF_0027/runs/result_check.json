@@ -1,0 +1,36 @@
+{
+  "case_id": "PERF_0027",
+  "scope": "pg_witness_only_root_summary",
+  "status": "validated_from_existing_pg_witness_evidence",
+  "ok": true,
+  "engine_scope": [
+    "postgres"
+  ],
+  "inputs": {
+    "source": "source.sql",
+    "positive_rewrite": "rewrite_pos_01.sql",
+    "negative_rewrite": "rewrite_neg_01.sql",
+    "checker_config": "validation/checker.yaml",
+    "pg_result_check": "runs/pg/result_check.json"
+  },
+  "outputs": {
+    "source": "runs/pg/source.tsv",
+    "positive_rewrite": "runs/pg/rewrite_pos_01.tsv",
+    "negative_rewrite": "runs/pg/rewrite_neg_01.tsv"
+  },
+  "checks": {
+    "source_positive_equal": true,
+    "source_negative_different": true
+  },
+  "evidence_notes": [
+    "Derived from existing runs/pg/result_check.json only.",
+    "Positive rewrite matched source on PostgreSQL witness data.",
+    "Negative rewrite differed from source on PostgreSQL witness data."
+  ],
+  "claim_boundaries": [
+    "postgres_witness_only",
+    "not_tri_engine_closure",
+    "not_admission",
+    "not_registry_writeback"
+  ]
+}
