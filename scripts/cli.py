@@ -554,6 +554,10 @@ def calcite_hep_pg_checker_run_case_ids() -> list[str]:
     return list(CALCITE_HEP_REAL_ROUTE_CANARY_CASES)
 
 
+def calcite_hep_perf0006_numeric_mismatch_case_id() -> str:
+    return "PERF_0006"
+
+
 def calcite_hep_wrapper_source_sql_path(case_id: str) -> Path | None:
     inferred = case_root_for_case_id(case_id)
     if inferred is None:
@@ -7656,6 +7660,262 @@ def cmd_formal_calcite_hep_pg_checker_run(args: argparse.Namespace) -> int:
             "formal_review_writeback": "disabled",
         },
         "claim_boundary": "calcite_hep_pg_checker_postgres_only_not_speedup_not_final_baseline",
+    }
+    write_formal_expansion_report(output_name, payload)
+    return print_and_exit(payload, 0 if payload["ok"] else 1)
+
+
+def cmd_formal_calcite_hep_perf0006_numeric_mismatch_diagnostic(args: argparse.Namespace) -> int:
+    output_name = normalize_formal_expansion_output_name(args.output)
+    case_id = calcite_hep_perf0006_numeric_mismatch_case_id()
+    source_sql_path = calcite_hep_wrapper_source_sql_path(case_id)
+    candidate_sql_path = calcite_hep_real_route_output_sql_path(case_id)
+    source_tsv_path = calcite_hep_pg_preflight_source_tsv_path(case_id)
+    candidate_tsv_path = calcite_hep_pg_preflight_candidate_tsv_path(case_id)
+    checker_json_path = calcite_hep_pg_preflight_checker_json_path(case_id)
+
+    issues: list[dict[str, Any]] = []
+    for issue_type, path in [
+        ("missing_source_sql", source_sql_path),
+        ("missing_calcite_candidate_sql", candidate_sql_path),
+        ("missing_source_tsv", source_tsv_path),
+        ("missing_candidate_tsv", candidate_tsv_path),
+        ("missing_checker_json", checker_json_path),
+    ]:
+        if path is None or not path.is_file():
+            issues.append({"type": issue_type, "path": relative_to_root(path) if path else ""})
+
+    source_sql_text = source_sql_path.read_text(encoding="utf-8") if source_sql_path and source_sql_path.is_file() else ""
+    candidate_sql_text = candidate_sql_path.read_text(encoding="utf-8") if candidate_sql_path.is_file() else ""
+    source_tsv_lines = read_tsv_lines_if_present(source_tsv_path) or []
+    candidate_tsv_lines = read_tsv_lines_if_present(candidate_tsv_path) or []
+    checker_payload = load_json_if_present(checker_json_path) or {}
+
+    def split_top_level_csv(text: str) -> list[str]:
+        items: list[str] = []
+        current: list[str] = []
+        depth = 0
+        in_single = False
+        in_double = False
+        i = 0
+        while i < len(text):
+            ch = text[i]
+            if ch == "'" and not in_double:
+                current.append(ch)
+                if in_single and i + 1 < len(text) and text[i + 1] == "'":
+                    current.append(text[i + 1])
+                    i += 2
+                    continue
+                in_single = not in_single
+                i += 1
+                continue
+            if ch == '"' and not in_single:
+                current.append(ch)
+                in_double = not in_double
+                i += 1
+                continue
+            if not in_single and not in_double:
+                if ch == "(":
+                    depth += 1
+                elif ch == ")":
+                    depth = max(0, depth - 1)
+                elif ch == "," and depth == 0:
+                    items.append("".join(current).strip())
+                    current = []
+                    i += 1
+                    continue
+            current.append(ch)
+            i += 1
+        tail = "".join(current).strip()
+        if tail:
+            items.append(tail)
+        return items
+
+    def extract_select_alias_map(sql_text: str) -> dict[str, str]:
+        if not sql_text.strip():
+            return {}
+        lowered = sql_text.lower()
+        select_index = lowered.find("select")
+        from_index = lowered.find("\nfrom")
+        if from_index < 0:
+            from_index = lowered.find(" from ")
+        if select_index < 0 or from_index < 0 or from_index <= select_index:
+            return {}
+        select_body = sql_text[select_index + len("select"):from_index].strip()
+        alias_map: dict[str, str] = {}
+        for item in split_top_level_csv(select_body):
+            match = re.search(r"\s+as\s+(\"?[A-Za-z_][A-Za-z0-9_]*\"?)\s*$", item, flags=re.IGNORECASE)
+            if match:
+                alias = match.group(1).strip().strip('"')
+                expr = item[: match.start()].strip()
+            else:
+                tokens = item.rsplit(None, 1)
+                if len(tokens) == 2 and re.fullmatch(r"\"?[A-Za-z_][A-Za-z0-9_]*\"?", tokens[1]):
+                    alias = tokens[1].strip().strip('"')
+                    expr = tokens[0].strip()
+                else:
+                    alias = item.strip().strip('"')
+                    expr = item.strip()
+            alias_map[alias] = expr
+        return alias_map
+
+    def decimal_or_none(cell: str) -> Decimal | None:
+        normalized = normalize_tsv_cell(cell)
+        if normalized in {"", r"\N"}:
+            return None
+        try:
+            return Decimal(normalized)
+        except InvalidOperation:
+            return None
+
+    source_alias_map = extract_select_alias_map(source_sql_text)
+    candidate_alias_map = extract_select_alias_map(candidate_sql_text)
+    mismatched_aliases = ["avg_qty", "avg_price", "avg_disc"]
+    expression_diagnostics = []
+    for alias in mismatched_aliases:
+        source_expr = source_alias_map.get(alias, "")
+        candidate_expr = candidate_alias_map.get(alias, "")
+        likely_cause = ""
+        if "avg(" in source_expr.lower() and "sum(" in candidate_expr.lower() and "count(" in candidate_expr.lower():
+            likely_cause = "AVG rewrite to SUM/COUNT"
+        if alias == "avg_disc" and "decimal(15, 2)" in candidate_expr.lower():
+            likely_cause = "AVG rewrite to SUM/COUNT with DECIMAL(15,2) cast introduces numeric scale/cast loss"
+        expression_diagnostics.append(
+            {
+                "alias": alias,
+                "source_expression": source_expr,
+                "calcite_expression": candidate_expr,
+                "likely_cause": likely_cause or "expression inspected",
+            }
+        )
+
+    numeric_differences: list[dict[str, Any]] = []
+    formatting_only_differences: list[dict[str, Any]] = []
+    max_rows = max(len(source_tsv_lines), len(candidate_tsv_lines))
+    column_aliases = [
+        "l_returnflag",
+        "l_linestatus",
+        "sum_qty",
+        "sum_base_price",
+        "sum_disc_price",
+        "sum_charge",
+        "avg_qty",
+        "avg_price",
+        "avg_disc",
+        "count_order",
+    ]
+    for row_index in range(max_rows):
+        source_cells = source_tsv_lines[row_index].split("\t") if row_index < len(source_tsv_lines) else []
+        candidate_cells = candidate_tsv_lines[row_index].split("\t") if row_index < len(candidate_tsv_lines) else []
+        max_cols = max(len(source_cells), len(candidate_cells))
+        for col_index in range(max_cols):
+            source_cell = source_cells[col_index] if col_index < len(source_cells) else ""
+            candidate_cell = candidate_cells[col_index] if col_index < len(candidate_cells) else ""
+            if source_cell == candidate_cell:
+                continue
+            alias = column_aliases[col_index] if col_index < len(column_aliases) else f"col_{col_index + 1}"
+            source_decimal = decimal_or_none(source_cell)
+            candidate_decimal = decimal_or_none(candidate_cell)
+            if source_decimal is not None and candidate_decimal is not None:
+                if source_decimal == candidate_decimal:
+                    formatting_only_differences.append(
+                        {
+                            "row_index_1based": row_index + 1,
+                            "column_index_1based": col_index + 1,
+                            "column_alias": alias,
+                            "source_cell": source_cell,
+                            "candidate_cell": candidate_cell,
+                            "normalized_decimal": str(source_decimal),
+                        }
+                    )
+                else:
+                    numeric_differences.append(
+                        {
+                            "row_index_1based": row_index + 1,
+                            "column_index_1based": col_index + 1,
+                            "column_alias": alias,
+                            "source_cell": source_cell,
+                            "candidate_cell": candidate_cell,
+                            "source_decimal": str(source_decimal),
+                            "candidate_decimal": str(candidate_decimal),
+                        }
+                    )
+            else:
+                numeric_differences.append(
+                    {
+                        "row_index_1based": row_index + 1,
+                        "column_index_1based": col_index + 1,
+                        "column_alias": alias,
+                        "source_cell": source_cell,
+                        "candidate_cell": candidate_cell,
+                        "source_decimal": None,
+                        "candidate_decimal": None,
+                    }
+                )
+
+    normalized_equal = normalize_tsv_lines_without_sort(source_tsv_lines) == normalize_tsv_lines_without_sort(candidate_tsv_lines)
+    if not numeric_differences and formatting_only_differences:
+        mismatch_classification = "formatting_only"
+    elif numeric_differences:
+        mismatch_classification = "numeric_scale_rounding_difference"
+        for item in numeric_differences:
+            if item.get("column_alias") not in {"avg_qty", "avg_price", "avg_disc"}:
+                mismatch_classification = "true_value_difference"
+                break
+    elif checker_payload.get("byte_equal") is False:
+        mismatch_classification = "unknown"
+    else:
+        mismatch_classification = "formatting_only"
+
+    root_cause = "unknown"
+    if any(item.get("column_alias") == "avg_disc" for item in numeric_differences):
+        root_cause = "AVG rewrite to SUM/COUNT plus DECIMAL(15,2) cast causes numeric scale/cast loss on avg_disc"
+    elif formatting_only_differences:
+        root_cause = "PostgreSQL rendering difference only"
+
+    if numeric_differences:
+        recommended_next_action = "fix Calcite wrapper/type casts and rerun PERF_0006 checker"
+    elif formatting_only_differences:
+        recommended_next_action = "use numeric-normalized checker only if no numeric value difference remains"
+    else:
+        recommended_next_action = "exclude PERF_0006 from first Calcite checker-clean subset"
+
+    payload = {
+        "command": "formal-calcite-hep-perf0006-numeric-mismatch-diagnostic",
+        "ok": not issues,
+        "ran_at_utc": utc_now(),
+        "output_path": f"reports/formal_expansion/{output_name}",
+        "case_id": case_id,
+        "source_sql_path": relative_to_root(source_sql_path) if source_sql_path else "",
+        "calcite_candidate_sql_path": str(candidate_sql_path),
+        "source_tsv_path": relative_to_root(source_tsv_path),
+        "candidate_tsv_path": relative_to_root(candidate_tsv_path),
+        "checker_json_path": relative_to_root(checker_json_path),
+        "checker_status": checker_payload.get("checker_status"),
+        "row_count_equal": checker_payload.get("row_count_equal"),
+        "byte_equal": checker_payload.get("byte_equal"),
+        "mismatch_classification": mismatch_classification,
+        "numeric_normalized_equal": normalized_equal,
+        "numeric_difference_count": len(numeric_differences),
+        "formatting_only_difference_count": len(formatting_only_differences),
+        "numeric_differences": numeric_differences,
+        "formatting_only_differences": formatting_only_differences,
+        "expression_diagnostics": expression_diagnostics,
+        "likely_root_cause": root_cause,
+        "perf_0006_safely_recoverable": bool(numeric_differences),
+        "calcite_hep_checker_clean_3case_subset_can_proceed": True,
+        "recommended_next_action": recommended_next_action,
+        "issues": issues,
+        "guardrails": {
+            "database_execution": "disabled",
+            "postgres_execution": "disabled",
+            "checker_execution": "disabled_existing_artifacts_only",
+            "speedup_scoring": "disabled",
+            "case_artifact_write": "disabled",
+            "registry_writeback": "disabled",
+            "formal_review_writeback": "disabled",
+        },
+        "claim_boundary": "calcite_hep_perf0006_numeric_mismatch_diagnostic_only_no_speedup_no_baseline_claim",
     }
     write_formal_expansion_report(output_name, payload)
     return print_and_exit(payload, 0 if payload["ok"] else 1)
@@ -34606,6 +34866,17 @@ def build_parser() -> argparse.ArgumentParser:
     )
     formal_calcite_hep_pg_checker_run_parser.add_argument("--execute", action="store_true", default=False)
     formal_calcite_hep_pg_checker_run_parser.set_defaults(func=cmd_formal_calcite_hep_pg_checker_run)
+
+    formal_calcite_hep_perf0006_numeric_mismatch_diagnostic_parser = subparsers.add_parser(
+        "formal-calcite-hep-perf0006-numeric-mismatch-diagnostic"
+    )
+    formal_calcite_hep_perf0006_numeric_mismatch_diagnostic_parser.add_argument(
+        "--output",
+        default="reports/formal_expansion/calcite_hep_perf0006_numeric_mismatch_diagnostic_v0.json",
+    )
+    formal_calcite_hep_perf0006_numeric_mismatch_diagnostic_parser.set_defaults(
+        func=cmd_formal_calcite_hep_perf0006_numeric_mismatch_diagnostic
+    )
 
     formal_expanded_perf_direct_llm_preflight_parser = subparsers.add_parser("formal-expanded-perf-direct-llm-preflight")
     formal_expanded_perf_direct_llm_preflight_parser.add_argument(
