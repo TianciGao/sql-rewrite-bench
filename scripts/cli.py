@@ -19793,6 +19793,192 @@ def cmd_formal_batch2b_cons_execution_scoring(args: argparse.Namespace) -> int:
     return print_and_exit(envelope, 0 if envelope["ok"] else 1)
 
 
+def cmd_formal_batch2c_port_preflight(args: argparse.Namespace) -> int:
+    output_name = normalize_formal_expansion_output_name(args.output)
+    candidate_case_ids = ["PORT_0003", "PORT_0006", "PORT_0013", "PORT_0016", "PORT_0024", "PORT_0025"]
+
+    if args.execute:
+        payload = {
+            "command": "formal-batch2c-port-preflight",
+            "ok": False,
+            "ran_at_utc": utc_now(),
+            "output_path": "reports/formal_expansion/batch2c_port_preflight_execute_refused_v0.json",
+            "issues": [
+                {
+                    "type": "execute_not_supported",
+                    "message": "formal-batch2c-port-preflight is read-existing-files-only and does not support --execute",
+                }
+            ],
+            "claim_boundary": "batch2c_port_preflight_only_not_execution_or_translation_correctness",
+        }
+        write_formal_expansion_report("batch2c_port_preflight_execute_refused_v0.json", payload)
+        return print_and_exit(payload, 1)
+
+    _, case_registry_rows = read_registry(CASE_REGISTRY)
+    case_registry_index = {str(row.get("case_id", "")).strip().upper(): row for row in case_registry_rows if row.get("case_id")}
+    yaml_module = None
+    if safe_module_available("yaml"):
+        try:
+            yaml_module = importlib.import_module("yaml")
+        except Exception:
+            yaml_module = None
+
+    def load_yaml_obj(path: Path) -> Any | None:
+        if not path.is_file() or yaml_module is None:
+            return None
+        try:
+            return yaml_module.safe_load(path.read_text(encoding="utf-8"))
+        except Exception:
+            return None
+
+    records: list[dict[str, Any]] = []
+    issues: list[dict[str, Any]] = []
+    ready_cases: list[str] = []
+    reference_policy_cases: list[str] = []
+    minor_backfill_cases: list[str] = []
+    blocked_cases: list[str] = []
+
+    for case_id in candidate_case_ids:
+        inferred = case_root_for_case_id(case_id)
+        case_root = inferred[1] if inferred else None
+        registry_row = case_registry_index.get(case_id, {})
+        if case_root is None:
+            issues.append({"type": "missing_case_root", "case_id": case_id})
+            continue
+
+        manifest_path = case_root / "manifest.yaml"
+        source_sql_path = case_root / "source.sql"
+        reference_sql_path = case_root / "rewrite_pos_01.sql"
+        negative_sql_path = case_root / "rewrite_neg_01.sql"
+        pg_schema_path = case_root / "schema" / "ddl_pg.sql"
+        pg_witness_data_path = case_root / "validation" / "pg_witness_data.sql"
+        root_result_check_path = case_root / "runs" / "result_check.json"
+        pg_result_check_path = case_root / "runs" / "pg" / "result_check.json"
+        checker_yaml_path = case_root / "validation" / "checker.yaml"
+        taxonomy_paths = sorted(case_root.glob("taxonomy_trial*.yaml"))
+        manifest_obj = load_yaml_obj(manifest_path)
+
+        manifest_exists = manifest_path.is_file()
+        source_sql_exists = source_sql_path.is_file()
+        reference_sql_exists = reference_sql_path.is_file()
+        negative_sql_exists = negative_sql_path.is_file()
+        pg_schema_exists = pg_schema_path.is_file()
+        pg_witness_data_exists = pg_witness_data_path.is_file()
+        root_result_check_exists = root_result_check_path.is_file()
+        pg_result_check_exists = pg_result_check_path.is_file()
+        checker_yaml_exists = checker_yaml_path.is_file()
+        validation_schema_expected = validation_schema_hint(case_id)
+
+        source_dialect = ""
+        target_dialect = "postgres"
+        known_portability_tags: list[str] = []
+        if isinstance(manifest_obj, dict):
+            source_dialect = str(manifest_obj.get("source_dialect", "")).strip()
+            portability = ((manifest_obj.get("tags") or {}).get("portability") or {}) if isinstance(manifest_obj.get("tags"), dict) else {}
+            confirmed = portability.get("confirmed", [])
+            if isinstance(confirmed, list):
+                known_portability_tags = [str(tag).strip() for tag in confirmed if str(tag).strip()]
+
+        current_blockers: list[str] = []
+        if not manifest_exists:
+            current_blockers.append("missing_manifest")
+        if not source_sql_exists:
+            current_blockers.append("missing_source_sql")
+        if not reference_sql_exists:
+            current_blockers.append("missing_reference_sql")
+        if not negative_sql_exists:
+            current_blockers.append("missing_negative_sql")
+        if not pg_schema_exists:
+            current_blockers.append("missing_pg_schema")
+        if not pg_witness_data_exists:
+            current_blockers.append("missing_pg_witness_data")
+        if not root_result_check_exists:
+            current_blockers.append("missing_root_result_check")
+        if not checker_yaml_exists:
+            current_blockers.append("missing_checker_yaml")
+        if not pg_result_check_exists:
+            current_blockers.append("missing_pg_result_check")
+
+        taxonomy_status = "missing"
+        if taxonomy_paths:
+            taxonomy_obj = load_yaml_obj(taxonomy_paths[0])
+            if isinstance(taxonomy_obj, dict):
+                taxonomy_status = str(taxonomy_obj.get("status", "")).strip() or "unknown"
+            else:
+                taxonomy_status = "unknown"
+
+        if not (source_sql_exists and reference_sql_exists and negative_sql_exists and pg_schema_exists):
+            likely_port_role = "not_ready"
+            readiness_status = "blocked_major_missing_artifacts"
+            recommended_next_action = "backfill core SQL or schema files before any Batch 2C portability expansion work"
+            blocked_cases.append(case_id)
+        elif not pg_witness_data_exists:
+            likely_port_role = "reference_normalization_needed" if case_id == "PORT_0003" else "diagnostic_candidate"
+            readiness_status = "needs_minor_backfill"
+            recommended_next_action = "add PostgreSQL witness-data package support before Batch 2C PG route-matrix execution"
+            minor_backfill_cases.append(case_id)
+        elif case_id == "PORT_0016":
+            likely_port_role = "diagnostic_candidate"
+            readiness_status = "needs_reference_policy"
+            recommended_next_action = "freeze explicit fairness/reference policy for PORT_0016 before bounded PG route-matrix execution"
+            reference_policy_cases.append(case_id)
+        elif not checker_yaml_exists or not pg_result_check_exists or not taxonomy_paths:
+            likely_port_role = "clean_candidate"
+            readiness_status = "needs_reference_policy"
+            recommended_next_action = "freeze bounded PG reference/checker policy and report-local execution policy before Batch 2C route-matrix execution"
+            reference_policy_cases.append(case_id)
+        elif case_id == "PORT_0003":
+            likely_port_role = "diagnostic_candidate"
+            readiness_status = "needs_reference_policy"
+            recommended_next_action = "resolve the existing taxonomy-exception caveat and route-reference policy before running Batch 2C"
+            reference_policy_cases.append(case_id)
+        else:
+            likely_port_role = "clean_candidate"
+            readiness_status = "ready_for_pg_route_matrix"
+            recommended_next_action = "run bounded Batch 2C PORT PG route matrix on this case"
+            ready_cases.append(case_id)
+
+        records.append(
+            {
+                "case_id": case_id,
+                "manifest_exists": manifest_exists,
+                "source_sql_exists": source_sql_exists,
+                "reference_sql_exists": reference_sql_exists,
+                "negative_sql_exists": negative_sql_exists,
+                "pg_schema_exists": pg_schema_exists,
+                "pg_witness_data_exists": pg_witness_data_exists,
+                "root_result_check_exists": root_result_check_exists,
+                "pg_result_check_exists": pg_result_check_exists,
+                "validation_schema_expected": validation_schema_expected,
+                "source_dialect": source_dialect,
+                "target_dialect": target_dialect,
+                "known_portability_tags": known_portability_tags,
+                "taxonomy_trial_status": taxonomy_status,
+                "current_blockers": current_blockers,
+                "likely_port_role": likely_port_role,
+                "readiness_status": readiness_status,
+                "recommended_next_action": recommended_next_action,
+            }
+        )
+
+    payload = {
+        "command": "formal-batch2c-port-preflight",
+        "ok": not issues,
+        "candidate_count": len(candidate_case_ids),
+        "ready_for_pg_route_matrix_count": len(ready_cases),
+        "needs_reference_policy_count": len(reference_policy_cases),
+        "needs_minor_backfill_count": len(minor_backfill_cases),
+        "blocked_count": len(blocked_cases),
+        "recommended_batch2c_pg_matrix_cases": ready_cases,
+        "recommended_diagnostic_cases": [case_id for case_id in reference_policy_cases if case_id in {"PORT_0003", "PORT_0016"}],
+        "records": records,
+        "issues": issues,
+        "claim_boundary": "batch2c_port_preflight_only_not_execution_or_translation_correctness",
+    }
+    write_formal_expansion_report(output_name, payload)
+    return print_and_exit(payload, 0 if payload["ok"] else 1)
+
+
 def cmd_formal_common_core_method_result_checker_run(args: argparse.Namespace) -> int:
     output_name = normalize_formal_common_core_output_name(args.output)
     valid_routes = {
@@ -27747,6 +27933,14 @@ def build_parser() -> argparse.ArgumentParser:
     )
     formal_batch2b_cons_execution_scoring_parser.add_argument("--execute", action="store_true", default=False)
     formal_batch2b_cons_execution_scoring_parser.set_defaults(func=cmd_formal_batch2b_cons_execution_scoring)
+
+    formal_batch2c_port_preflight_parser = subparsers.add_parser("formal-batch2c-port-preflight")
+    formal_batch2c_port_preflight_parser.add_argument(
+        "--output",
+        default="batch2c_port_preflight_v0.json",
+    )
+    formal_batch2c_port_preflight_parser.add_argument("--execute", action="store_true", default=False)
+    formal_batch2c_port_preflight_parser.set_defaults(func=cmd_formal_batch2c_port_preflight)
 
     formal_common_core_method_plan_collection_preflight_parser = subparsers.add_parser("formal-common-core-method-plan-collection-preflight")
     formal_common_core_method_plan_collection_preflight_parser.add_argument(
