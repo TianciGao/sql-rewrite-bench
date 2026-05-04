@@ -52,6 +52,12 @@ CALCITE_HEP_FIRST_SUBSET_CASES = [
     "PERF_0033",
     "PERF_0054",
 ]
+CALCITE_HEP_WRAPPER_FIRST_PERF_CASES = [
+    "PERF_0006",
+    "PERF_0008",
+    "PERF_0033",
+    "PERF_0054",
+]
 CALCITE_HEP_PG_NATIVE_9_CASES = [
     "PERF_0006",
     "PERF_0008",
@@ -207,6 +213,10 @@ PORT_CASE_ROOT = ROOT / "cases" / "PORT"
 CONS_CASE_ROOT = ROOT / "cases" / "CONS"
 LONGTAIL_CASE_ID_RE = re.compile(r"^LONGTAIL_\d{4}$")
 LONGTAIL_CASE_ROOT = ROOT / "cases" / "LONGTAIL"
+CALCITE_CHECKOUT_ROOT = ROOT / "datasets" / "raw" / "calcite" / "calcite"
+CALCITE_HEP_WRAPPER_SOURCE = ROOT / "tools" / "calcite_hep" / "CalciteHepRewriteSmoke.java"
+CALCITE_HEP_TEMP_ROOT = Path("/tmp/calcite-hep-wrapper")
+CALCITE_HEP_GRADLE_USER_HOME = Path("/tmp/calcite-gradle-home")
 PORT_TRANSLATE_SOURCE_DIALECT_FALLBACKS = {
     "PORT_0004": "mysql",
     "PORT_0012": "postgres",
@@ -525,6 +535,120 @@ def calcite_hep_candidate_case_ids(candidate_set: str) -> list[str]:
     if candidate_set == "pg-native-9":
         return list(CALCITE_HEP_PG_NATIVE_9_CASES)
     raise ValueError(f"unsupported Calcite HEP candidate set: {candidate_set}")
+
+
+def calcite_hep_wrapper_case_ids() -> list[str]:
+    return list(CALCITE_HEP_WRAPPER_FIRST_PERF_CASES)
+
+
+def calcite_hep_wrapper_source_sql_path(case_id: str) -> Path | None:
+    inferred = case_root_for_case_id(case_id)
+    if inferred is None:
+        return None
+    _, case_root = inferred
+    return case_root / "source.sql"
+
+
+def calcite_hep_wrapper_ddl_path(case_id: str) -> Path | None:
+    inferred = case_root_for_case_id(case_id)
+    if inferred is None:
+        return None
+    _, case_root = inferred
+    return case_root / "schema" / "ddl_pg.sql"
+
+
+def calcite_hep_wrapper_output_sql_path(case_id: str) -> Path:
+    return CALCITE_HEP_TEMP_ROOT / "outputs" / f"{normalize_case_id_for_filename(case_id)}.sql"
+
+
+def calcite_hep_wrapper_classes_dir() -> Path:
+    return CALCITE_HEP_TEMP_ROOT / "classes"
+
+
+def calcite_hep_wrapper_runtime_classpath_entries() -> list[str]:
+    entries: list[Path] = [
+        calcite_hep_wrapper_classes_dir(),
+        CALCITE_CHECKOUT_ROOT / "core" / "build" / "classes" / "java" / "main",
+        CALCITE_CHECKOUT_ROOT / "core" / "build" / "resources" / "main",
+        CALCITE_CHECKOUT_ROOT / "linq4j" / "build" / "classes" / "java" / "main",
+        CALCITE_CHECKOUT_ROOT / "linq4j" / "build" / "resources" / "main",
+    ]
+    jar_root = CALCITE_HEP_GRADLE_USER_HOME / "caches" / "modules-2" / "files-2.1"
+    if jar_root.is_dir():
+        entries.extend(sorted(path for path in jar_root.rglob("*.jar") if path.is_file()))
+    deduped: list[str] = []
+    seen: set[str] = set()
+    for path in entries:
+        path_str = str(path)
+        if path_str not in seen and path.exists():
+            seen.add(path_str)
+            deduped.append(path_str)
+    return deduped
+
+
+def calcite_hep_wrapper_compile_command() -> list[str]:
+    classpath = os.pathsep.join(calcite_hep_wrapper_runtime_classpath_entries()[1:])
+    return [
+        "javac",
+        "-cp",
+        classpath,
+        "-d",
+        str(calcite_hep_wrapper_classes_dir()),
+        str(CALCITE_HEP_WRAPPER_SOURCE),
+    ]
+
+
+def calcite_hep_wrapper_run_command(case_id: str, source_sql_path: Path, ddl_path: Path, output_sql_path: Path) -> list[str]:
+    classpath = os.pathsep.join(calcite_hep_wrapper_runtime_classpath_entries())
+    return [
+        "java",
+        "-cp",
+        classpath,
+        "CalciteHepRewriteSmoke",
+        "--case-id",
+        case_id,
+        "--source-sql",
+        str(source_sql_path),
+        "--ddl",
+        str(ddl_path),
+        "--output-sql",
+        str(output_sql_path),
+    ]
+
+
+def run_captured_subprocess(
+    argv: list[str],
+    cwd: Path,
+    env_overrides: dict[str, str] | None = None,
+) -> dict[str, Any]:
+    env = os.environ.copy()
+    if env_overrides:
+        env.update(env_overrides)
+    completed = subprocess.run(
+        argv,
+        cwd=cwd,
+        capture_output=True,
+        text=True,
+        env=env,
+    )
+    return {
+        "argv": argv,
+        "cwd": str(cwd),
+        "returncode": completed.returncode,
+        "stdout": completed.stdout,
+        "stderr": completed.stderr,
+        "ok": completed.returncode == 0,
+    }
+
+
+def parse_wrapper_stdout_kv(text: str) -> dict[str, str]:
+    result: dict[str, str] = {}
+    for line in text.splitlines():
+        if "=" not in line:
+            continue
+        key, value = line.split("=", 1)
+        result[key.strip()] = value.strip()
+    return result
 
 
 def learnedrewrite_candidate_case_ids(candidate_set: str) -> list[str]:
@@ -6373,6 +6497,241 @@ def cmd_baseline_smoke_calcite_readiness(args: argparse.Namespace) -> int:
         "claim_boundary": "calcite_parse_readiness_only_not_actual_parse_or_rewrite",
     }
     write_baseline_smoke_report(output_name, payload)
+    return print_and_exit(payload, 0 if payload["ok"] else 1)
+
+
+def cmd_formal_calcite_hep_wrapper_scaffold(args: argparse.Namespace) -> int:
+    output_name = normalize_formal_expansion_output_name(args.output)
+    selected_case_ids = [str(case_id).strip().upper() for case_id in (args.case_id or []) if str(case_id).strip()]
+    if not selected_case_ids:
+        selected_case_ids = calcite_hep_wrapper_case_ids()
+
+    valid_case_ids = set(calcite_hep_wrapper_case_ids())
+    issues: list[dict[str, Any]] = []
+    for case_id in selected_case_ids:
+        if case_id not in valid_case_ids:
+            issues.append({"type": "unsupported_case_id", "case_id": case_id})
+    selected_case_ids = [case_id for case_id in selected_case_ids if case_id in valid_case_ids]
+
+    if args.execute and len(selected_case_ids) != 1:
+        issues.append(
+            {
+                "type": "execute_requires_single_case",
+                "message": "formal-calcite-hep-wrapper-scaffold --execute currently supports exactly one case-id",
+            }
+        )
+
+    planned_gradle_command = [
+        "./gradlew",
+        ":core:classes",
+    ]
+    planned_compile_command = calcite_hep_wrapper_compile_command()
+
+    records: list[dict[str, Any]] = []
+    for case_id in selected_case_ids:
+        source_sql_path = calcite_hep_wrapper_source_sql_path(case_id)
+        ddl_path = calcite_hep_wrapper_ddl_path(case_id)
+        output_sql_path = calcite_hep_wrapper_output_sql_path(case_id)
+        source_sql_exists = bool(source_sql_path and source_sql_path.is_file())
+        ddl_exists = bool(ddl_path and ddl_path.is_file())
+        notes: list[str] = []
+        if source_sql_exists:
+            notes.append("source.sql present")
+        if ddl_exists:
+            notes.append("schema/ddl_pg.sql present")
+        records.append(
+            {
+                "case_id": case_id,
+                "source_sql_path": relative_to_root(source_sql_path) if source_sql_path else "",
+                "source_sql_exists": source_sql_exists,
+                "ddl_path": relative_to_root(ddl_path) if ddl_path else "",
+                "ddl_exists": ddl_exists,
+                "planned_output_sql_path": str(output_sql_path),
+                "planned_wrapper_command": (
+                    calcite_hep_wrapper_run_command(case_id, source_sql_path, ddl_path, output_sql_path)
+                    if source_sql_path and ddl_path
+                    else []
+                ),
+                "scaffold_status": "adapter_parse_scaffold_only",
+                "artifact_claim_boundary": "calcite_hep_wrapper_scaffold_generation_only_no_db_execution",
+                "notes": notes,
+            }
+        )
+
+    if not args.execute:
+        payload = {
+            "command": "formal-calcite-hep-wrapper-scaffold",
+            "ok": not issues and all(record["source_sql_exists"] and record["ddl_exists"] for record in records),
+            "ran_at_utc": utc_now(),
+            "output_path": f"reports/formal_expansion/{output_name}",
+            "case_count": len(records),
+            "selected_case_ids": selected_case_ids,
+            "scaffold_status": "adapter_parse_scaffold_only",
+            "java_wrapper_source_path": relative_to_root(CALCITE_HEP_WRAPPER_SOURCE),
+            "calcite_checkout_root": relative_to_root(CALCITE_CHECKOUT_ROOT),
+            "gradle_user_home": str(CALCITE_HEP_GRADLE_USER_HOME),
+            "planned_commands": {
+                "gradle_core_classes": planned_gradle_command,
+                "javac_wrapper_compile": planned_compile_command,
+            },
+            "java_wrapper_compiled": False,
+            "wrapper_execute_attempted": False,
+            "records": records,
+            "issues": issues,
+            "guardrails": {
+                "database_execution": "disabled",
+                "checker_execution": "disabled",
+                "speedup_scoring": "disabled",
+                "postgres_execution": "disabled",
+                "case_artifact_write": "disabled",
+                "registry_writeback": "disabled",
+                "formal_review_writeback": "disabled",
+            },
+            "claim_boundary": "calcite_hep_wrapper_scaffold_generation_only_no_db_execution",
+        }
+        write_formal_expansion_report(output_name, payload)
+        return print_and_exit(payload, 0 if payload["ok"] else 1)
+
+    if issues:
+        payload = {
+            "command": "formal-calcite-hep-wrapper-scaffold",
+            "ok": False,
+            "ran_at_utc": utc_now(),
+            "output_path": "reports/formal_expansion/calcite_hep_wrapper_scaffold_execute_refused_v0.json",
+            "case_count": len(records),
+            "selected_case_ids": selected_case_ids,
+            "scaffold_status": "adapter_parse_scaffold_only",
+            "message": "execute refused before wrapper build/invocation",
+            "records": records,
+            "issues": issues,
+            "guardrails": {
+                "database_execution": "disabled",
+                "checker_execution": "disabled",
+                "speedup_scoring": "disabled",
+                "postgres_execution": "disabled",
+                "case_artifact_write": "disabled",
+                "registry_writeback": "disabled",
+                "formal_review_writeback": "disabled",
+            },
+            "claim_boundary": "calcite_hep_wrapper_scaffold_generation_only_no_db_execution",
+        }
+        write_formal_expansion_report("calcite_hep_wrapper_scaffold_execute_refused_v0.json", payload)
+        return print_and_exit(payload, 1)
+
+    record = records[0]
+    case_id = record["case_id"]
+    source_sql_path = resolve_repo_path(record["source_sql_path"])
+    ddl_path = resolve_repo_path(record["ddl_path"])
+    output_sql_path = Path(record["planned_output_sql_path"])
+    output_sql_path.parent.mkdir(parents=True, exist_ok=True)
+    calcite_hep_wrapper_classes_dir().mkdir(parents=True, exist_ok=True)
+
+    gradle_result = run_captured_subprocess(
+        planned_gradle_command,
+        cwd=CALCITE_CHECKOUT_ROOT,
+        env_overrides={"GRADLE_USER_HOME": str(CALCITE_HEP_GRADLE_USER_HOME)},
+    )
+
+    compile_result: dict[str, Any] = {
+        "argv": planned_compile_command,
+        "cwd": str(ROOT),
+        "returncode": None,
+        "stdout": "",
+        "stderr": "",
+        "ok": False,
+    }
+    wrapper_result: dict[str, Any] = {
+        "argv": calcite_hep_wrapper_run_command(case_id, source_sql_path, ddl_path, output_sql_path),
+        "cwd": str(ROOT),
+        "returncode": None,
+        "stdout": "",
+        "stderr": "",
+        "ok": False,
+    }
+
+    if gradle_result["ok"]:
+        compile_result = run_captured_subprocess(planned_compile_command, cwd=ROOT)
+    if gradle_result["ok"] and compile_result["ok"]:
+        wrapper_result = run_captured_subprocess(
+            calcite_hep_wrapper_run_command(case_id, source_sql_path, ddl_path, output_sql_path),
+            cwd=ROOT,
+        )
+
+    wrapper_stdout = parse_wrapper_stdout_kv(str(wrapper_result.get("stdout") or ""))
+    emitted_sql_exists = output_sql_path.is_file()
+    emitted_sql_text = output_sql_path.read_text(encoding="utf-8") if emitted_sql_exists else ""
+    source_sql_text = source_sql_path.read_text(encoding="utf-8")
+    emitted_sql_matches_source = (
+        normalize_sql_for_compare(emitted_sql_text) == normalize_sql_for_compare(source_sql_text)
+        if emitted_sql_exists
+        else False
+    )
+
+    blocker_category = ""
+    blocker_message = ""
+    if not gradle_result["ok"]:
+        blocker_category = "gradle_core_classes_failed"
+        blocker_message = str(gradle_result.get("stderr") or gradle_result.get("stdout") or "").strip()
+    elif not compile_result["ok"]:
+        blocker_category = "wrapper_compile_failed"
+        blocker_message = str(compile_result.get("stderr") or compile_result.get("stdout") or "").strip()
+    elif not wrapper_result["ok"]:
+        blocker_category = "wrapper_execute_failed"
+        blocker_message = str(wrapper_result.get("stderr") or wrapper_result.get("stdout") or "").strip()
+    elif not emitted_sql_exists:
+        blocker_category = "output_sql_missing"
+        blocker_message = "wrapper returned success but did not emit output SQL"
+
+    execution_record = {
+        **record,
+        "java_wrapper_compiled": compile_result["ok"],
+        "wrapper_execute_attempted": True,
+        "wrapper_execute_ok": wrapper_result["ok"],
+        "source_sql_accepted": wrapper_stdout.get("source_sql_accepted") == "true",
+        "ddl_accepted": wrapper_stdout.get("ddl_accepted") == "true",
+        "calcite_parse_succeeded": wrapper_stdout.get("calcite_parse_succeeded") == "true",
+        "candidate_sql_emitted": emitted_sql_exists,
+        "emitted_sql_mode": wrapper_stdout.get("emission_mode", ""),
+        "emitted_sql_path": str(output_sql_path),
+        "emitted_sql_matches_source_normalized": emitted_sql_matches_source,
+        "emitted_sql_character_count": len(emitted_sql_text) if emitted_sql_exists else 0,
+        "wrapper_stdout_kv": wrapper_stdout,
+        "gradle_core_classes_result": gradle_result,
+        "wrapper_compile_result": compile_result,
+        "wrapper_run_result": wrapper_result,
+        "blocker_category": blocker_category,
+        "blocker_message": blocker_message,
+    }
+
+    payload = {
+        "command": "formal-calcite-hep-wrapper-scaffold",
+        "ok": gradle_result["ok"] and compile_result["ok"] and wrapper_result["ok"] and emitted_sql_exists,
+        "ran_at_utc": utc_now(),
+        "output_path": f"reports/formal_expansion/{output_name}",
+        "case_count": 1,
+        "selected_case_ids": [case_id],
+        "scaffold_status": wrapper_stdout.get("scaffold_status", "adapter_parse_scaffold_only"),
+        "java_wrapper_source_path": relative_to_root(CALCITE_HEP_WRAPPER_SOURCE),
+        "calcite_checkout_root": relative_to_root(CALCITE_CHECKOUT_ROOT),
+        "gradle_user_home": str(CALCITE_HEP_GRADLE_USER_HOME),
+        "java_wrapper_compiled": compile_result["ok"],
+        "wrapper_execute_attempted": True,
+        "wrapper_executed": wrapper_result["ok"],
+        "candidate_sql_emitted_count": 1 if emitted_sql_exists else 0,
+        "records": [execution_record],
+        "issues": issues,
+        "guardrails": {
+            "database_execution": "disabled",
+            "checker_execution": "disabled",
+            "speedup_scoring": "disabled",
+            "postgres_execution": "disabled",
+            "case_artifact_write": "disabled",
+            "registry_writeback": "disabled",
+            "formal_review_writeback": "disabled",
+        },
+        "claim_boundary": "calcite_hep_wrapper_scaffold_generation_only_no_db_execution",
+    }
+    write_formal_expansion_report(output_name, payload)
     return print_and_exit(payload, 0 if payload["ok"] else 1)
 
 
@@ -33286,6 +33645,15 @@ def build_parser() -> argparse.ArgumentParser:
         default="baseline_coverage_audit_v0.json",
     )
     formal_baseline_coverage_audit_parser.set_defaults(func=cmd_formal_baseline_coverage_audit)
+
+    formal_calcite_hep_wrapper_scaffold_parser = subparsers.add_parser("formal-calcite-hep-wrapper-scaffold")
+    formal_calcite_hep_wrapper_scaffold_parser.add_argument("--case-id", action="append", default=[])
+    formal_calcite_hep_wrapper_scaffold_parser.add_argument(
+        "--output",
+        default="reports/formal_expansion/calcite_hep_wrapper_scaffold_v0.json",
+    )
+    formal_calcite_hep_wrapper_scaffold_parser.add_argument("--execute", action="store_true", default=False)
+    formal_calcite_hep_wrapper_scaffold_parser.set_defaults(func=cmd_formal_calcite_hep_wrapper_scaffold)
 
     formal_expanded_perf_direct_llm_preflight_parser = subparsers.add_parser("formal-expanded-perf-direct-llm-preflight")
     formal_expanded_perf_direct_llm_preflight_parser.add_argument(
