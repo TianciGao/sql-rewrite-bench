@@ -178,6 +178,12 @@ FORMAL_COMMON_CORE_BATCH3A_PERF_CASES = [
     "PERF_0065",
     "PERF_0066",
 ]
+FORMAL_COMMON_CORE_BATCH3B_PERF_CASES = [
+    "PERF_0027",
+    "PERF_0028",
+    "PERF_0030",
+    "PERF_0031",
+]
 HUMAN_POSITIVE_PG_DEFAULT_CASES = [
     "PERF_0006",
     "PERF_0008",
@@ -20580,6 +20586,753 @@ def cmd_formal_batch3a_speedup_run(args: argparse.Namespace) -> int:
     return print_and_exit(payload, 0 if payload["ok"] else 1)
 
 
+def cmd_formal_batch3b_perf_execution_scoring(args: argparse.Namespace) -> int:
+    candidate_case_ids = list(FORMAL_COMMON_CORE_BATCH3B_PERF_CASES)
+    valid_routes = {
+        "NATIVE_IDENTITY": {
+            "baseline_id": "NATIVE_IDENTITY",
+            "candidate_path": lambda case_root: case_root / "source.sql",
+            "generator": None,
+        },
+        "HUMAN_REFERENCE_POSITIVE": {
+            "baseline_id": "HUMAN_REFERENCE_POSITIVE",
+            "candidate_path": lambda case_root: sorted(case_root.glob("rewrite_pos_*.sql"))[0]
+            if sorted(case_root.glob("rewrite_pos_*.sql"))
+            else case_root / "rewrite_pos_01.sql",
+            "generator": None,
+        },
+        "HARD_NEGATIVE_GUARD": {
+            "baseline_id": "HARD_NEGATIVE_GUARD",
+            "candidate_path": lambda case_root: sorted(case_root.glob("rewrite_neg_*.sql"))[0]
+            if sorted(case_root.glob("rewrite_neg_*.sql"))
+            else case_root / "rewrite_neg_01.sql",
+            "generator": None,
+        },
+        "SQLGLOT_OPT_SAME_DIALECT": {
+            "baseline_id": "SQLGLOT_OPT_SAME_DIALECT",
+            "candidate_path": lambda case_root: case_root / "source.sql",
+            "generator": "sqlglot_same_dialect_opt",
+        },
+        "SQLGLOT_TRANSPILE_SAME_DIALECT_NO_OPT": {
+            "baseline_id": "SQLGLOT_TRANSPILE_SAME_DIALECT_NO_OPT",
+            "candidate_path": lambda case_root: case_root / "source.sql",
+            "generator": "sqlglot_same_dialect_no_opt",
+        },
+    }
+
+    selected_case_ids = [str(case_id).strip().upper() for case_id in (args.case_id or []) if str(case_id).strip()]
+    if not selected_case_ids:
+        selected_case_ids = list(candidate_case_ids)
+    selected_routes = [str(route).strip().upper() for route in (args.route or []) if str(route).strip()]
+    if not selected_routes:
+        selected_routes = list(valid_routes)
+
+    invalid_case_ids = [case_id for case_id in selected_case_ids if case_id not in candidate_case_ids]
+    invalid_routes = [route for route in selected_routes if route not in valid_routes]
+    output_dir = str(getattr(args, "output_dir", "reports/formal_expansion") or "").strip() or "reports/formal_expansion"
+    override_missing = not bool(getattr(args, "paper_draft_override", False))
+    if invalid_case_ids or invalid_routes or override_missing or output_dir != "reports/formal_expansion":
+        payload = {
+            "command": "formal-batch3b-perf-execution-scoring",
+            "ok": False,
+            "ran_at_utc": utc_now(),
+            "output_path": "reports/formal_expansion/batch3b_perf_execution_execute_refused_v0.json",
+            "issues": [
+                *({"type": "unsupported_case_id", "case_id": case_id} for case_id in invalid_case_ids),
+                *({"type": "unsupported_route", "route": route} for route in invalid_routes),
+                *(
+                    [
+                        {
+                            "type": "paper_draft_override_required",
+                            "message": "these registry-not-assessed cases require --paper-draft-override",
+                        }
+                    ]
+                    if override_missing
+                    else []
+                ),
+                *(
+                    [
+                        {
+                            "type": "unsupported_output_dir",
+                            "output_dir": output_dir,
+                            "message": "only reports/formal_expansion is supported",
+                        }
+                    ]
+                    if output_dir != "reports/formal_expansion"
+                    else []
+                ),
+            ],
+            "guardrails": {
+                "database_execution": "enabled_only_with_execute_and_paper_draft_override",
+                "sql_execution": "postgres_only_selected_routes_and_cases",
+                "sqlglot_optimize": "enabled_only_for_execution_boundary_observation",
+                "model_api_call": "disabled",
+                "mysql_execution": "disabled",
+                "spark_execution": "disabled",
+                "port_execution": "disabled",
+                "cons_execution": "disabled",
+                "speedup_scoring": "disabled",
+                "plan_collection": "disabled",
+                "case_artifact_write": "disabled",
+                "registry_writeback": "disabled",
+            },
+            "claim_boundary": "batch3b_perf_pg_execution_scoring_paper_draft_only_not_admission",
+        }
+        write_formal_expansion_report("batch3b_perf_execution_execute_refused_v0.json", payload)
+        return print_and_exit(payload, 1)
+
+    env_visibility = pg_env_visibility()
+    required_env_visible = all(env_visibility[name] for name in ["PGHOST", "PGPORT", "PGDATABASE", "PGUSER"])
+    pg_password_present = env_visibility["PGPASSWORD"]
+    psycopg_available = safe_module_available("psycopg")
+    sqlglot_available = safe_module_available("sqlglot")
+    yaml_available = safe_module_available("yaml")
+    issues: list[dict[str, Any]] = []
+    if args.execute and not required_env_visible:
+        issues.append({"type": "missing_pg_env", "message": "required env: PGHOST, PGPORT, PGDATABASE, PGUSER"})
+    if args.execute and not psycopg_available:
+        issues.append({"type": "psycopg_unavailable", "message": "psycopg is not installed"})
+    if not yaml_available:
+        issues.append({"type": "yaml_unavailable", "message": "PyYAML is not installed"})
+    if any(route in selected_routes for route in ("SQLGLOT_OPT_SAME_DIALECT", "SQLGLOT_TRANSPILE_SAME_DIALECT_NO_OPT")) and not sqlglot_available:
+        issues.append({"type": "sqlglot_unavailable", "message": "sqlglot is not installed"})
+
+    psycopg = None
+    sqlglot_module = None
+    sqlglot_optimize = None
+    yaml_module = None
+    if args.execute and psycopg_available:
+        try:
+            psycopg = importlib.import_module("psycopg")
+        except Exception as exc:
+            issues.append({"type": "psycopg_import_error", "message": str(exc)})
+    if sqlglot_available:
+        try:
+            sqlglot_module = importlib.import_module("sqlglot")
+            from sqlglot.optimizer import optimize as sqlglot_optimize  # type: ignore
+        except Exception as exc:
+            issues.append({"type": "sqlglot_import_error", "message": str(exc)})
+            sqlglot_available = False
+            sqlglot_module = None
+            sqlglot_optimize = None
+    if yaml_available:
+        try:
+            yaml_module = importlib.import_module("yaml")
+        except Exception as exc:
+            issues.append({"type": "yaml_import_error", "message": str(exc)})
+            yaml_module = None
+
+    def serialize_tsv_row(row: Sequence[Any]) -> str:
+        cells: list[str] = []
+        for value in row:
+            if value is None:
+                text = r"\N"
+            else:
+                text = str(value)
+                text = text.replace("\\", "\\\\").replace("\t", "\\t").replace("\n", "\\n").replace("\r", "\\r")
+            cells.append(text)
+        return "\t".join(cells)
+
+    def execute_query_to_lines(cur: Any, sql_text: str) -> tuple[list[str], int]:
+        cur.execute(sql_text)
+        rows = cur.fetchall() if cur.description is not None else []
+        return [serialize_tsv_row(row) for row in rows], len(rows)
+
+    def checker_normalize(lines: list[str], checker_obj: Any) -> list[str]:
+        normalization = checker_obj.get("normalization", {}) if isinstance(checker_obj, dict) else {}
+        sort_rows = bool(normalization.get("sort_rows", False))
+        trim_whitespace = bool(normalization.get("trim_whitespace", False))
+        normalize_numeric_format = bool(normalization.get("normalize_numeric_format", False))
+        normalize_null = bool(normalization.get("normalize_null", False))
+        output = list(lines)
+        if trim_whitespace:
+            output = [line.rstrip() for line in output]
+        if normalize_numeric_format or normalize_null:
+            output = normalize_tsv_lines_without_sort(output)
+        if sort_rows:
+            output = sorted(output)
+        return output
+
+    execution_records: list[dict[str, Any]] = []
+    success_count_by_route: Counter[str] = Counter()
+    failed_count_by_route: Counter[str] = Counter()
+    failure_categories: Counter[str] = Counter()
+    route_rows_by_case: dict[str, dict[str, list[str]]] = {}
+    route_row_counts_by_case: dict[str, dict[str, int]] = {}
+    checker_objects_by_case: dict[str, Any] = {}
+    checker_config_exists_by_case: dict[str, bool] = {}
+
+    for case_id in selected_case_ids:
+        inferred = case_root_for_case_id(case_id)
+        case_root = inferred[1] if inferred else None
+        validation_schema = validation_schema_hint(case_id)
+        route_rows_by_case[case_id] = {}
+        route_row_counts_by_case[case_id] = {}
+
+        checker_path = case_root / "validation" / "checker.yaml" if case_root else ROOT / "__missing__"
+        checker_exists = checker_path.is_file()
+        checker_config_exists_by_case[case_id] = checker_exists
+        if checker_exists and yaml_module is not None:
+            try:
+                checker_objects_by_case[case_id] = yaml_module.safe_load(checker_path.read_text(encoding="utf-8")) or {}
+            except Exception as exc:
+                issues.append({"type": "checker_yaml_parse_error", "case_id": case_id, "message": str(exc)})
+                checker_objects_by_case[case_id] = {}
+        else:
+            checker_objects_by_case[case_id] = {}
+
+        for route in selected_routes:
+            config = valid_routes[route]
+            source_sql_exists = False
+            candidate_sql_source = ""
+            candidate_sql_exists_or_generated = False
+            parse_status = "not_applicable"
+            generation_status = "not_applicable"
+            execution_status = "not_requested"
+            row_count: int | None = None
+            runtime_ms: int | None = None
+            search_path_after_set = ""
+            failure_category = "none"
+            error_message = ""
+            generated_sql_preview = ""
+            generated_sql_character_count: int | None = None
+            sql_text = ""
+
+            if case_root is None:
+                execution_status = "failed"
+                failure_category = "case_not_resolved"
+                error_message = "could not resolve case root from case_id"
+            else:
+                source_sql_path = case_root / "source.sql"
+                source_sql_exists = source_sql_path.is_file()
+                if config["generator"] in {"sqlglot_same_dialect_opt", "sqlglot_same_dialect_no_opt"}:
+                    candidate_sql_source = relative_to_root(source_sql_path)
+                    if not source_sql_exists:
+                        parse_status = "failed"
+                        generation_status = "failed"
+                        execution_status = "failed" if args.execute else "skipped"
+                        failure_category = "missing_source_sql"
+                        error_message = "source.sql is missing"
+                    elif not sqlglot_available or sqlglot_module is None:
+                        parse_status = "failed"
+                        generation_status = "failed"
+                        execution_status = "failed" if args.execute else "skipped"
+                        failure_category = "sqlglot_unavailable"
+                        error_message = "sqlglot is unavailable"
+                    else:
+                        source_sql = source_sql_path.read_text(encoding="utf-8")
+                        try:
+                            parsed = sqlglot_module.parse_one(source_sql, dialect="postgres")
+                            parse_status = "success"
+                            if config["generator"] == "sqlglot_same_dialect_opt":
+                                if sqlglot_optimize is None:
+                                    raise RuntimeError("sqlglot optimizer is unavailable")
+                                optimized = sqlglot_optimize(parsed, dialect="postgres")
+                                sql_text = optimized.sql(dialect="postgres")
+                            else:
+                                sql_text = parsed.sql(dialect="postgres")
+                            generation_status = "success"
+                            candidate_sql_exists_or_generated = True
+                            generated_sql_preview = batch2a_sql_preview_text(sql_text)
+                            generated_sql_character_count = len(sql_text)
+                        except Exception as exc:
+                            if parse_status != "success":
+                                parse_status = "failed"
+                            generation_status = "failed"
+                            execution_status = "failed" if args.execute else "skipped"
+                            failure_category = type(exc).__name__
+                            error_message = str(exc)
+                else:
+                    candidate_sql_path = config["candidate_path"](case_root)
+                    candidate_sql_source = relative_to_root(candidate_sql_path)
+                    if candidate_sql_path.is_file():
+                        sql_text = candidate_sql_path.read_text(encoding="utf-8")
+                        candidate_sql_exists_or_generated = True
+                    else:
+                        execution_status = "failed" if args.execute else "skipped"
+                        failure_category = "missing_candidate_sql"
+                        error_message = f"candidate SQL missing for route {route}"
+
+                if candidate_sql_exists_or_generated and not args.execute:
+                    execution_status = "dry_run_only"
+                elif candidate_sql_exists_or_generated and args.execute:
+                    if issues:
+                        execution_status = "blocked_invalid_selection"
+                        failure_category = "environment_or_selection_blocked"
+                    else:
+                        started = time.perf_counter()
+                        try:
+                            with psycopg.connect(
+                                host=os.environ["PGHOST"],
+                                port=os.environ["PGPORT"],
+                                dbname=os.environ["PGDATABASE"],
+                                user=os.environ["PGUSER"],
+                                password=os.environ.get("PGPASSWORD"),
+                                options="-c statement_timeout=30000 -c default_transaction_read_only=on",
+                                autocommit=False,
+                            ) as conn:
+                                with conn.cursor() as cur:
+                                    cur.execute("SELECT to_regnamespace(%s)", (validation_schema,))
+                                    schema_row = cur.fetchone()
+                                    schema_name = schema_row[0] if schema_row else None
+                                    if not schema_name:
+                                        execution_status = "failed"
+                                        failure_category = "missing_validation_schema"
+                                        error_message = f"validation schema not found: {validation_schema}"
+                                    else:
+                                        cur.execute(
+                                            psycopg.sql.SQL("SET search_path TO {}, public").format(
+                                                psycopg.sql.Identifier(validation_schema)
+                                            )
+                                        )
+                                        cur.execute("SHOW search_path")
+                                        search_path_row = cur.fetchone()
+                                        search_path_after_set = str(search_path_row[0]) if search_path_row else ""
+                                        result_lines, row_count = execute_query_to_lines(cur, sql_text)
+                                        route_rows_by_case[case_id][route] = result_lines
+                                        route_row_counts_by_case[case_id][route] = row_count
+                                        execution_status = "success"
+                                    conn.rollback()
+                            runtime_ms = int((time.perf_counter() - started) * 1000)
+                        except Exception as exc:
+                            runtime_ms = int((time.perf_counter() - started) * 1000)
+                            execution_status = "failed"
+                            failure_category = type(exc).__name__
+                            error_message = str(exc)
+
+            execution_records.append(
+                {
+                    "case_id": case_id,
+                    "route": route,
+                    "baseline_id": str(config["baseline_id"]),
+                    "source_sql_exists": source_sql_exists,
+                    "candidate_sql_source": candidate_sql_source,
+                    "candidate_sql_exists_or_generated": candidate_sql_exists_or_generated,
+                    "parse_status": parse_status,
+                    "generation_status": generation_status,
+                    "execution_requested": bool(args.execute),
+                    "execution_status": execution_status,
+                    "row_count": row_count,
+                    "runtime_ms": runtime_ms,
+                    "validation_schema": validation_schema,
+                    "search_path_after_set": search_path_after_set,
+                    "failure_category": failure_category,
+                    "error_message": error_message,
+                    "generated_sql_preview": generated_sql_preview,
+                    "generated_sql_character_count": generated_sql_character_count,
+                    "artifact_claim_boundary": "batch3b_perf_pg_execution_only_not_correctness_or_speedup",
+                }
+            )
+            if execution_status == "success":
+                success_count_by_route[route] += 1
+            elif execution_status == "failed":
+                failed_count_by_route[route] += 1
+                failure_categories[failure_category] += 1
+
+    control_scoring_records: list[dict[str, Any]] = []
+    control_positive_equal_count = 0
+    control_negative_differs_count = 0
+    control_false_accept_count = 0
+    control_checker_mode = "value_normalized_in_memory_from_checker_yaml"
+    for case_id in selected_case_ids:
+        checker_obj = checker_objects_by_case.get(case_id, {})
+        route_rows = route_rows_by_case.get(case_id, {})
+        source_positive_equal: bool | None = None
+        source_negative_differs: bool | None = None
+        if args.execute and all(route in route_rows for route in ("NATIVE_IDENTITY", "HUMAN_REFERENCE_POSITIVE")):
+            source_positive_equal = checker_normalize(route_rows["NATIVE_IDENTITY"], checker_obj) == checker_normalize(
+                route_rows["HUMAN_REFERENCE_POSITIVE"], checker_obj
+            )
+            if source_positive_equal:
+                control_positive_equal_count += 1
+        if args.execute and all(route in route_rows for route in ("NATIVE_IDENTITY", "HARD_NEGATIVE_GUARD")):
+            source_negative_differs = checker_normalize(route_rows["NATIVE_IDENTITY"], checker_obj) != checker_normalize(
+                route_rows["HARD_NEGATIVE_GUARD"], checker_obj
+            )
+            if source_negative_differs:
+                control_negative_differs_count += 1
+            else:
+                control_false_accept_count += 1
+        control_scoring_records.append(
+            {
+                "case_id": case_id,
+                "source_positive_equal": source_positive_equal,
+                "source_negative_differs": source_negative_differs,
+                "checker_mode": control_checker_mode,
+                "checker_config_exists": checker_config_exists_by_case.get(case_id, False),
+            }
+        )
+
+    no_opt_checker_records: list[dict[str, Any]] = []
+    generation_success_count = 0
+    generation_failed_count = 0
+    source_execution_success_count = 0
+    candidate_execution_success_count = 0
+    candidate_execution_failed_count = 0
+    checker_consistent_count = 0
+    checker_inconsistent_count = 0
+    checker_failed_count = 0
+    row_count_match_count = 0
+    row_count_mismatch_count = 0
+
+    execution_record_map = {
+        (str(record.get("case_id", "")).strip().upper(), str(record.get("route", "")).strip().upper()): record
+        for record in execution_records
+    }
+
+    for case_id in selected_case_ids:
+        source_record = execution_record_map.get((case_id, "NATIVE_IDENTITY"), {})
+        no_opt_record = execution_record_map.get((case_id, "SQLGLOT_TRANSPILE_SAME_DIALECT_NO_OPT"), {})
+        source_execution_status = "success" if source_record.get("execution_status") == "success" else (
+            "dry_run_only" if not args.execute else "source_execution_failed"
+        )
+        candidate_execution_status = "success" if no_opt_record.get("execution_status") == "success" else (
+            "dry_run_only" if not args.execute else (
+                "generation_failed" if no_opt_record.get("generation_status") == "failed" else "candidate_execution_failed"
+            )
+        )
+        parse_status = str(no_opt_record.get("parse_status", "not_attempted"))
+        generation_status = str(no_opt_record.get("generation_status", "not_attempted"))
+        source_row_count = source_record.get("row_count")
+        candidate_row_count = no_opt_record.get("row_count")
+        row_count_equal: bool | None = None
+        byte_equal: bool | None = None
+        checker_status = "checker_unavailable"
+        failure_category = "none"
+        error_message = ""
+
+        if generation_status == "success":
+            generation_success_count += 1
+        elif generation_status == "failed":
+            generation_failed_count += 1
+
+        if source_execution_status == "success":
+            source_execution_success_count += 1
+        if candidate_execution_status == "success":
+            candidate_execution_success_count += 1
+        elif candidate_execution_status == "candidate_execution_failed":
+            candidate_execution_failed_count += 1
+
+        if args.execute:
+            source_lines = route_rows_by_case.get(case_id, {}).get("NATIVE_IDENTITY")
+            candidate_lines = route_rows_by_case.get(case_id, {}).get("SQLGLOT_TRANSPILE_SAME_DIALECT_NO_OPT")
+            if source_execution_status != "success":
+                checker_status = "source_execution_failed"
+                failure_category = str(source_record.get("failure_category", "source_execution_failed"))
+                error_message = str(source_record.get("error_message", ""))
+                checker_failed_count += 1
+            elif candidate_execution_status != "success":
+                checker_status = "candidate_execution_failed" if generation_status == "success" else "generation_failed"
+                failure_category = str(no_opt_record.get("failure_category", checker_status))
+                error_message = str(no_opt_record.get("error_message", ""))
+                checker_failed_count += 1
+            elif source_lines is not None and candidate_lines is not None:
+                row_count_equal = source_row_count == candidate_row_count
+                byte_equal = source_lines == candidate_lines
+                checker_status = "consistent" if byte_equal else "inconsistent"
+                if checker_status == "consistent":
+                    checker_consistent_count += 1
+                else:
+                    checker_inconsistent_count += 1
+                if row_count_equal:
+                    row_count_match_count += 1
+                else:
+                    row_count_mismatch_count += 1
+            else:
+                checker_status = "candidate_execution_failed"
+                failure_category = "missing_in_memory_rows"
+                error_message = "expected in-memory result rows were not captured"
+                checker_failed_count += 1
+
+        no_opt_checker_records.append(
+            {
+                "case_id": case_id,
+                "route": "SQLGLOT_TRANSPILE_SAME_DIALECT_NO_OPT",
+                "baseline_id": "SQLGLOT_TRANSPILE_SAME_DIALECT_NO_OPT",
+                "parse_status": parse_status,
+                "generation_status": generation_status,
+                "source_execution_status": source_execution_status,
+                "candidate_execution_status": candidate_execution_status,
+                "source_row_count": source_row_count,
+                "candidate_row_count": candidate_row_count,
+                "row_count_equal": row_count_equal,
+                "byte_equal": byte_equal,
+                "checker_status": checker_status,
+                "runtime_source_ms": source_record.get("runtime_ms"),
+                "runtime_candidate_ms": no_opt_record.get("runtime_ms"),
+                "failure_category": failure_category,
+                "error_message": error_message,
+                "generated_sql_preview": str(no_opt_record.get("generated_sql_preview", "")),
+                "generated_sql_character_count": no_opt_record.get("generated_sql_character_count"),
+                "checker_mode": "exact_tsv_in_memory",
+                "artifact_claim_boundary": "batch3b_sqlglot_no_opt_checker_not_speedup_not_leaderboard",
+            }
+        )
+
+    executed_count = sum(1 for record in execution_records if record["execution_status"] in {"success", "failed"})
+    success_count = sum(1 for record in execution_records if record["execution_status"] == "success")
+    failed_count = sum(1 for record in execution_records if record["execution_status"] == "failed")
+    skipped_count = len(execution_records) - executed_count
+    required_success_routes = {
+        "NATIVE_IDENTITY",
+        "HUMAN_REFERENCE_POSITIVE",
+        "HARD_NEGATIVE_GUARD",
+        "SQLGLOT_TRANSPILE_SAME_DIALECT_NO_OPT",
+    }
+    execution_payload = {
+        "command": "formal-batch3b-perf-execution-scoring",
+        "ok": (
+            not issues
+            and (
+                all(record["execution_status"] == "dry_run_only" for record in execution_records)
+                if not args.execute
+                else all(
+                    record["execution_status"] == "success"
+                    for record in execution_records
+                    if str(record.get("route", "")) in required_success_routes
+                )
+            )
+        ),
+        "ran_at_utc": utc_now(),
+        "output_path": "reports/formal_expansion/batch3b_perf_pg_execution_v0.json",
+        "case_count": len(selected_case_ids),
+        "route_count": len(selected_routes),
+        "total_records": len(execution_records),
+        "executed_count": executed_count,
+        "success_count": success_count,
+        "failed_count": failed_count,
+        "skipped_count": skipped_count,
+        "success_count_by_route": dict(success_count_by_route),
+        "failed_count_by_route": dict(failed_count_by_route),
+        "failure_categories": dict(failure_categories),
+        "control_checker_mode": control_checker_mode,
+        "control_positive_equal_count": control_positive_equal_count,
+        "control_negative_differs_count": control_negative_differs_count,
+        "control_false_accept_count": control_false_accept_count,
+        "control_scoring_records": control_scoring_records,
+        "records": execution_records,
+        "issues": issues,
+        "guardrails": {
+            "database_execution": "enabled_only_with_execute_and_paper_draft_override",
+            "sql_execution": "postgres_only_selected_routes_and_cases",
+            "sqlglot_optimize": "enabled_only_for_execution_boundary_observation",
+            "model_api_call": "disabled",
+            "mysql_execution": "disabled",
+            "spark_execution": "disabled",
+            "port_execution": "disabled",
+            "cons_execution": "disabled",
+            "speedup_scoring": "disabled",
+            "plan_collection": "disabled",
+            "case_artifact_write": "disabled",
+            "registry_writeback": "disabled",
+        },
+        "claim_boundary": "batch3b_perf_pg_execution_scoring_paper_draft_only_not_admission",
+    }
+    write_formal_expansion_report("batch3b_perf_pg_execution_v0.json", execution_payload)
+
+    result_consistency_rate = (
+        float(checker_consistent_count / (checker_consistent_count + checker_inconsistent_count))
+        if (checker_consistent_count + checker_inconsistent_count)
+        else None
+    )
+    optimize_success_count = sum(
+        1
+        for record in execution_records
+        if record["route"] == "SQLGLOT_OPT_SAME_DIALECT" and record["execution_status"] == "success"
+    )
+    optimize_failed_count = sum(
+        1
+        for record in execution_records
+        if record["route"] == "SQLGLOT_OPT_SAME_DIALECT" and record["execution_status"] == "failed"
+    )
+    no_opt_checker_payload = {
+        "command": "formal-batch3b-perf-execution-scoring",
+        "ok": not issues and (
+            not args.execute or all(record["checker_status"] == "consistent" for record in no_opt_checker_records)
+        ),
+        "ran_at_utc": utc_now(),
+        "output_path": "reports/formal_expansion/batch3b_perf_sqlglot_no_opt_checker_v0.json",
+        "case_count": len(selected_case_ids),
+        "generation_success_count": generation_success_count,
+        "generation_failed_count": generation_failed_count,
+        "source_execution_success_count": source_execution_success_count,
+        "candidate_execution_success_count": candidate_execution_success_count,
+        "candidate_execution_failed_count": candidate_execution_failed_count,
+        "checker_consistent_count": checker_consistent_count,
+        "checker_inconsistent_count": checker_inconsistent_count,
+        "checker_failed_count": checker_failed_count,
+        "result_consistency_rate": result_consistency_rate,
+        "result_consistency_rate_status": (
+            "computed_from_in_memory_exact_tsv" if result_consistency_rate is not None else "not_computed_execute_required"
+        ),
+        "row_count_match_count": row_count_match_count,
+        "row_count_mismatch_count": row_count_mismatch_count,
+        "comparison_to_sqlglot_optimize": {
+            "optimize_success_count": optimize_success_count,
+            "optimize_failed_count": optimize_failed_count,
+            "no_opt_generation_success_count": generation_success_count,
+            "no_opt_pg_execution_success_count": candidate_execution_success_count,
+            "no_opt_checker_consistent_count": checker_consistent_count,
+        },
+        "records": no_opt_checker_records,
+        "issues": issues,
+        "guardrails": {
+            "database_execution": "enabled_only_with_execute_and_paper_draft_override",
+            "sql_execution": "postgres_only_source_and_no_opt_candidate",
+            "sqlglot_optimize": "disabled",
+            "model_api_call": "disabled",
+            "mysql_execution": "disabled",
+            "spark_execution": "disabled",
+            "port_execution": "disabled",
+            "cons_execution": "disabled",
+            "speedup_scoring": "disabled",
+            "plan_collection": "disabled",
+            "case_artifact_write": "disabled",
+            "registry_writeback": "disabled",
+        },
+        "claim_boundary": "batch3b_sqlglot_no_opt_checker_separate_baseline_candidate_not_replacement",
+    }
+    write_formal_expansion_report("batch3b_perf_sqlglot_no_opt_checker_v0.json", no_opt_checker_payload)
+
+    runtime_policy = {
+        "repeat_count_proposed": 5,
+        "warmup_count_proposed": 1,
+        "statement_timeout_ms_proposed": 30000,
+        "primary_statistic_proposed": "median",
+        "tie_threshold_proposed": 0.05,
+        "regression_threshold_proposed": 1.2,
+    }
+    preflight_records: list[dict[str, Any]] = []
+    ready_count_by_route: Counter[str] = Counter()
+    blocked_count_by_route: Counter[str] = Counter()
+    checker_map = {str(record["case_id"]).strip().upper(): record for record in no_opt_checker_records}
+    control_map = {str(record["case_id"]).strip().upper(): record for record in control_scoring_records}
+    for case_id in selected_case_ids:
+        inferred = case_root_for_case_id(case_id)
+        pool = inferred[0] if inferred else "unknown"
+        case_root = inferred[1] if inferred else None
+        validation_schema = validation_schema_hint(case_id) if case_root else ""
+        validation_schema_ready = bool(validation_schema)
+        source_sql_path = case_root / "source.sql" if case_root else ROOT / "__missing__"
+        positive_path = (
+            sorted(case_root.glob("rewrite_pos_*.sql"))[0]
+            if case_root and sorted(case_root.glob("rewrite_pos_*.sql"))
+            else (case_root / "rewrite_pos_01.sql" if case_root else ROOT / "__missing__")
+        )
+        source_sql_exists = source_sql_path.is_file()
+
+        for route_key, candidate_path, consistency_passed, consistency_status in [
+            (
+                "HUMAN_REFERENCE_POSITIVE",
+                positive_path,
+                bool(control_map.get(case_id, {}).get("source_positive_equal") is True),
+                "passed_checker_yaml_normalized_equality"
+                if control_map.get(case_id, {}).get("source_positive_equal") is True
+                else "blocked_missing_positive_consistency",
+            ),
+            (
+                "SQLGLOT_TRANSPILE_SAME_DIALECT_NO_OPT",
+                source_sql_path,
+                bool(checker_map.get(case_id, {}).get("checker_status") == "consistent"),
+                "passed_in_memory_exact_tsv"
+                if checker_map.get(case_id, {}).get("checker_status") == "consistent"
+                else "blocked_missing_no_opt_consistency",
+            ),
+        ]:
+            candidate_sql_source_available = candidate_path.is_file()
+            candidate_sql_source = (
+                relative_to_root(candidate_path)
+                if route_key == "HUMAN_REFERENCE_POSITIVE"
+                else "generated_from_source_via_sqlglot_transpile_no_opt"
+            )
+            blockers: list[str] = []
+            if not source_sql_exists:
+                blockers.append("missing_source_sql")
+            if not candidate_sql_source_available:
+                blockers.append("missing_candidate_sql_source")
+            if not consistency_passed:
+                blockers.append("consistency_gate_not_passed")
+            if not validation_schema_ready:
+                blockers.append("validation_schema_not_ready")
+
+            if not blockers:
+                route_eligibility = "eligible_for_batch3b_speedup_runtime"
+                ready_count_by_route[route_key] += 1
+            else:
+                route_eligibility = "blocked"
+                blocked_count_by_route[route_key] += 1
+
+            preflight_records.append(
+                {
+                    "case_id": case_id,
+                    "pool": pool,
+                    "route": route_key,
+                    "baseline_id": route_key,
+                    "source_sql_exists": source_sql_exists,
+                    "candidate_sql_source": candidate_sql_source,
+                    "candidate_sql_source_available": candidate_sql_source_available,
+                    "consistency_gate_passed": consistency_passed,
+                    "consistency_gate_status": consistency_status,
+                    "runtime_policy_exists": True,
+                    "validation_schema_ready": validation_schema_ready,
+                    "validation_schema": validation_schema,
+                    "route_eligibility": route_eligibility,
+                    "planned_runtime_output_path": f"reports/formal_expansion/runtime_observation_batch3b_{route_key.lower()}.json",
+                    "planned_speedup_scoring_output_path": f"reports/formal_expansion/batch3b_speedup_scoring_{route_key.lower()}.json",
+                    "blockers": blockers,
+                    "artifact_claim_boundary": "batch3b_speedup_preflight_only_no_runtime_execution",
+                }
+            )
+
+    speedup_preflight_payload = {
+        "command": "formal-batch3b-perf-execution-scoring",
+        "ok": not issues,
+        "ran_at_utc": utc_now(),
+        "output_path": "reports/formal_expansion/batch3b_perf_speedup_preflight_v0.json",
+        "case_count": len(selected_case_ids),
+        "route_count": 2,
+        "records": preflight_records,
+        "ready_count_by_route": dict(ready_count_by_route),
+        "blocked_count_by_route": dict(blocked_count_by_route),
+        "runtime_policy": runtime_policy,
+        "runtime_policy_exists": True,
+        "recommended_next_action": "run_batch3b_repeat_runtime_for_human_reference_positive_and_sqlglot_transpile_same_dialect_no_opt",
+        "issues": issues,
+        "guardrails": {
+            "database_execution": "disabled",
+            "sql_execution": "disabled",
+            "model_api_call": "disabled",
+            "sqlglot_generation": "disabled",
+            "checker_execution": "disabled",
+            "runtime_rerun": "disabled",
+            "speedup_scoring": "disabled",
+            "plan_collection": "disabled",
+            "case_artifact_write": "disabled",
+            "registry_writeback": "disabled",
+        },
+        "claim_boundary": "batch3b_speedup_preflight_only_not_runtime_execution_or_speedup_scoring",
+    }
+    write_formal_expansion_report("batch3b_perf_speedup_preflight_v0.json", speedup_preflight_payload)
+
+    envelope = {
+        "command": "formal-batch3b-perf-execution-scoring",
+        "ok": (
+            (not issues) if not args.execute
+            else (execution_payload["ok"] and no_opt_checker_payload["ok"] and speedup_preflight_payload["ok"])
+        ),
+        "ran_at_utc": utc_now(),
+        "output_dir": "reports/formal_expansion",
+        "execution_report_path": "reports/formal_expansion/batch3b_perf_pg_execution_v0.json",
+        "checker_report_path": "reports/formal_expansion/batch3b_perf_sqlglot_no_opt_checker_v0.json",
+        "speedup_preflight_report_path": "reports/formal_expansion/batch3b_perf_speedup_preflight_v0.json",
+        "case_count": len(selected_case_ids),
+        "route_count": len(selected_routes),
+        "issues": issues,
+        "claim_boundary": "batch3b_perf_pg_execution_scoring_paper_draft_only_not_admission",
+    }
+    return print_and_exit(envelope, 0 if envelope["ok"] else 1)
+
+
 def cmd_formal_batch2b_cons_backfill_preflight(args: argparse.Namespace) -> int:
     output_name = normalize_formal_expansion_output_name(args.output)
     candidate_case_ids = ["CONS_0024", "CONS_0031", "CONS_0034"]
@@ -30210,6 +30963,17 @@ def build_parser() -> argparse.ArgumentParser:
     )
     formal_batch3b_perf_backfill_preflight_parser.add_argument("--execute", action="store_true", default=False)
     formal_batch3b_perf_backfill_preflight_parser.set_defaults(func=cmd_formal_batch3b_perf_backfill_preflight)
+
+    formal_batch3b_perf_execution_scoring_parser = subparsers.add_parser("formal-batch3b-perf-execution-scoring")
+    formal_batch3b_perf_execution_scoring_parser.add_argument("--case-id", action="append", default=[])
+    formal_batch3b_perf_execution_scoring_parser.add_argument("--route", action="append", default=[])
+    formal_batch3b_perf_execution_scoring_parser.add_argument(
+        "--output-dir",
+        default="reports/formal_expansion",
+    )
+    formal_batch3b_perf_execution_scoring_parser.add_argument("--paper-draft-override", action="store_true", default=False)
+    formal_batch3b_perf_execution_scoring_parser.add_argument("--execute", action="store_true", default=False)
+    formal_batch3b_perf_execution_scoring_parser.set_defaults(func=cmd_formal_batch3b_perf_execution_scoring)
 
     formal_batch2b_cons_execution_scoring_parser = subparsers.add_parser("formal-batch2b-cons-execution-scoring")
     formal_batch2b_cons_execution_scoring_parser.add_argument("--case-id", action="append", default=[])
