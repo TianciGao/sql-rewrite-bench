@@ -148,6 +148,22 @@ LLM Translate:
   - normalized equal: `true`
   - checker status: `consistent`
 - `PORT_0012` remains holdout failure-analysis / stress case
+- bounded Batch 2C PostgreSQL slice:
+  - Direct LLM translate:
+    - model call success: `3 / 3`
+    - SQL extraction success: `3 / 3`
+    - PostgreSQL execution success: `3 / 3`
+    - checker consistent: `3 / 3`
+    - `PORT_0013` token usage: `442`
+    - `PORT_0024` token usage: `388`
+    - `PORT_0025` token usage: `448`
+    - `total_token_usage=1278`
+  - preserved SQLGlot route evidence on the same Batch 2C slice:
+    - PostgreSQL success: `2 / 3`
+    - policy-consistent: `2 / 3`
+    - `PORT_0013` failed with `UndefinedFunction` from `SUM(boolean)`
+    - `PORT_0024` succeeded with normalized TSV consistency
+    - `PORT_0025` succeeded with exact TSV consistency
 
 Interpretation:
 
@@ -162,6 +178,9 @@ Interpretation:
 - a bounded PostgreSQL-normalized-reference follow-up now shows:
   - the earlier `PORT_0012` LLM exact-TSV failure was a reference-layer compatibility issue
   - with a report-local PostgreSQL-normalized reference variant, the existing Direct LLM candidate matches exactly
+- the latest Batch 2C bounded PostgreSQL slice extends that evidence:
+  - Direct LLM translate succeeded and checked consistently on all three selected cases
+  - SQLGlot remained mixed on the same slice, with one PostgreSQL failure and two policy-consistent results
 - exact-TSV reference checking also exposed value mismatches on executable cases:
   - SQLGlot mismatched reference output on both executable cases
   - Direct LLM matched exactly on `PORT_0004` but mismatched on `PORT_0022`

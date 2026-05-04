@@ -65,36 +65,41 @@ Consistency result:
 
 # LLM Result
 
-Current environment result:
+Latest local Batch 2C LLM result:
 
-- model call success: `0 / 3`
-- extraction success: `0 / 3`
-- PostgreSQL execution success: `0 / 3`
-- PostgreSQL execution failed / blocked: `3 / 3`
-- total token usage: `0`
+- model call success: `3 / 3`
+- extraction success: `3 / 3`
+- PostgreSQL execution success: `3 / 3`
+- checker consistent: `3 / 3`
+- total token usage: `1278`
 
 Per case:
 
 - `PORT_0013`
-  - model call status: `env_blocked`
-  - extraction status: `not_available`
-  - PostgreSQL status: failed
-  - failure category: `missing_api_key`
+  - model call status: `success`
+  - extraction status: `extracted`
+  - PostgreSQL status: success
+  - checker status: `consistent`
+  - token usage: `442`
 - `PORT_0024`
-  - model call status: `env_blocked`
-  - extraction status: `not_available`
-  - PostgreSQL status: failed
-  - failure category: `missing_api_key`
+  - model call status: `success`
+  - extraction status: `extracted`
+  - PostgreSQL status: success
+  - raw exact status: `inconsistent`
+  - normalized equal: `true`
+  - checker policy result: `consistent`
+  - token usage: `388`
 - `PORT_0025`
-  - model call status: `env_blocked`
-  - extraction status: `not_available`
-  - PostgreSQL status: failed
-  - failure category: `missing_api_key`
+  - model call status: `success`
+  - extraction status: `extracted`
+  - PostgreSQL status: success
+  - checker status: `consistent`
+  - token usage: `448`
 
 Interpretation:
 
-- the LLM route did not fail on case-specific SQL behavior in this run
-- it was blocked uniformly by missing API credentials in the current environment
+- the latest local Batch 2C LLM route executed successfully on all three selected cases
+- `PORT_0024` still required the allowed normalized TSV policy for its final checker result
 
 # Failed / Inconsistent Cases
 
@@ -107,8 +112,7 @@ Interpretation:
   - raw exact TSV mismatch
   - normalized checker policy: consistent
   - summary: difference collapsed under the allowed normalized TSV policy for numeric-formatting-sensitive output
-- all three `LLM_DIRECT_TRANSLATE` records
-  - blocked by `missing_api_key`
+- no LLM Batch 2C failures remain in the latest local report
 
 # Boundaries
 

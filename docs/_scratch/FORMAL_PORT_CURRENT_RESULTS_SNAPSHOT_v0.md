@@ -32,7 +32,9 @@ Reports and references used:
 - `reports/formal_port/port_pg_translation_consistency_preflight_v0.json`
 - `reports/formal_port/port_pg_translation_consistency_run_v0.json`
 - `reports/formal_port/port_0012_pg_reference_normalization_check_v0.json`
+- `reports/formal_expansion/batch2c_port_pg_matrix_consistency_v0.json`
 - `docs/_scratch/FORMAL_PORT_PG_TRANSLATION_CONSISTENCY_SUMMARY_v0.md`
+- `docs/_scratch/BATCH2C_PORT_PG_MATRIX_CONSISTENCY_SUMMARY_v0.md`
 - `docs/_scratch/PORT_0012_PG_REFERENCE_NORMALIZATION_CHECK_v0.md`
 - `docs/_scratch/PORT_0012_FAILURE_ANALYSIS_PACKET_v0.md`
 - `docs/_scratch/PORT_0012_LLM_TRANSLATE_TARGETED_CANARY_v0.md`
@@ -135,6 +137,13 @@ Interpretation:
   - the existing Direct LLM candidate executed
   - the resulting TSVs matched exactly
 - this is still route evidence only, not translation correctness or denominator expansion by itself
+- the latest Batch 2C bounded PostgreSQL slice extends that route evidence:
+  - Direct LLM translate succeeded on `PORT_0013`, `PORT_0024`, and `PORT_0025`
+  - total Batch 2C LLM token usage: `1278`
+  - SQLGlot route evidence on the same slice remains mixed:
+    - `PORT_0013` PG failed with `UndefinedFunction` from `SUM(boolean)`
+    - `PORT_0024` PG succeeded and closed under normalized TSV policy
+    - `PORT_0025` PG succeeded and closed under exact TSV policy
 
 ## 6. PORT_0012 Holdout / Failure-Analysis Status
 
@@ -201,6 +210,20 @@ Current RQ3-facing interpretation:
     - report-local normalized reference execution success
     - Direct LLM candidate execution success
     - exact TSV consistency success
+  - the newer bounded Batch 2C PostgreSQL slice adds:
+    - Direct LLM translate `3 / 3` call success
+    - Direct LLM translate `3 / 3` extraction success
+    - Direct LLM translate `3 / 3` PostgreSQL success
+    - Direct LLM translate `3 / 3` checker-consistent under the approved Batch 2C policies
+    - `PORT_0013` / `PORT_0024` / `PORT_0025` token usage:
+      - `442`
+      - `388`
+      - `448`
+    - total token usage: `1278`
+    - preserved SQLGlot Batch 2C route evidence:
+      - PG success `2 / 3`
+      - policy-consistent `2 / 3`
+      - `PORT_0013` failed with `UndefinedFunction` due to `SUM(boolean)`
   - `PORT_0012` therefore remains intentionally outside the clean denominator
 
 This means:
