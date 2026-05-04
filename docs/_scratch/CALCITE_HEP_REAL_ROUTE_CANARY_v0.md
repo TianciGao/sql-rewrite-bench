@@ -2,28 +2,32 @@
 
 ## Status
 
-This note records the first real-route Calcite HEP canary for:
+This note records the expanded 4-case Calcite HEP real-route canary for:
 
 - `python -m scripts.cli formal-calcite-hep-real-route-canary`
 - `tools/calcite_hep/CalciteHepRewriteSmoke.java`
 - `reports/formal_expansion/calcite_hep_real_route_canary_v0.json`
 
-Scope is one canary only:
+Scope is the clean 4-case PERF subset:
 
 - `PERF_0006`
+- `PERF_0008`
+- `PERF_0033`
+- `PERF_0054`
 
 Explicit non-claim boundary:
 
-- not PostgreSQL execution
-- not checker-backed
-- not speedup-scored
-- not a claim that Calcite HEP baseline is implemented
+- no PostgreSQL execution
+- no checker
+- no speedup
+- not final Calcite HEP baseline
+- not a claim that Calcite HEP is fully implemented as a benchmark baseline
 
 ## Commands Run
 
 - `python -m py_compile scripts/cli.py`
 - `python -m scripts.cli formal-calcite-hep-real-route-canary`
-- `python -m scripts.cli formal-calcite-hep-real-route-canary --case-id PERF_0006 --execute`
+- `python -m scripts.cli formal-calcite-hep-real-route-canary --case-id PERF_0006 --case-id PERF_0008 --case-id PERF_0033 --case-id PERF_0054 --execute`
 - `python -m json.tool reports/formal_expansion/calcite_hep_real_route_canary_v0.json >/dev/null`
 
 Implementation constraint used by the CLI:
@@ -35,103 +39,117 @@ Implementation constraint used by the CLI:
 Dry-run outcome:
 
 - status: success
-- case id: `PERF_0006`
+- denominator surfaced: `4`
+- selected cases:
+  - `PERF_0006`
+  - `PERF_0008`
+  - `PERF_0033`
+  - `PERF_0054`
 - route target: `calcite_hep_real_route_canary`
-- planned only; no Java compile and no wrapper invocation
+- dry-run only; no Java compile and no wrapper invocation
 
 Interpretation:
 
-- the canary CLI route is wired correctly
-- the command points at case-local `source.sql` and `schema/ddl_pg.sql`
-- the execute route remains generation-only and no-database
+- the real-route CLI is wired for the intended 4-case subset
+- the command resolves case-local `source.sql` and `schema/ddl_pg.sql` for all four cases
+- the route remains generation-only and no-database
 
-## Execute Result
+## 4-Case Execute Result
 
-Final execute outcome on `PERF_0006`:
+Final real-route outcome on the clean 4-case PERF subset:
 
 - `Java wrapper compile status:` success
-- `case id:` `PERF_0006`
-- `parse status:` success
-- `schema/ddl ingestion status:` success
-- `validation status:` success
-- `sql_to_rel status:` success
-- `hep_planner status:` success
-- `rel_to_sql status:` success
-- `emitted SQL mode:` `calcite_rel_to_sql`
-- `route_stage_reached:` `emit`
-- `exact blocker:` none
+- `real-route success count:` `4/4`
+- `parse success count:` `4/4`
+- `validation success count:` `4/4`
+- `sql_to_rel success count:` `4/4`
+- `HepPlanner success count:` `4/4`
+- `RelToSql success count:` `4/4`
+- `emit success count:` `4/4`
+- `emitted SQL mode distribution:` `calcite_rel_to_sql=4`
 
-This means the canary moved past original passthrough scaffold mode and reached a real Calcite route:
+Per-case result:
 
-- schema-backed validation closed
-- SQL-to-Rel conversion closed
-- a bounded `HepPlanner` rule program ran
-- SQL was emitted through Calcite `RelToSql`
+| case_id | source accepted | DDL accepted | parse | DDL ingestion | validate | sql_to_rel | HepPlanner | rel_to_sql | emit | emitted SQL mode | Calcite-generated | normalized output differs from source | blocker |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `PERF_0006` | yes | yes | yes | yes | yes | yes | yes | yes | yes | `calcite_rel_to_sql` | yes | yes | none |
+| `PERF_0008` | yes | yes | yes | yes | yes | yes | yes | yes | yes | `calcite_rel_to_sql` | yes | yes | none |
+| `PERF_0033` | yes | yes | yes | yes | yes | yes | yes | yes | yes | `calcite_rel_to_sql` | yes | yes | none |
+| `PERF_0054` | yes | yes | yes | yes | yes | yes | yes | yes | yes | `calcite_rel_to_sql` | yes | yes | none |
+
+Observed parse kind for all four cases:
+
+- `ORDER_BY`
+
+## What Closed
+
+All four cases now close the same generation-only real route:
+
+1. parse
+2. schema / DDL ingestion
+3. validation
+4. SQL-to-Rel conversion
+5. bounded `HepPlanner`
+6. `RelToSql`
+7. emit
+
+This required widening the tiny local DDL bridge to handle:
+
+- multi-table `ddl_pg.sql` files
+- table-level `PRIMARY KEY (...)`
+- inline `PRIMARY KEY`
+- `char(n)`, `varchar(n)`, `numeric(p,s)`, and `text`
+- balanced-parenthesis parsing rather than regex-shortcut matching
 
 ## Output Characterization
 
-Observed output path:
+Observed output characteristics across the subset:
 
-- `/tmp/calcite-hep-wrapper/real-route/perf_0006.sql`
-
-Observed output characteristics:
-
-- `candidate SQL emitted:` yes
-- `emitted SQL is Calcite-generated or passthrough:` Calcite-generated
-- `output matches frozen source under normalized comparison:` no
-- `final semicolon normalization for parse:` yes
+- all emitted SQL is Calcite-generated
+- all four outputs differ from the frozen source under normalized comparison
+- none of the four cases used passthrough fallback
+- none of the four cases stopped at `calcite_parse_only`
 
 Representative effect:
 
-- the emitted SQL rewrites `AVG(...)` expressions into `SUM(...) / COUNT(*)` form
-- the emitted SQL adds Calcite-style quoting and `COALESCE(SUM(...), 0)` wrappers
-
-That is sufficient evidence that this is no longer just parse smoke or passthrough emission.
-
-## Exact Current State
-
-- `Java wrapper compiled:` yes
-- `wrapper executed:` yes
-- `source.sql accepted:` yes
-- `schema/ddl_pg.sql accepted:` yes
-- `parse reached:` yes
-- `validate reached:` yes
-- `sql_to_rel reached:` yes
-- `hep_planner reached:` yes
-- `rel_to_sql reached:` yes
-- `emit reached:` yes
-- `emitted SQL mode:` `calcite_rel_to_sql`
-- `whether emitted SQL is Calcite-generated:` yes
-- `exact blocker if any:` none in the final canary execute result
+- Calcite rewrites `AVG(...)` into `SUM(...) / COUNT(*)` style expressions where applicable
+- emitted SQL uses Calcite/PostgreSQL dialect rendering and explicit quoting
 
 ## Interpretation
 
-What this canary proves:
+What this result proves:
 
-- the local Calcite checkout can support a real schema-backed planning route inside the repo wrapper
-- `PERF_0006` can be parsed, validated, converted to rel, passed through a bounded HEP step, and emitted back to SQL without any database execution
-- the wrapper can now distinguish real-route output from parse-only or passthrough fallback modes
+- the local Calcite checkout can support a schema-backed planning route on the clean 4-case PERF subset
+- the wrapper now reaches real planner stages, not just parse smoke
+- the subset has generation-only closure through `RelToSql`
 
 What this still does not prove:
 
-- no PostgreSQL execution closure exists
-- no result-checker closure exists
-- no speedup closure exists
-- no broader multi-case Calcite HEP baseline exists yet
-- no claim should be made that Calcite HEP is fully implemented as a benchmark baseline
+- no PostgreSQL execution closure exists yet
+- no result-checker closure exists yet
+- no speedup closure exists yet
+- no final benchmark baseline claim should be made from this result alone
 
-## Next Step
+## Blockers
 
-Recommended next action:
+Final 4-case execute blockers:
 
-- expand the real route to the clean 4-case PERF subset
+- none
 
-Reason:
+Intermediate engineering blockers that were fixed before the final run:
 
-- schema ingestion, validation, rel conversion, bounded HEP, and rel-to-SQL all succeeded on the first canary
-- the next incremental risk is subset generalization, not foundational planner closure
+- single-table-only DDL parsing
+- unsupported `PRIMARY KEY` lines
+- unsupported `text`
+- regex-based `CREATE TABLE` matching that broke on `char(n)` / `varchar(n)`
 
-Only fall back to schema/validation/rel-conversion repair if one of the next cases breaks that route.
+## Next Action
+
+Because the 4-case real-route succeeds `4/4`, the next step should be:
+
+- run Calcite HEP PG execution/checker preflight
+
+That is the correct next boundary because generation-only real-route closure now exists on the clean subset.
 
 ## Verification / Non-Modification Note
 

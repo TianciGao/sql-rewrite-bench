@@ -32,11 +32,9 @@ import org.apache.calcite.tools.Frameworks;
 import org.apache.calcite.tools.Planner;
 
 public final class CalciteHepRewriteSmoke {
-    private static final Pattern CREATE_TABLE_PATTERN =
-            Pattern.compile("(?is)create\\s+table\\s+([a-zA-Z_][\\w]*)\\s*\\((.*)\\)\\s*;?\\s*");
     private static final Pattern COLUMN_PATTERN =
             Pattern.compile(
-                    "(?is)^([a-zA-Z_][\\w]*)\\s+([a-zA-Z]+)(?:\\s*\\(([^)]*)\\))?(?:\\s+(not\\s+null))?$");
+                    "(?is)^([a-zA-Z_][\\w]*)\\s+([a-zA-Z]+)(?:\\s*\\(([^)]*)\\))?(?:\\s+(not\\s+null))?(?:\\s+primary\\s+key)?$");
 
     private CalciteHepRewriteSmoke() {}
 
@@ -124,7 +122,7 @@ public final class CalciteHepRewriteSmoke {
         SqlNode validatedQuery = null;
         RelRoot relRoot = null;
         RelNode hepRel = null;
-        ParsedTable ddlTable = null;
+        List<ParsedTable> ddlTables = Collections.emptyList();
         String emittedSql = null;
 
         try {
@@ -134,12 +132,15 @@ public final class CalciteHepRewriteSmoke {
             result.put("parsed_sql_kind", parsedQuery.getKind().name());
             result.put("route_stage_reached", "parse");
 
-            ddlTable = parseSimpleCreateTable(ddlSql);
+            ddlTables = parseSimpleCreateTables(ddlSql);
             result.put("schema_ddl_ingestion_succeeded", "true");
-            result.put("schema_table_name", ddlTable.tableName);
-            result.put("schema_column_count", Integer.toString(ddlTable.columns.size()));
+            result.put("schema_table_count", Integer.toString(ddlTables.size()));
+            result.put("schema_table_names", joinTableNames(ddlTables));
+            result.put(
+                    "schema_column_count",
+                    Integer.toString(ddlTables.stream().mapToInt(table -> table.columns.size()).sum()));
 
-            FrameworkConfig config = buildFrameworkConfig(ddlTable, parserConfig);
+            FrameworkConfig config = buildFrameworkConfig(ddlTables, parserConfig);
             try (Planner planner = Frameworks.getPlanner(config)) {
                 SqlNode plannerParsed = planner.parse(parseCandidateSql);
                 validatedQuery = planner.validate(plannerParsed);
@@ -209,9 +210,11 @@ public final class CalciteHepRewriteSmoke {
         }
     }
 
-    private static FrameworkConfig buildFrameworkConfig(ParsedTable table, SqlParser.Config parserConfig) {
+    private static FrameworkConfig buildFrameworkConfig(List<ParsedTable> tables, SqlParser.Config parserConfig) {
         org.apache.calcite.schema.SchemaPlus rootSchema = Frameworks.createRootSchema(true);
-        rootSchema.add(table.tableName, new StaticTable(table.columns));
+        for (ParsedTable table : tables) {
+            rootSchema.add(table.tableName, new StaticTable(table.columns));
+        }
         return Frameworks.newConfigBuilder()
                 .defaultSchema(rootSchema)
                 .parserConfig(parserConfig)
@@ -226,35 +229,73 @@ public final class CalciteHepRewriteSmoke {
         return planner.findBestExp();
     }
 
-    private static ParsedTable parseSimpleCreateTable(String ddlSql) {
+    private static List<ParsedTable> parseSimpleCreateTables(String ddlSql) {
         String cleaned = stripSqlComments(ddlSql).trim();
-        Matcher tableMatcher = CREATE_TABLE_PATTERN.matcher(cleaned);
-        if (!tableMatcher.matches()) {
+        List<ParsedTable> tables = new ArrayList<>();
+        int cursor = 0;
+        String lowered = cleaned.toLowerCase(Locale.ROOT);
+        while (true) {
+            int createIndex = lowered.indexOf("create table", cursor);
+            if (createIndex < 0) {
+                break;
+            }
+            int nameStart = createIndex + "create table".length();
+            while (nameStart < cleaned.length() && Character.isWhitespace(cleaned.charAt(nameStart))) {
+                nameStart++;
+            }
+            int nameEnd = nameStart;
+            while (nameEnd < cleaned.length()) {
+                char c = cleaned.charAt(nameEnd);
+                if (Character.isLetterOrDigit(c) || c == '_') {
+                    nameEnd++;
+                } else {
+                    break;
+                }
+            }
+            if (nameEnd == nameStart) {
+                throw new IllegalArgumentException("could not parse table name from DDL");
+            }
+            String tableName = cleaned.substring(nameStart, nameEnd).trim();
+            int openParen = cleaned.indexOf('(', nameEnd);
+            if (openParen < 0) {
+                throw new IllegalArgumentException("missing opening parenthesis for table: " + tableName);
+            }
+            int closeParen = findMatchingParen(cleaned, openParen);
+            if (closeParen < 0) {
+                throw new IllegalArgumentException("missing closing parenthesis for table: " + tableName);
+            }
+            String columnsBody = cleaned.substring(openParen + 1, closeParen).trim();
+            List<String> columnChunks = splitTopLevelCommaList(columnsBody);
+            List<ColumnDef> columns = new ArrayList<>();
+            for (String rawColumn : columnChunks) {
+                String normalized = rawColumn.trim();
+                if (normalized.isEmpty()) {
+                    continue;
+                }
+                String normalizedLower = normalized.toLowerCase(Locale.ROOT);
+                if (normalizedLower.startsWith("primary key")) {
+                    continue;
+                }
+                Matcher columnMatcher = COLUMN_PATTERN.matcher(normalized);
+                if (!columnMatcher.matches()) {
+                    throw new IllegalArgumentException("unsupported column definition: " + normalized);
+                }
+                String columnName = columnMatcher.group(1).trim();
+                String typeName = columnMatcher.group(2).trim().toLowerCase(Locale.ROOT);
+                String typeArgs = columnMatcher.group(3);
+                boolean notNull = columnMatcher.group(4) != null || normalizedLower.contains(" primary key");
+                columns.add(new ColumnDef(columnName, sqlTypeName(typeName), parseTypeArgs(typeArgs), !notNull));
+            }
+            if (columns.isEmpty()) {
+                throw new IllegalArgumentException("no columns parsed from DDL for table: " + tableName);
+            }
+            tables.add(new ParsedTable(tableName, columns));
+            cursor = closeParen + 1;
+        }
+        if (tables.isEmpty()) {
             throw new IllegalArgumentException("unsupported DDL format for canary parser");
         }
-        String tableName = tableMatcher.group(1).trim();
-        String columnsBody = tableMatcher.group(2).trim();
-        List<String> columnChunks = splitTopLevelCommaList(columnsBody);
-        List<ColumnDef> columns = new ArrayList<>();
-        for (String rawColumn : columnChunks) {
-            String normalized = rawColumn.trim();
-            if (normalized.isEmpty()) {
-                continue;
-            }
-            Matcher columnMatcher = COLUMN_PATTERN.matcher(normalized);
-            if (!columnMatcher.matches()) {
-                throw new IllegalArgumentException("unsupported column definition: " + normalized);
-            }
-            String columnName = columnMatcher.group(1).trim();
-            String typeName = columnMatcher.group(2).trim().toLowerCase(Locale.ROOT);
-            String typeArgs = columnMatcher.group(3);
-            boolean notNull = columnMatcher.group(4) != null;
-            columns.add(new ColumnDef(columnName, sqlTypeName(typeName), parseTypeArgs(typeArgs), !notNull));
-        }
-        if (columns.isEmpty()) {
-            throw new IllegalArgumentException("no columns parsed from DDL");
-        }
-        return new ParsedTable(tableName, columns);
+        return tables;
     }
 
     private static String stripSqlComments(String sql) {
@@ -292,6 +333,22 @@ public final class CalciteHepRewriteSmoke {
         return chunks;
     }
 
+    private static int findMatchingParen(String value, int openParen) {
+        int depth = 0;
+        for (int i = openParen; i < value.length(); i++) {
+            char c = value.charAt(i);
+            if (c == '(') {
+                depth++;
+            } else if (c == ')') {
+                depth--;
+                if (depth == 0) {
+                    return i;
+                }
+            }
+        }
+        return -1;
+    }
+
     private static SqlTypeName sqlTypeName(String typeName) {
         switch (typeName) {
             case "char":
@@ -303,6 +360,8 @@ public final class CalciteHepRewriteSmoke {
                 return SqlTypeName.DECIMAL;
             case "date":
                 return SqlTypeName.DATE;
+            case "text":
+                return SqlTypeName.VARCHAR;
             case "int":
             case "integer":
                 return SqlTypeName.INTEGER;
@@ -322,6 +381,14 @@ public final class CalciteHepRewriteSmoke {
             values.add(Integer.parseInt(piece.trim()));
         }
         return values;
+    }
+
+    private static String joinTableNames(List<ParsedTable> tables) {
+        List<String> names = new ArrayList<>();
+        for (ParsedTable table : tables) {
+            names.add(table.tableName);
+        }
+        return String.join(",", names);
     }
 
     private static String stripTrailingSemicolon(String sql) {
