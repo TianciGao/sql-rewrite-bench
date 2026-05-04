@@ -550,6 +550,10 @@ def calcite_hep_pg_checker_preflight_case_ids() -> list[str]:
     return list(CALCITE_HEP_REAL_ROUTE_CANARY_CASES)
 
 
+def calcite_hep_pg_checker_run_case_ids() -> list[str]:
+    return list(CALCITE_HEP_REAL_ROUTE_CANARY_CASES)
+
+
 def calcite_hep_wrapper_source_sql_path(case_id: str) -> Path | None:
     inferred = case_root_for_case_id(case_id)
     if inferred is None:
@@ -7316,6 +7320,342 @@ def cmd_formal_calcite_hep_pg_checker_preflight(args: argparse.Namespace) -> int
             "formal_review_writeback": "disabled",
         },
         "claim_boundary": "calcite_hep_pg_checker_preflight_only_not_pg_execution_or_checker",
+    }
+    write_formal_expansion_report(output_name, payload)
+    return print_and_exit(payload, 0 if payload["ok"] else 1)
+
+
+def cmd_formal_calcite_hep_pg_checker_run(args: argparse.Namespace) -> int:
+    output_name = normalize_formal_expansion_output_name(args.output)
+    selected_case_ids = [str(case_id).strip().upper() for case_id in (args.case_id or []) if str(case_id).strip()]
+    if not selected_case_ids:
+        selected_case_ids = calcite_hep_pg_checker_run_case_ids()
+
+    valid_case_ids = set(calcite_hep_pg_checker_run_case_ids())
+    invalid_case_ids = [case_id for case_id in selected_case_ids if case_id not in valid_case_ids]
+    if invalid_case_ids:
+        payload = {
+            "command": "formal-calcite-hep-pg-checker-run",
+            "ok": False,
+            "ran_at_utc": utc_now(),
+            "output_path": "reports/formal_expansion/calcite_hep_pg_checker_run_execute_refused_v0.json",
+            "issues": [{"type": "unsupported_case_id", "case_id": case_id} for case_id in invalid_case_ids],
+            "guardrails": {
+                "database_execution": "enabled_only_with_execute",
+                "postgres_execution": "postgres_only_selected_cases",
+                "checker_execution": "exact_tsv_report_local_only",
+                "speedup_scoring": "disabled",
+                "case_artifact_write": "report_local_only",
+                "registry_writeback": "disabled",
+                "formal_review_writeback": "disabled",
+            },
+            "claim_boundary": "calcite_hep_pg_checker_postgres_only_not_speedup_not_final_baseline",
+        }
+        write_formal_expansion_report("calcite_hep_pg_checker_run_execute_refused_v0.json", payload)
+        return print_and_exit(payload, 1)
+
+    env_visibility = pg_env_visibility()
+    required_env_visible = all(env_visibility[name] for name in ["PGHOST", "PGPORT", "PGDATABASE", "PGUSER"])
+    pg_password_present = env_visibility["PGPASSWORD"]
+    psycopg_available = safe_module_available("psycopg")
+    issues: list[dict[str, Any]] = []
+    if args.execute and not required_env_visible:
+        issues.append({"type": "missing_pg_env", "message": "required env: PGHOST, PGPORT, PGDATABASE, PGUSER"})
+    if args.execute and not psycopg_available:
+        issues.append({"type": "psycopg_unavailable", "message": "psycopg is not installed"})
+
+    psycopg = None
+    if args.execute and psycopg_available:
+        try:
+            psycopg = importlib.import_module("psycopg")
+        except Exception as exc:
+            issues.append({"type": "psycopg_import_error", "message": str(exc)})
+
+    real_route_report_path = FORMAL_EXPANSION_REPORT_DIR / "calcite_hep_real_route_canary_v0.json"
+    real_route_report = load_json_if_present(real_route_report_path)
+    if real_route_report is None:
+        issues.append({"type": "missing_real_route_report", "path": relative_to_root(real_route_report_path)})
+        real_route_report = {}
+    real_route_record_map = {
+        str(record.get("case_id", "")).strip().upper(): record
+        for record in (real_route_report or {}).get("records", [])
+        if record.get("case_id")
+    }
+
+    result_materialization_root = FORMAL_EXPANSION_REPORT_DIR / "result_materialization" / "calcite_hep"
+    result_checks_root = FORMAL_EXPANSION_REPORT_DIR / "result_checks" / "calcite_hep" / "calcite_rel_to_sql"
+
+    dry_run_records: list[dict[str, Any]] = []
+    for case_id in selected_case_ids:
+        inferred = case_root_for_case_id(case_id)
+        case_root = inferred[1] if inferred else None
+        source_sql_path = calcite_hep_wrapper_source_sql_path(case_id) if case_root else None
+        ddl_path = calcite_hep_wrapper_ddl_path(case_id) if case_root else None
+        checker_yaml_path = case_root / "validation" / "checker.yaml" if case_root else ROOT / "__missing__"
+        source_result_path = calcite_hep_pg_preflight_source_tsv_path(case_id)
+        candidate_result_path = calcite_hep_pg_preflight_candidate_tsv_path(case_id)
+        checker_output_path = calcite_hep_pg_preflight_checker_json_path(case_id)
+        route_record = real_route_record_map.get(case_id, {})
+        output_sql_path_str = str(route_record.get("output_sql_path", "") or "").strip()
+        output_sql_path = Path(output_sql_path_str) if output_sql_path_str else calcite_hep_real_route_output_sql_path(case_id)
+        emitted_sql_mode = str(route_record.get("emitted_sql_mode", "") or "").strip() or "missing"
+        output_sql_exists = output_sql_path.is_file()
+        source_sql_exists = bool(source_sql_path and source_sql_path.is_file())
+        ddl_exists = bool(ddl_path and ddl_path.is_file())
+        checker_yaml_exists = checker_yaml_path.is_file()
+        source_execution_evidence_path = case_root / "runs" / "pg" / "source.tsv" if case_root else ROOT / "__missing__"
+        source_execution_evidence_exists = source_execution_evidence_path.is_file()
+        route_success = bool(route_record.get("real_route_success") is True)
+        calcite_generated = bool(route_record.get("emitted_sql_is_calcite_generated") is True)
+        candidate_sql_ready = output_sql_exists and emitted_sql_mode == "calcite_rel_to_sql" and calcite_generated
+        dry_run_records.append(
+            {
+                "case_id": case_id,
+                "source_sql_path": relative_to_root(source_sql_path) if source_sql_path else "",
+                "source_sql_exists": source_sql_exists,
+                "ddl_path": relative_to_root(ddl_path) if ddl_path else "",
+                "ddl_exists": ddl_exists,
+                "checker_yaml_path": relative_to_root(checker_yaml_path),
+                "checker_yaml_exists": checker_yaml_exists,
+                "validation_schema": validation_schema_hint(case_id),
+                "real_route_report_path": relative_to_root(real_route_report_path),
+                "real_route_record_exists": bool(route_record),
+                "route_success": route_success,
+                "emitted_sql_mode": emitted_sql_mode,
+                "emitted_sql_is_calcite_generated": calcite_generated,
+                "generated_sql_output_path": str(output_sql_path),
+                "generated_sql_output_exists": output_sql_exists,
+                "candidate_sql_ready_for_pg_execution": candidate_sql_ready,
+                "source_execution_evidence_path": relative_to_root(source_execution_evidence_path),
+                "source_execution_evidence_exists": source_execution_evidence_exists,
+                "planned_source_result_path": relative_to_root(source_result_path),
+                "planned_candidate_result_path": relative_to_root(candidate_result_path),
+                "planned_checker_output_path": relative_to_root(checker_output_path),
+                "artifact_claim_boundary": "calcite_hep_pg_checker_postgres_only_not_speedup_not_final_baseline",
+            }
+        )
+
+    if not args.execute:
+        payload = {
+            "command": "formal-calcite-hep-pg-checker-run",
+            "ok": not issues and all(record["candidate_sql_ready_for_pg_execution"] for record in dry_run_records),
+            "ran_at_utc": utc_now(),
+            "output_path": f"reports/formal_expansion/{output_name}",
+            "case_count": len(dry_run_records),
+            "selected_case_ids": selected_case_ids,
+            "pg_env_visible": required_env_visible,
+            "pg_password_present": pg_password_present,
+            "planned_source_result_root": relative_to_root(result_materialization_root / "source"),
+            "planned_candidate_result_root": relative_to_root(result_materialization_root / "calcite_rel_to_sql"),
+            "planned_checker_output_root": relative_to_root(result_checks_root),
+            "records": dry_run_records,
+            "issues": issues,
+            "guardrails": {
+                "database_execution": "disabled",
+                "postgres_execution": "disabled",
+                "checker_execution": "disabled",
+                "speedup_scoring": "disabled",
+                "case_artifact_write": "disabled",
+                "registry_writeback": "disabled",
+                "formal_review_writeback": "disabled",
+            },
+            "claim_boundary": "calcite_hep_pg_checker_postgres_only_not_speedup_not_final_baseline",
+        }
+        write_formal_expansion_report(output_name, payload)
+        return print_and_exit(payload, 0 if payload["ok"] else 1)
+
+    records: list[dict[str, Any]] = []
+    failure_categories: Counter[str] = Counter()
+    source_execution_success_count = 0
+    candidate_execution_success_count = 0
+    checker_consistent_count = 0
+    checker_inconsistent_count = 0
+    checker_failed_count = 0
+    row_count_match_count = 0
+    row_count_mismatch_count = 0
+
+    for dry_run_record in dry_run_records:
+        case_id = dry_run_record["case_id"]
+        validation_schema = dry_run_record["validation_schema"]
+        source_result_path = resolve_repo_path(dry_run_record["planned_source_result_path"])
+        candidate_result_path = resolve_repo_path(dry_run_record["planned_candidate_result_path"])
+        checker_output_path = resolve_repo_path(dry_run_record["planned_checker_output_path"])
+        source_sql_path = resolve_repo_path(dry_run_record["source_sql_path"])
+        candidate_sql_path = Path(str(dry_run_record["generated_sql_output_path"]))
+
+        source_execution_status = "not_attempted"
+        candidate_execution_status = "not_attempted"
+        checker_status = "not_attempted"
+        source_row_count: int | None = None
+        candidate_row_count: int | None = None
+        row_count_equal: bool | None = None
+        byte_equal: bool | None = None
+        runtime_source_ms: int | None = None
+        runtime_candidate_ms: int | None = None
+        search_path_after_set = ""
+        failure_category = "none"
+        error_message = ""
+
+        if issues:
+            source_execution_status = "env_blocked"
+            candidate_execution_status = "env_blocked"
+            checker_status = "env_blocked"
+            failure_category = "environment_or_selection_blocked"
+        elif not dry_run_record["candidate_sql_ready_for_pg_execution"]:
+            source_execution_status = "not_attempted"
+            candidate_execution_status = "not_attempted"
+            checker_status = "candidate_execution_failed"
+            failure_category = "candidate_sql_not_ready"
+            error_message = "Calcite candidate SQL was not ready for PostgreSQL execution"
+        else:
+            source_sql = source_sql_path.read_text(encoding="utf-8")
+            candidate_sql = candidate_sql_path.read_text(encoding="utf-8")
+            try:
+                with psycopg.connect(
+                    host=os.environ["PGHOST"],
+                    port=os.environ["PGPORT"],
+                    dbname=os.environ["PGDATABASE"],
+                    user=os.environ["PGUSER"],
+                    password=os.environ.get("PGPASSWORD"),
+                    options="-c statement_timeout=30000 -c default_transaction_read_only=on",
+                    autocommit=False,
+                ) as conn:
+                    with conn.cursor() as cur:
+                        cur.execute("SELECT to_regnamespace(%s)", (validation_schema,))
+                        schema_row = cur.fetchone()
+                        schema_name = schema_row[0] if schema_row else None
+                        if not schema_name:
+                            raise RuntimeError(f"validation schema not found: {validation_schema}")
+                        cur.execute(
+                            psycopg.sql.SQL("SET search_path TO {}, public").format(
+                                psycopg.sql.Identifier(validation_schema)
+                            )
+                        )
+                        cur.execute("SHOW search_path")
+                        search_path_row = cur.fetchone()
+                        search_path_after_set = str(search_path_row[0]) if search_path_row else ""
+
+                        started = time.perf_counter()
+                        source_row_count, _ = materialize_query_to_tsv(cur, source_sql, source_result_path)
+                        runtime_source_ms = int((time.perf_counter() - started) * 1000)
+                        source_execution_status = "success"
+                        conn.rollback()
+
+                        cur.execute(
+                            psycopg.sql.SQL("SET search_path TO {}, public").format(
+                                psycopg.sql.Identifier(validation_schema)
+                            )
+                        )
+                        started = time.perf_counter()
+                        candidate_row_count, _ = materialize_query_to_tsv(cur, candidate_sql, candidate_result_path)
+                        runtime_candidate_ms = int((time.perf_counter() - started) * 1000)
+                        candidate_execution_status = "success"
+                        conn.rollback()
+
+                        row_count_equal = source_row_count == candidate_row_count
+                        byte_equal = source_result_path.read_bytes() == candidate_result_path.read_bytes()
+                        checker_status = "consistent" if byte_equal else "inconsistent"
+            except Exception as exc:
+                error_message = str(exc)
+                failure_category = type(exc).__name__
+                if source_execution_status == "success":
+                    candidate_execution_status = "candidate_execution_failed"
+                    checker_status = "candidate_execution_failed"
+                else:
+                    source_execution_status = "source_execution_failed"
+                    checker_status = "source_execution_failed"
+
+        if source_execution_status == "success":
+            source_execution_success_count += 1
+        if candidate_execution_status == "success":
+            candidate_execution_success_count += 1
+        if checker_status == "consistent":
+            checker_consistent_count += 1
+        elif checker_status == "inconsistent":
+            checker_inconsistent_count += 1
+        elif checker_status in {"source_execution_failed", "candidate_execution_failed", "env_blocked"}:
+            checker_failed_count += 1
+        if row_count_equal is True:
+            row_count_match_count += 1
+        elif row_count_equal is False:
+            row_count_mismatch_count += 1
+        if failure_category != "none":
+            failure_categories[failure_category] += 1
+
+        checker_payload = {
+            "case_id": case_id,
+            "route": "calcite_rel_to_sql",
+            "baseline_id": "CALCITE_HEP",
+            "source_result_path": relative_to_root(source_result_path),
+            "candidate_result_path": relative_to_root(candidate_result_path),
+            "checker_mode": "exact_tsv_report_local",
+            "source_row_count": source_row_count,
+            "candidate_row_count": candidate_row_count,
+            "row_count_equal": row_count_equal,
+            "byte_equal": byte_equal,
+            "checker_status": checker_status,
+            "failure_category": failure_category,
+            "error_message": error_message,
+            "artifact_claim_boundary": "calcite_hep_pg_checker_postgres_only_not_speedup_not_final_baseline",
+        }
+        checker_output_path.parent.mkdir(parents=True, exist_ok=True)
+        checker_output_path.write_text(json.dumps(checker_payload, indent=2) + "\n", encoding="utf-8")
+
+        records.append(
+            {
+                **dry_run_record,
+                "source_execution_status": source_execution_status,
+                "candidate_execution_status": candidate_execution_status,
+                "checker_output_path": relative_to_root(checker_output_path),
+                "checker_mode": "exact_tsv_report_local",
+                "checker_status": checker_status,
+                "source_row_count": source_row_count,
+                "candidate_row_count": candidate_row_count,
+                "row_count_equal": row_count_equal,
+                "byte_equal": byte_equal,
+                "runtime_source_ms": runtime_source_ms,
+                "runtime_candidate_ms": runtime_candidate_ms,
+                "search_path_after_set": search_path_after_set,
+                "failure_category": failure_category,
+                "error_message": error_message,
+                "claim_boundary": "calcite_hep_pg_checker_postgres_only_not_speedup_not_final_baseline",
+            }
+        )
+
+    executed_count = len(records)
+    checker_total = checker_consistent_count + checker_inconsistent_count + checker_failed_count
+    result_consistency_rate = (
+        float(checker_consistent_count / checker_total) if checker_total else None
+    )
+    payload = {
+        "command": "formal-calcite-hep-pg-checker-run",
+        "ok": not issues and all(record["checker_status"] == "consistent" for record in records),
+        "ran_at_utc": utc_now(),
+        "output_path": f"reports/formal_expansion/{output_name}",
+        "case_count": len(records),
+        "selected_case_ids": selected_case_ids,
+        "executed_count": executed_count,
+        "source_execution_success_count": source_execution_success_count,
+        "candidate_execution_success_count": candidate_execution_success_count,
+        "checker_consistent_count": checker_consistent_count,
+        "checker_inconsistent_count": checker_inconsistent_count,
+        "checker_failed_count": checker_failed_count,
+        "result_consistency_rate": result_consistency_rate,
+        "row_count_match_count": row_count_match_count,
+        "row_count_mismatch_count": row_count_mismatch_count,
+        "failure_categories": dict(failure_categories),
+        "records": records,
+        "issues": issues,
+        "guardrails": {
+            "database_execution": "enabled_only_with_execute",
+            "postgres_execution": "postgres_only_selected_cases",
+            "checker_execution": "exact_tsv_report_local_only",
+            "speedup_scoring": "disabled",
+            "case_artifact_write": "report_local_only",
+            "registry_writeback": "disabled",
+            "formal_review_writeback": "disabled",
+        },
+        "claim_boundary": "calcite_hep_pg_checker_postgres_only_not_speedup_not_final_baseline",
     }
     write_formal_expansion_report(output_name, payload)
     return print_and_exit(payload, 0 if payload["ok"] else 1)
@@ -34257,6 +34597,15 @@ def build_parser() -> argparse.ArgumentParser:
     )
     formal_calcite_hep_pg_checker_preflight_parser.add_argument("--execute", action="store_true", default=False)
     formal_calcite_hep_pg_checker_preflight_parser.set_defaults(func=cmd_formal_calcite_hep_pg_checker_preflight)
+
+    formal_calcite_hep_pg_checker_run_parser = subparsers.add_parser("formal-calcite-hep-pg-checker-run")
+    formal_calcite_hep_pg_checker_run_parser.add_argument("--case-id", action="append", default=[])
+    formal_calcite_hep_pg_checker_run_parser.add_argument(
+        "--output",
+        default="reports/formal_expansion/calcite_hep_pg_checker_run_v0.json",
+    )
+    formal_calcite_hep_pg_checker_run_parser.add_argument("--execute", action="store_true", default=False)
+    formal_calcite_hep_pg_checker_run_parser.set_defaults(func=cmd_formal_calcite_hep_pg_checker_run)
 
     formal_expanded_perf_direct_llm_preflight_parser = subparsers.add_parser("formal-expanded-perf-direct-llm-preflight")
     formal_expanded_perf_direct_llm_preflight_parser.add_argument(
