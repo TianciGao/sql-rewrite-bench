@@ -17603,6 +17603,251 @@ def cmd_formal_common_core_batch2a_pg_execution(args: argparse.Namespace) -> int
     return print_and_exit(payload, 0 if payload["ok"] else 1)
 
 
+def classify_batch2a_sqlglot_trigger_patterns(source_sql: str, source_family: str) -> list[str]:
+    low = source_sql.lower()
+    patterns: list[str] = []
+
+    def add(name: str, condition: bool) -> None:
+        if condition and name not in patterns:
+            patterns.append(name)
+
+    add("subquery", "(select" in low or "exists (" in low or " not exists" in low or " in (" in low)
+    add("correlated_subquery", "exists (" in low or " not exists" in low or "select min(" in low)
+    add("aggregation", any(token in low for token in ("group by", "sum(", "avg(", "count(", "having")))
+    add(
+        "date_time_expression",
+        any(
+            token in low
+            for token in (
+                "date '",
+                "interval ",
+                "extract(",
+                "date_trunc(",
+                "l_shipdate",
+                "l_receiptdate",
+                "l_commitdate",
+                "o_orderdate",
+            )
+        ),
+    )
+    add("alias_resolution", " as " in low or re.search(r"\bfrom\s+\(", low) is not None)
+    add(
+        "column_resolution",
+        any(token in low for token in ("l_", "o_", "c_", "s_", "ps_", "p_", "n_", "r_")),
+    )
+    add("tpc_h_pattern", source_family == "TPC-H" or "tpc-h" in low)
+    add("tpc_ds_pattern", source_family == "TPC-DS" or "tpc-ds" in low)
+    if not patterns:
+        patterns.append("unknown")
+    return patterns
+
+
+def batch2a_sql_preview_text(source_sql: str, limit: int = 320) -> str:
+    return re.sub(r"\s+", " ", source_sql.strip())[:limit]
+
+
+def classify_batch2a_sqlglot_failure_stage(record: dict[str, Any]) -> str:
+    failure_category = str(record.get("failure_category", "") or "")
+    parse_status = str(record.get("parse_status", "") or "")
+    generation_status = str(record.get("generation_status", "") or "")
+    execution_status = str(record.get("execution_status", "") or "")
+
+    if parse_status == "failed":
+        return "parse"
+    if generation_status == "failed" or failure_category == "OptimizeError":
+        return "optimize"
+    if generation_status == "success" and execution_status == "failed":
+        return "postgres_execution"
+    if generation_status == "success":
+        return "generation"
+    return "unknown"
+
+
+def cmd_formal_batch2a_sqlglot_failure_analysis(args: argparse.Namespace) -> int:
+    output_name = normalize_formal_expansion_output_name(args.output)
+    if args.execute:
+        payload = {
+            "command": "formal-batch2a-sqlglot-failure-analysis",
+            "ok": False,
+            "ran_at_utc": utc_now(),
+            "output_path": "reports/formal_expansion/batch2a_sqlglot_failure_analysis_execute_refused_v0.json",
+            "issues": [
+                {
+                    "type": "execute_not_supported",
+                    "message": "formal-batch2a-sqlglot-failure-analysis reads existing reports and case SQL only",
+                }
+            ],
+            "guardrails": {
+                "database_execution": "disabled",
+                "sql_execution": "disabled",
+                "model_api_call": "disabled",
+                "sqlglot_rerun": "disabled_by_default",
+                "checker_execution": "disabled",
+                "speedup_scoring": "disabled",
+                "plan_collection": "disabled",
+                "case_artifact_write": "disabled",
+                "registry_writeback": "disabled",
+            },
+            "claim_boundary": "batch2a_sqlglot_failure_analysis_from_existing_reports_only",
+        }
+        write_formal_expansion_report("batch2a_sqlglot_failure_analysis_execute_refused_v0.json", payload)
+        return print_and_exit(payload, 1)
+
+    report_path = FORMAL_EXPANSION_REPORT_DIR / "batch2a_pg_execution_v0.json"
+    issues: list[dict[str, Any]] = []
+    warnings: list[str] = []
+    if not report_path.is_file():
+        payload = {
+            "command": "formal-batch2a-sqlglot-failure-analysis",
+            "ok": False,
+            "ran_at_utc": utc_now(),
+            "output_path": f"reports/formal_expansion/{output_name}",
+            "batch2a_case_count": 0,
+            "sqlglot_success_count": 0,
+            "sqlglot_failure_count": 0,
+            "failure_count_by_category": {},
+            "failure_count_by_stage": {},
+            "failure_count_by_diagnosis": {},
+            "optimize_error_cases": [],
+            "undefined_column_cases": [],
+            "success_cases": [],
+            "recommended_next_action": "run_a_small_diagnostic_dry_run_that_compares_sqlglot_optimize_vs_sqlglot_transpile_no_opt_on_failed_cases",
+            "records": [],
+            "issues": [{"type": "missing_batch2a_execution_report", "path": relative_to_root(report_path)}],
+            "warnings": warnings,
+            "guardrails": {
+                "database_execution": "disabled",
+                "sql_execution": "disabled",
+                "model_api_call": "disabled",
+                "sqlglot_rerun": "disabled_by_default",
+                "checker_execution": "disabled",
+                "speedup_scoring": "disabled",
+                "plan_collection": "disabled",
+                "case_artifact_write": "disabled",
+                "registry_writeback": "disabled",
+            },
+            "claim_boundary": "batch2a_sqlglot_failure_analysis_from_existing_reports_only",
+        }
+        write_formal_expansion_report(output_name, payload)
+        return print_and_exit(payload, 1)
+
+    batch2a_report = json.loads(report_path.read_text(encoding="utf-8"))
+    sqlglot_records = [
+        record for record in batch2a_report.get("records", []) if record.get("route") == "SQLGLOT_OPT_SAME_DIALECT"
+    ]
+    records: list[dict[str, Any]] = []
+    failure_count_by_category: Counter[str] = Counter()
+    failure_count_by_stage: Counter[str] = Counter()
+    failure_count_by_diagnosis: Counter[str] = Counter()
+    optimize_error_cases: list[str] = []
+    undefined_column_cases: list[str] = []
+    success_cases: list[str] = []
+
+    for route_record in sqlglot_records:
+        case_id = str(route_record.get("case_id", "")).strip().upper()
+        inferred = case_root_for_case_id(case_id)
+        case_root = inferred[1] if inferred else None
+        source_family = ""
+        source_sql = ""
+        source_sql_path = ROOT / "__missing__"
+        if case_root is not None:
+            manifest_path = case_root / "manifest.yaml"
+            if manifest_path.is_file():
+                manifest_text = manifest_path.read_text(encoding="utf-8")
+                source_family = manifest_source_family_hint(manifest_text) or ""
+                if not source_family:
+                    if "source_name: TPC-H" in manifest_text:
+                        source_family = "TPC-H"
+                    elif "source_name: TPC-DS" in manifest_text:
+                        source_family = "TPC-DS"
+            source_sql_path = case_root / "source.sql"
+            if source_sql_path.is_file():
+                source_sql = source_sql_path.read_text(encoding="utf-8")
+
+        execution_status = str(route_record.get("execution_status", "") or "")
+        if execution_status == "success":
+            success_cases.append(case_id)
+            records.append(
+                {
+                    "case_id": case_id,
+                    "execution_status": execution_status,
+                    "row_count": route_record.get("row_count"),
+                    "runtime_ms": route_record.get("runtime_ms"),
+                }
+            )
+            continue
+
+        failure_category = str(route_record.get("failure_category", "") or "unknown")
+        failure_stage = classify_batch2a_sqlglot_failure_stage(route_record)
+        error_message = str(route_record.get("error_message", "") or "")
+        diagnosis = "needs_manual_review"
+        recommended_action = "manual_case_review_needed"
+        if failure_category == "OptimizeError":
+            diagnosis = "sqlglot_optimizer_capability_boundary"
+            recommended_action = "split_sqlglot_optimize_vs_transpile_baseline"
+            optimize_error_cases.append(case_id)
+        elif failure_category == "UndefinedColumn":
+            diagnosis = "sqlglot_alias_or_column_resolution_issue"
+            recommended_action = "split_sqlglot_optimize_vs_transpile_baseline"
+            undefined_column_cases.append(case_id)
+        elif not error_message:
+            diagnosis = "report_missing_detail"
+
+        records.append(
+            {
+                "case_id": case_id,
+                "failure_category": failure_category,
+                "failure_stage": failure_stage,
+                "error_message": error_message,
+                "source_sql_path": relative_to_root(source_sql_path),
+                "source_sql_preview": batch2a_sql_preview_text(source_sql),
+                "generated_sql_available": False,
+                "generated_sql_preview": "",
+                "likely_trigger_patterns": classify_batch2a_sqlglot_trigger_patterns(source_sql, source_family),
+                "diagnosis": diagnosis,
+                "recommended_action": recommended_action,
+                "artifact_claim_boundary": "batch2a_sqlglot_failure_analysis_only_no_rerun",
+            }
+        )
+        failure_count_by_category[failure_category] += 1
+        failure_count_by_stage[failure_stage] += 1
+        failure_count_by_diagnosis[diagnosis] += 1
+
+    payload = {
+        "command": "formal-batch2a-sqlglot-failure-analysis",
+        "ok": True,
+        "ran_at_utc": utc_now(),
+        "output_path": f"reports/formal_expansion/{output_name}",
+        "batch2a_case_count": len(sqlglot_records),
+        "sqlglot_success_count": len(success_cases),
+        "sqlglot_failure_count": len(optimize_error_cases) + len(undefined_column_cases),
+        "failure_count_by_category": dict(sorted(failure_count_by_category.items())),
+        "failure_count_by_stage": dict(sorted(failure_count_by_stage.items())),
+        "failure_count_by_diagnosis": dict(sorted(failure_count_by_diagnosis.items())),
+        "optimize_error_cases": optimize_error_cases,
+        "undefined_column_cases": undefined_column_cases,
+        "success_cases": success_cases,
+        "recommended_next_action": "run_a_small_diagnostic_dry_run_that_compares_sqlglot_optimize_vs_sqlglot_transpile_no_opt_on_failed_cases",
+        "records": records,
+        "issues": issues,
+        "warnings": warnings,
+        "guardrails": {
+            "database_execution": "disabled",
+            "sql_execution": "disabled",
+            "model_api_call": "disabled",
+            "sqlglot_rerun": "disabled_by_default",
+            "checker_execution": "disabled",
+            "speedup_scoring": "disabled",
+            "plan_collection": "disabled",
+            "case_artifact_write": "disabled",
+            "registry_writeback": "disabled",
+        },
+        "claim_boundary": "batch2a_sqlglot_failure_analysis_from_existing_reports_only",
+    }
+    write_formal_expansion_report(output_name, payload)
+    return print_and_exit(payload, 0)
+
+
 def cmd_formal_common_core_method_result_checker_run(args: argparse.Namespace) -> int:
     output_name = normalize_formal_common_core_output_name(args.output)
     valid_routes = {
@@ -25495,6 +25740,14 @@ def build_parser() -> argparse.ArgumentParser:
     )
     formal_common_core_batch2a_pg_execution_parser.add_argument("--execute", action="store_true", default=False)
     formal_common_core_batch2a_pg_execution_parser.set_defaults(func=cmd_formal_common_core_batch2a_pg_execution)
+
+    formal_batch2a_sqlglot_failure_analysis_parser = subparsers.add_parser("formal-batch2a-sqlglot-failure-analysis")
+    formal_batch2a_sqlglot_failure_analysis_parser.add_argument(
+        "--output",
+        default="batch2a_sqlglot_failure_analysis_v0.json",
+    )
+    formal_batch2a_sqlglot_failure_analysis_parser.add_argument("--execute", action="store_true", default=False)
+    formal_batch2a_sqlglot_failure_analysis_parser.set_defaults(func=cmd_formal_batch2a_sqlglot_failure_analysis)
 
     formal_common_core_method_plan_collection_preflight_parser = subparsers.add_parser("formal-common-core-method-plan-collection-preflight")
     formal_common_core_method_plan_collection_preflight_parser.add_argument(
