@@ -41,6 +41,7 @@ Current expanded evidence totals:
 | `LLM_DIRECT_REWRITE_STRONG` | seed common-core `9` | `9 / 9` | generated-method consistency `9 / 9` | none on seed | seed-only generated-method evidence |
 | Batch 2B CONS controls | Batch 2B CONS `3` | native `3 / 3`, positive `3 / 3`, negative `3 / 3` | `ResultConsistencyRate=1.0`, `NegativeRejectionRate=1.0`, `FalseAcceptRate=0.0` | none | consistency expansion only |
 | `SQLGLOT_TRANSPILE_SAME_DIALECT_NO_OPT` | Batch 2A PERF `19` | generation `19 / 19`, PG execution `19 / 19` | exact TSV consistency `19 / 19`, `ResultConsistencyRate=1.0` | none on Batch 2A | separate baseline candidate, not replacement |
+| `LLM_DIRECT_REWRITE_STRONG` | expanded PERF `34` | model call `34 / 34`, extraction `34 / 34`, source PG execution `34 / 34`, candidate PG execution `34 / 34` | checker consistency `34 / 34`, row-count match `34 / 34`, `ResultConsistencyRate=1.0` | none on expanded PERF | PostgreSQL-only, checker-backed, not speedup, not final leaderboard |
 | `SQLGLOT_OPT_SAME_DIALECT` | Batch 2A PERF `19` | success `4 / 19`, failed `15 / 19` | capability boundary exposed rather than closed consistency | `OptimizeError=13`, `UndefinedColumn=2` | boundary evidence only |
 | Batch 3B PERF controls | Batch 3B PERF `4` | native `4 / 4`, positive `4 / 4`, negative `4 / 4` | positive equality `4 / 4`, negative differs `4 / 4` | none | paper-draft override slice only |
 | `SQLGLOT_TRANSPILE_SAME_DIALECT_NO_OPT` | Batch 3B PERF `4` | generation `4 / 4`, PG execution `4 / 4` | checker consistency `4 / 4`, `ResultConsistencyRate=1.0` | none on Batch 3B | separate baseline candidate, not replacement |
@@ -139,6 +140,7 @@ Combined current PostgreSQL-side PORT summary:
 
 - the expanded denominator exposed a major `SQLGLOT_OPT_SAME_DIALECT` capability boundary that the seed packet did not reveal
 - `SQLGLOT_TRANSPILE_SAME_DIALECT_NO_OPT` remains broadly executable / consistent across Batch 2A, Batch 3A, and Batch 3B, but speedup gains remain close to neutral
+- Direct LLM now has a full expanded PERF checker-backed PostgreSQL row on `34` cases, but still no expanded PERF speedup row
 - Direct LLM shows stronger PostgreSQL-side PORT coverage than SQLGlot on the current bounded six-case sample
 - human positive and SQLGlot no-opt both remain close to neutral, with tie-heavy runtime behavior on the expanded PERF slices
 - the `SQLGLOT_OPT_SAME_DIALECT` capability boundary persists from Batch 2A into Batch 3A and Batch 3B
