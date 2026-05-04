@@ -24380,8 +24380,15 @@ def cmd_formal_expanded_perf_direct_llm_speedup_run(args: argparse.Namespace) ->
         proc = subprocess.run(["bash", "-lc", cmd], capture_output=True, text=True, env=os.environ.copy())
         runtime_ms = round((time.perf_counter() - start) * 1000, 3)
         if proc.returncode != 0:
-            stderr = (proc.stderr or proc.stdout or "").strip()
-            raise RuntimeError(stderr or "psql execution failed")
+            raise RuntimeError(
+                "psql execution failed: "
+                f"returncode={proc.returncode}; "
+                f"stdout={proc.stdout!r}; "
+                f"stderr={proc.stderr!r}; "
+                f"validation_schema={validation_schema_name}; "
+                f"sql={normalized_sql!r}; "
+                f"command={cmd!r}"
+            )
         stdout = proc.stdout or ""
         row_count = 0 if stdout == "" else stdout.count("\n")
         if stdout and not stdout.endswith("\n"):
@@ -24530,7 +24537,14 @@ def cmd_formal_expanded_perf_direct_llm_speedup_run(args: argparse.Namespace) ->
                 )
                 schema_name = (schema_check.stdout or "").strip()
                 if schema_check.returncode != 0:
-                    raise RuntimeError((schema_check.stderr or "").strip() or "validation schema check failed")
+                    raise RuntimeError(
+                        "validation schema check failed: "
+                        f"returncode={schema_check.returncode}; "
+                        f"stdout={schema_check.stdout!r}; "
+                        f"stderr={schema_check.stderr!r}; "
+                        f"validation_schema={validation_schema!r}; "
+                        f"command={schema_cmd!r}"
+                    )
                 if not schema_name:
                     execution_status = "failed"
                     failure_category = "missing_validation_schema"

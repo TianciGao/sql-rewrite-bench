@@ -12,6 +12,7 @@ Result status:
 - canary execute attempted on `PERF_0007`
 - canary did not succeed
 - full 34-case execute was not started
+- canary diagnostics were improved to capture full subprocess context
 
 ## Scope
 
@@ -61,12 +62,46 @@ Canary outcome:
 - failed count: `1`
 - failed case: `PERF_0007`
 - failure category: `RuntimeError`
-- reported error text: `psql: error:`
+- reported error text now captured in full:
+  - `validation schema check failed: returncode=2; stdout=''; stderr='psql: error: \n'; validation_schema='perf_0007_validation'; command='psql -X -v ON_ERROR_STOP=1 -q -A -t -c \\'SELECT to_regnamespace(\\'"'"'perf_0007_validation\\'"'"')\\''`
 
 Interpretation:
 
 - the execute path did not clear the single-case PostgreSQL runtime canary
 - because the canary failed, the full 34-case speedup runtime/scoring step was not run
+- the failure happens before source SQL or candidate SQL runtime measurement
+
+## Diagnosis
+
+Comparison against the existing speedup runners:
+
+- `formal-batch2a-speedup-run`
+- `formal-batch3a-speedup-run`
+- `formal-batch3b-perf-speedup-run`
+
+All three existing runners use the same `psycopg.connect(...)` execution path:
+
+- validate schema with `SELECT to_regnamespace(...)`
+- set `search_path` to `<case>_validation, public`
+- execute source SQL and candidate SQL inside PostgreSQL
+- collect warmup and repeat runtimes in Python
+
+Expanded Direct LLM speedup now also:
+
+- reads candidate SQL from `extracted_sql_text` in `reports/formal_expansion/expanded_perf_direct_llm_run_v0.json`
+- uses the same target validation schema convention
+- sets the same runtime policy
+
+However, in this environment, both attempted Python-side PostgreSQL execution paths fail:
+
+- `psycopg.connect(...)` fails with `OperationalError: connection is bad: no error details available`
+- nested `psql` subprocess execution from inside Python fails with `returncode=2` and `stderr='psql: error: \n'`
+
+Best current diagnosis:
+
+- PostgreSQL connectivity is available from the top-level shell in this workspace
+- but PostgreSQL client access from inside the Python process is failing before query execution
+- this appears to be an environment/runtime boundary issue rather than a Direct LLM SQL issue, because the failure occurs at the validation-schema check step before any source/candidate runtime loop starts
 
 ## Full run result
 
