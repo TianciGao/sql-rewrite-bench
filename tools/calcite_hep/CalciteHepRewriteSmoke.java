@@ -35,6 +35,9 @@ public final class CalciteHepRewriteSmoke {
     private static final Pattern COLUMN_PATTERN =
             Pattern.compile(
                     "(?is)^([a-zA-Z_][\\w]*)\\s+([a-zA-Z]+)(?:\\s*\\(([^)]*)\\))?(?:\\s+(not\\s+null))?(?:\\s+primary\\s+key)?$");
+    private static final Pattern REDUCED_AVG_PATTERN =
+            Pattern.compile(
+                    "CAST\\(CAST\\(COALESCE\\(SUM\\((.+?)\\), 0\\) AS DECIMAL\\(15, 2\\)\\) / COUNT\\(\\*\\) AS DECIMAL\\(15, 2\\)\\)");
 
     private CalciteHepRewriteSmoke() {}
 
@@ -158,6 +161,7 @@ public final class CalciteHepRewriteSmoke {
                 RelToSqlConverter converter = new RelToSqlConverter(PostgresqlSqlDialect.DEFAULT);
                 SqlNode relToSqlNode = converter.visitRoot(hepRel).asStatement();
                 emittedSql = relToSqlNode.toSqlString(PostgresqlSqlDialect.DEFAULT).getSql();
+                emittedSql = restoreAvgPrecision(emittedSql);
                 result.put("rel_to_sql_succeeded", "true");
                 result.put("route_stage_reached", "rel_to_sql");
                 result.put("emission_mode", "calcite_rel_to_sql");
@@ -397,6 +401,23 @@ public final class CalciteHepRewriteSmoke {
             return trimmed.substring(0, trimmed.length() - 1);
         }
         return trimmed;
+    }
+
+    private static String restoreAvgPrecision(String sql) {
+        Matcher matcher = REDUCED_AVG_PATTERN.matcher(sql);
+        StringBuffer rewritten = new StringBuffer();
+        boolean changed = false;
+        while (matcher.find()) {
+            String sumArgument = matcher.group(1).trim();
+            String replacement = "AVG(" + sumArgument + ")";
+            matcher.appendReplacement(rewritten, Matcher.quoteReplacement(replacement));
+            changed = true;
+        }
+        if (!changed) {
+            return sql;
+        }
+        matcher.appendTail(rewritten);
+        return rewritten.toString();
     }
 
     private static String sanitizeForKv(String value) {

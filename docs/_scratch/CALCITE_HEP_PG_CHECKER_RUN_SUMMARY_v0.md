@@ -2,12 +2,10 @@
 
 ## Status
 
-This note records PostgreSQL-only execution and exact-TSV checker results for the Calcite HEP real-route 4-case PERF subset:
+This note now reflects two bounded facts about the Calcite HEP PostgreSQL checker lane:
 
-- `PERF_0006`
-- `PERF_0008`
-- `PERF_0033`
-- `PERF_0054`
+- the earlier 4-case checker run closed PostgreSQL execution on all four clean PERF cases
+- after the targeted `PERF_0006` AVG precision fix, the `PERF_0006` checker canary is now exact-TSV consistent
 
 Explicit boundary:
 
@@ -17,46 +15,9 @@ Explicit boundary:
 - not final Calcite HEP baseline
 - not a claim that Calcite HEP is fully implemented
 
-## Commands Run
+## Historical 4-Case Run
 
-1. `python -m py_compile scripts/cli.py`
-2. `python -m scripts.cli formal-calcite-hep-pg-checker-run`
-3. `export PGPASSWORD='123456'`
-4. `source scripts/env_postgres.sh`
-5. `python -m scripts.cli formal-calcite-hep-pg-checker-run --case-id PERF_0006 --execute`
-6. `python -m json.tool reports/formal_expansion/calcite_hep_pg_checker_run_v0.json >/dev/null`
-7. `python -m json.tool reports/formal_expansion/result_checks/calcite_hep/calcite_rel_to_sql/perf_0006.json >/dev/null`
-8. `python -m scripts.cli formal-calcite-hep-pg-checker-run --execute`
-9. `python -m json.tool reports/formal_expansion/calcite_hep_pg_checker_run_v0.json >/dev/null`
-
-Operational note:
-
-- PostgreSQL execution required running outside the sandbox to reach the PostgreSQL host.
-
-## Canary Result
-
-Canary case:
-
-- `PERF_0006`
-
-Canary outcome:
-
-- source PG execution: success
-- candidate PG execution: success
-- source row count: `2`
-- candidate row count: `2`
-- row-count match: yes
-- exact TSV byte equality: no
-- checker status: `inconsistent`
-
-Canary interpretation:
-
-- the PostgreSQL execution path closed end-to-end for both source and Calcite candidate SQL
-- the first real checker result was not exact-equal, so widening to the full 4-case subset was necessary
-
-## Full 4-Case Result
-
-Final full-subset outcome:
+Historical full-subset result before the `PERF_0006` fix:
 
 - `case_count:` `4`
 - `executed_count:` `4`
@@ -68,61 +29,67 @@ Final full-subset outcome:
 - `result_consistency_rate:` `0.75`
 - `row_count_match_count:` `4`
 - `row_count_mismatch_count:` `0`
-- `failure_categories:` none
 
-Per-case result:
-
-| case_id | source exec | candidate exec | source rows | candidate rows | row-count equal | byte equal | checker status |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| `PERF_0006` | success | success | `2` | `2` | yes | no | `inconsistent` |
-| `PERF_0008` | success | success | `1` | `1` | yes | yes | `consistent` |
-| `PERF_0033` | success | success | `1` | `1` | yes | yes | `consistent` |
-| `PERF_0054` | success | success | `1` | `1` | yes | yes | `consistent` |
-
-Materialized outputs written under the allowed report-local paths:
-
-- source TSVs: `reports/formal_expansion/result_materialization/calcite_hep/source/*.tsv`
-- candidate TSVs: `reports/formal_expansion/result_materialization/calcite_hep/calcite_rel_to_sql/*.tsv`
-- checker JSONs: `reports/formal_expansion/result_checks/calcite_hep/calcite_rel_to_sql/*.json`
-- run summary JSON: `reports/formal_expansion/calcite_hep_pg_checker_run_v0.json`
-
-## Inconsistent Case
-
-Inconsistent case:
+Historical inconsistent case:
 
 - `PERF_0006`
 
-Observed failure shape:
+## Fixed Canary
 
-- row counts still match: `2` vs `2`
-- exact TSV bytes do not match
-- the diff is in decimal-valued output columns, not missing or extra rows
+Bounded rerun performed after the AVG precision fix:
 
-Observed TSV diff characteristics for `PERF_0006`:
+- `python -m scripts.cli formal-calcite-hep-real-route-canary --case-id PERF_0006 --execute`
+- `python -m scripts.cli formal-calcite-hep-pg-checker-run --case-id PERF_0006 --execute`
 
-- source contains higher-precision decimal text such as `15.0000000000000000`, `150.0000000000000000`, and `0.07500000000000000000`
-- Calcite candidate emits shorter or rounded values such as `15.00`, `150.00`, and `0.08`
+Fixed `PERF_0006` canary result:
+
+- source PG execution: success
+- candidate PG execution: success
+- source row count: `2`
+- candidate row count: `2`
+- row-count match: yes
+- exact TSV byte equality: yes
+- checker status: `consistent`
+- emitted SQL mode: `calcite_rel_to_sql`
 
 Interpretation:
 
-- the checker failure is not a row-count failure
-- the mismatch is consistent with Calcite rewrite / PostgreSQL evaluation changing exact rendered numeric results in at least one derived expression
-- this subset is therefore not yet checker-clean enough to treat as a baseline candidate
+- the targeted AVG precision fix cleared the only known checker inconsistency on the clean PERF subset
+- the previously failing `avg_disc` path is now checker-consistent on `PERF_0006`
 
-## What This Proves
+## Current Reading
 
-- the Calcite HEP real-route subset now has PostgreSQL execution closure on all four clean PERF cases
-- exact-TSV checker artifacts can be produced for the Calcite candidate route
-- three of the four cases are checker-consistent under exact TSV
+What is now true:
 
-## What This Does Not Prove
+- `PERF_0006` is checker-clean under the bounded canary rerun
+- the prior `3/4` checker result is stale with respect to `PERF_0006`
+- a fresh full 4-case PostgreSQL checker rerun is now appropriate
 
-- this is not speedup-scored
-- this is not a final Calcite HEP baseline
-- this does not establish correctness closure for the full subset because `PERF_0006` remains inconsistent
+What has not been rerun yet in this step:
+
+- the full 4-case checker summary after the `PERF_0006` fix
+
+So the strongest current statement is:
+
+- `PERF_0006` recovery succeeded
+- full 4-case checker-clean recovery is now plausible and should be verified with a bounded 4-case rerun
+
+## Materialized Artifacts
+
+Current `PERF_0006` checker artifact paths:
+
+- source TSV: `reports/formal_expansion/result_materialization/calcite_hep/source/perf_0006.tsv`
+- candidate TSV: `reports/formal_expansion/result_materialization/calcite_hep/calcite_rel_to_sql/perf_0006.tsv`
+- checker JSON: `reports/formal_expansion/result_checks/calcite_hep/calcite_rel_to_sql/perf_0006.json`
+- checker run report: `reports/formal_expansion/calcite_hep_pg_checker_run_v0.json`
 
 ## Next Action
 
-Because the full 4-case run is only `3/4` exact-TSV consistent, the next step should be:
+Because the repaired `PERF_0006` canary is now exact-TSV consistent, the next step should be:
 
-- investigate and fix the `PERF_0006` numeric mismatch before any speedup or stronger baseline framing
+- rerun the bounded 4-case PostgreSQL checker subset
+
+Still out of scope here:
+
+- speedup
+- final baseline claim
