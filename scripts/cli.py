@@ -8,6 +8,7 @@ import json
 import math
 import os
 import re
+import shlex
 import statistics
 import subprocess
 import sys
@@ -24237,6 +24238,445 @@ def cmd_formal_expanded_perf_direct_llm_speedup_preflight(args: argparse.Namespa
     return print_and_exit(payload, 0 if payload["ok"] else 1)
 
 
+def cmd_formal_expanded_perf_direct_llm_speedup_run(args: argparse.Namespace) -> int:
+    output_name = normalize_formal_expansion_output_name(args.output)
+    execute_refused_name = "expanded_perf_direct_llm_speedup_run_execute_refused_v0.json"
+    valid_case_ids = set(FORMAL_COMMON_CORE_BATCH2A_PERF_CASES) | set(FORMAL_COMMON_CORE_BATCH3A_PERF_CASES) | set(
+        FORMAL_COMMON_CORE_BATCH3B_PERF_CASES
+    )
+
+    selected_case_ids = [str(case_id).strip().upper() for case_id in (args.case_id or []) if str(case_id).strip()]
+    if not selected_case_ids:
+        selected_case_ids = (
+            list(FORMAL_COMMON_CORE_BATCH2A_PERF_CASES)
+            + list(FORMAL_COMMON_CORE_BATCH3A_PERF_CASES)
+            + list(FORMAL_COMMON_CORE_BATCH3B_PERF_CASES)
+        )
+
+    invalid_case_ids = [case_id for case_id in selected_case_ids if case_id not in valid_case_ids]
+    if invalid_case_ids and args.execute:
+        payload = {
+            "command": "formal-expanded-perf-direct-llm-speedup-run",
+            "ok": False,
+            "ran_at_utc": utc_now(),
+            "output_path": f"reports/formal_expansion/{execute_refused_name}",
+            "issues": [{"type": "unsupported_case_id", "case_id": case_id} for case_id in invalid_case_ids],
+            "guardrails": {
+                "database_execution": "enabled_only_with_execute",
+                "sql_execution": "postgres_only_source_and_prior_llm_candidate_sql",
+                "model_api_call": "disabled",
+                "runtime_rerun": "enabled_only_with_execute",
+                "speedup_scoring": "enabled_only_for_expanded_perf_direct_llm_postgres",
+                "plan_collection": "disabled",
+                "case_artifact_write": "disabled",
+                "registry_writeback": "disabled",
+            },
+            "claim_boundary": "expanded_perf_direct_llm_speedup_run_postgres_only_not_final_leaderboard",
+        }
+        write_formal_expansion_report(execute_refused_name, payload)
+        return print_and_exit(payload, 1)
+
+    selected_case_ids = [case_id for case_id in selected_case_ids if case_id in valid_case_ids]
+
+    env_visibility = pg_env_visibility()
+    required_env_visible = all(env_visibility[name] for name in ["PGHOST", "PGPORT", "PGDATABASE", "PGUSER"])
+    pg_password_present = env_visibility["PGPASSWORD"]
+    psql_available = subprocess.run(["bash", "-lc", "command -v psql >/dev/null 2>&1"], capture_output=True, text=True).returncode == 0
+    issues: list[dict[str, Any]] = []
+    issues.extend({"type": "unsupported_case_id", "case_id": case_id} for case_id in invalid_case_ids)
+
+    if args.execute and not required_env_visible:
+        issues.append({"type": "missing_pg_env", "message": "required env: PGHOST, PGPORT, PGDATABASE, PGUSER"})
+    if args.execute and not psql_available:
+        issues.append({"type": "psql_unavailable", "message": "psql is not available in PATH"})
+
+    preflight_report = load_json_if_present(FORMAL_EXPANSION_REPORT_DIR / "expanded_perf_direct_llm_speedup_preflight_v0.json") or {}
+    prior_run_report = load_json_if_present(FORMAL_EXPANSION_REPORT_DIR / "expanded_perf_direct_llm_run_v0.json") or {}
+    if not preflight_report:
+        issues.append(
+            {
+                "type": "missing_speedup_preflight_report",
+                "path": "reports/formal_expansion/expanded_perf_direct_llm_speedup_preflight_v0.json",
+            }
+        )
+    if not prior_run_report:
+        issues.append(
+            {
+                "type": "missing_prior_direct_llm_run_report",
+                "path": "reports/formal_expansion/expanded_perf_direct_llm_run_v0.json",
+            }
+        )
+
+    preflight_record_map = {
+        str(record.get("case_id", "")).strip().upper(): record
+        for record in preflight_report.get("records", [])
+        if record.get("case_id")
+    }
+    prior_run_record_map = {
+        str(record.get("case_id", "")).strip().upper(): record
+        for record in prior_run_report.get("records", [])
+        if record.get("case_id")
+    }
+
+    repeat_count = 5
+    warmup_count = 1
+    statement_timeout_ms = 30000
+    primary_statistic = "median"
+    tie_threshold = 0.05
+    regression_threshold = 1.2
+
+    payload = {
+        "command": "formal-expanded-perf-direct-llm-speedup-run",
+        "ran_at_utc": utc_now(),
+        "output_path": f"reports/formal_expansion/{output_name}",
+        "case_count": len(selected_case_ids),
+        "route_count": 1,
+        "repeat_count": repeat_count,
+        "warmup_count": warmup_count,
+        "statement_timeout_ms": statement_timeout_ms,
+        "primary_runtime_statistic": primary_statistic,
+        "tie_threshold": tie_threshold,
+        "regression_threshold": regression_threshold,
+        "baseline_id": "LLM_DIRECT_REWRITE_STRONG",
+        "engine_scope": "postgres",
+        "pg_env_visible": required_env_visible,
+        "pg_password_present": pg_password_present,
+        "psql_available": psql_available,
+        "total_token_usage": prior_run_report.get("total_token_usage"),
+        "guardrails": {
+            "database_execution": "enabled_only_with_execute",
+            "sql_execution": "postgres_only_source_and_prior_llm_candidate_sql",
+            "model_api_call": "disabled",
+            "runtime_rerun": "enabled_only_with_execute",
+            "speedup_scoring": "enabled_only_for_expanded_perf_direct_llm_postgres",
+            "plan_collection": "disabled",
+            "case_artifact_write": "disabled",
+            "registry_writeback": "disabled",
+        },
+        "claim_boundary": "expanded_perf_direct_llm_speedup_run_postgres_only_not_final_leaderboard",
+    }
+
+    def runtime_stats(values: list[float]) -> tuple[float | None, float | None, float | None]:
+        if not values:
+            return None, None, None
+        return float(statistics.median(values)), min(values), float(sum(values) / len(values))
+
+    def geometric_mean(values: list[float]) -> float | None:
+        positive_values = [value for value in values if isinstance(value, (int, float)) and value > 0]
+        if not positive_values:
+            return None
+        return float(math.exp(sum(math.log(value) for value in positive_values) / len(positive_values)))
+
+    def execute_sql_via_psql(sql_text: str, validation_schema_name: str) -> tuple[int | None, float, str]:
+        normalized_sql = " ".join(sql_text.strip().rstrip(";").split())
+        wrapped_sql = (
+            "SET SESSION CHARACTERISTICS AS TRANSACTION READ ONLY; "
+            f"SET statement_timeout = '{statement_timeout_ms}'; "
+            f"SET search_path TO {validation_schema_name}, public; "
+            f"COPY ({normalized_sql}) TO STDOUT WITH (FORMAT CSV, DELIMITER E'\\t');"
+        )
+        start = time.perf_counter()
+        cmd = f"psql -X -v ON_ERROR_STOP=1 -q -A -t -c {shlex.quote(wrapped_sql)}"
+        proc = subprocess.run(["bash", "-lc", cmd], capture_output=True, text=True, env=os.environ.copy())
+        runtime_ms = round((time.perf_counter() - start) * 1000, 3)
+        if proc.returncode != 0:
+            stderr = (proc.stderr or proc.stdout or "").strip()
+            raise RuntimeError(stderr or "psql execution failed")
+        stdout = proc.stdout or ""
+        row_count = 0 if stdout == "" else stdout.count("\n")
+        if stdout and not stdout.endswith("\n"):
+            row_count += 1
+        return row_count, runtime_ms, stdout
+
+    records: list[dict[str, Any]] = []
+    failure_categories: Counter[str] = Counter()
+
+    for case_id in selected_case_ids:
+        inferred = case_root_for_case_id(case_id)
+        validation_schema = validation_schema_hint(case_id)
+        if inferred is None:
+            records.append(
+                {
+                    "case_id": case_id,
+                    "route": "LLM_DIRECT_REWRITE_STRONG",
+                    "baseline_id": "LLM_DIRECT_REWRITE_STRONG",
+                    "validation_schema": validation_schema,
+                    "search_path_after_set": "",
+                    "source_warmup_runtime_ms": None,
+                    "candidate_warmup_runtime_ms": None,
+                    "source_runtime_ms_values": [],
+                    "candidate_runtime_ms_values": [],
+                    "source_median_runtime_ms": None,
+                    "candidate_median_runtime_ms": None,
+                    "source_min_runtime_ms": None,
+                    "candidate_min_runtime_ms": None,
+                    "source_mean_runtime_ms": None,
+                    "candidate_mean_runtime_ms": None,
+                    "speedup_ratio": None,
+                    "win_tie_loss_status": "unknown",
+                    "regression_20pct": None,
+                    "source_row_count": None,
+                    "candidate_row_count": None,
+                    "row_count_matches_source": None,
+                    "candidate_sql_source": "",
+                    "generated_sql_preview": "",
+                    "generated_sql_character_count": None,
+                    "execution_status": "failed",
+                    "failure_category": "case_not_resolved",
+                    "error_message": "could not resolve case root from case_id",
+                    "artifact_claim_boundary": "expanded_perf_direct_llm_speedup_run_postgres_only_not_final_leaderboard",
+                }
+            )
+            failure_categories["case_not_resolved"] += 1
+            continue
+
+        pool, case_root = inferred
+        source_sql_path = case_root / "source.sql"
+        source_sql_exists = source_sql_path.is_file()
+        source_sql = source_sql_path.read_text(encoding="utf-8") if source_sql_exists else ""
+
+        prior_run_record = prior_run_record_map.get(case_id, {})
+        preflight_record = preflight_record_map.get(case_id, {})
+        candidate_sql_source = "prior_run_report.extracted_sql_text"
+        generated_sql_preview = str(prior_run_record.get("extracted_sql_preview", "") or "")
+        candidate_sql = str(prior_run_record.get("extracted_sql_text", "") or "").strip()
+        generated_sql_character_count = len(candidate_sql) if candidate_sql else None
+        source_warmup_runtime_ms: float | None = None
+        candidate_warmup_runtime_ms: float | None = None
+        source_runtime_ms_values: list[float] = []
+        candidate_runtime_ms_values: list[float] = []
+        source_row_count: int | None = None
+        candidate_row_count: int | None = None
+        speedup_ratio: float | None = None
+        win_tie_loss_status = "unknown"
+        regression_20pct: bool | None = None
+        row_count_matches_source: bool | None = None
+        failure_category = "none"
+        error_message = ""
+        execution_status = "dry_run_only"
+        search_path_after_set = ""
+
+        blockers = []
+        if not source_sql_exists:
+            blockers.append("missing_source_sql")
+        if str(preflight_record.get("preflight_status", "")) != "ready_for_speedup_runtime":
+            blockers.append("preflight_not_ready")
+        if not bool(preflight_record.get("source_materialization_exists")):
+            blockers.append("missing_source_materialization")
+        if not bool(preflight_record.get("candidate_materialization_exists")):
+            blockers.append("missing_candidate_materialization")
+        if not bool(preflight_record.get("checker_consistent")):
+            blockers.append("checker_not_consistent")
+        if not bool(preflight_record.get("validation_schema_ready")):
+            blockers.append("validation_schema_not_ready")
+        if not candidate_sql:
+            blockers.append("missing_extracted_candidate_sql")
+
+        blockers = list(dict.fromkeys(blockers))
+
+        if not args.execute:
+            records.append(
+                {
+                    "case_id": case_id,
+                    "pool": pool,
+                    "route": "LLM_DIRECT_REWRITE_STRONG",
+                    "baseline_id": "LLM_DIRECT_REWRITE_STRONG",
+                    "validation_schema": validation_schema,
+                    "search_path_after_set": search_path_after_set,
+                    "source_warmup_runtime_ms": source_warmup_runtime_ms,
+                    "candidate_warmup_runtime_ms": candidate_warmup_runtime_ms,
+                    "source_runtime_ms_values": source_runtime_ms_values,
+                    "candidate_runtime_ms_values": candidate_runtime_ms_values,
+                    "source_median_runtime_ms": None,
+                    "candidate_median_runtime_ms": None,
+                    "source_min_runtime_ms": None,
+                    "candidate_min_runtime_ms": None,
+                    "source_mean_runtime_ms": None,
+                    "candidate_mean_runtime_ms": None,
+                    "speedup_ratio": speedup_ratio,
+                    "win_tie_loss_status": win_tie_loss_status,
+                    "regression_20pct": regression_20pct,
+                    "source_row_count": source_row_count,
+                    "candidate_row_count": candidate_row_count,
+                    "row_count_matches_source": row_count_matches_source,
+                    "candidate_sql_source": candidate_sql_source,
+                    "generated_sql_preview": generated_sql_preview,
+                    "generated_sql_character_count": generated_sql_character_count,
+                    "execution_status": execution_status,
+                    "failure_category": failure_category,
+                    "error_message": error_message,
+                    "artifact_claim_boundary": "expanded_perf_direct_llm_speedup_run_postgres_only_not_final_leaderboard",
+                }
+            )
+            continue
+
+        if issues:
+            execution_status = "blocked_invalid_selection"
+            failure_category = "invalid_selection_or_environment"
+            error_message = "; ".join(sorted({str(issue.get('type', 'issue')) for issue in issues}))
+        elif blockers:
+            execution_status = "blocked_preflight"
+            failure_category = "preflight_blocked"
+            error_message = "; ".join(blockers)
+        else:
+            try:
+                schema_sql = f"SELECT to_regnamespace('{validation_schema}')"
+                schema_cmd = f"psql -X -v ON_ERROR_STOP=1 -q -A -t -c {shlex.quote(schema_sql)}"
+                schema_check = subprocess.run(
+                    ["bash", "-lc", schema_cmd],
+                    capture_output=True,
+                    text=True,
+                    env=os.environ.copy(),
+                )
+                schema_name = (schema_check.stdout or "").strip()
+                if schema_check.returncode != 0:
+                    raise RuntimeError((schema_check.stderr or "").strip() or "validation schema check failed")
+                if not schema_name:
+                    execution_status = "failed"
+                    failure_category = "missing_validation_schema"
+                    error_message = f"validation schema not found: {validation_schema}"
+                else:
+                    search_path_after_set = f"{validation_schema}, public"
+
+                    source_row_count, source_warmup_runtime_ms, _ = execute_sql_via_psql(source_sql, validation_schema)
+                    candidate_row_count, candidate_warmup_runtime_ms, _ = execute_sql_via_psql(
+                        candidate_sql, validation_schema
+                    )
+
+                    for repeat_index in range(repeat_count):
+                        order = ["source", "candidate"] if repeat_index % 2 == 0 else ["candidate", "source"]
+                        for role in order:
+                            sql_text = source_sql if role == "source" else candidate_sql
+                            rc, rt, _ = execute_sql_via_psql(sql_text, validation_schema)
+                            if role == "source":
+                                source_runtime_ms_values.append(rt)
+                                if source_row_count is None:
+                                    source_row_count = rc
+                            else:
+                                candidate_runtime_ms_values.append(rt)
+                                if candidate_row_count is None:
+                                    candidate_row_count = rc
+
+                    execution_status = "success"
+            except Exception as exc:
+                execution_status = "failed"
+                failure_category = exc.__class__.__name__
+                error_message = str(exc)
+
+        source_median_runtime_ms, source_min_runtime_ms, source_mean_runtime_ms = runtime_stats(source_runtime_ms_values)
+        candidate_median_runtime_ms, candidate_min_runtime_ms, candidate_mean_runtime_ms = runtime_stats(
+            candidate_runtime_ms_values
+        )
+        if (
+            isinstance(source_median_runtime_ms, (int, float))
+            and isinstance(candidate_median_runtime_ms, (int, float))
+            and candidate_median_runtime_ms > 0
+        ):
+            speedup_ratio = float(source_median_runtime_ms / candidate_median_runtime_ms)
+            if speedup_ratio > 1.0 + tie_threshold:
+                win_tie_loss_status = "win"
+            elif speedup_ratio < 1.0 - tie_threshold:
+                win_tie_loss_status = "loss"
+            else:
+                win_tie_loss_status = "tie"
+            regression_20pct = bool(candidate_median_runtime_ms >= regression_threshold * source_median_runtime_ms)
+
+        if source_row_count is not None and candidate_row_count is not None:
+            row_count_matches_source = source_row_count == candidate_row_count
+
+        if execution_status == "failed":
+            failure_categories[failure_category] += 1
+
+        records.append(
+            {
+                "case_id": case_id,
+                "pool": pool,
+                "route": "LLM_DIRECT_REWRITE_STRONG",
+                "baseline_id": "LLM_DIRECT_REWRITE_STRONG",
+                "validation_schema": validation_schema,
+                "search_path_after_set": search_path_after_set,
+                "source_warmup_runtime_ms": source_warmup_runtime_ms,
+                "candidate_warmup_runtime_ms": candidate_warmup_runtime_ms,
+                "source_runtime_ms_values": source_runtime_ms_values,
+                "candidate_runtime_ms_values": candidate_runtime_ms_values,
+                "source_median_runtime_ms": source_median_runtime_ms,
+                "candidate_median_runtime_ms": candidate_median_runtime_ms,
+                "source_min_runtime_ms": source_min_runtime_ms,
+                "candidate_min_runtime_ms": candidate_min_runtime_ms,
+                "source_mean_runtime_ms": source_mean_runtime_ms,
+                "candidate_mean_runtime_ms": candidate_mean_runtime_ms,
+                "speedup_ratio": speedup_ratio,
+                "win_tie_loss_status": win_tie_loss_status,
+                "regression_20pct": regression_20pct,
+                "source_row_count": source_row_count,
+                "candidate_row_count": candidate_row_count,
+                "row_count_matches_source": row_count_matches_source,
+                "candidate_sql_source": candidate_sql_source,
+                "generated_sql_preview": generated_sql_preview,
+                "generated_sql_character_count": generated_sql_character_count,
+                "execution_status": execution_status,
+                "failure_category": failure_category,
+                "error_message": error_message,
+                "artifact_claim_boundary": "expanded_perf_direct_llm_speedup_run_postgres_only_not_final_leaderboard",
+            }
+        )
+
+    executed_count = sum(1 for record in records if record["execution_status"] in {"success", "failed"})
+    success_count = sum(1 for record in records if record["execution_status"] == "success")
+    failed_count = sum(1 for record in records if record["execution_status"] == "failed")
+    skipped_count = len(records) - executed_count
+    row_count_match_count = sum(1 for record in records if record.get("row_count_matches_source") is True)
+    row_count_mismatch_count = sum(1 for record in records if record.get("row_count_matches_source") is False)
+
+    valid_speedup_values = [
+        float(record["speedup_ratio"])
+        for record in records
+        if record["execution_status"] == "success" and isinstance(record.get("speedup_ratio"), (int, float))
+    ]
+    valid_case_count = len(valid_speedup_values)
+    route_summary = {
+        "gm_speedup": geometric_mean(valid_speedup_values),
+        "win_count": sum(1 for record in records if record.get("win_tie_loss_status") == "win"),
+        "tie_count": sum(1 for record in records if record.get("win_tie_loss_status") == "tie"),
+        "loss_count": sum(1 for record in records if record.get("win_tie_loss_status") == "loss"),
+        "regression_20pct_count": sum(1 for record in records if record.get("regression_20pct") is True),
+        "regression_20pct_rate": (
+            float(sum(1 for record in records if record.get("regression_20pct") is True) / valid_case_count)
+            if valid_case_count
+            else None
+        ),
+        "valid_speedup_case_count": valid_case_count,
+        "row_count_match_count": row_count_match_count,
+    }
+
+    payload.update(
+        {
+            "ok": not issues
+            and all(record["execution_status"] == ("success" if args.execute else "dry_run_only") for record in records),
+            "total_records": len(records),
+            "executed_count": executed_count,
+            "success_count": success_count,
+            "failed_count": failed_count,
+            "skipped_count": skipped_count,
+            "row_count_match_count": row_count_match_count,
+            "row_count_mismatch_count": row_count_mismatch_count,
+            "gm_speedup": route_summary["gm_speedup"],
+            "win_count": route_summary["win_count"],
+            "tie_count": route_summary["tie_count"],
+            "loss_count": route_summary["loss_count"],
+            "regression_20pct_count": route_summary["regression_20pct_count"],
+            "regression_20pct_rate": route_summary["regression_20pct_rate"],
+            "valid_speedup_case_count": route_summary["valid_speedup_case_count"],
+            "route_summaries": {"LLM_DIRECT_REWRITE_STRONG": route_summary},
+            "records": records,
+            "issues": issues,
+            "failure_categories": dict(sorted(failure_categories.items())),
+        }
+    )
+    write_formal_expansion_report(output_name, payload)
+    return print_and_exit(payload, 0 if payload["ok"] else 1)
+
+
 def cmd_formal_batch2c_port_pg_matrix_consistency(args: argparse.Namespace) -> int:
     output_name = normalize_formal_expansion_output_name(args.output)
     execute_refused_name = "batch2c_port_pg_matrix_consistency_execute_refused_v0.json"
@@ -32843,6 +33283,19 @@ def build_parser() -> argparse.ArgumentParser:
     formal_expanded_perf_direct_llm_speedup_preflight_parser.add_argument("--execute", action="store_true", default=False)
     formal_expanded_perf_direct_llm_speedup_preflight_parser.set_defaults(
         func=cmd_formal_expanded_perf_direct_llm_speedup_preflight
+    )
+
+    formal_expanded_perf_direct_llm_speedup_run_parser = subparsers.add_parser(
+        "formal-expanded-perf-direct-llm-speedup-run"
+    )
+    formal_expanded_perf_direct_llm_speedup_run_parser.add_argument("--case-id", action="append", default=[])
+    formal_expanded_perf_direct_llm_speedup_run_parser.add_argument(
+        "--output",
+        default="reports/formal_expansion/expanded_perf_direct_llm_speedup_run_v0.json",
+    )
+    formal_expanded_perf_direct_llm_speedup_run_parser.add_argument("--execute", action="store_true", default=False)
+    formal_expanded_perf_direct_llm_speedup_run_parser.set_defaults(
+        func=cmd_formal_expanded_perf_direct_llm_speedup_run
     )
 
     formal_batch2c_port_pg_matrix_consistency_parser = subparsers.add_parser("formal-batch2c-port-pg-matrix-consistency")
