@@ -112,15 +112,20 @@ LLM Translate:
 - total token usage: `912`
 - `PORT_0012` targeted Direct LLM canary command now exists
 - latest targeted `PORT_0012` execute-path result:
-  - `model_call_status=env_blocked`
-  - `extraction_status=not_available`
-  - `pg_execution_status=not_attempted`
+  - `model_call_status=success`
+  - `extraction_status=extracted`
+  - `pg_execution_status=success`
+  - `row_count=1`
+  - `runtime_ms=63`
+  - `token_usage_total=480`
 - `PORT_0012` remains holdout failure-analysis / stress case
 
 Interpretation:
 
 - current RQ3 evidence is useful route-status evidence
-- the targeted `PORT_0012` Direct LLM follow-up path is now scaffolded, but the latest attempt was blocked by missing model/API environment
+- the targeted `PORT_0012` Direct LLM follow-up succeeded on PostgreSQL in this one-case stress canary
+- this suggests the targeted LLM path avoided the SQLGlot identifier-literal / datetime failure on `PORT_0012`
+- `PORT_0012` still remains outside the clean denominator unless a separate denominator-expansion decision is taken
 - it is not full PORT closure
 
 ## RQ4 Coverage / Failure Slicing
@@ -152,7 +157,7 @@ The following paper-facing tables can now be drafted from existing artifacts:
 - bounded portability snapshot table
   - SQLGlot Transpile `3/3 -> 2/3`
   - LLM Translate clean subset `2/2`
-  - `PORT_0012` holdout note plus targeted-canary blocked-state note
+  - `PORT_0012` holdout note plus targeted-canary success note
 
 ## Non-Claim Boundaries
 

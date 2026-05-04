@@ -6,7 +6,7 @@ This is a tracked scratch note for the targeted `PORT_0012` Direct LLM translate
 
 The targeted canary command was implemented and run.
 
-The current execute-path result is blocked by missing model/API environment.
+The latest targeted execute-path result is successful on PostgreSQL for this one-case canary.
 
 ## 2. Why `PORT_0012` Was Targeted
 
@@ -49,39 +49,34 @@ Targeted canary output:
 - route: `LLM_DIRECT_TRANSLATE`
 - case: `PORT_0012`
 - model label: `gpt-5.2`
-- provider mode: `env_blocked`
-- model call attempted: `false`
-- model call status: `env_blocked`
-- extraction status: `not_available`
-
-Reason:
-
-- no visible `OPENAI_API_KEY` or `LLM_API_KEY` was available in the execution shell
+- model call attempted: `true`
+- model call status: `success`
+- extraction status: `extracted`
 
 ## 5. Token Usage
 
-- `token_usage_total=null`
-
-No token usage was recorded because no model call was made.
+- `token_usage_total=480`
 
 ## 6. Execution Result
 
-- PostgreSQL execution status: `not_attempted`
-- row count: `null`
-- runtime: `null`
-- failure category: `missing_api_key`
+- PostgreSQL execution status: `success`
+- row count: `1`
+- runtime: `63 ms`
+- failure category: `none`
 
 Interpretation:
 
-- this targeted canary did not generate or execute a candidate SQL translation
-- the current result is a bounded blocked-state artifact, not a successful or failed translation execution result
+- this targeted canary generated one extracted SQL candidate and executed it successfully on PostgreSQL
+- this suggests the targeted LLM path avoided the SQLGlot identifier-literal / datetime failure in this one-case stress canary
 
 ## 7. Current Interpretation
 
 Current interpretation is conservative:
 
-- this run does not show whether Direct LLM translate can repair the SQLGlot identifier-literal failure on `PORT_0012`
-- it only shows that the targeted canary path is now scaffolded and that the current shell lacked model/API environment
+- this run suggests Direct LLM translate can avoid the SQLGlot identifier-literal / datetime failure on `PORT_0012` in this targeted canary
+- this is still not translation correctness
+- this is still not full PORT closure
+- this is still not a cross-engine matrix result
 - `PORT_0012` therefore remains a failure-analysis / targeted stress case rather than a clean denominator case
 
 ## 8. Claim Boundaries
@@ -91,8 +86,8 @@ Current interpretation is conservative:
 - not cross-engine matrix
 - PostgreSQL only
 - one-case targeted stress canary
-- blocked by missing model/API env in the current execution shell
+- not a denominator expansion decision
 
 ## 9. Recommended Next Action
 
-- rerun the targeted `PORT_0012` Direct LLM translate canary only after a bounded model/API environment is available in the same execution shell
+- decide separately whether targeted `PORT_0012` LLM success evidence is strong enough to justify any later denominator-expansion review

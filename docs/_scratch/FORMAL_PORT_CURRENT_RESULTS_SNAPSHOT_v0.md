@@ -82,10 +82,13 @@ Current LLM translate bounded snapshot:
 - `PORT_0012`:
   - prompt-ready in the earlier bounded smoke route
   - targeted canary command now exists
-  - latest targeted canary execute-path result: `env_blocked`
-  - no model call
-  - no extracted SQL
-  - no PostgreSQL execution
+  - latest targeted canary execute-path result: `success`
+  - model call succeeded
+  - SQL extraction succeeded
+  - PostgreSQL execution succeeded
+  - row count: `1`
+  - runtime: `63 ms`
+  - token usage: `480`
 
 Interpretation:
 
@@ -113,9 +116,10 @@ Current `PORT_0012` status:
   - ready
 - targeted LLM canary:
   - attempted at command level
-  - blocked by missing model/API env
-  - `model_call_status=env_blocked`
-  - `pg_execution_status=not_attempted`
+  - model call succeeded
+  - `model_call_status=success`
+  - `extraction_status=extracted`
+  - `pg_execution_status=success`
 - clean subset inclusion:
   - false
 
@@ -129,7 +133,8 @@ Current RQ3-facing interpretation:
 - LLM Translate:
   - clean `2`-case execution evidence exists on `PORT_0004` and `PORT_0022`
   - a targeted `PORT_0012` Direct LLM canary path now exists
-  - the latest targeted run is blocked by missing model/API env
+  - the latest targeted run succeeded on PostgreSQL for this one-case stress canary
+  - this suggests the targeted LLM route avoided the SQLGlot identifier-literal / datetime failure on this case
   - `PORT_0012` therefore remains intentionally outside the clean denominator
 
 This means:
@@ -149,7 +154,7 @@ This means:
 
 ## 9. Recommended Next Action
 
-- rerun the targeted `PORT_0012` LLM translate canary only after model/API environment is available in the same execution shell, or keep the formal PORT denominator at the clean `2`-case subset for the first formal packet
+- decide whether targeted `PORT_0012` LLM success evidence should remain a failure-analysis note only, or whether a separate denominator-expansion decision is warranted while still keeping the current clean `2`-case subset unchanged by default
 
 ## 10. Verification / Non-Modification Note
 
@@ -158,7 +163,7 @@ This means:
 - no SQL was executed
 - no SQLGlot was run
 - no checker was run
-- no LLM calls were made
+- no new LLM calls were made while updating this note
 - no registry changes were made
 - `docs/EXECUTION_STATUS.md` was not changed
 - no formal review files were changed
