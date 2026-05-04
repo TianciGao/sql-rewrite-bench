@@ -10,7 +10,7 @@ It summarizes the current state of the formal common-core and PORT artifact stac
 
 | area | execution status | executable / ready rate | row-count / plan observation | checker-backed consistency status | token usage | speedup status | claim boundary |
 |---|---|---:|---|---|---:|---|---|
-| control routes | complete | `1.0` executable across native / human positive / hard negative | execution and control-route scoring complete | complete from existing checker artifacts | n/a | not computed | control scoring only, not leaderboard |
+| control routes | complete | `1.0` executable across native / human positive / hard negative | execution and control-route scoring complete | complete from existing checker artifacts | n/a | HUMAN_REFERENCE_POSITIVE PERF-only positive-control speedup complete: `GM_Speedup=0.96159127168004`, `WTL=1/2/4`, `RegressionRate@20%=0/7` | positive-control speedup only, not full leaderboard |
 | SQLGlot same-dialect | complete | `1.0` parse, generation, execution | row-count match `9 / 9`; method plans `9 / 9`; plan parse `9 / 9` | `not_computed_checker_required` | n/a | not computed | row-count match is not semantic correctness |
 | Direct LLM rewrite | complete from existing reports | `1.0` call, extraction, PG execution | row-count match `9 / 9`; method plans `9 / 9`; plan parse `9 / 9` | `not_computed_checker_required` | `5089` total formalized token usage | not computed | read-existing-reports formalization only, not semantic correctness |
 | PORT SQLGlot Transpile | partial | preflight `3 / 3`, PG execution `2 / 3` | `PORT_0012` failed `InvalidDatetimeFormat` | not computed | n/a | not computed | not PORT closure |
@@ -34,7 +34,9 @@ It summarizes the current state of the formal common-core and PORT artifact stac
 - source-positive, source-negative, source-SQLGlot, and source-LLM pair readiness: `9 / 9`
 - operator-delta preflight is complete from existing plans
 - attribution is not computed
-- speedup is not computed
+- HUMAN_REFERENCE_POSITIVE PERF-only positive-control speedup is complete:
+  `GM_Speedup=0.96159127168004`, `Win/Tie/Loss=1/2/4`, `RegressionRate@20%=0/7`
+- SQLGlot and Direct LLM speedup remain blocked from correctness-gated leaderboard scoring
 
 Observed operator-delta highlights:
 
@@ -60,6 +62,7 @@ Observed operator-delta highlights:
 ## Completed Formal Artifacts
 
 - control execution and scoring
+- HUMAN_REFERENCE_POSITIVE PERF-only formal speedup run
 - SQLGlot same-dialect execution and scoring snapshot
 - Direct LLM rewrite execution and scoring snapshot
 - method plan collection
@@ -72,17 +75,18 @@ Observed operator-delta highlights:
 
 - SQLGlot method checker-backed consistency
 - Direct LLM method checker-backed consistency
+- exploratory SQLGlot / Direct LLM row-count-gated speedup appendix
 - formal operator-delta summary / attribution logic
-- formal speedup policy and scoring
 - final paper packet consolidation
 
 ## Recommended Next Primary Action
 
-- implement formal plan operator-delta summary now that all source-paired plan artifacts are collected, parseable, and preflight-ready
+- implement the exploratory SQLGlot / Direct LLM PERF-only row-count-gated speedup appendix while keeping those routes out of the correctness-gated leaderboard
 
 ## Claim Boundaries
 
 - no final leaderboard
-- no formal speedup
+- HUMAN_REFERENCE_POSITIVE speedup is positive-control only
+- SQLGlot and Direct LLM speedup are not admitted into the correctness-gated leaderboard
 - no admission
 - no registry writeback
