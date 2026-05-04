@@ -23173,6 +23173,403 @@ def cmd_formal_final_port_expansion_feasibility_preflight(args: argparse.Namespa
     return print_and_exit(payload, 0 if payload["ok"] else 1)
 
 
+def cmd_formal_baseline_coverage_audit(args: argparse.Namespace) -> int:
+    output_name = normalize_formal_expansion_output_name(args.output)
+    records = [
+        {
+            "baseline_family": "Native / Original SQL",
+            "planned_role": "control_baseline",
+            "current_status": "implemented",
+            "current_denominator": "expanded common-core PG packet: 46 cases",
+            "metrics_available": ["execution", "row_count", "control_scoring_reference", "speedup_reference_source"],
+            "missing_metrics": [],
+            "blockers": [],
+            "next_action": "retain as fixed control reference for future common-core expansions",
+            "claim_boundary": "control route only; not an optimization method baseline",
+        },
+        {
+            "baseline_family": "Human positive rewrite",
+            "planned_role": "positive_control_baseline",
+            "current_status": "implemented",
+            "current_denominator": "expanded common-core PG packet: 46 cases; speedup on PERF waves 7 + 19 + 11 + 4",
+            "metrics_available": ["execution", "checker-backed consistency", "speedup"],
+            "missing_metrics": [],
+            "blockers": [],
+            "next_action": "retain as positive-control reference in paper-facing tables",
+            "claim_boundary": "control rewrite route; not a generated method",
+        },
+        {
+            "baseline_family": "Hard negative guard",
+            "planned_role": "negative_control_baseline",
+            "current_status": "implemented",
+            "current_denominator": "expanded common-core PG packet: 46 cases",
+            "metrics_available": ["execution", "negative_rejection"],
+            "missing_metrics": [],
+            "blockers": [],
+            "next_action": "retain as guardrail route for common-core expansions",
+            "claim_boundary": "guard behavior only; not a speedup baseline",
+        },
+        {
+            "baseline_family": "SQLGlot optimize",
+            "planned_role": "same_dialect_generated_method",
+            "current_status": "implemented",
+            "current_denominator": "common-core PG execution evidence: 43 cases (seed 9 + Batch 2A 19 + Batch 3A 11 + Batch 3B 4)",
+            "metrics_available": ["execution", "seed checker-backed consistency", "seed speedup", "expanded failure categorization"],
+            "missing_metrics": ["expanded checker-backed consistency beyond seed", "expanded speedup on only successful later slices is not formalized as a route-wide denominator"],
+            "blockers": ["persistent OptimizeError capability boundary on Batch 2A, Batch 3A, and Batch 3B"],
+            "next_action": "keep as implemented comparison route with explicit capability-boundary framing",
+            "claim_boundary": "not a uniformly closed expanded denominator baseline",
+        },
+        {
+            "baseline_family": "SQLGlot no-opt / same-dialect transpile",
+            "planned_role": "same_dialect_generated_method_separate_candidate",
+            "current_status": "implemented",
+            "current_denominator": "expanded PERF PG packet: 34 cases (Batch 2A 19 + Batch 3A 11 + Batch 3B 4)",
+            "metrics_available": ["execution", "checker-backed consistency", "speedup"],
+            "missing_metrics": [],
+            "blockers": [],
+            "next_action": "keep as separate SQLGlot baseline candidate, not a silent replacement for optimize",
+            "claim_boundary": "separate baseline candidate only; not optimize-route replacement",
+        },
+        {
+            "baseline_family": "Direct LLM rewrite",
+            "planned_role": "generated_rewrite_baseline",
+            "current_status": "partially_implemented",
+            "current_denominator": "seed common-core PG packet: 9 cases",
+            "metrics_available": ["prompt/call/extraction execution", "checker-backed consistency", "seed speedup", "token usage"],
+            "missing_metrics": ["expanded PERF execution", "expanded PERF checker-backed consistency", "expanded PERF speedup"],
+            "blockers": ["expanded PERF route has not yet been formalized beyond preflight"],
+            "next_action": "run expanded PERF Direct LLM on the ready subset after preflight review",
+            "claim_boundary": "seed route is closed; expanded PERF not yet executed",
+        },
+        {
+            "baseline_family": "SQLGlot Transpile",
+            "planned_role": "cross_dialect_translation_baseline",
+            "current_status": "partially_implemented",
+            "current_denominator": "bounded PostgreSQL-side PORT packet: 6 cases",
+            "metrics_available": ["PG execution", "policy/reference consistency", "failure analysis"],
+            "missing_metrics": ["cross-engine closure", "full translation correctness", "uniform normalized checker policy across all PORT"],
+            "blockers": ["known PG-side failures on PORT_0012 and PORT_0013"],
+            "next_action": "retain as bounded PORT translation baseline with explicit PG-side-only framing",
+            "claim_boundary": "PORT PostgreSQL-side evidence only",
+        },
+        {
+            "baseline_family": "LLM Translate",
+            "planned_role": "cross_dialect_translation_baseline_llm_counterpart",
+            "current_status": "partially_implemented",
+            "current_denominator": "bounded PostgreSQL-side PORT packet: 6 cases",
+            "metrics_available": ["call", "extraction", "PG execution", "policy/reference consistency", "token usage"],
+            "missing_metrics": ["cross-engine closure", "full translation correctness"],
+            "blockers": [],
+            "next_action": "retain as bounded PORT translation baseline with token-cost caveat and PG-only boundary",
+            "claim_boundary": "PORT PostgreSQL-side evidence only",
+        },
+        {
+            "baseline_family": "Calcite HEP",
+            "planned_role": "symbolic_rule_based_rewrite_baseline",
+            "current_status": "preflight_only",
+            "current_denominator": "readiness subsets only (first-subset and pg-native-9 audit scopes)",
+            "metrics_available": ["readiness audit", "subset recommendations"],
+            "missing_metrics": ["execution", "checker", "speedup"],
+            "blockers": ["adapter/build path missing", "no actual parse or rewrite runner integrated"],
+            "next_action": "keep in readiness-only backlog unless a runnable adapter path is added",
+            "claim_boundary": "readiness only; not a runnable benchmark baseline",
+        },
+        {
+            "baseline_family": "LearnedRewrite",
+            "planned_role": "learned_rule_or_model_rewrite_baseline",
+            "current_status": "preflight_only",
+            "current_denominator": "readiness subsets only",
+            "metrics_available": ["readiness audit", "input-readiness scaffold"],
+            "missing_metrics": ["execution", "checker", "speedup"],
+            "blockers": ["artifact stack missing", "adapter/inference path missing"],
+            "next_action": "leave as subset-only readiness line until artifact/adapter path exists",
+            "claim_boundary": "readiness only; not integrated",
+        },
+        {
+            "baseline_family": "SlabCity",
+            "planned_role": "frontier_exception_baseline",
+            "current_status": "blocked",
+            "current_denominator": "none",
+            "metrics_available": ["readiness audit"],
+            "missing_metrics": ["execution", "checker", "speedup"],
+            "blockers": ["no local runner", "no adapter", "no reproducible service/runtime contract"],
+            "next_action": "keep deferred",
+            "claim_boundary": "deferred frontier exception only",
+        },
+        {
+            "baseline_family": "GenRewrite",
+            "planned_role": "frontier_generated_rewrite_baseline",
+            "current_status": "preflight_only",
+            "current_denominator": "readiness subsets only",
+            "metrics_available": ["readiness audit", "input/cost-readiness scaffold"],
+            "missing_metrics": ["execution", "checker", "speedup"],
+            "blockers": ["correction loop missing", "verifier/executor-feedback path missing", "retry/cost policy unfrozen"],
+            "next_action": "keep in appendix/readiness backlog",
+            "claim_boundary": "frontier subset-only readiness line",
+        },
+        {
+            "baseline_family": "R-Bot",
+            "planned_role": "retrieval_augmented_rewrite_baseline",
+            "current_status": "preflight_only",
+            "current_denominator": "readiness subsets only",
+            "metrics_available": ["readiness audit", "retrieval-readiness scaffold"],
+            "missing_metrics": ["execution", "checker", "speedup"],
+            "blockers": ["retrieval corpus/index missing", "demo/rule pool missing", "fair comparison policy missing"],
+            "next_action": "keep in readiness backlog until retrieval stack exists",
+            "claim_boundary": "retrieval-dependent subset-only readiness line",
+        },
+        {
+            "baseline_family": "LLM-R2",
+            "planned_role": "retrieval_augmented_rewrite_baseline",
+            "current_status": "preflight_only",
+            "current_denominator": "readiness subsets only",
+            "metrics_available": ["readiness audit", "retrieval-readiness scaffold"],
+            "missing_metrics": ["execution", "checker", "speedup"],
+            "blockers": ["retrieval corpus/index missing", "demo/rule pool missing", "fair comparison policy missing"],
+            "next_action": "keep in readiness backlog until retrieval stack exists",
+            "claim_boundary": "retrieval-dependent subset-only readiness line",
+        },
+        {
+            "baseline_family": "SQLSolver",
+            "planned_role": "formal_support_or_secondary_verifier",
+            "current_status": "not_integrated",
+            "current_denominator": "support-first readiness scope only",
+            "metrics_available": ["support-readiness audit"],
+            "missing_metrics": ["execution", "checker", "speedup", "support verdict output"],
+            "blockers": ["no runner", "no solver wrapper", "no schema/constraint extraction path"],
+            "next_action": "keep as bounded support-analysis backlog only",
+            "claim_boundary": "support-only, not leaderboard baseline",
+        },
+        {
+            "baseline_family": "VeriEQL",
+            "planned_role": "formal_support_or_secondary_verifier",
+            "current_status": "not_integrated",
+            "current_denominator": "support-first readiness scope only",
+            "metrics_available": ["support-readiness audit"],
+            "missing_metrics": ["execution", "checker", "speedup", "support verdict output"],
+            "blockers": ["no runner", "no solver wrapper", "no subset/timeout policy", "no schema/constraint extraction path"],
+            "next_action": "keep as bounded support-analysis backlog only",
+            "claim_boundary": "support-only, not leaderboard baseline",
+        },
+    ]
+    status_counts = Counter(str(record["current_status"]) for record in records)
+    payload = {
+        "command": "formal-baseline-coverage-audit",
+        "ok": True,
+        "ran_at_utc": utc_now(),
+        "output_path": f"reports/formal_expansion/{output_name}",
+        "baseline_count": len(records),
+        "status_counts": dict(sorted(status_counts.items())),
+        "records": records,
+        "issues": [],
+        "claim_boundary": "baseline_coverage_audit_only_not_execution_or_new_metrics",
+    }
+    write_formal_expansion_report(output_name, payload)
+    return print_and_exit(payload, 0)
+
+
+def cmd_formal_expanded_perf_direct_llm_preflight(args: argparse.Namespace) -> int:
+    output_name = normalize_formal_expansion_output_name(args.output)
+    execute_refused_name = "expanded_perf_direct_llm_preflight_execute_refused_v0.json"
+    if args.execute:
+        payload = {
+            "command": "formal-expanded-perf-direct-llm-preflight",
+            "ok": False,
+            "ran_at_utc": utc_now(),
+            "output_path": f"reports/formal_expansion/{execute_refused_name}",
+            "issues": [
+                {
+                    "type": "execute_not_supported",
+                    "message": "formal-expanded-perf-direct-llm-preflight is read-only and does not support --execute",
+                }
+            ],
+            "claim_boundary": "expanded_perf_direct_llm_preflight_only_not_model_or_sql_execution",
+        }
+        write_formal_expansion_report(execute_refused_name, payload)
+        return print_and_exit(payload, 1)
+
+    candidate_case_ids = list(FORMAL_COMMON_CORE_BATCH2A_PERF_CASES) + list(FORMAL_COMMON_CORE_BATCH3A_PERF_CASES) + list(FORMAL_COMMON_CORE_BATCH3B_PERF_CASES)
+    env_config = resolve_llm_endpoint_config()
+    api_env_status = "<set>" if env_config["api_key_visible"] else "<missing>"
+
+    execution_report_paths = [
+        FORMAL_EXPANSION_REPORT_DIR / "batch2a_pg_execution_v0.json",
+        FORMAL_EXPANSION_REPORT_DIR / "batch3a_perf_pg_execution_v0.json",
+        FORMAL_EXPANSION_REPORT_DIR / "batch3b_perf_pg_execution_v0.json",
+    ]
+    checker_report_paths = [
+        FORMAL_EXPANSION_REPORT_DIR / "batch2a_sqlglot_no_opt_checker_v0.json",
+        FORMAL_EXPANSION_REPORT_DIR / "batch3a_sqlglot_no_opt_checker_v0.json",
+        FORMAL_EXPANSION_REPORT_DIR / "batch3b_perf_sqlglot_no_opt_checker_v0.json",
+    ]
+    execution_reports = [load_json_if_present(path) or {} for path in execution_report_paths]
+    checker_reports = [load_json_if_present(path) or {} for path in checker_report_paths]
+
+    issues: list[dict[str, Any]] = []
+    for path, report in [*zip(execution_report_paths, execution_reports), *zip(checker_report_paths, checker_reports)]:
+        if not report:
+            issues.append({"type": "missing_input_report", "path": relative_to_root(path)})
+
+    native_execution_map: dict[str, dict[str, Any]] = {}
+    for report in execution_reports:
+        for record in report.get("records", []):
+            if str(record.get("route", "")).strip().upper() == "NATIVE_IDENTITY":
+                native_execution_map[str(record.get("case_id", "")).strip().upper()] = record
+
+    checker_map: dict[str, dict[str, Any]] = {}
+    for report in checker_reports:
+        for record in report.get("records", []):
+            case_id = str(record.get("case_id", "")).strip().upper()
+            if case_id:
+                checker_map[case_id] = record
+
+    runtime_policy = {
+        "repeat_count": 5,
+        "warmup_count": 1,
+        "statement_timeout_ms": 30000,
+        "primary_statistic": "median",
+        "tie_threshold": 0.05,
+        "regression_threshold": 1.2,
+    }
+    runtime_policy_exists = True
+
+    records: list[dict[str, Any]] = []
+    ready_cases: list[str] = []
+    blocked_cases: list[str] = []
+    blocker_counts: Counter[str] = Counter()
+
+    for case_id in candidate_case_ids:
+        inferred = case_root_for_case_id(case_id)
+        pool = inferred[0] if inferred else "unknown"
+        case_root = inferred[1] if inferred else None
+        manifest_path = case_root / "manifest.yaml" if case_root else ROOT / "__missing__"
+        source_sql_path = case_root / "source.sql" if case_root else ROOT / "__missing__"
+        source_sql_exists = source_sql_path.is_file()
+        manifest_exists = manifest_path.is_file()
+        validation_schema_expected = validation_schema_hint(case_id)
+        validation_schema_ready = bool(validation_schema_expected)
+
+        checker_artifacts = formal_common_core_checker_or_result_artifacts(case_root) if case_root else []
+        checker_evidence_exists = bool(checker_artifacts)
+        native_execution_record = native_execution_map.get(case_id, {})
+        prior_source_execution_evidence_exists = str(native_execution_record.get("execution_status", "")).strip().lower() == "success"
+
+        prompt_record = build_llm_prompt_package(
+            {"case_id": case_id, "pool": pool, "why_selected": "expanded_perf_formal_preflight", "caveat": ""},
+            target_dialect="postgres",
+            model_label="gpt-5.2",
+        )
+        prompt_package_status = str(prompt_record.get("prompt_package_status", "missing")).strip()
+        prompt_package_buildable = prompt_package_status == "ready"
+
+        route_checker_record = checker_map.get(case_id, {})
+        checker_gate_passed = str(route_checker_record.get("checker_status", "")).strip().lower() == "consistent"
+
+        output_root = FORMAL_EXPANSION_REPORT_DIR
+        case_slug = case_id.lower()
+        future_call_report_path = f"reports/formal_expansion/expanded_perf_direct_llm_call_{case_slug}_v0.json"
+        future_execution_report_path = f"reports/formal_expansion/expanded_perf_direct_llm_pg_{case_slug}_v0.json"
+        future_checker_output_path = (
+            f"reports/formal_expansion/result_checks/expanded_perf/llm_direct_rewrite/{case_slug}.json"
+        )
+        future_source_tsv_path = (
+            f"reports/formal_expansion/result_materialization/expanded_perf/source/{case_slug}.tsv"
+        )
+        future_candidate_tsv_path = (
+            f"reports/formal_expansion/result_materialization/expanded_perf/llm_direct_rewrite/{case_slug}.tsv"
+        )
+        future_speedup_report_path = "reports/formal_expansion/expanded_perf_direct_llm_speedup_run_v0.json"
+
+        blockers: list[str] = []
+        if not source_sql_exists or not manifest_exists or not prompt_package_buildable:
+            blockers.append("missing_prompt_inputs")
+        if not checker_evidence_exists or not checker_gate_passed:
+            blockers.append("missing_checker_gate")
+        if not runtime_policy_exists:
+            blockers.append("missing_runtime_policy")
+        if not prior_source_execution_evidence_exists:
+            blockers.append("missing_source_execution_evidence")
+
+        if not source_sql_exists or not manifest_exists or not prompt_package_buildable:
+            preflight_status = "missing_prompt_inputs"
+        elif not checker_evidence_exists or not checker_gate_passed:
+            preflight_status = "missing_checker_gate"
+        elif not runtime_policy_exists:
+            preflight_status = "missing_runtime_policy"
+        elif not prior_source_execution_evidence_exists or not validation_schema_ready:
+            preflight_status = "blocked_other"
+        elif not env_config["api_key_visible"]:
+            preflight_status = "env_blocked"
+        else:
+            preflight_status = "ready_for_direct_llm_run"
+
+        if preflight_status == "ready_for_direct_llm_run":
+            ready_cases.append(case_id)
+        else:
+            blocked_cases.append(case_id)
+            blocker_counts[preflight_status] += 1
+
+        records.append(
+            {
+                "case_id": case_id,
+                "pool": pool,
+                "manifest_exists": manifest_exists,
+                "source_sql_exists": source_sql_exists,
+                "validation_schema_expected": validation_schema_expected,
+                "validation_schema_ready": validation_schema_ready,
+                "checker_evidence_exists": checker_evidence_exists,
+                "checker_gate_passed": checker_gate_passed,
+                "checker_status": route_checker_record.get("checker_status", "missing"),
+                "prior_source_execution_evidence_exists": prior_source_execution_evidence_exists,
+                "runtime_policy_exists": runtime_policy_exists,
+                "runtime_policy": runtime_policy,
+                "prompt_package_status": prompt_package_status,
+                "prompt_package_buildable": prompt_package_buildable,
+                "prompt_character_count": prompt_record.get("prompt_character_count"),
+                "estimated_prompt_tokens": prompt_record.get("estimated_prompt_tokens"),
+                "api_env_status": api_env_status,
+                "api_base_url_status": "<set>" if env_config["base_url_visible"] else "<missing>",
+                "future_call_report_path": future_call_report_path,
+                "future_execution_report_path": future_execution_report_path,
+                "future_checker_output_path": future_checker_output_path,
+                "future_source_tsv_path": future_source_tsv_path,
+                "future_candidate_tsv_path": future_candidate_tsv_path,
+                "future_speedup_report_path": future_speedup_report_path,
+                "preflight_status": preflight_status,
+                "blockers": blockers,
+                "claim_boundary": "expanded_perf_direct_llm_preflight_only_not_model_or_sql_execution",
+            }
+        )
+
+    payload = {
+        "command": "formal-expanded-perf-direct-llm-preflight",
+        "ok": not issues,
+        "ran_at_utc": utc_now(),
+        "output_path": f"reports/formal_expansion/{output_name}",
+        "case_count": len(candidate_case_ids),
+        "ready_count": len(ready_cases),
+        "blocked_count": len(blocked_cases),
+        "env_status": {
+            "api_key": api_env_status,
+            "base_url": "<set>" if env_config["base_url_visible"] else "<missing>",
+            "provider_mode": env_config["provider_mode"],
+        },
+        "recommended_execution_subset": ready_cases,
+        "blockers": dict(sorted(blocker_counts.items())),
+        "records": records,
+        "issues": issues,
+        "next_action": (
+            "run Direct LLM expanded PERF on the ready subset"
+            if ready_cases
+            else "resolve the preflight blockers before any expanded PERF Direct LLM run"
+        ),
+        "claim_boundary": "expanded_perf_direct_llm_preflight_only_not_model_or_sql_execution",
+    }
+    write_formal_expansion_report(output_name, payload)
+    return print_and_exit(payload, 0 if payload["ok"] else 1)
+
+
 def cmd_formal_batch2c_port_pg_matrix_consistency(args: argparse.Namespace) -> int:
     output_name = normalize_formal_expansion_output_name(args.output)
     execute_refused_name = "batch2c_port_pg_matrix_consistency_execute_refused_v0.json"
@@ -31744,6 +32141,21 @@ def build_parser() -> argparse.ArgumentParser:
     )
     formal_final_port_expansion_feasibility_preflight_parser.add_argument("--execute", action="store_true", default=False)
     formal_final_port_expansion_feasibility_preflight_parser.set_defaults(func=cmd_formal_final_port_expansion_feasibility_preflight)
+
+    formal_baseline_coverage_audit_parser = subparsers.add_parser("formal-baseline-coverage-audit")
+    formal_baseline_coverage_audit_parser.add_argument(
+        "--output",
+        default="baseline_coverage_audit_v0.json",
+    )
+    formal_baseline_coverage_audit_parser.set_defaults(func=cmd_formal_baseline_coverage_audit)
+
+    formal_expanded_perf_direct_llm_preflight_parser = subparsers.add_parser("formal-expanded-perf-direct-llm-preflight")
+    formal_expanded_perf_direct_llm_preflight_parser.add_argument(
+        "--output",
+        default="expanded_perf_direct_llm_preflight_v0.json",
+    )
+    formal_expanded_perf_direct_llm_preflight_parser.add_argument("--execute", action="store_true", default=False)
+    formal_expanded_perf_direct_llm_preflight_parser.set_defaults(func=cmd_formal_expanded_perf_direct_llm_preflight)
 
     formal_batch2c_port_pg_matrix_consistency_parser = subparsers.add_parser("formal-batch2c-port-pg-matrix-consistency")
     formal_batch2c_port_pg_matrix_consistency_parser.add_argument("--case-id", action="append", default=[])
