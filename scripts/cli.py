@@ -20586,6 +20586,549 @@ def cmd_formal_batch3a_speedup_run(args: argparse.Namespace) -> int:
     return print_and_exit(payload, 0 if payload["ok"] else 1)
 
 
+def cmd_formal_batch3b_perf_speedup_run(args: argparse.Namespace) -> int:
+    output_name = normalize_formal_expansion_output_name(args.output)
+    valid_case_ids = set(FORMAL_COMMON_CORE_BATCH3B_PERF_CASES)
+    valid_routes = {
+        "HUMAN_REFERENCE_POSITIVE": {
+            "route": "human_reference_positive",
+            "baseline_id": "HUMAN_REFERENCE_POSITIVE",
+            "candidate_kind": "file",
+        },
+        "SQLGLOT_TRANSPILE_SAME_DIALECT_NO_OPT": {
+            "route": "sqlglot_transpile_same_dialect_no_opt",
+            "baseline_id": "SQLGLOT_TRANSPILE_SAME_DIALECT_NO_OPT",
+            "candidate_kind": "sqlglot_transpile_no_opt",
+        },
+    }
+
+    selected_case_ids = [str(case_id).strip().upper() for case_id in (args.case_id or []) if str(case_id).strip()]
+    if not selected_case_ids:
+        selected_case_ids = list(FORMAL_COMMON_CORE_BATCH3B_PERF_CASES)
+    selected_route_keys = [str(route).strip().upper() for route in (args.route or []) if str(route).strip()]
+    if not selected_route_keys:
+        selected_route_keys = list(valid_routes)
+
+    invalid_case_ids = [case_id for case_id in selected_case_ids if case_id not in valid_case_ids]
+    invalid_route_keys = [route for route in selected_route_keys if route not in valid_routes]
+    override_missing = not bool(getattr(args, "paper_draft_override", False))
+    if (invalid_case_ids or invalid_route_keys or (args.execute and override_missing)):
+        payload = {
+            "command": "formal-batch3b-perf-speedup-run",
+            "ok": False,
+            "ran_at_utc": utc_now(),
+            "output_path": "reports/formal_expansion/batch3b_perf_speedup_run_execute_refused_v0.json",
+            "issues": [
+                *({"type": "unsupported_case_id", "case_id": case_id} for case_id in invalid_case_ids),
+                *({"type": "unsupported_route", "route": route} for route in invalid_route_keys),
+                *(
+                    [{
+                        "type": "paper_draft_override_required",
+                        "message": "Batch 3B execution requires --paper-draft-override",
+                    }]
+                    if args.execute and override_missing
+                    else []
+                ),
+            ],
+            "guardrails": {
+                "database_execution": "enabled_only_with_execute_and_paper_draft_override",
+                "sql_execution": "postgres_only_source_and_selected_candidate_routes",
+                "sqlglot_optimize": "disabled",
+                "model_api_call": "disabled",
+                "mysql_execution": "disabled",
+                "spark_execution": "disabled",
+                "port_execution": "disabled",
+                "cons_execution": "disabled",
+                "checker_execution": "disabled",
+                "speedup_scoring": "enabled_only_for_frozen_batch3b_policy",
+                "plan_collection": "disabled",
+                "case_artifact_write": "disabled",
+                "registry_writeback": "disabled",
+            },
+            "claim_boundary": "batch3b_speedup_run_perf_only_paper_draft_not_final_leaderboard",
+        }
+        write_formal_expansion_report("batch3b_perf_speedup_run_execute_refused_v0.json", payload)
+        return print_and_exit(payload, 1)
+
+    selected_case_ids = [case_id for case_id in selected_case_ids if case_id in valid_case_ids]
+    selected_route_keys = [route for route in selected_route_keys if route in valid_routes]
+
+    env_visibility = pg_env_visibility()
+    required_env_visible = all(env_visibility[name] for name in ["PGHOST", "PGPORT", "PGDATABASE", "PGUSER"])
+    pg_password_present = env_visibility["PGPASSWORD"]
+    psycopg_available = safe_module_available("psycopg")
+    sqlglot_available = safe_module_available("sqlglot")
+    issues: list[dict[str, Any]] = []
+    issues.extend({"type": "unsupported_case_id", "case_id": case_id} for case_id in invalid_case_ids)
+    issues.extend({"type": "unsupported_route", "route": route} for route in invalid_route_keys)
+
+    if args.execute and not required_env_visible:
+        issues.append({"type": "missing_pg_env", "message": "required env: PGHOST, PGPORT, PGDATABASE, PGUSER"})
+    if args.execute and not psycopg_available:
+        issues.append({"type": "psycopg_unavailable", "message": "psycopg is not installed"})
+    if "SQLGLOT_TRANSPILE_SAME_DIALECT_NO_OPT" in selected_route_keys and not sqlglot_available:
+        issues.append({"type": "sqlglot_unavailable", "message": "sqlglot is not installed"})
+
+    preflight_report = load_json_if_present(FORMAL_EXPANSION_REPORT_DIR / "batch3b_perf_speedup_preflight_v0.json") or {}
+    execution_report = load_json_if_present(FORMAL_EXPANSION_REPORT_DIR / "batch3b_perf_pg_execution_v0.json") or {}
+    no_opt_checker_report = load_json_if_present(FORMAL_EXPANSION_REPORT_DIR / "batch3b_perf_sqlglot_no_opt_checker_v0.json") or {}
+
+    if not preflight_report:
+        issues.append({"type": "missing_speedup_preflight_report", "path": "reports/formal_expansion/batch3b_perf_speedup_preflight_v0.json"})
+    if not execution_report:
+        issues.append({"type": "missing_batch3b_execution_report", "path": "reports/formal_expansion/batch3b_perf_pg_execution_v0.json"})
+    if "SQLGLOT_TRANSPILE_SAME_DIALECT_NO_OPT" in selected_route_keys and not no_opt_checker_report:
+        issues.append({"type": "missing_no_opt_checker_report", "path": "reports/formal_expansion/batch3b_perf_sqlglot_no_opt_checker_v0.json"})
+
+    preflight_record_map = {
+        (str(record.get("case_id", "")).strip().upper(), str(record.get("route", "")).strip().upper()): record
+        for record in preflight_report.get("records", [])
+        if record.get("case_id") and record.get("route")
+    }
+    execution_record_map = {
+        (str(record.get("case_id", "")).strip().upper(), str(record.get("baseline_id", "")).strip().upper()): record
+        for record in execution_report.get("records", [])
+        if record.get("case_id") and record.get("baseline_id")
+    }
+    no_opt_checker_record_map = {
+        str(record.get("case_id", "")).strip().upper(): record
+        for record in no_opt_checker_report.get("records", [])
+        if record.get("case_id")
+    }
+
+    sqlglot_module = None
+    psycopg = None
+    if "SQLGLOT_TRANSPILE_SAME_DIALECT_NO_OPT" in selected_route_keys and sqlglot_available:
+        try:
+            sqlglot_module = importlib.import_module("sqlglot")
+        except Exception as exc:
+            sqlglot_available = False
+            issues.append({"type": "sqlglot_import_error", "message": str(exc)})
+    if args.execute and psycopg_available:
+        try:
+            psycopg = importlib.import_module("psycopg")
+        except Exception as exc:
+            psycopg_available = False
+            issues.append({"type": "psycopg_import_error", "message": str(exc)})
+
+    repeat_count = 5
+    warmup_count = 1
+    statement_timeout_ms = 30000
+    primary_statistic = "median"
+    tie_threshold = 0.05
+    regression_threshold = 1.2
+
+    payload = {
+        "command": "formal-batch3b-perf-speedup-run",
+        "ran_at_utc": utc_now(),
+        "output_path": f"reports/formal_expansion/{output_name}",
+        "case_count": len(selected_case_ids),
+        "route_count": len(selected_route_keys),
+        "repeat_count": repeat_count,
+        "warmup_count": warmup_count,
+        "statement_timeout_ms": statement_timeout_ms,
+        "primary_runtime_statistic": primary_statistic,
+        "tie_threshold": tie_threshold,
+        "regression_threshold": regression_threshold,
+        "pg_env_visible": required_env_visible,
+        "pg_password_present": pg_password_present,
+        "psycopg_available": psycopg_available,
+        "sqlglot_available": sqlglot_available,
+        "guardrails": {
+            "database_execution": "enabled_only_with_execute_and_paper_draft_override",
+            "sql_execution": "postgres_only_source_and_selected_candidate_routes",
+            "sqlglot_optimize": "disabled",
+            "model_api_call": "disabled",
+            "mysql_execution": "disabled",
+            "spark_execution": "disabled",
+            "port_execution": "disabled",
+            "cons_execution": "disabled",
+            "checker_execution": "disabled",
+            "speedup_scoring": "enabled_only_for_frozen_batch3b_policy",
+            "plan_collection": "disabled",
+            "case_artifact_write": "disabled",
+            "registry_writeback": "disabled",
+        },
+        "claim_boundary": "batch3b_speedup_run_perf_only_paper_draft_not_final_leaderboard",
+    }
+
+    def runtime_stats(values: list[float]) -> tuple[float | None, float | None, float | None]:
+        if not values:
+            return None, None, None
+        return float(statistics.median(values)), min(values), float(sum(values) / len(values))
+
+    def geometric_mean(values: list[float]) -> float | None:
+        positive_values = [value for value in values if isinstance(value, (int, float)) and value > 0]
+        if not positive_values:
+            return None
+        return float(math.exp(sum(math.log(value) for value in positive_values) / len(positive_values)))
+
+    def execute_sql(cur: Any, sql_text: str) -> tuple[int | None, float]:
+        start = time.perf_counter()
+        cur.execute(sql_text)
+        if cur.description is not None:
+            rows = cur.fetchall()
+            row_count = len(rows)
+        else:
+            row_count = cur.rowcount if cur.rowcount >= 0 else None
+        runtime_ms = round((time.perf_counter() - start) * 1000, 3)
+        return row_count, runtime_ms
+
+    records: list[dict[str, Any]] = []
+    success_count_by_route: Counter[str] = Counter()
+    failed_count_by_route: Counter[str] = Counter()
+    failure_categories: Counter[str] = Counter()
+
+    for case_id in selected_case_ids:
+        inferred = case_root_for_case_id(case_id)
+        validation_schema = validation_schema_hint(case_id)
+        if inferred is None:
+            for route_key in selected_route_keys:
+                route_spec = valid_routes[route_key]
+                records.append(
+                    {
+                        "case_id": case_id,
+                        "route": route_key,
+                        "baseline_id": route_spec["baseline_id"],
+                        "validation_schema": validation_schema,
+                        "search_path_after_set": "",
+                        "source_warmup_runtime_ms": None,
+                        "candidate_warmup_runtime_ms": None,
+                        "source_runtime_ms_values": [],
+                        "candidate_runtime_ms_values": [],
+                        "source_median_runtime_ms": None,
+                        "candidate_median_runtime_ms": None,
+                        "source_min_runtime_ms": None,
+                        "candidate_min_runtime_ms": None,
+                        "source_mean_runtime_ms": None,
+                        "candidate_mean_runtime_ms": None,
+                        "speedup_ratio": None,
+                        "win_tie_loss_status": "unknown",
+                        "regression_20pct": None,
+                        "source_row_count": None,
+                        "candidate_row_count": None,
+                        "row_count_matches_source": None,
+                        "candidate_sql_source": "",
+                        "generated_sql_preview": "",
+                        "generated_sql_character_count": None,
+                        "execution_status": "failed",
+                        "failure_category": "case_not_resolved",
+                        "error_message": "could not resolve case root from case_id",
+                        "artifact_claim_boundary": "batch3b_speedup_run_perf_only_paper_draft_not_final_leaderboard",
+                    }
+                )
+                failed_count_by_route[route_key] += 1
+                failure_categories["case_not_resolved"] += 1
+            continue
+
+        pool, case_root = inferred
+        source_sql_path = case_root / "source.sql"
+        positive_paths = existing_case_sql_paths(case_root, "rewrite_pos_*.sql")
+        positive_sql_path = positive_paths[0] if positive_paths else (case_root / "rewrite_pos_01.sql")
+        source_sql_exists = source_sql_path.is_file()
+        source_sql = source_sql_path.read_text(encoding="utf-8") if source_sql_exists else ""
+
+        for route_key in selected_route_keys:
+            route_spec = valid_routes[route_key]
+            candidate_sql_source = ""
+            generated_sql_preview = ""
+            generated_sql_character_count: int | None = None
+            source_warmup_runtime_ms: float | None = None
+            candidate_warmup_runtime_ms: float | None = None
+            source_runtime_ms_values: list[float] = []
+            candidate_runtime_ms_values: list[float] = []
+            source_row_count: int | None = None
+            candidate_row_count: int | None = None
+            speedup_ratio: float | None = None
+            win_tie_loss_status = "unknown"
+            regression_20pct: bool | None = None
+            row_count_matches_source: bool | None = None
+            failure_category = "none"
+            error_message = ""
+            execution_status = "dry_run_only"
+            search_path_after_set = ""
+            candidate_sql = ""
+
+            blockers = []
+            preflight_record = preflight_record_map.get((case_id, route_key), {})
+            if not source_sql_exists:
+                blockers.append("missing_source_sql")
+            if not bool(preflight_record.get("candidate_sql_source_available")):
+                blockers.append("missing_candidate_sql_source")
+            if not bool(preflight_record.get("consistency_gate_passed")):
+                blockers.append("consistency_gate_not_passed")
+            if not bool(preflight_record.get("runtime_policy_exists")):
+                blockers.append("runtime_policy_missing")
+            if not bool(preflight_record.get("validation_schema_ready")):
+                blockers.append("validation_schema_not_ready")
+            if str(preflight_record.get("route_eligibility", "")) != "eligible_for_batch3b_speedup_runtime":
+                blockers.append("route_not_eligible")
+
+            if route_key == "HUMAN_REFERENCE_POSITIVE":
+                candidate_sql_source = relative_to_root(positive_sql_path)
+                if not positive_sql_path.is_file():
+                    blockers.append("missing_positive_sql")
+                if str((execution_record_map.get((case_id, "HUMAN_REFERENCE_POSITIVE")) or {}).get("execution_status", "")) != "success":
+                    blockers.append("missing_human_execution_success")
+            else:
+                checker_record = no_opt_checker_record_map.get(case_id, {})
+                if str(checker_record.get("checker_status", "")) != "consistent":
+                    blockers.append("missing_no_opt_checker_consistency")
+                if str(checker_record.get("candidate_execution_status", "")) != "success":
+                    blockers.append("missing_no_opt_candidate_execution_success")
+                if str(checker_record.get("source_execution_status", "")) != "success":
+                    blockers.append("missing_no_opt_source_execution_success")
+                if not sqlglot_available or sqlglot_module is None:
+                    blockers.append("sqlglot_unavailable")
+
+            blockers = list(dict.fromkeys(blockers))
+
+            if not args.execute:
+                execution_status = "dry_run_only"
+                if route_key == "SQLGLOT_TRANSPILE_SAME_DIALECT_NO_OPT" and source_sql_exists and sqlglot_available and sqlglot_module is not None:
+                    try:
+                        transpiled = sqlglot_module.transpile(source_sql, read="postgres", write="postgres")
+                        candidate_sql = str(transpiled[0]).strip() if transpiled else ""
+                        generated_sql_preview = batch2a_sql_preview_text(candidate_sql) if candidate_sql else ""
+                        generated_sql_character_count = len(candidate_sql) if candidate_sql else None
+                        candidate_sql_source = "sqlglot.transpile(postgres->postgres,no_opt)"
+                    except Exception:
+                        candidate_sql_source = "sqlglot.transpile(postgres->postgres,no_opt)"
+                records.append(
+                    {
+                        "case_id": case_id,
+                        "pool": pool,
+                        "route": route_key,
+                        "baseline_id": route_spec["baseline_id"],
+                        "validation_schema": validation_schema,
+                        "search_path_after_set": search_path_after_set,
+                        "source_warmup_runtime_ms": source_warmup_runtime_ms,
+                        "candidate_warmup_runtime_ms": candidate_warmup_runtime_ms,
+                        "source_runtime_ms_values": source_runtime_ms_values,
+                        "candidate_runtime_ms_values": candidate_runtime_ms_values,
+                        "source_median_runtime_ms": None,
+                        "candidate_median_runtime_ms": None,
+                        "source_min_runtime_ms": None,
+                        "candidate_min_runtime_ms": None,
+                        "source_mean_runtime_ms": None,
+                        "candidate_mean_runtime_ms": None,
+                        "speedup_ratio": speedup_ratio,
+                        "win_tie_loss_status": win_tie_loss_status,
+                        "regression_20pct": regression_20pct,
+                        "source_row_count": source_row_count,
+                        "candidate_row_count": candidate_row_count,
+                        "row_count_matches_source": row_count_matches_source,
+                        "candidate_sql_source": candidate_sql_source,
+                        "generated_sql_preview": generated_sql_preview,
+                        "generated_sql_character_count": generated_sql_character_count,
+                        "execution_status": execution_status,
+                        "failure_category": failure_category,
+                        "error_message": error_message,
+                        "artifact_claim_boundary": "batch3b_speedup_run_perf_only_paper_draft_not_final_leaderboard",
+                    }
+                )
+                continue
+
+            if issues:
+                execution_status = "blocked_invalid_selection"
+                failure_category = "invalid_selection_or_environment"
+                error_message = "; ".join(sorted({str(issue.get('type', 'issue')) for issue in issues}))
+            elif blockers:
+                execution_status = "blocked_preflight"
+                failure_category = "preflight_blocked"
+                error_message = "; ".join(blockers)
+            else:
+                if route_key == "HUMAN_REFERENCE_POSITIVE":
+                    candidate_sql = positive_sql_path.read_text(encoding="utf-8")
+                else:
+                    transpiled = sqlglot_module.transpile(source_sql, read="postgres", write="postgres")
+                    candidate_sql = str(transpiled[0]).strip() if transpiled else ""
+                    candidate_sql_source = "sqlglot.transpile(postgres->postgres,no_opt)"
+                    generated_sql_preview = batch2a_sql_preview_text(candidate_sql)
+                    generated_sql_character_count = len(candidate_sql)
+                    if not candidate_sql:
+                        execution_status = "failed"
+                        failure_category = "empty_transpile_output"
+                        error_message = "sqlglot transpile returned no SQL text"
+
+                if execution_status != "failed":
+                    try:
+                        with psycopg.connect(
+                            host=os.environ["PGHOST"],
+                            port=os.environ["PGPORT"],
+                            dbname=os.environ["PGDATABASE"],
+                            user=os.environ["PGUSER"],
+                            password=os.environ.get("PGPASSWORD"),
+                            options=(
+                                f"-c statement_timeout={statement_timeout_ms} "
+                                "-c default_transaction_read_only=on"
+                            ),
+                            autocommit=False,
+                        ) as conn:
+                            with conn.cursor() as cur:
+                                cur.execute("SELECT to_regnamespace(%s)", (validation_schema,))
+                                schema_row = cur.fetchone()
+                                schema_name = schema_row[0] if schema_row else None
+                                if not schema_name:
+                                    execution_status = "failed"
+                                    failure_category = "missing_validation_schema"
+                                    error_message = f"validation schema not found: {validation_schema}"
+                                else:
+                                    cur.execute(
+                                        psycopg.sql.SQL("SET search_path TO {}, public").format(
+                                            psycopg.sql.Identifier(validation_schema)
+                                        )
+                                    )
+                                    search_path_after_set = f"{validation_schema}, public"
+
+                                    source_row_count, source_warmup_runtime_ms = execute_sql(cur, source_sql)
+                                    conn.rollback()
+
+                                    cur.execute(
+                                        psycopg.sql.SQL("SET search_path TO {}, public").format(
+                                            psycopg.sql.Identifier(validation_schema)
+                                        )
+                                    )
+                                    candidate_row_count, candidate_warmup_runtime_ms = execute_sql(cur, candidate_sql)
+                                    conn.rollback()
+
+                                    for repeat_index in range(repeat_count):
+                                        order = ["source", "candidate"] if repeat_index % 2 == 0 else ["candidate", "source"]
+                                        for role in order:
+                                            cur.execute(
+                                                psycopg.sql.SQL("SET search_path TO {}, public").format(
+                                                    psycopg.sql.Identifier(validation_schema)
+                                                )
+                                            )
+                                            sql_text = source_sql if role == "source" else candidate_sql
+                                            rc, rt = execute_sql(cur, sql_text)
+                                            conn.rollback()
+                                            if role == "source":
+                                                source_runtime_ms_values.append(rt)
+                                                if source_row_count is None:
+                                                    source_row_count = rc
+                                            else:
+                                                candidate_runtime_ms_values.append(rt)
+                                                if candidate_row_count is None:
+                                                    candidate_row_count = rc
+
+                                    execution_status = "success"
+                    except Exception as exc:
+                        execution_status = "failed"
+                        failure_category = exc.__class__.__name__
+                        error_message = str(exc)
+
+            source_median_runtime_ms, source_min_runtime_ms, source_mean_runtime_ms = runtime_stats(source_runtime_ms_values)
+            candidate_median_runtime_ms, candidate_min_runtime_ms, candidate_mean_runtime_ms = runtime_stats(candidate_runtime_ms_values)
+            if (
+                isinstance(source_median_runtime_ms, (int, float))
+                and isinstance(candidate_median_runtime_ms, (int, float))
+                and candidate_median_runtime_ms > 0
+            ):
+                speedup_ratio = float(source_median_runtime_ms / candidate_median_runtime_ms)
+                if speedup_ratio > 1.0 + tie_threshold:
+                    win_tie_loss_status = "win"
+                elif speedup_ratio < 1.0 - tie_threshold:
+                    win_tie_loss_status = "loss"
+                else:
+                    win_tie_loss_status = "tie"
+                regression_20pct = bool(candidate_median_runtime_ms >= regression_threshold * source_median_runtime_ms)
+
+            if source_row_count is not None and candidate_row_count is not None:
+                row_count_matches_source = source_row_count == candidate_row_count
+
+            if execution_status == "success":
+                success_count_by_route[route_key] += 1
+            elif execution_status == "failed":
+                failed_count_by_route[route_key] += 1
+                failure_categories[failure_category] += 1
+
+            records.append(
+                {
+                    "case_id": case_id,
+                    "pool": pool,
+                    "route": route_key,
+                    "baseline_id": route_spec["baseline_id"],
+                    "validation_schema": validation_schema,
+                    "search_path_after_set": search_path_after_set,
+                    "source_warmup_runtime_ms": source_warmup_runtime_ms,
+                    "candidate_warmup_runtime_ms": candidate_warmup_runtime_ms,
+                    "source_runtime_ms_values": source_runtime_ms_values,
+                    "candidate_runtime_ms_values": candidate_runtime_ms_values,
+                    "source_median_runtime_ms": source_median_runtime_ms,
+                    "candidate_median_runtime_ms": candidate_median_runtime_ms,
+                    "source_min_runtime_ms": source_min_runtime_ms,
+                    "candidate_min_runtime_ms": candidate_min_runtime_ms,
+                    "source_mean_runtime_ms": source_mean_runtime_ms,
+                    "candidate_mean_runtime_ms": candidate_mean_runtime_ms,
+                    "speedup_ratio": speedup_ratio,
+                    "win_tie_loss_status": win_tie_loss_status,
+                    "regression_20pct": regression_20pct,
+                    "source_row_count": source_row_count,
+                    "candidate_row_count": candidate_row_count,
+                    "row_count_matches_source": row_count_matches_source,
+                    "candidate_sql_source": candidate_sql_source,
+                    "generated_sql_preview": generated_sql_preview,
+                    "generated_sql_character_count": generated_sql_character_count,
+                    "execution_status": execution_status,
+                    "failure_category": failure_category,
+                    "error_message": error_message,
+                    "artifact_claim_boundary": "batch3b_speedup_run_perf_only_paper_draft_not_final_leaderboard",
+                }
+            )
+
+    executed_count = sum(1 for record in records if record["execution_status"] in {"success", "failed"})
+    success_count = sum(1 for record in records if record["execution_status"] == "success")
+    failed_count = sum(1 for record in records if record["execution_status"] == "failed")
+    skipped_count = len(records) - executed_count
+    row_count_match_count = sum(1 for record in records if record.get("row_count_matches_source") is True)
+    row_count_mismatch_count = sum(1 for record in records if record.get("row_count_matches_source") is False)
+
+    route_summaries: dict[str, dict[str, Any]] = {}
+    for route_key in selected_route_keys:
+        route_records = [record for record in records if record["route"] == route_key]
+        valid_speedup_values = [
+            float(record["speedup_ratio"])
+            for record in route_records
+            if record["execution_status"] == "success" and isinstance(record.get("speedup_ratio"), (int, float))
+        ]
+        valid_case_count = len(valid_speedup_values)
+        route_summaries[route_key] = {
+            "gm_speedup": geometric_mean(valid_speedup_values),
+            "win_count": sum(1 for record in route_records if record.get("win_tie_loss_status") == "win"),
+            "tie_count": sum(1 for record in route_records if record.get("win_tie_loss_status") == "tie"),
+            "loss_count": sum(1 for record in route_records if record.get("win_tie_loss_status") == "loss"),
+            "regression_20pct_count": sum(1 for record in route_records if record.get("regression_20pct") is True),
+            "regression_20pct_rate": (
+                float(sum(1 for record in route_records if record.get("regression_20pct") is True) / valid_case_count)
+                if valid_case_count
+                else None
+            ),
+            "valid_speedup_case_count": valid_case_count,
+            "row_count_match_count": sum(1 for record in route_records if record.get("row_count_matches_source") is True),
+        }
+
+    payload.update(
+        {
+            "ok": not issues and all(
+                record["execution_status"] == ("success" if args.execute else "dry_run_only") for record in records
+            ),
+            "total_records": len(records),
+            "executed_count": executed_count,
+            "success_count": success_count,
+            "failed_count": failed_count,
+            "skipped_count": skipped_count,
+            "row_count_match_count": row_count_match_count,
+            "row_count_mismatch_count": row_count_mismatch_count,
+            "route_summaries": route_summaries,
+            "records": records,
+            "issues": issues,
+        }
+    )
+    write_formal_expansion_report(output_name, payload)
+    return print_and_exit(payload, 0 if payload["ok"] else 1)
+
+
 def cmd_formal_batch3b_perf_execution_scoring(args: argparse.Namespace) -> int:
     candidate_case_ids = list(FORMAL_COMMON_CORE_BATCH3B_PERF_CASES)
     valid_routes = {
@@ -30947,6 +31490,17 @@ def build_parser() -> argparse.ArgumentParser:
     )
     formal_batch3a_speedup_run_parser.add_argument("--execute", action="store_true", default=False)
     formal_batch3a_speedup_run_parser.set_defaults(func=cmd_formal_batch3a_speedup_run)
+
+    formal_batch3b_perf_speedup_run_parser = subparsers.add_parser("formal-batch3b-perf-speedup-run")
+    formal_batch3b_perf_speedup_run_parser.add_argument("--route", action="append", default=[])
+    formal_batch3b_perf_speedup_run_parser.add_argument("--case-id", action="append", default=[])
+    formal_batch3b_perf_speedup_run_parser.add_argument(
+        "--output",
+        default="batch3b_perf_speedup_run_v0.json",
+    )
+    formal_batch3b_perf_speedup_run_parser.add_argument("--paper-draft-override", action="store_true", default=False)
+    formal_batch3b_perf_speedup_run_parser.add_argument("--execute", action="store_true", default=False)
+    formal_batch3b_perf_speedup_run_parser.set_defaults(func=cmd_formal_batch3b_perf_speedup_run)
 
     formal_batch2b_cons_backfill_preflight_parser = subparsers.add_parser("formal-batch2b-cons-backfill-preflight")
     formal_batch2b_cons_backfill_preflight_parser.add_argument(
