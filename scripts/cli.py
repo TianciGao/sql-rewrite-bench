@@ -1474,7 +1474,7 @@ def resolve_llm_endpoint_config(
     if cli_base_url:
         base_url_env_used = "cli"
     else:
-        for candidate in ("OPENAI_BASE_URL", "LLM_BASE_URL"):
+        for candidate in ("OPENAI_BASE_URL", "OPENAI_API_BASE", "LLM_BASE_URL"):
             candidate_value = os.environ.get(candidate, "")
             if candidate_value:
                 base_url_value = candidate_value
@@ -23570,6 +23570,396 @@ def cmd_formal_expanded_perf_direct_llm_preflight(args: argparse.Namespace) -> i
     return print_and_exit(payload, 0 if payload["ok"] else 1)
 
 
+def cmd_formal_expanded_perf_direct_llm_run(args: argparse.Namespace) -> int:
+    output_name = normalize_formal_expansion_output_name(args.output)
+    supported_case_ids = (
+        list(FORMAL_COMMON_CORE_BATCH2A_PERF_CASES)
+        + list(FORMAL_COMMON_CORE_BATCH3A_PERF_CASES)
+        + list(FORMAL_COMMON_CORE_BATCH3B_PERF_CASES)
+    )
+    selected_case_ids = [str(case_id).strip().upper() for case_id in (args.case_id or []) if str(case_id).strip()]
+    if not selected_case_ids:
+        selected_case_ids = list(supported_case_ids)
+
+    env_config = resolve_llm_endpoint_config()
+    api_env_status = "<set>" if env_config["api_key_visible"] else "<missing>"
+    base_url_status = "<set>" if env_config["base_url_visible"] else "<missing>"
+    issues: list[dict[str, Any]] = []
+    invalid_case_ids = [case_id for case_id in selected_case_ids if case_id not in supported_case_ids]
+    valid_case_ids = [case_id for case_id in selected_case_ids if case_id in supported_case_ids]
+
+    for case_id in invalid_case_ids:
+        issues.append({"type": "unsupported_case_id", "case_id": case_id})
+
+    dry_run_records: list[dict[str, Any]] = []
+    for case_id in valid_case_ids:
+        inferred = case_root_for_case_id(case_id)
+        pool = inferred[0] if inferred else "unknown"
+        case_root = inferred[1] if inferred else None
+        manifest_path = case_root / "manifest.yaml" if case_root else ROOT / "__missing__"
+        source_sql_path = case_root / "source.sql" if case_root else ROOT / "__missing__"
+        prompt_record = build_llm_prompt_package(
+            {
+                "case_id": case_id,
+                "pool": pool,
+                "why_selected": "expanded_perf_direct_llm_formal_run",
+                "caveat": "",
+            },
+            target_dialect="postgres",
+            model_label="gpt-5.2",
+        )
+        prompt_ready = prompt_record.get("prompt_package_status") == "ready"
+        manifest_exists = manifest_path.is_file()
+        source_sql_exists = source_sql_path.is_file()
+        validation_schema = validation_schema_hint(case_id)
+        if not source_sql_exists or not manifest_exists or not prompt_ready:
+            dry_run_status = "missing_prompt_inputs"
+        elif not env_config["api_key_visible"]:
+            dry_run_status = "env_blocked"
+        else:
+            dry_run_status = "ready_for_execute"
+        dry_run_records.append(
+            {
+                "case_id": case_id,
+                "pool": pool,
+                "baseline_id": "LLM_DIRECT_REWRITE_STRONG",
+                "route": "llm_direct_rewrite",
+                "source_sql_path": relative_to_root(source_sql_path),
+                "source_sql_exists": source_sql_exists,
+                "manifest_path": relative_to_root(manifest_path),
+                "manifest_exists": manifest_exists,
+                "validation_schema": validation_schema,
+                "prompt_package_status": prompt_record.get("prompt_package_status"),
+                "prompt_character_count": prompt_record.get("prompt_character_count"),
+                "estimated_prompt_tokens": prompt_record.get("estimated_prompt_tokens"),
+                "prompt_hash_sha256": prompt_record.get("prompt_hash_sha256"),
+                "api_env_status": api_env_status,
+                "api_base_url_status": base_url_status,
+                "provider_mode": env_config["provider_mode"],
+                "run_status": dry_run_status,
+                "notes": prompt_record.get("notes", []),
+                "claim_boundary": "expanded_perf_direct_llm_dry_run_only_not_model_or_sql_execution",
+            }
+        )
+
+    if not args.execute:
+        payload = {
+            "command": "formal-expanded-perf-direct-llm-run",
+            "ok": not invalid_case_ids and all(
+                record["prompt_package_status"] == "ready" for record in dry_run_records
+            ),
+            "ran_at_utc": utc_now(),
+            "output_path": f"reports/formal_expansion/{output_name}",
+            "execute_requested": False,
+            "dry_run": True,
+            "baseline_id": "LLM_DIRECT_REWRITE_STRONG",
+            "route": "llm_direct_rewrite",
+            "engine_scope": "postgres",
+            "case_count": len(dry_run_records),
+            "requested_case_ids": selected_case_ids,
+            "env_status": {
+                "api_key": api_env_status,
+                "base_url": base_url_status,
+                "provider_mode": env_config["provider_mode"],
+            },
+            "ready_for_execute_count": sum(1 for record in dry_run_records if record["run_status"] == "ready_for_execute"),
+            "env_blocked_count": sum(1 for record in dry_run_records if record["run_status"] == "env_blocked"),
+            "missing_input_count": sum(1 for record in dry_run_records if record["run_status"] == "missing_prompt_inputs"),
+            "records": dry_run_records,
+            "issues": issues,
+            "claim_boundary": "expanded_perf_direct_llm_dry_run_only_not_model_or_sql_execution",
+        }
+        write_formal_expansion_report(output_name, payload)
+        return print_and_exit(payload, 0 if payload["ok"] else 1)
+
+    if not env_config["api_key_visible"]:
+        payload = {
+            "command": "formal-expanded-perf-direct-llm-run",
+            "ok": False,
+            "ran_at_utc": utc_now(),
+            "output_path": f"reports/formal_expansion/{output_name}",
+            "execute_requested": True,
+            "dry_run": False,
+            "baseline_id": "LLM_DIRECT_REWRITE_STRONG",
+            "route": "llm_direct_rewrite",
+            "engine_scope": "postgres",
+            "case_count": len(dry_run_records),
+            "requested_case_ids": selected_case_ids,
+            "env_status": {
+                "api_key": api_env_status,
+                "base_url": base_url_status,
+                "provider_mode": env_config["provider_mode"],
+            },
+            "env_blocked": True,
+            "records": [
+                {
+                    **record,
+                    "run_status": "env_blocked",
+                    "call_status": "env_blocked",
+                    "execution_status": "not_attempted",
+                    "failure_category": "missing_api_env",
+                    "claim_boundary": "expanded_perf_direct_llm_env_blocked_no_model_or_sql_execution",
+                }
+                for record in dry_run_records
+            ],
+            "issues": issues + [{"type": "missing_api_env", "message": "No visible LLM API key env was found."}],
+            "claim_boundary": "expanded_perf_direct_llm_env_blocked_no_model_or_sql_execution",
+        }
+        write_formal_expansion_report(output_name, payload)
+        return print_and_exit(payload, 1)
+
+    try:
+        openai_mod = importlib.import_module("openai")
+        OpenAI = getattr(openai_mod, "OpenAI", None)
+    except ModuleNotFoundError:
+        OpenAI = None
+    if OpenAI is None:
+        payload = {
+            "command": "formal-expanded-perf-direct-llm-run",
+            "ok": False,
+            "ran_at_utc": utc_now(),
+            "output_path": f"reports/formal_expansion/{output_name}",
+            "execute_requested": True,
+            "dry_run": False,
+            "baseline_id": "LLM_DIRECT_REWRITE_STRONG",
+            "route": "llm_direct_rewrite",
+            "engine_scope": "postgres",
+            "case_count": len(valid_case_ids),
+            "requested_case_ids": selected_case_ids,
+            "env_status": {
+                "api_key": api_env_status,
+                "base_url": base_url_status,
+                "provider_mode": env_config["provider_mode"],
+            },
+            "records": [],
+            "issues": issues + [{"type": "client_unavailable", "message": "openai.OpenAI client is unavailable"}],
+            "claim_boundary": "expanded_perf_direct_llm_execute_blocked_before_sql_execution",
+        }
+        write_formal_expansion_report(output_name, payload)
+        return print_and_exit(payload, 1)
+
+    try:
+        psycopg = importlib.import_module("psycopg")
+    except ModuleNotFoundError:
+        payload = {
+            "command": "formal-expanded-perf-direct-llm-run",
+            "ok": False,
+            "ran_at_utc": utc_now(),
+            "output_path": f"reports/formal_expansion/{output_name}",
+            "execute_requested": True,
+            "dry_run": False,
+            "baseline_id": "LLM_DIRECT_REWRITE_STRONG",
+            "route": "llm_direct_rewrite",
+            "engine_scope": "postgres",
+            "case_count": len(valid_case_ids),
+            "requested_case_ids": selected_case_ids,
+            "env_status": {
+                "api_key": api_env_status,
+                "base_url": base_url_status,
+                "provider_mode": env_config["provider_mode"],
+            },
+            "records": [],
+            "issues": issues + [{"type": "psycopg_unavailable", "message": "psycopg is unavailable"}],
+            "claim_boundary": "expanded_perf_direct_llm_execute_blocked_before_sql_execution",
+        }
+        write_formal_expansion_report(output_name, payload)
+        return print_and_exit(payload, 1)
+
+    client_kwargs = {"api_key": env_config["api_key"]}
+    if env_config["base_url_visible"]:
+        client_kwargs["base_url"] = env_config["base_url"]
+    client = OpenAI(**client_kwargs)
+    pg_env_visible = all(os.environ.get(name) for name in ("PGHOST", "PGPORT", "PGDATABASE", "PGUSER"))
+    pg_password_present = bool(os.environ.get("PGPASSWORD"))
+
+    records: list[dict[str, Any]] = []
+    for dry_run_record in dry_run_records:
+        case_id = dry_run_record["case_id"]
+        pool = dry_run_record["pool"]
+        prompt_record = build_llm_prompt_package(
+            {
+                "case_id": case_id,
+                "pool": pool,
+                "why_selected": "expanded_perf_direct_llm_formal_run",
+                "caveat": "",
+            },
+            target_dialect="postgres",
+            model_label="gpt-5.2",
+        )
+        prompt_blob = prompt_record.get("prompt_blob", "")
+        validation_schema = dry_run_record["validation_schema"]
+        raw_text = ""
+        extracted_sql_text = ""
+        extracted_sql_status = "not_available"
+        call_status = "not_attempted"
+        execution_status = "not_attempted"
+        failure_category = "none"
+        error_message = ""
+        token_usage_input = None
+        token_usage_output = None
+        token_usage_total = None
+        row_count = None
+        runtime_ms = None
+        search_path_after_set = ""
+        notes = list(prompt_record.get("notes", []))
+
+        if prompt_record.get("prompt_package_status") != "ready":
+            failure_category = str(prompt_record.get("prompt_package_status"))
+            notes.append("execution skipped: prompt package not ready")
+        elif not pg_env_visible:
+            call_status = "not_attempted"
+            execution_status = "env_blocked"
+            failure_category = "missing_pg_env"
+            notes.append("execution skipped: required env PGHOST/PGPORT/PGDATABASE/PGUSER not fully visible")
+        else:
+            prompt_package = json.loads(prompt_blob)
+            try:
+                response = client.chat.completions.create(
+                    model="gpt-5.2",
+                    messages=[
+                        {"role": "system", "content": prompt_package["system_message"]},
+                        {"role": "user", "content": prompt_package["user_message"]},
+                    ],
+                    temperature=0.0,
+                    max_tokens=2048,
+                )
+                message = response.choices[0].message.content if response.choices else ""
+                raw_text = (message or "").strip()
+                extracted_sql_status, extracted_sql_text = extract_sql_like_output(raw_text)
+                call_status = "success"
+                usage = getattr(response, "usage", None)
+                if usage is not None:
+                    token_usage_input = getattr(usage, "prompt_tokens", None)
+                    token_usage_output = getattr(usage, "completion_tokens", None)
+                    token_usage_total = getattr(usage, "total_tokens", None)
+            except Exception as exc:
+                call_status = "failed"
+                failure_category = type(exc).__name__
+                error_message = str(exc)
+
+            if call_status == "success" and extracted_sql_status == "extracted":
+                start = time.perf_counter()
+                try:
+                    with psycopg.connect(
+                        host=os.environ["PGHOST"],
+                        port=os.environ["PGPORT"],
+                        dbname=os.environ["PGDATABASE"],
+                        user=os.environ["PGUSER"],
+                        password=os.environ.get("PGPASSWORD"),
+                        options="-c statement_timeout=30000 -c default_transaction_read_only=on",
+                    ) as conn:
+                        with conn.cursor() as cur:
+                            cur.execute("SELECT to_regnamespace(%s)", (validation_schema,))
+                            schema_row = cur.fetchone()
+                            schema_name = schema_row[0] if schema_row else None
+                            if not schema_name:
+                                raise RuntimeError(f"validation schema not found: {validation_schema}")
+                            cur.execute(
+                                psycopg.sql.SQL("SET search_path TO {}, public").format(
+                                    psycopg.sql.Identifier(validation_schema)
+                                )
+                            )
+                            cur.execute("SHOW search_path")
+                            search_path_row = cur.fetchone()
+                            search_path_after_set = str(search_path_row[0]) if search_path_row else ""
+                            cur.execute(extracted_sql_text)
+                            if cur.description is not None:
+                                row_count = len(cur.fetchall())
+                            else:
+                                row_count = cur.rowcount if cur.rowcount >= 0 else None
+                    runtime_ms = int((time.perf_counter() - start) * 1000)
+                    execution_status = "success"
+                except Exception as exc:
+                    runtime_ms = int((time.perf_counter() - start) * 1000)
+                    execution_status = "failed"
+                    if failure_category == "none":
+                        failure_category = type(exc).__name__
+                    error_message = str(exc)
+            elif call_status == "success":
+                execution_status = "not_attempted"
+                if failure_category == "none":
+                    failure_category = extracted_sql_status
+                notes.append("SQL execution skipped because extracted SQL was not accepted automatically")
+
+        records.append(
+            {
+                "case_id": case_id,
+                "pool": pool,
+                "baseline_id": "LLM_DIRECT_REWRITE_STRONG",
+                "route": "llm_direct_rewrite",
+                "model_label": "gpt-5.2",
+                "provider_mode": env_config["provider_mode"],
+                "api_key_visible": True,
+                "api_key_env_used": env_config["api_key_env_used"],
+                "base_url_visible": env_config["base_url_visible"],
+                "base_url_env_used": env_config["base_url_env_used"],
+                "base_url_host_or_redacted": env_config["base_url_host_or_redacted"],
+                "pg_env_visible": pg_env_visible,
+                "pg_password_present": pg_password_present,
+                "source_sql_path": dry_run_record["source_sql_path"],
+                "manifest_path": dry_run_record["manifest_path"],
+                "validation_schema": validation_schema,
+                "prompt_hash_sha256": prompt_record.get("prompt_hash_sha256"),
+                "prompt_character_count": prompt_record.get("prompt_character_count"),
+                "estimated_prompt_tokens": prompt_record.get("estimated_prompt_tokens"),
+                "call_status": call_status,
+                "raw_output_character_count": len(raw_text),
+                "raw_output_preview": raw_text[:700],
+                "extracted_sql_status": extracted_sql_status,
+                "extracted_sql_preview": extracted_sql_text[:700],
+                "extracted_sql_character_count": len(extracted_sql_text),
+                "token_usage_input": token_usage_input,
+                "token_usage_output": token_usage_output,
+                "token_usage_total": token_usage_total,
+                "execution_status": execution_status,
+                "row_count": row_count,
+                "runtime_ms": runtime_ms,
+                "search_path_after_set": search_path_after_set,
+                "failure_category": failure_category,
+                "error_message": error_message,
+                "notes": notes,
+                "claim_boundary": "expanded_perf_direct_llm_execute_postgres_only_not_correctness_or_speedup_scoring",
+            }
+        )
+
+    payload = {
+        "command": "formal-expanded-perf-direct-llm-run",
+        "ok": (
+            not invalid_case_ids
+            and len(records) == len(valid_case_ids)
+            and all(record["call_status"] == "success" for record in records)
+            and all(record["execution_status"] == "success" for record in records)
+        ),
+        "ran_at_utc": utc_now(),
+        "output_path": f"reports/formal_expansion/{output_name}",
+        "execute_requested": True,
+        "dry_run": False,
+        "baseline_id": "LLM_DIRECT_REWRITE_STRONG",
+        "route": "llm_direct_rewrite",
+        "engine_scope": "postgres",
+        "case_count": len(records),
+        "requested_case_ids": selected_case_ids,
+        "env_status": {
+            "api_key": api_env_status,
+            "base_url": base_url_status,
+            "provider_mode": env_config["provider_mode"],
+        },
+        "call_success_count": sum(1 for record in records if record["call_status"] == "success"),
+        "call_failed_count": sum(1 for record in records if record["call_status"] == "failed"),
+        "execution_success_count": sum(1 for record in records if record["execution_status"] == "success"),
+        "execution_failed_count": sum(1 for record in records if record["execution_status"] == "failed"),
+        "env_blocked_count": sum(1 for record in records if record["execution_status"] == "env_blocked"),
+        "token_usage_total_if_available": sum(
+            record["token_usage_total"] for record in records if isinstance(record["token_usage_total"], int)
+        ) or None,
+        "records": records,
+        "issues": issues,
+        "claim_boundary": "expanded_perf_direct_llm_execute_postgres_only_not_correctness_or_speedup_scoring",
+    }
+    write_formal_expansion_report(output_name, payload)
+    return print_and_exit(payload, 0 if payload["ok"] else 1)
+
+
 def cmd_formal_batch2c_port_pg_matrix_consistency(args: argparse.Namespace) -> int:
     output_name = normalize_formal_expansion_output_name(args.output)
     execute_refused_name = "batch2c_port_pg_matrix_consistency_execute_refused_v0.json"
@@ -32156,6 +32546,15 @@ def build_parser() -> argparse.ArgumentParser:
     )
     formal_expanded_perf_direct_llm_preflight_parser.add_argument("--execute", action="store_true", default=False)
     formal_expanded_perf_direct_llm_preflight_parser.set_defaults(func=cmd_formal_expanded_perf_direct_llm_preflight)
+
+    formal_expanded_perf_direct_llm_run_parser = subparsers.add_parser("formal-expanded-perf-direct-llm-run")
+    formal_expanded_perf_direct_llm_run_parser.add_argument("--case-id", action="append", default=[])
+    formal_expanded_perf_direct_llm_run_parser.add_argument(
+        "--output",
+        default="reports/formal_expansion/expanded_perf_direct_llm_run_v0.json",
+    )
+    formal_expanded_perf_direct_llm_run_parser.add_argument("--execute", action="store_true", default=False)
+    formal_expanded_perf_direct_llm_run_parser.set_defaults(func=cmd_formal_expanded_perf_direct_llm_run)
 
     formal_batch2c_port_pg_matrix_consistency_parser = subparsers.add_parser("formal-batch2c-port-pg-matrix-consistency")
     formal_batch2c_port_pg_matrix_consistency_parser.add_argument("--case-id", action="append", default=[])
