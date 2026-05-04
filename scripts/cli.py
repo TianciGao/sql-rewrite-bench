@@ -24375,9 +24375,10 @@ def cmd_formal_expanded_perf_direct_llm_speedup_run(args: argparse.Namespace) ->
         return float(math.exp(sum(math.log(value) for value in positive_values) / len(positive_values)))
 
     def execute_sql(cur: Any, sql_text: str) -> tuple[int | None, float]:
-        start = time.perf_counter()
-        runtime_ms = round((time.perf_counter() - start) * 1000, 3)
+        start_ns = time.perf_counter_ns()
         cur.execute(sql_text)
+        elapsed_ns = time.perf_counter_ns() - start_ns
+        runtime_ms = elapsed_ns / 1_000_000
         if cur.description is not None:
             rows = cur.fetchall()
             row_count = len(rows)
@@ -24447,6 +24448,7 @@ def cmd_formal_expanded_perf_direct_llm_speedup_run(args: argparse.Namespace) ->
         speedup_ratio: float | None = None
         win_tie_loss_status = "unknown"
         regression_20pct: bool | None = None
+        speedup_unavailable_reason: str | None = None
         row_count_matches_source: bool | None = None
         failure_category = "none"
         error_message = ""
@@ -24493,6 +24495,7 @@ def cmd_formal_expanded_perf_direct_llm_speedup_run(args: argparse.Namespace) ->
                     "speedup_ratio": speedup_ratio,
                     "win_tie_loss_status": win_tie_loss_status,
                     "regression_20pct": regression_20pct,
+                    "speedup_unavailable_reason": speedup_unavailable_reason,
                     "source_row_count": source_row_count,
                     "candidate_row_count": candidate_row_count,
                     "row_count_matches_source": row_count_matches_source,
@@ -24589,6 +24592,7 @@ def cmd_formal_expanded_perf_direct_llm_speedup_run(args: argparse.Namespace) ->
         if (
             isinstance(source_median_runtime_ms, (int, float))
             and isinstance(candidate_median_runtime_ms, (int, float))
+            and source_median_runtime_ms > 0
             and candidate_median_runtime_ms > 0
         ):
             speedup_ratio = float(source_median_runtime_ms / candidate_median_runtime_ms)
@@ -24599,6 +24603,13 @@ def cmd_formal_expanded_perf_direct_llm_speedup_run(args: argparse.Namespace) ->
             else:
                 win_tie_loss_status = "tie"
             regression_20pct = bool(candidate_median_runtime_ms >= regression_threshold * source_median_runtime_ms)
+        elif execution_status == "success":
+            if source_median_runtime_ms in (0, 0.0) and candidate_median_runtime_ms in (0, 0.0):
+                speedup_unavailable_reason = "speedup unavailable: both source and candidate median runtime are 0 ms"
+            elif source_median_runtime_ms in (0, 0.0):
+                speedup_unavailable_reason = "speedup unavailable: source median runtime is 0 ms"
+            elif candidate_median_runtime_ms in (0, 0.0):
+                speedup_unavailable_reason = "speedup unavailable: candidate median runtime is 0 ms"
 
         if source_row_count is not None and candidate_row_count is not None:
             row_count_matches_source = source_row_count == candidate_row_count
@@ -24627,6 +24638,7 @@ def cmd_formal_expanded_perf_direct_llm_speedup_run(args: argparse.Namespace) ->
                 "speedup_ratio": speedup_ratio,
                 "win_tie_loss_status": win_tie_loss_status,
                 "regression_20pct": regression_20pct,
+                "speedup_unavailable_reason": speedup_unavailable_reason,
                 "source_row_count": source_row_count,
                 "candidate_row_count": candidate_row_count,
                 "row_count_matches_source": row_count_matches_source,

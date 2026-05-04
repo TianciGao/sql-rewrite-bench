@@ -11,6 +11,7 @@ Result status:
 - `scripts/cli.py` compiled successfully
 - canary execute attempted on `PERF_0007`
 - SQL comment-wrapping bug in the execute helper was fixed
+- runtime measurement for this runner now uses `time.perf_counter_ns()` around the actual `cur.execute(...)` call and stores high-precision `runtime_ms` floats
 - canary did not succeed
 - full 34-case execute was not started
 - canary now fails later at Python-side PostgreSQL connection setup
@@ -49,6 +50,7 @@ The full execute step was skipped because the canary execute did not succeed.
 - candidate SQL source: prior Direct LLM run report `extracted_sql_text`
 - no model calls
 - no runtime repeats executed in dry-run mode
+- no full 34-case speedup execute started
 
 ## Canary result
 
@@ -65,10 +67,11 @@ Canary outcome:
 - failed case: `PERF_0007`
 - failure category: `OperationalError`
 - reported error text now captured in full:
-  - `connection is bad: no error details available`
+- `connection is bad: no error details available`
 
 Interpretation:
 
+- the runner no longer rounds runtimes to `0.0` before execution because the timing path now measures elapsed execution time using `time.perf_counter_ns()`
 - the execute path did not clear the single-case PostgreSQL runtime canary
 - because the canary failed, the full 34-case speedup runtime/scoring step was not run
 - the earlier SQL-wrapping failure is no longer the active blocker
@@ -95,6 +98,7 @@ Expanded Direct LLM speedup now:
 - uses the same target validation schema convention
 - sets the same runtime policy
 - executes source SQL and candidate SQL via `psycopg` cursor execution instead of collapsing SQL into a single-line `COPY (<sql>)` wrapper
+- measures runtime with `time.perf_counter_ns()` and stores `runtime_ms = elapsed_ns / 1_000_000` without integer truncation
 
 The original SQL wrapping problem was:
 
@@ -111,6 +115,7 @@ However, in the current environment, the canary still fails after that fix becau
 Best current diagnosis:
 
 - the SQL wrapping defect in the Direct LLM speedup runner has been repaired
+- the runtime precision defect in the Direct LLM speedup runner has been repaired in code
 - the remaining blocker is a Python-side PostgreSQL connection failure that occurs before validation-schema lookup or runtime measurement
 - because the connection fails before query execution, the canary still does not establish runtime/scoring closure
 
@@ -119,6 +124,7 @@ Best current diagnosis:
 - status: not run
 - reason: canary execute still fails on `OperationalError`
 - final report path reflects the latest canary execute attempt, not a completed full execute result
+- full 34-case speedup is not ready yet because the canary does not reach runtime collection
 
 ## Metrics
 
@@ -129,6 +135,7 @@ No successful runtime/scoring result was produced, so the following remain unava
 - `RegressionRate@20%`
 - `source_median_runtime_ms`
 - `candidate_median_runtime_ms`
+- `speedup_unavailable_reason` for zero-median cases was added in code, but this canary did not reach execution far enough to populate it
 
 Current dry-run report fields remain:
 
