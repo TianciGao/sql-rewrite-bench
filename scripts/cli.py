@@ -22982,6 +22982,197 @@ def cmd_formal_batch2c_port_preflight(args: argparse.Namespace) -> int:
     return print_and_exit(payload, 0 if payload["ok"] else 1)
 
 
+def cmd_formal_final_port_expansion_feasibility_preflight(args: argparse.Namespace) -> int:
+    output_name = normalize_formal_expansion_output_name(args.output)
+    candidate_case_ids = ["PORT_0003", "PORT_0006", "PORT_0016"]
+    execute_refused_name = "final_port_expansion_feasibility_preflight_execute_refused_v0.json"
+
+    if args.execute:
+        payload = {
+            "command": "formal-final-port-expansion-feasibility-preflight",
+            "ok": False,
+            "ran_at_utc": utc_now(),
+            "output_path": f"reports/formal_expansion/{execute_refused_name}",
+            "issues": [
+                {
+                    "type": "execute_not_supported",
+                    "message": (
+                        "formal-final-port-expansion-feasibility-preflight is read-existing-files-only "
+                        "and does not support --execute"
+                    ),
+                }
+            ],
+            "claim_boundary": "final_port_expansion_feasibility_preflight_only_not_execution_or_translation_correctness",
+        }
+        write_formal_expansion_report(execute_refused_name, payload)
+        return print_and_exit(payload, 1)
+
+    _, case_registry_rows = read_registry(CASE_REGISTRY)
+    case_registry_index = {str(row.get("case_id", "")).strip().upper(): row for row in case_registry_rows if row.get("case_id")}
+    yaml_module = None
+    if safe_module_available("yaml"):
+        try:
+            yaml_module = importlib.import_module("yaml")
+        except Exception:
+            yaml_module = None
+
+    def load_yaml_obj(path: Path) -> Any | None:
+        if not path.is_file() or yaml_module is None:
+            return None
+        try:
+            return yaml_module.safe_load(path.read_text(encoding="utf-8"))
+        except Exception:
+            return None
+
+    records: list[dict[str, Any]] = []
+    issues: list[dict[str, Any]] = []
+    quick_add_cases: list[str] = []
+    witness_backfill_cases: list[str] = []
+    diagnostic_cases: list[str] = []
+    too_slow_cases: list[str] = []
+
+    for case_id in candidate_case_ids:
+        inferred = case_root_for_case_id(case_id)
+        case_root = inferred[1] if inferred else None
+        registry_row = case_registry_index.get(case_id, {})
+        if case_root is None:
+            issues.append({"type": "missing_case_root", "case_id": case_id})
+            continue
+
+        manifest_path = case_root / "manifest.yaml"
+        source_sql_path = case_root / "source.sql"
+        reference_sql_path = case_root / "rewrite_pos_01.sql"
+        pg_schema_path = case_root / "schema" / "ddl_pg.sql"
+        pg_witness_data_path = case_root / "validation" / "pg_witness_data.sql"
+        pg_result_check_path = case_root / "runs" / "pg" / "result_check.json"
+        taxonomy_paths = sorted(case_root.glob("taxonomy_trial*.yaml"))
+
+        manifest_obj = load_yaml_obj(manifest_path)
+        taxonomy_obj = load_yaml_obj(taxonomy_paths[0]) if taxonomy_paths else None
+
+        manifest_exists = manifest_path.is_file()
+        source_sql_exists = source_sql_path.is_file()
+        reference_sql_exists = reference_sql_path.is_file()
+        pg_schema_exists = pg_schema_path.is_file()
+        pg_witness_data_exists = pg_witness_data_path.is_file()
+        pg_result_check_exists = pg_result_check_path.is_file()
+
+        source_dialect = ""
+        tri_engine_closure = ""
+        next_gap = str(registry_row.get("next_gap", "")).strip()
+        portability_focus: list[str] = []
+        taxonomy_status = "missing"
+        if isinstance(manifest_obj, dict):
+            source_dialect = str(manifest_obj.get("source_dialect", "")).strip()
+            tri_engine_closure = str(manifest_obj.get("tri_engine_closure", "")).strip()
+            focus_value = manifest_obj.get("portability_focus", [])
+            if isinstance(focus_value, list):
+                portability_focus = [str(item).strip() for item in focus_value if str(item).strip()]
+        if isinstance(taxonomy_obj, dict):
+            taxonomy_status = str(taxonomy_obj.get("status", "")).strip() or "unknown"
+
+        missing_artifacts: list[str] = []
+        if not manifest_exists:
+            missing_artifacts.append("manifest.yaml")
+        if not source_sql_exists:
+            missing_artifacts.append("source.sql")
+        if not reference_sql_exists:
+            missing_artifacts.append("rewrite_pos_01.sql")
+        if not pg_schema_exists:
+            missing_artifacts.append("schema/ddl_pg.sql")
+        if not pg_witness_data_exists:
+            missing_artifacts.append("validation/pg_witness_data.sql")
+        if not pg_result_check_exists:
+            missing_artifacts.append("runs/pg/result_check.json")
+        if not taxonomy_paths:
+            missing_artifacts.append("taxonomy_trial*.yaml")
+
+        if not (manifest_exists and source_sql_exists and reference_sql_exists and pg_schema_exists):
+            classification = "too_slow_for_current_cycle"
+            rationale = "core package files are incomplete for a bounded final-cycle PORT add"
+            recommended_action = "freeze current 6-case PORT packet"
+            too_slow_cases.append(case_id)
+        elif not pg_witness_data_exists:
+            classification = "needs_pg_witness_backfill"
+            rationale = "PostgreSQL witness input is missing, so bounded PG-side route-matrix execution cannot start cleanly"
+            recommended_action = "freeze current 6-case PORT packet"
+            witness_backfill_cases.append(case_id)
+        elif case_id == "PORT_0016":
+            classification = "too_slow_for_current_cycle"
+            rationale = (
+                "this case remains policy-sensitive and diagnostic-oriented; it still lacks report-local PG witness result evidence "
+                "and would require additional fairness/checker work beyond a quick final-cycle add"
+            )
+            recommended_action = "freeze current 6-case PORT packet"
+            too_slow_cases.append(case_id)
+        elif not pg_result_check_exists:
+            classification = "needs_pg_witness_backfill"
+            rationale = "PG witness data exists but PG-local result-check evidence is missing"
+            recommended_action = "freeze current 6-case PORT packet"
+            witness_backfill_cases.append(case_id)
+        elif not taxonomy_paths:
+            classification = "diagnostic_only"
+            rationale = "bounded PG execution might be feasible later, but metadata hardening is still incomplete for a quick paper-cycle add"
+            recommended_action = "freeze current 6-case PORT packet"
+            diagnostic_cases.append(case_id)
+        else:
+            classification = "quick_add_candidate"
+            rationale = "package already has the bounded PG-local artifacts needed for immediate final-cycle inclusion"
+            recommended_action = "add exactly these cases to final PORT evidence"
+            quick_add_cases.append(case_id)
+
+        records.append(
+            {
+                "case_id": case_id,
+                "manifest_exists": manifest_exists,
+                "source_sql_exists": source_sql_exists,
+                "reference_sql_exists": reference_sql_exists,
+                "pg_schema_exists": pg_schema_exists,
+                "pg_witness_data_exists": pg_witness_data_exists,
+                "pg_result_check_exists": pg_result_check_exists,
+                "taxonomy_trial_status": taxonomy_status,
+                "source_dialect": source_dialect,
+                "tri_engine_closure": tri_engine_closure,
+                "portability_focus": portability_focus,
+                "registry_benchmark_line": str(registry_row.get("benchmark_line", "")).strip(),
+                "registry_admission_status": str(registry_row.get("admission_status", "")).strip(),
+                "registry_promotion_status": str(registry_row.get("promotion_status", "")).strip(),
+                "next_gap": next_gap,
+                "missing_artifacts": missing_artifacts,
+                "classification": classification,
+                "rationale": rationale,
+                "recommended_next_action": recommended_action,
+            }
+        )
+
+    recommended_next_action = (
+        "add exactly these cases to final PORT evidence"
+        if quick_add_cases and not witness_backfill_cases and not diagnostic_cases and not too_slow_cases
+        else "freeze current 6-case PORT packet"
+    )
+    payload = {
+        "command": "formal-final-port-expansion-feasibility-preflight",
+        "ok": not issues,
+        "ran_at_utc": utc_now(),
+        "output_path": f"reports/formal_expansion/{output_name}",
+        "candidate_count": len(candidate_case_ids),
+        "quick_add_candidate_count": len(quick_add_cases),
+        "needs_pg_witness_backfill_count": len(witness_backfill_cases),
+        "diagnostic_only_count": len(diagnostic_cases),
+        "too_slow_for_current_cycle_count": len(too_slow_cases),
+        "quick_add_candidates": quick_add_cases,
+        "needs_pg_witness_backfill_cases": witness_backfill_cases,
+        "diagnostic_only_cases": diagnostic_cases,
+        "too_slow_for_current_cycle_cases": too_slow_cases,
+        "recommended_next_action": recommended_next_action,
+        "records": records,
+        "issues": issues,
+        "claim_boundary": "final_port_expansion_feasibility_preflight_only_not_execution_or_translation_correctness",
+    }
+    write_formal_expansion_report(output_name, payload)
+    return print_and_exit(payload, 0 if payload["ok"] else 1)
+
+
 def cmd_formal_batch2c_port_pg_matrix_consistency(args: argparse.Namespace) -> int:
     output_name = normalize_formal_expansion_output_name(args.output)
     execute_refused_name = "batch2c_port_pg_matrix_consistency_execute_refused_v0.json"
@@ -31545,6 +31736,14 @@ def build_parser() -> argparse.ArgumentParser:
     )
     formal_batch2c_port_preflight_parser.add_argument("--execute", action="store_true", default=False)
     formal_batch2c_port_preflight_parser.set_defaults(func=cmd_formal_batch2c_port_preflight)
+
+    formal_final_port_expansion_feasibility_preflight_parser = subparsers.add_parser("formal-final-port-expansion-feasibility-preflight")
+    formal_final_port_expansion_feasibility_preflight_parser.add_argument(
+        "--output",
+        default="final_port_expansion_feasibility_preflight_v0.json",
+    )
+    formal_final_port_expansion_feasibility_preflight_parser.add_argument("--execute", action="store_true", default=False)
+    formal_final_port_expansion_feasibility_preflight_parser.set_defaults(func=cmd_formal_final_port_expansion_feasibility_preflight)
 
     formal_batch2c_port_pg_matrix_consistency_parser = subparsers.add_parser("formal-batch2c-port-pg-matrix-consistency")
     formal_batch2c_port_pg_matrix_consistency_parser.add_argument("--case-id", action="append", default=[])
