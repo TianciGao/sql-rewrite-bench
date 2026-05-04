@@ -8,11 +8,12 @@ This note records the current expanded PERF Direct LLM speedup runtime/scoring a
 
 Result status:
 
-- dry-run command completed
+- `scripts/cli.py` compiled successfully
 - canary execute attempted on `PERF_0007`
+- SQL comment-wrapping bug in the execute helper was fixed
 - canary did not succeed
 - full 34-case execute was not started
-- canary diagnostics were improved to capture full subprocess context
+- canary now fails later at Python-side PostgreSQL connection setup
 
 ## Scope
 
@@ -33,8 +34,9 @@ Runtime policy configured in the command:
 ## Commands run
 
 - `python -m py_compile scripts/cli.py`
-- `python -m scripts.cli formal-expanded-perf-direct-llm-speedup-run`
-- `source scripts/env_postgres.sh && python -m scripts.cli formal-expanded-perf-direct-llm-speedup-run --case-id PERF_0007 --execute`
+- `export PGPASSWORD='123456'`
+- `source scripts/env_postgres.sh`
+- `python -m scripts.cli formal-expanded-perf-direct-llm-speedup-run --case-id PERF_0007 --execute`
 - `python -m json.tool reports/formal_expansion/expanded_perf_direct_llm_speedup_run_v0.json >/dev/null`
 
 The full execute step was skipped because the canary execute did not succeed.
@@ -61,15 +63,16 @@ Canary outcome:
 - success count: `0`
 - failed count: `1`
 - failed case: `PERF_0007`
-- failure category: `RuntimeError`
+- failure category: `OperationalError`
 - reported error text now captured in full:
-  - `validation schema check failed: returncode=2; stdout=''; stderr='psql: error: \n'; validation_schema='perf_0007_validation'; command='psql -X -v ON_ERROR_STOP=1 -q -A -t -c \\'SELECT to_regnamespace(\\'"'"'perf_0007_validation\\'"'"')\\''`
+  - `connection is bad: no error details available`
 
 Interpretation:
 
 - the execute path did not clear the single-case PostgreSQL runtime canary
 - because the canary failed, the full 34-case speedup runtime/scoring step was not run
-- the failure happens before source SQL or candidate SQL runtime measurement
+- the earlier SQL-wrapping failure is no longer the active blocker
+- the current failure happens before source SQL or candidate SQL runtime measurement
 
 ## Diagnosis
 
@@ -86,28 +89,36 @@ All three existing runners use the same `psycopg.connect(...)` execution path:
 - execute source SQL and candidate SQL inside PostgreSQL
 - collect warmup and repeat runtimes in Python
 
-Expanded Direct LLM speedup now also:
+Expanded Direct LLM speedup now:
 
 - reads candidate SQL from `extracted_sql_text` in `reports/formal_expansion/expanded_perf_direct_llm_run_v0.json`
 - uses the same target validation schema convention
 - sets the same runtime policy
+- executes source SQL and candidate SQL via `psycopg` cursor execution instead of collapsing SQL into a single-line `COPY (<sql>)` wrapper
 
-However, in this environment, both attempted Python-side PostgreSQL execution paths fail:
+The original SQL wrapping problem was:
 
-- `psycopg.connect(...)` fails with `OperationalError: connection is bad: no error details available`
-- nested `psql` subprocess execution from inside Python fails with `returncode=2` and `stderr='psql: error: \n'`
+- `execute_sql_via_psql()` normalized query text with `" ".join(...split())`
+- leading `--` comments from `source.sql` were therefore collapsed onto the same line as the query body
+- PostgreSQL then treated the wrapped `COPY (<sql>)` payload as a comment and raised `syntax error at end of input`
+
+That bug is now fixed by removing the `psql COPY` wrapper from this runner and switching to the same `psycopg` execution pattern used by the other formal speedup runners.
+
+However, in the current environment, the canary still fails after that fix because:
+
+- `psycopg.connect(...)` now fails with `OperationalError: connection is bad: no error details available`
 
 Best current diagnosis:
 
-- PostgreSQL connectivity is available from the top-level shell in this workspace
-- but PostgreSQL client access from inside the Python process is failing before query execution
-- this appears to be an environment/runtime boundary issue rather than a Direct LLM SQL issue, because the failure occurs at the validation-schema check step before any source/candidate runtime loop starts
+- the SQL wrapping defect in the Direct LLM speedup runner has been repaired
+- the remaining blocker is a Python-side PostgreSQL connection failure that occurs before validation-schema lookup or runtime measurement
+- because the connection fails before query execution, the canary still does not establish runtime/scoring closure
 
 ## Full run result
 
 - status: not run
-- reason: canary execute failed
-- final report path currently reflects the latest dry-run state, not a completed full execute result
+- reason: canary execute still fails on `OperationalError`
+- final report path reflects the latest canary execute attempt, not a completed full execute result
 
 ## Metrics
 

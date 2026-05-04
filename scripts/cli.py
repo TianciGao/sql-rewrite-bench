@@ -24282,13 +24282,19 @@ def cmd_formal_expanded_perf_direct_llm_speedup_run(args: argparse.Namespace) ->
     required_env_visible = all(env_visibility[name] for name in ["PGHOST", "PGPORT", "PGDATABASE", "PGUSER"])
     pg_password_present = env_visibility["PGPASSWORD"]
     psql_available = subprocess.run(["bash", "-lc", "command -v psql >/dev/null 2>&1"], capture_output=True, text=True).returncode == 0
+    psycopg_available = True
     issues: list[dict[str, Any]] = []
     issues.extend({"type": "unsupported_case_id", "case_id": case_id} for case_id in invalid_case_ids)
 
     if args.execute and not required_env_visible:
         issues.append({"type": "missing_pg_env", "message": "required env: PGHOST, PGPORT, PGDATABASE, PGUSER"})
-    if args.execute and not psql_available:
-        issues.append({"type": "psql_unavailable", "message": "psql is not available in PATH"})
+    psycopg = None
+    if args.execute:
+        try:
+            psycopg = importlib.import_module("psycopg")
+        except Exception as exc:
+            psycopg_available = False
+            issues.append({"type": "psycopg_import_error", "message": str(exc)})
 
     preflight_report = load_json_if_present(FORMAL_EXPANSION_REPORT_DIR / "expanded_perf_direct_llm_speedup_preflight_v0.json") or {}
     prior_run_report = load_json_if_present(FORMAL_EXPANSION_REPORT_DIR / "expanded_perf_direct_llm_run_v0.json") or {}
@@ -24341,6 +24347,7 @@ def cmd_formal_expanded_perf_direct_llm_speedup_run(args: argparse.Namespace) ->
         "engine_scope": "postgres",
         "pg_env_visible": required_env_visible,
         "pg_password_present": pg_password_present,
+        "psycopg_available": psycopg_available,
         "psql_available": psql_available,
         "total_token_usage": prior_run_report.get("total_token_usage"),
         "guardrails": {
@@ -24367,33 +24374,16 @@ def cmd_formal_expanded_perf_direct_llm_speedup_run(args: argparse.Namespace) ->
             return None
         return float(math.exp(sum(math.log(value) for value in positive_values) / len(positive_values)))
 
-    def execute_sql_via_psql(sql_text: str, validation_schema_name: str) -> tuple[int | None, float, str]:
-        normalized_sql = " ".join(sql_text.strip().rstrip(";").split())
-        wrapped_sql = (
-            "SET SESSION CHARACTERISTICS AS TRANSACTION READ ONLY; "
-            f"SET statement_timeout = '{statement_timeout_ms}'; "
-            f"SET search_path TO {validation_schema_name}, public; "
-            f"COPY ({normalized_sql}) TO STDOUT WITH (FORMAT CSV, DELIMITER E'\\t');"
-        )
+    def execute_sql(cur: Any, sql_text: str) -> tuple[int | None, float]:
         start = time.perf_counter()
-        cmd = f"psql -X -v ON_ERROR_STOP=1 -q -A -t -c {shlex.quote(wrapped_sql)}"
-        proc = subprocess.run(["bash", "-lc", cmd], capture_output=True, text=True, env=os.environ.copy())
         runtime_ms = round((time.perf_counter() - start) * 1000, 3)
-        if proc.returncode != 0:
-            raise RuntimeError(
-                "psql execution failed: "
-                f"returncode={proc.returncode}; "
-                f"stdout={proc.stdout!r}; "
-                f"stderr={proc.stderr!r}; "
-                f"validation_schema={validation_schema_name}; "
-                f"sql={normalized_sql!r}; "
-                f"command={cmd!r}"
-            )
-        stdout = proc.stdout or ""
-        row_count = 0 if stdout == "" else stdout.count("\n")
-        if stdout and not stdout.endswith("\n"):
-            row_count += 1
-        return row_count, runtime_ms, stdout
+        cur.execute(sql_text)
+        if cur.description is not None:
+            rows = cur.fetchall()
+            row_count = len(rows)
+        else:
+            row_count = cur.rowcount if cur.rowcount >= 0 else None
+        return row_count, runtime_ms
 
     records: list[dict[str, Any]] = []
     failure_categories: Counter[str] = Counter()
@@ -24527,51 +24517,66 @@ def cmd_formal_expanded_perf_direct_llm_speedup_run(args: argparse.Namespace) ->
             error_message = "; ".join(blockers)
         else:
             try:
-                schema_sql = f"SELECT to_regnamespace('{validation_schema}')"
-                schema_cmd = f"psql -X -v ON_ERROR_STOP=1 -q -A -t -c {shlex.quote(schema_sql)}"
-                schema_check = subprocess.run(
-                    ["bash", "-lc", schema_cmd],
-                    capture_output=True,
-                    text=True,
-                    env=os.environ.copy(),
-                )
-                schema_name = (schema_check.stdout or "").strip()
-                if schema_check.returncode != 0:
-                    raise RuntimeError(
-                        "validation schema check failed: "
-                        f"returncode={schema_check.returncode}; "
-                        f"stdout={schema_check.stdout!r}; "
-                        f"stderr={schema_check.stderr!r}; "
-                        f"validation_schema={validation_schema!r}; "
-                        f"command={schema_cmd!r}"
-                    )
-                if not schema_name:
-                    execution_status = "failed"
-                    failure_category = "missing_validation_schema"
-                    error_message = f"validation schema not found: {validation_schema}"
-                else:
-                    search_path_after_set = f"{validation_schema}, public"
+                with psycopg.connect(
+                    host=os.environ["PGHOST"],
+                    port=os.environ["PGPORT"],
+                    dbname=os.environ["PGDATABASE"],
+                    user=os.environ["PGUSER"],
+                    password=os.environ.get("PGPASSWORD"),
+                    options=(
+                        f"-c statement_timeout={statement_timeout_ms} "
+                        "-c default_transaction_read_only=on"
+                    ),
+                    autocommit=False,
+                ) as conn:
+                    with conn.cursor() as cur:
+                        cur.execute("SELECT to_regnamespace(%s)", (validation_schema,))
+                        schema_row = cur.fetchone()
+                        schema_name = schema_row[0] if schema_row else None
+                        if not schema_name:
+                            execution_status = "failed"
+                            failure_category = "missing_validation_schema"
+                            error_message = f"validation schema not found: {validation_schema}"
+                        else:
+                            cur.execute(
+                                psycopg.sql.SQL("SET search_path TO {}, public").format(
+                                    psycopg.sql.Identifier(validation_schema)
+                                )
+                            )
+                            search_path_after_set = f"{validation_schema}, public"
 
-                    source_row_count, source_warmup_runtime_ms, _ = execute_sql_via_psql(source_sql, validation_schema)
-                    candidate_row_count, candidate_warmup_runtime_ms, _ = execute_sql_via_psql(
-                        candidate_sql, validation_schema
-                    )
+                            source_row_count, source_warmup_runtime_ms = execute_sql(cur, source_sql)
+                            conn.rollback()
 
-                    for repeat_index in range(repeat_count):
-                        order = ["source", "candidate"] if repeat_index % 2 == 0 else ["candidate", "source"]
-                        for role in order:
-                            sql_text = source_sql if role == "source" else candidate_sql
-                            rc, rt, _ = execute_sql_via_psql(sql_text, validation_schema)
-                            if role == "source":
-                                source_runtime_ms_values.append(rt)
-                                if source_row_count is None:
-                                    source_row_count = rc
-                            else:
-                                candidate_runtime_ms_values.append(rt)
-                                if candidate_row_count is None:
-                                    candidate_row_count = rc
+                            cur.execute(
+                                psycopg.sql.SQL("SET search_path TO {}, public").format(
+                                    psycopg.sql.Identifier(validation_schema)
+                                )
+                            )
+                            candidate_row_count, candidate_warmup_runtime_ms = execute_sql(cur, candidate_sql)
+                            conn.rollback()
 
-                    execution_status = "success"
+                            for repeat_index in range(repeat_count):
+                                order = ["source", "candidate"] if repeat_index % 2 == 0 else ["candidate", "source"]
+                                for role in order:
+                                    cur.execute(
+                                        psycopg.sql.SQL("SET search_path TO {}, public").format(
+                                            psycopg.sql.Identifier(validation_schema)
+                                        )
+                                    )
+                                    sql_text = source_sql if role == "source" else candidate_sql
+                                    rc, rt = execute_sql(cur, sql_text)
+                                    conn.rollback()
+                                    if role == "source":
+                                        source_runtime_ms_values.append(rt)
+                                        if source_row_count is None:
+                                            source_row_count = rc
+                                    else:
+                                        candidate_runtime_ms_values.append(rt)
+                                        if candidate_row_count is None:
+                                            candidate_row_count = rc
+
+                            execution_status = "success"
             except Exception as exc:
                 execution_status = "failed"
                 failure_category = exc.__class__.__name__
