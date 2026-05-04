@@ -742,6 +742,10 @@ def remaining_prior_baselines_feasibility_case_ids() -> list[str]:
     return ["PERF_0006", "PERF_0008", "PERF_0033", "PERF_0054", "CONS_0007", "CONS_0012"]
 
 
+def verieql_support_bootstrap_probe_case_ids() -> list[str]:
+    return ["CONS_0007"]
+
+
 def formal_common_core_case_ids() -> list[str]:
     return list(FORMAL_COMMON_CORE_CASES)
 
@@ -9846,6 +9850,219 @@ def cmd_formal_remaining_prior_baselines_feasibility(args: argparse.Namespace) -
         },
         "claim_boundary": "feasibility_audit_only_not_execution_not_checker_not_speedup",
     }
+    return print_and_exit(payload, 0)
+
+
+def cmd_formal_verieql_support_bootstrap_probe(args: argparse.Namespace) -> int:
+    output_name = normalize_formal_expansion_output_name(args.output)
+    selected_case_ids = [str(case_id).strip().upper() for case_id in (args.case_id or []) if str(case_id).strip()]
+    if not selected_case_ids:
+        selected_case_ids = verieql_support_bootstrap_probe_case_ids()
+
+    verieql_root = ROOT / "datasets" / "raw" / "verieql" / "staged" / "VeriEQL"
+    readme_path = verieql_root / "README.md"
+    requirements_path = verieql_root / "requirements.txt"
+    entrypoint_path = verieql_root / "__main__.py"
+    parallel_timeout_cli_path = verieql_root / "parallel" / "cli_within_timeout.py"
+    benchmark_calcite_path = verieql_root / "benchmarks" / "calcite" / "calcite2.jsonlines"
+    environment_path = verieql_root / "environment.py"
+
+    repo_local_code_present = verieql_root.is_dir()
+    readme_exists = readme_path.is_file()
+    requirements_exists = requirements_path.is_file()
+    entrypoint_exists = entrypoint_path.is_file()
+    timeout_cli_exists = parallel_timeout_cli_path.is_file()
+    benchmark_file_exists = benchmark_calcite_path.is_file()
+    environment_exists = environment_path.is_file()
+
+    readme_text = readme_path.read_text(encoding="utf-8") if readme_exists else ""
+    requirements_text = requirements_path.read_text(encoding="utf-8") if requirements_exists else ""
+    entrypoint_text = entrypoint_path.read_text(encoding="utf-8") if entrypoint_exists else ""
+    benchmark_example_line = ""
+    if benchmark_file_exists:
+        with benchmark_calcite_path.open(encoding="utf-8") as handle:
+            benchmark_example_line = handle.readline().strip()
+
+    python_version = subprocess.run(
+        ["python", "--version"], capture_output=True, text=True, cwd=str(ROOT)
+    ).stdout.strip() or subprocess.run(["python", "--version"], capture_output=True, text=True, cwd=str(ROOT)).stderr.strip()
+
+    requirements = [line.strip() for line in requirements_text.splitlines() if line.strip() and not line.strip().startswith("#")]
+    python_assumptions = {
+        "runtime_python_version": python_version,
+        "verieql_readme_prerequisite": "Python 3.10 or later (Python 3.11 recommended)"
+        if "Python 3.10 or later" in readme_text
+        else "not stated",
+    }
+
+    records: list[dict[str, Any]] = []
+    blockers: Counter[str] = Counter()
+
+    for case_id in selected_case_ids:
+        inferred = case_root_for_case_id(case_id)
+        if inferred is None:
+            record = {
+                "case_id": case_id,
+                "repo_local_verieql_code_present": repo_local_code_present,
+                "runnable_now": False,
+                "exact_blockers": ["case_not_resolved"],
+            }
+            records.append(record)
+            blockers["case_not_resolved"] += 1
+            continue
+
+        pool, case_root = inferred
+        source_sql_path = case_root / "source.sql"
+        positive_sql_path = case_root / "rewrite_pos_01.sql"
+        negative_sql_path = case_root / "rewrite_neg_01.sql"
+        ddl_pg_path = case_root / "schema" / "ddl_pg.sql"
+        checker_yaml_path = case_root / "validation" / "checker.yaml"
+        manifest_path = case_root / "manifest.yaml"
+
+        source_sql_exists = source_sql_path.is_file()
+        positive_sql_exists = positive_sql_path.is_file()
+        negative_sql_exists = negative_sql_path.is_file()
+        ddl_pg_exists = ddl_pg_path.is_file()
+        checker_yaml_exists = checker_yaml_path.is_file()
+        manifest_exists = manifest_path.is_file()
+
+        source_sql_text = source_sql_path.read_text(encoding="utf-8") if source_sql_exists else ""
+        positive_sql_text = positive_sql_path.read_text(encoding="utf-8") if positive_sql_exists else ""
+        negative_sql_text = negative_sql_path.read_text(encoding="utf-8") if negative_sql_exists else ""
+        ddl_pg_text = ddl_pg_path.read_text(encoding="utf-8") if ddl_pg_exists else ""
+
+        table_names = re.findall(r"CREATE\s+TABLE\s+([A-Za-z_][A-Za-z0-9_]*)", ddl_pg_text, flags=re.IGNORECASE)
+        table_name = table_names[0] if table_names else ""
+        has_primary_key = "PRIMARY KEY" in ddl_pg_text.upper()
+        ddl_type_tokens = sorted(set(re.findall(r"\b(INTEGER|DECIMAL|VARCHAR|CHAR|BOOLEAN|DATE|TIMESTAMP|TIME)\b", ddl_pg_text, flags=re.IGNORECASE)))
+
+        expected_input_format = {
+            "top_level_keys": ["index", "schema", "constraint", "pair"],
+            "pair_shape": ["sql1", "sql2"],
+            "schema_shape": {"TABLE_NAME": {"COLUMN_NAME": "TYPE"}},
+            "constraint_examples": ["not_null", "primary", "foreign", "neq"],
+            "benchmark_transport": "jsonlines file consumed by parallel.cli_within_timeout or parallel.cli_within_bound",
+        }
+
+        source_positive_pair_mappable = bool(source_sql_exists and positive_sql_exists and ddl_pg_exists and table_name)
+        source_negative_pair_mappable = bool(source_sql_exists and negative_sql_exists and ddl_pg_exists and table_name)
+
+        exact_blockers: list[str] = []
+        if not repo_local_code_present:
+            exact_blockers.append("missing_verieql_repo_checkout")
+        if not requirements_exists:
+            exact_blockers.append("missing_requirements_txt")
+        if not entrypoint_exists:
+            exact_blockers.append("missing_entrypoint")
+        if not timeout_cli_exists:
+            exact_blockers.append("missing_parallel_timeout_cli")
+        if not source_sql_exists:
+            exact_blockers.append("missing_source_sql")
+        if not positive_sql_exists:
+            exact_blockers.append("missing_positive_sql")
+        if not negative_sql_exists:
+            exact_blockers.append("missing_negative_sql")
+        if not ddl_pg_exists:
+            exact_blockers.append("missing_ddl_pg")
+        if not source_positive_pair_mappable:
+            exact_blockers.append("source_positive_pair_mapping_not_ready")
+        if not source_negative_pair_mappable:
+            exact_blockers.append("source_negative_pair_mapping_not_ready")
+        if not checker_yaml_exists:
+            exact_blockers.append("missing_validation_checker_yaml")
+        exact_blockers.extend(
+            [
+                "dependency_materialization_not_attempted",
+                "case_to_verifier_pair_wrapper_missing",
+                "subset_policy_missing",
+                "timeout_policy_missing",
+                "constraint_schema_bridge_missing",
+            ]
+        )
+
+        for blocker in exact_blockers:
+            blockers[blocker] += 1
+
+        records.append(
+            {
+                "case_id": case_id,
+                "pool": pool,
+                "repo_local_verieql_code_present": repo_local_code_present,
+                "readme_exists": readme_exists,
+                "requirements_exists": requirements_exists,
+                "entrypoint_exists": entrypoint_exists,
+                "parallel_timeout_cli_exists": timeout_cli_exists,
+                "benchmark_example_file_exists": benchmark_file_exists,
+                "environment_module_exists": environment_exists,
+                "python_version": python_version,
+                "dependency_materialization_status": "not_attempted; requirements.txt present"
+                if requirements_exists
+                else "not_attempted; requirements.txt missing",
+                "cli_entrypoint_discovered": entrypoint_exists or timeout_cli_exists,
+                "discovered_entrypoints": [
+                    path
+                    for path, exists in [
+                        (relative_to_root(entrypoint_path), entrypoint_exists),
+                        (relative_to_root(parallel_timeout_cli_path), timeout_cli_exists),
+                    ]
+                    if exists
+                ],
+                "expected_verifier_input_format": expected_input_format,
+                "benchmark_example_preview": benchmark_example_line[:500],
+                "source_sql_path": relative_to_root(source_sql_path),
+                "rewrite_pos_sql_path": relative_to_root(positive_sql_path),
+                "rewrite_neg_sql_path": relative_to_root(negative_sql_path),
+                "ddl_pg_path": relative_to_root(ddl_pg_path),
+                "checker_yaml_path": relative_to_root(checker_yaml_path),
+                "manifest_path": relative_to_root(manifest_path),
+                "source_sql_exists": source_sql_exists,
+                "rewrite_pos_sql_exists": positive_sql_exists,
+                "rewrite_neg_sql_exists": negative_sql_exists,
+                "ddl_pg_exists": ddl_pg_exists,
+                "checker_yaml_exists": checker_yaml_exists,
+                "manifest_exists": manifest_exists,
+                "ddl_table_names": table_names,
+                "ddl_primary_key_detected": has_primary_key,
+                "ddl_type_tokens": ddl_type_tokens,
+                "source_positive_pair_mappable": source_positive_pair_mappable,
+                "source_negative_pair_mappable": source_negative_pair_mappable,
+                "source_positive_pair_reason": "source.sql + rewrite_pos_01.sql + single-table ddl_pg.sql present"
+                if source_positive_pair_mappable
+                else "missing one of source.sql, rewrite_pos_01.sql, ddl_pg.sql, or detectable table name",
+                "source_negative_pair_reason": "source.sql + rewrite_neg_01.sql + single-table ddl_pg.sql present"
+                if source_negative_pair_mappable
+                else "missing one of source.sql, rewrite_neg_01.sql, ddl_pg.sql, or detectable table name",
+                "timeout_subset_policy_needed": {
+                    "timeout_seconds": 600,
+                    "bound_size": "small bounded first probe, likely 1 or 2",
+                    "integrity_constraint_mode": "explicit and frozen",
+                    "pair_scope": ["source vs positive", "source vs negative"],
+                },
+                "runnable_now": False,
+                "exact_blockers": exact_blockers,
+                "recommended_next_action": "wrapper scaffold",
+                "claim_boundary": "bootstrap_probe_only_not_verification_execution_not_support_verdict",
+            }
+        )
+
+    payload = {
+        "command": "formal-verieql-support-bootstrap-probe",
+        "ok": True,
+        "ran_at_utc": utc_now(),
+        "output_path": f"reports/formal_expansion/{output_name}",
+        "repo_local_verieql_code_present": repo_local_code_present,
+        "python_environment_assumptions": python_assumptions,
+        "dependency_materialization_status": "not_attempted",
+        "cli_entrypoint_discovered": entrypoint_exists or timeout_cli_exists,
+        "requirements_preview": requirements,
+        "records": records,
+        "blockers_by_type": dict(sorted(blockers.items())),
+        "recommended_next_action": "wrapper scaffold"
+        if repo_local_code_present and entrypoint_exists and timeout_cli_exists
+        else "keep support-only backlog",
+        "claim_boundary": "bootstrap_probe_only_not_verification_execution_not_support_verdict",
+    }
+    write_formal_expansion_report(output_name, payload)
     return print_and_exit(payload, 0)
 
 
@@ -35873,6 +36090,14 @@ def build_parser() -> argparse.ArgumentParser:
     formal_calcite_hep_perf0006_numeric_mismatch_diagnostic_parser.set_defaults(
         func=cmd_formal_calcite_hep_perf0006_numeric_mismatch_diagnostic
     )
+
+    formal_verieql_support_bootstrap_probe_parser = subparsers.add_parser("formal-verieql-support-bootstrap-probe")
+    formal_verieql_support_bootstrap_probe_parser.add_argument("--case-id", action="append", default=[])
+    formal_verieql_support_bootstrap_probe_parser.add_argument(
+        "--output",
+        default="reports/formal_expansion/verieql_support_bootstrap_probe_v0.json",
+    )
+    formal_verieql_support_bootstrap_probe_parser.set_defaults(func=cmd_formal_verieql_support_bootstrap_probe)
 
     formal_expanded_perf_direct_llm_preflight_parser = subparsers.add_parser("formal-expanded-perf-direct-llm-preflight")
     formal_expanded_perf_direct_llm_preflight_parser.add_argument(
