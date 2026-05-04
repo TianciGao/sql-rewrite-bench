@@ -24073,6 +24073,170 @@ def cmd_formal_expanded_perf_direct_llm_run(args: argparse.Namespace) -> int:
     return print_and_exit(payload, 0 if payload["ok"] else 1)
 
 
+def cmd_formal_expanded_perf_direct_llm_speedup_preflight(args: argparse.Namespace) -> int:
+    output_name = normalize_formal_expansion_output_name(args.output)
+    execute_refused_name = "expanded_perf_direct_llm_speedup_preflight_execute_refused_v0.json"
+    if args.execute:
+        payload = {
+            "command": "formal-expanded-perf-direct-llm-speedup-preflight",
+            "ok": False,
+            "ran_at_utc": utc_now(),
+            "output_path": f"reports/formal_expansion/{execute_refused_name}",
+            "issues": [
+                {
+                    "type": "execute_not_supported",
+                    "message": (
+                        "formal-expanded-perf-direct-llm-speedup-preflight is read-existing-artifacts-only "
+                        "and does not support --execute"
+                    ),
+                }
+            ],
+            "guardrails": {
+                "database_execution": "disabled",
+                "sql_execution": "disabled",
+                "model_api_call": "disabled",
+                "runtime_rerun": "disabled",
+                "speedup_scoring": "disabled",
+                "plan_collection": "disabled",
+                "case_artifact_write": "disabled",
+                "registry_writeback": "disabled",
+            },
+            "claim_boundary": "expanded_perf_direct_llm_speedup_preflight_only_not_speedup_result",
+        }
+        write_formal_expansion_report(execute_refused_name, payload)
+        return print_and_exit(payload, 1)
+
+    run_report_path = FORMAL_EXPANSION_REPORT_DIR / "expanded_perf_direct_llm_run_v0.json"
+    run_report = load_json_if_present(run_report_path)
+    issues: list[dict[str, Any]] = []
+    if run_report is None:
+        issues.append({"type": "missing_prior_run_report", "path": relative_to_root(run_report_path)})
+        run_report = {}
+
+    runtime_policy = {
+        "warmup_count": 1,
+        "repeat_count": 5,
+        "statement_timeout_ms": 30000,
+        "primary_statistic": "median",
+        "tie_threshold": 0.05,
+        "regression_threshold": 1.2,
+    }
+
+    records: list[dict[str, Any]] = []
+    ready_cases: list[str] = []
+    blocked_cases: list[str] = []
+    blocker_counts: Counter[str] = Counter()
+
+    for item in run_report.get("records", []):
+        case_id = str(item.get("case_id", "")).strip().upper()
+        if not case_id:
+            continue
+        inferred = case_root_for_case_id(case_id)
+        pool = inferred[0] if inferred else "unknown"
+
+        source_result_path = ROOT / str(item.get("source_result_path", ""))
+        candidate_result_path = ROOT / str(item.get("candidate_result_path", ""))
+        source_sql_path = ROOT / str(item.get("source_sql_path", ""))
+        source_materialization_exists = source_result_path.is_file()
+        candidate_materialization_exists = candidate_result_path.is_file()
+        source_sql_exists = source_sql_path.is_file()
+
+        checker_status = str(item.get("checker_status", "")).strip().lower()
+        checker_consistent = checker_status == "consistent"
+        extracted_candidate_sql = str(item.get("extracted_sql_text", "") or "").strip()
+        extracted_candidate_sql_available = bool(extracted_candidate_sql)
+        validation_schema_expected = str(item.get("validation_schema", "") or validation_schema_hint(case_id)).strip()
+        validation_schema_ready = bool(validation_schema_expected)
+
+        blockers: list[str] = []
+        if not source_materialization_exists:
+            blockers.append("missing_source_materialization")
+        if not candidate_materialization_exists:
+            blockers.append("missing_candidate_materialization")
+        if not checker_consistent:
+            blockers.append("checker_not_consistent")
+        if not source_sql_exists:
+            blockers.append("missing_source_sql_path")
+        if not extracted_candidate_sql_available:
+            blockers.append("missing_extracted_candidate_sql")
+        if not validation_schema_ready:
+            blockers.append("missing_validation_schema")
+
+        if blockers:
+            blocked_cases.append(case_id)
+            for blocker in blockers:
+                blocker_counts[blocker] += 1
+            preflight_status = "blocked"
+        else:
+            ready_cases.append(case_id)
+            preflight_status = "ready_for_speedup_runtime"
+
+        records.append(
+            {
+                "case_id": case_id,
+                "pool": pool,
+                "baseline_id": "LLM_DIRECT_REWRITE_STRONG",
+                "route": "LLM_DIRECT_REWRITE_STRONG",
+                "engine_scope": "postgres",
+                "source_materialization_path": relative_to_root(source_result_path),
+                "source_materialization_exists": source_materialization_exists,
+                "candidate_materialization_path": relative_to_root(candidate_result_path),
+                "candidate_materialization_exists": candidate_materialization_exists,
+                "checker_status": item.get("checker_status", ""),
+                "checker_consistent": checker_consistent,
+                "source_sql_path": relative_to_root(source_sql_path),
+                "source_sql_exists": source_sql_exists,
+                "extracted_candidate_sql_available": extracted_candidate_sql_available,
+                "extracted_candidate_sql_character_count": len(extracted_candidate_sql),
+                "validation_schema_expected": validation_schema_expected,
+                "validation_schema_ready": validation_schema_ready,
+                "runtime_policy_available": True,
+                "runtime_policy": runtime_policy,
+                "prior_total_token_usage": item.get("token_usage_total"),
+                "preflight_status": preflight_status,
+                "blockers": blockers,
+                "claim_boundary": "expanded_perf_direct_llm_speedup_preflight_only_not_speedup_result",
+            }
+        )
+
+    payload = {
+        "command": "formal-expanded-perf-direct-llm-speedup-preflight",
+        "ok": not issues,
+        "ran_at_utc": utc_now(),
+        "output_path": f"reports/formal_expansion/{output_name}",
+        "baseline_id": "LLM_DIRECT_REWRITE_STRONG",
+        "engine_scope": "postgres",
+        "case_count": len(records),
+        "ready_count": len(ready_cases),
+        "blocked_count": len(blocked_cases),
+        "ready_cases": ready_cases,
+        "blocked_cases": blocked_cases,
+        "blockers_by_type": dict(sorted(blocker_counts.items())),
+        "runtime_policy": runtime_policy,
+        "total_token_usage": run_report.get("total_token_usage"),
+        "records": records,
+        "issues": issues,
+        "recommended_next_action": (
+            "run expanded PERF Direct LLM speedup repeats on the ready cases"
+            if ready_cases and not blocked_cases
+            else "resolve the blocked cases before any expanded PERF Direct LLM speedup run"
+        ),
+        "guardrails": {
+            "database_execution": "disabled",
+            "sql_execution": "disabled",
+            "model_api_call": "disabled",
+            "runtime_rerun": "disabled",
+            "speedup_scoring": "disabled",
+            "plan_collection": "disabled",
+            "case_artifact_write": "disabled",
+            "registry_writeback": "disabled",
+        },
+        "claim_boundary": "expanded_perf_direct_llm_speedup_preflight_only_not_speedup_result",
+    }
+    write_formal_expansion_report(output_name, payload)
+    return print_and_exit(payload, 0 if payload["ok"] else 1)
+
+
 def cmd_formal_batch2c_port_pg_matrix_consistency(args: argparse.Namespace) -> int:
     output_name = normalize_formal_expansion_output_name(args.output)
     execute_refused_name = "batch2c_port_pg_matrix_consistency_execute_refused_v0.json"
@@ -32668,6 +32832,18 @@ def build_parser() -> argparse.ArgumentParser:
     )
     formal_expanded_perf_direct_llm_run_parser.add_argument("--execute", action="store_true", default=False)
     formal_expanded_perf_direct_llm_run_parser.set_defaults(func=cmd_formal_expanded_perf_direct_llm_run)
+
+    formal_expanded_perf_direct_llm_speedup_preflight_parser = subparsers.add_parser(
+        "formal-expanded-perf-direct-llm-speedup-preflight"
+    )
+    formal_expanded_perf_direct_llm_speedup_preflight_parser.add_argument(
+        "--output",
+        default="reports/formal_expansion/expanded_perf_direct_llm_speedup_preflight_v0.json",
+    )
+    formal_expanded_perf_direct_llm_speedup_preflight_parser.add_argument("--execute", action="store_true", default=False)
+    formal_expanded_perf_direct_llm_speedup_preflight_parser.set_defaults(
+        func=cmd_formal_expanded_perf_direct_llm_speedup_preflight
+    )
 
     formal_batch2c_port_pg_matrix_consistency_parser = subparsers.add_parser("formal-batch2c-port-pg-matrix-consistency")
     formal_batch2c_port_pg_matrix_consistency_parser.add_argument("--case-id", action="append", default=[])
