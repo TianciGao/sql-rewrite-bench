@@ -19459,6 +19459,340 @@ def cmd_formal_batch2b_cons_backfill_preflight(args: argparse.Namespace) -> int:
     return print_and_exit(payload, 0 if payload["ok"] else 1)
 
 
+def cmd_formal_batch2b_cons_execution_scoring(args: argparse.Namespace) -> int:
+    candidate_case_ids = ["CONS_0024", "CONS_0031", "CONS_0034"]
+    selected_case_ids = [str(case_id).strip().upper() for case_id in (args.case_id or []) if str(case_id).strip()]
+    if not selected_case_ids:
+        selected_case_ids = list(candidate_case_ids)
+
+    invalid_case_ids = [case_id for case_id in selected_case_ids if case_id not in candidate_case_ids]
+    if invalid_case_ids:
+        payload = {
+            "command": "formal-batch2b-cons-execution-scoring",
+            "ok": False,
+            "ran_at_utc": utc_now(),
+            "output_path": "reports/formal_expansion/batch2b_cons_execution_execute_refused_v0.json",
+            "issues": [{"type": "unsupported_case_id", "case_id": case_id} for case_id in invalid_case_ids],
+            "guardrails": {
+                "database_execution": "enabled_only_with_execute",
+                "sql_execution": "postgres_only_source_positive_negative",
+                "checker_execution": "bounded_in_memory_only",
+                "model_api_call": "disabled",
+                "sqlglot_execution": "disabled",
+                "mysql_execution": "disabled",
+                "spark_execution": "disabled",
+                "port_execution": "disabled",
+                "speedup_scoring": "disabled",
+                "plan_collection": "disabled",
+                "case_artifact_write": "disabled",
+                "registry_writeback": "disabled",
+            },
+            "claim_boundary": "batch2b_cons_pg_checker_scoring_not_admission",
+        }
+        write_formal_expansion_report("batch2b_cons_execution_execute_refused_v0.json", payload)
+        return print_and_exit(payload, 1)
+
+    env_visibility = pg_env_visibility()
+    required_env_visible = all(env_visibility[name] for name in ["PGHOST", "PGPORT", "PGDATABASE", "PGUSER"])
+    pg_password_present = env_visibility["PGPASSWORD"]
+    psycopg_available = safe_module_available("psycopg")
+    yaml_available = safe_module_available("yaml")
+    issues: list[dict[str, Any]] = []
+    if args.execute and not required_env_visible:
+        issues.append({"type": "missing_pg_env", "message": "required env: PGHOST, PGPORT, PGDATABASE, PGUSER"})
+    if args.execute and not psycopg_available:
+        issues.append({"type": "psycopg_unavailable", "message": "psycopg is not installed"})
+    if not yaml_available:
+        issues.append({"type": "yaml_unavailable", "message": "PyYAML is not installed"})
+
+    psycopg = None
+    yaml_module = None
+    if args.execute and psycopg_available:
+        try:
+            psycopg = importlib.import_module("psycopg")
+        except Exception as exc:
+            issues.append({"type": "psycopg_import_error", "message": str(exc)})
+    if yaml_available:
+        try:
+            yaml_module = importlib.import_module("yaml")
+        except Exception as exc:
+            issues.append({"type": "yaml_import_error", "message": str(exc)})
+
+    def serialize_tsv_row(row: Sequence[Any]) -> str:
+        cells: list[str] = []
+        for value in row:
+            if value is None:
+                text = r"\N"
+            else:
+                text = str(value)
+                text = text.replace("\\", "\\\\").replace("\t", "\\t").replace("\n", "\\n").replace("\r", "\\r")
+            cells.append(text)
+        return "\t".join(cells)
+
+    def execute_query_to_rows(cur: Any, sql_text: str) -> tuple[list[str], int]:
+        cur.execute(sql_text)
+        rows = cur.fetchall() if cur.description is not None else []
+        return [serialize_tsv_row(row) for row in rows], len(rows)
+
+    execution_records: list[dict[str, Any]] = []
+    scoring_records: list[dict[str, Any]] = []
+    checker_mode = "value_normalized_in_memory_from_checker_yaml"
+
+    route_order = [
+        ("NATIVE_IDENTITY", "source.sql", "source.sql"),
+        ("HUMAN_REFERENCE_POSITIVE", "rewrite_pos_01.sql", "rewrite_pos_01.sql"),
+        ("HARD_NEGATIVE_GUARD", "rewrite_neg_01.sql", "rewrite_neg_01.sql"),
+    ]
+
+    native_success_count = 0
+    positive_success_count = 0
+    negative_success_count = 0
+    result_consistency_count = 0
+    negative_rejection_count = 0
+    false_accept_count = 0
+    failure_categories: Counter[str] = Counter()
+
+    for case_id in selected_case_ids:
+        inferred = case_root_for_case_id(case_id)
+        case_root = inferred[1] if inferred else None
+        if case_root is None:
+            issues.append({"type": "missing_case_root", "case_id": case_id})
+            continue
+
+        checker_path = case_root / "validation" / "checker.yaml"
+        source_sql_path = case_root / "source.sql"
+        positive_sql_path = case_root / "rewrite_pos_01.sql"
+        negative_sql_path = case_root / "rewrite_neg_01.sql"
+        validation_schema = validation_schema_hint(case_id)
+
+        source_positive_equal: bool | None = None
+        source_negative_differs: bool | None = None
+        source_row_count: int | None = None
+        positive_row_count: int | None = None
+        negative_row_count: int | None = None
+
+        if not checker_path.is_file() or yaml_module is None:
+            issues.append({"type": "missing_checker_yaml", "case_id": case_id, "path": relative_to_root(checker_path)})
+            continue
+
+        checker_obj = yaml_module.safe_load(checker_path.read_text(encoding="utf-8"))
+        normalization = checker_obj.get("normalization", {}) if isinstance(checker_obj, dict) else {}
+        sort_rows = bool(normalization.get("sort_rows", False))
+        trim_whitespace = bool(normalization.get("trim_whitespace", False))
+        normalize_numeric_format = bool(normalization.get("normalize_numeric_format", False))
+        normalize_null = bool(normalization.get("normalize_null", False))
+
+        def checker_normalize(lines: list[str]) -> list[str]:
+            output = list(lines)
+            if trim_whitespace:
+                output = [line.rstrip() for line in output]
+            if normalize_numeric_format or normalize_null:
+                output = normalize_tsv_lines(output)
+            if sort_rows:
+                output = sorted(output)
+            return output
+
+        sql_text_map = {
+            "source.sql": source_sql_path.read_text(encoding="utf-8") if source_sql_path.is_file() else "",
+            "rewrite_pos_01.sql": positive_sql_path.read_text(encoding="utf-8") if positive_sql_path.is_file() else "",
+            "rewrite_neg_01.sql": negative_sql_path.read_text(encoding="utf-8") if negative_sql_path.is_file() else "",
+        }
+
+        route_rows: dict[str, list[str]] = {}
+        route_row_counts: dict[str, int] = {}
+
+        for route_name, sql_key, candidate_sql_name in route_order:
+            execution_status = "not_requested"
+            row_count: int | None = None
+            runtime_ms: int | None = None
+            failure_category = "none"
+            error_message = ""
+
+            sql_text = sql_text_map.get(sql_key, "")
+            if not sql_text:
+                execution_status = "failed"
+                failure_category = "missing_sql"
+                error_message = f"{candidate_sql_name} is missing"
+            elif not args.execute:
+                execution_status = "dry_run_only"
+            elif issues:
+                execution_status = "failed"
+                failure_category = "environment_blocked"
+                error_message = "environment prerequisites not satisfied"
+            else:
+                try:
+                    with psycopg.connect(
+                        host=os.environ["PGHOST"],
+                        port=os.environ["PGPORT"],
+                        dbname=os.environ["PGDATABASE"],
+                        user=os.environ["PGUSER"],
+                        password=os.environ.get("PGPASSWORD"),
+                        options="-c statement_timeout=30000 -c default_transaction_read_only=on",
+                        autocommit=False,
+                    ) as conn:
+                        with conn.cursor() as cur:
+                            cur.execute("SELECT to_regnamespace(%s)", (validation_schema,))
+                            schema_row = cur.fetchone()
+                            schema_name = schema_row[0] if schema_row else None
+                            if not schema_name:
+                                execution_status = "failed"
+                                failure_category = "missing_validation_schema"
+                                error_message = f"validation schema not found: {validation_schema}"
+                            else:
+                                cur.execute(
+                                    psycopg.sql.SQL("SET search_path TO {}, public").format(
+                                        psycopg.sql.Identifier(validation_schema)
+                                    )
+                                )
+                                started = time.perf_counter()
+                                result_lines, row_count = execute_query_to_rows(cur, sql_text)
+                                runtime_ms = int((time.perf_counter() - started) * 1000)
+                                conn.rollback()
+                                execution_status = "success"
+                                route_rows[route_name] = result_lines
+                                route_row_counts[route_name] = row_count
+                except Exception as exc:
+                    execution_status = "failed"
+                    failure_category = type(exc).__name__
+                    error_message = str(exc)
+
+            if execution_status == "success":
+                if route_name == "NATIVE_IDENTITY":
+                    native_success_count += 1
+                    source_row_count = row_count
+                elif route_name == "HUMAN_REFERENCE_POSITIVE":
+                    positive_success_count += 1
+                    positive_row_count = row_count
+                elif route_name == "HARD_NEGATIVE_GUARD":
+                    negative_success_count += 1
+                    negative_row_count = row_count
+            elif failure_category != "none":
+                failure_categories[failure_category] += 1
+
+            execution_records.append(
+                {
+                    "case_id": case_id,
+                    "route": route_name,
+                    "execution_status": execution_status,
+                    "row_count": row_count,
+                    "runtime_ms": runtime_ms,
+                    "failure_category": failure_category,
+                    "error_message": error_message,
+                }
+            )
+
+        if args.execute:
+            if all(route_name in route_rows for route_name in ["NATIVE_IDENTITY", "HUMAN_REFERENCE_POSITIVE"]):
+                source_positive_equal = checker_normalize(route_rows["NATIVE_IDENTITY"]) == checker_normalize(route_rows["HUMAN_REFERENCE_POSITIVE"])
+                if source_positive_equal:
+                    result_consistency_count += 1
+            if all(route_name in route_rows for route_name in ["NATIVE_IDENTITY", "HARD_NEGATIVE_GUARD"]):
+                source_negative_differs = checker_normalize(route_rows["NATIVE_IDENTITY"]) != checker_normalize(route_rows["HARD_NEGATIVE_GUARD"])
+                if source_negative_differs:
+                    negative_rejection_count += 1
+                else:
+                    false_accept_count += 1
+
+        scoring_records.append(
+            {
+                "case_id": case_id,
+                "source_positive_equal": source_positive_equal,
+                "source_negative_differs": source_negative_differs,
+                "checker_mode": checker_mode,
+                "source_row_count": source_row_count,
+                "positive_row_count": positive_row_count,
+                "negative_row_count": negative_row_count,
+            }
+        )
+
+    execution_payload = {
+        "command": "formal-batch2b-cons-execution-scoring",
+        "ok": not issues and (not args.execute or all(record["execution_status"] == "success" for record in execution_records)),
+        "ran_at_utc": utc_now(),
+        "output_path": "reports/formal_expansion/batch2b_cons_execution_v0.json",
+        "case_count": len(selected_case_ids),
+        "route_count": 3,
+        "records": execution_records,
+        "issues": issues,
+        "guardrails": {
+            "database_execution": "enabled_only_with_execute",
+            "sql_execution": "postgres_only_source_positive_negative",
+            "checker_execution": "bounded_in_memory_only",
+            "model_api_call": "disabled",
+            "sqlglot_execution": "disabled",
+            "mysql_execution": "disabled",
+            "spark_execution": "disabled",
+            "port_execution": "disabled",
+            "speedup_scoring": "disabled",
+            "plan_collection": "disabled",
+            "case_artifact_write": "disabled",
+            "registry_writeback": "disabled",
+        },
+        "claim_boundary": "batch2b_cons_pg_checker_scoring_not_admission",
+    }
+    write_formal_expansion_report("batch2b_cons_execution_v0.json", execution_payload)
+
+    case_count = len(selected_case_ids)
+    positive_comparable_count = sum(1 for record in scoring_records if record["source_positive_equal"] is not None)
+    negative_comparable_count = sum(1 for record in scoring_records if record["source_negative_differs"] is not None)
+    scoring_payload = {
+        "command": "formal-batch2b-cons-execution-scoring",
+        "ok": execution_payload["ok"],
+        "ran_at_utc": utc_now(),
+        "output_path": "reports/formal_expansion/batch2b_cons_scoring_v0.json",
+        "case_count": case_count,
+        "native_executable_rate": (native_success_count / case_count) if case_count else None,
+        "human_positive_executable_rate": (positive_success_count / case_count) if case_count else None,
+        "hard_negative_executable_rate": (negative_success_count / case_count) if case_count else None,
+        "result_consistency_rate": (result_consistency_count / positive_comparable_count) if positive_comparable_count else None,
+        "negative_rejection_rate": (negative_rejection_count / negative_comparable_count) if negative_comparable_count else None,
+        "false_accept_rate": (false_accept_count / negative_comparable_count) if negative_comparable_count else None,
+        "per_case_source_positive_equal": [
+            {"case_id": record["case_id"], "value": record["source_positive_equal"]} for record in scoring_records
+        ],
+        "per_case_source_negative_differs": [
+            {"case_id": record["case_id"], "value": record["source_negative_differs"]} for record in scoring_records
+        ],
+        "checker_mode": checker_mode,
+        "row_count_match_count": sum(
+            1
+            for record in scoring_records
+            if record["source_row_count"] is not None
+            and record["positive_row_count"] is not None
+            and record["negative_row_count"] is not None
+            and record["source_row_count"] == record["positive_row_count"]
+            and record["source_row_count"] == record["negative_row_count"]
+        ),
+        "records": scoring_records,
+        "issues": issues,
+        "claim_boundary": "batch2b_cons_pg_checker_scoring_not_admission",
+    }
+    write_formal_expansion_report("batch2b_cons_scoring_v0.json", scoring_payload)
+
+    envelope = {
+        "command": "formal-batch2b-cons-execution-scoring",
+        "ok": execution_payload["ok"] and scoring_payload["ok"],
+        "ran_at_utc": utc_now(),
+        "output_dir": "reports/formal_expansion",
+        "execution_report_path": "reports/formal_expansion/batch2b_cons_execution_v0.json",
+        "scoring_report_path": "reports/formal_expansion/batch2b_cons_scoring_v0.json",
+        "case_count": case_count,
+        "native_executable_rate": scoring_payload["native_executable_rate"],
+        "human_positive_executable_rate": scoring_payload["human_positive_executable_rate"],
+        "hard_negative_executable_rate": scoring_payload["hard_negative_executable_rate"],
+        "result_consistency_rate": scoring_payload["result_consistency_rate"],
+        "negative_rejection_rate": scoring_payload["negative_rejection_rate"],
+        "false_accept_rate": scoring_payload["false_accept_rate"],
+        "checker_mode": checker_mode,
+        "pg_env_visible": required_env_visible,
+        "pg_password_present": pg_password_present,
+        "psycopg_available": psycopg_available,
+        "issues": issues,
+        "claim_boundary": "batch2b_cons_pg_checker_scoring_not_admission",
+    }
+    return print_and_exit(envelope, 0 if envelope["ok"] else 1)
+
+
 def cmd_formal_common_core_method_result_checker_run(args: argparse.Namespace) -> int:
     output_name = normalize_formal_common_core_output_name(args.output)
     valid_routes = {
@@ -27404,6 +27738,15 @@ def build_parser() -> argparse.ArgumentParser:
     )
     formal_batch2b_cons_backfill_preflight_parser.add_argument("--execute", action="store_true", default=False)
     formal_batch2b_cons_backfill_preflight_parser.set_defaults(func=cmd_formal_batch2b_cons_backfill_preflight)
+
+    formal_batch2b_cons_execution_scoring_parser = subparsers.add_parser("formal-batch2b-cons-execution-scoring")
+    formal_batch2b_cons_execution_scoring_parser.add_argument("--case-id", action="append", default=[])
+    formal_batch2b_cons_execution_scoring_parser.add_argument(
+        "--output-dir",
+        default="reports/formal_expansion",
+    )
+    formal_batch2b_cons_execution_scoring_parser.add_argument("--execute", action="store_true", default=False)
+    formal_batch2b_cons_execution_scoring_parser.set_defaults(func=cmd_formal_batch2b_cons_execution_scoring)
 
     formal_common_core_method_plan_collection_preflight_parser = subparsers.add_parser("formal-common-core-method-plan-collection-preflight")
     formal_common_core_method_plan_collection_preflight_parser.add_argument(
