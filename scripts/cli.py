@@ -14468,6 +14468,410 @@ def cmd_formal_experiment_failure_slicing_preflight(args: argparse.Namespace) ->
     return print_and_exit(payload, 0 if payload["ok"] else 1)
 
 
+def cmd_formal_experiment_taxonomy_slicing(args: argparse.Namespace) -> int:
+    output_name = normalize_formal_common_core_output_name(args.output)
+    if args.execute:
+        payload = {
+            "command": "formal-experiment-taxonomy-slicing",
+            "ok": False,
+            "ran_at_utc": utc_now(),
+            "output_path": "reports/formal_common_core/taxonomy_slicing_execute_refused_v0.json",
+            "message": "This command reads existing metadata only and does not support --execute.",
+            "issues": [
+                {
+                    "type": "invalid_execute_flag",
+                    "message": "formal-experiment-taxonomy-slicing does not support --execute",
+                }
+            ],
+            "guardrails": {
+                "database_execution": "disabled",
+                "sql_execution": "disabled",
+                "explain_execution": "disabled",
+                "model_api_call": "disabled",
+                "sqlglot_generation": "disabled",
+                "checker_execution": "disabled",
+                "metric_recomputation": "disabled",
+                "taxonomy_writeback": "disabled",
+                "case_artifact_write": "disabled",
+                "registry_writeback": "disabled",
+            },
+            "claim_boundary": "taxonomy_slicing_from_existing_metadata_only_not_final_taxonomy_or_leaderboard",
+        }
+        write_formal_common_core_report("taxonomy_slicing_execute_refused_v0.json", payload)
+        return print_and_exit(payload, 1)
+
+    issues: list[dict[str, Any]] = []
+    warnings: list[str] = []
+    yaml_module: Any | None = None
+    try:
+        yaml_module = importlib.import_module("yaml")
+    except ModuleNotFoundError:
+        warnings.append("PyYAML not available; taxonomy/manifest parsing will be limited")
+
+    failure_slicing_path = FORMAL_COMMON_CORE_REPORT_DIR / "failure_slicing_preflight_v0.json"
+    control_scoring_path = FORMAL_COMMON_CORE_REPORT_DIR / "control_scoring_v0.json"
+    method_consistency_path = FORMAL_COMMON_CORE_REPORT_DIR / "method_consistency_scoring_v0.json"
+    method_speedup_path = FORMAL_COMMON_CORE_REPORT_DIR / "method_speedup_scoring_v0.json"
+    plan_operator_delta_path = FORMAL_COMMON_CORE_REPORT_DIR / "plan_operator_delta_summary_v0.json"
+    port_snapshot_path = FORMAL_PORT_REPORT_DIR / "port_current_results_snapshot_v0.json"
+
+    failure_slicing_report = load_json_if_present(failure_slicing_path)
+    control_scoring_report = load_json_if_present(control_scoring_path)
+    method_consistency_report = load_json_if_present(method_consistency_path)
+    method_speedup_report = load_json_if_present(method_speedup_path)
+    plan_operator_delta_report = load_json_if_present(plan_operator_delta_path)
+    port_snapshot_report = load_json_if_present(port_snapshot_path)
+
+    for issue_type, path, report in [
+        ("missing_failure_slicing_preflight_report", failure_slicing_path, failure_slicing_report),
+        ("missing_control_scoring_report", control_scoring_path, control_scoring_report),
+        ("missing_method_consistency_report", method_consistency_path, method_consistency_report),
+        ("missing_method_speedup_report", method_speedup_path, method_speedup_report),
+        ("missing_plan_operator_delta_summary_report", plan_operator_delta_path, plan_operator_delta_report),
+        ("missing_port_current_results_snapshot_report", port_snapshot_path, port_snapshot_report),
+    ]:
+        if report is None:
+            issues.append({"type": issue_type, "path": relative_to_root(path)})
+
+    _, case_registry_rows = read_registry(CASE_REGISTRY)
+    case_registry_index = {row["case_id"]: row for row in case_registry_rows if row.get("case_id")}
+    failure_record_index = {
+        str(record.get("case_id", "")).strip(): record
+        for record in (failure_slicing_report or {}).get("records", [])
+        if record.get("case_id")
+    }
+
+    taxonomy_definition_paths = sorted((ROOT / "taxonomy").glob("*.yaml"))
+    taxonomy_records_read_count = 0
+    metadata_records_read_count = 0
+
+    def load_yaml_object(path: Path) -> Any | None:
+        nonlocal taxonomy_records_read_count, metadata_records_read_count
+        if not path.is_file():
+            return None
+        try:
+            if yaml_module is None:
+                return None
+            obj = yaml_module.safe_load(path.read_text(encoding="utf-8"))
+            if "taxonomy" in path.parts:
+                taxonomy_records_read_count += 1
+            else:
+                metadata_records_read_count += 1
+            return obj
+        except Exception:
+            warnings.append(f"failed_to_parse_yaml:{relative_to_root(path)}")
+            return None
+
+    for taxonomy_path in taxonomy_definition_paths:
+        load_yaml_object(taxonomy_path)
+
+    common_core_case_ids = formal_common_core_case_ids()
+    port_case_ids = ["PORT_0004", "PORT_0012", "PORT_0022"]
+    target_case_ids = [*common_core_case_ids, *port_case_ids]
+
+    def normalize_tag_values(value: Any) -> list[str]:
+        if value is None:
+            return []
+        if isinstance(value, str):
+            value = value.strip()
+            return [value] if value else []
+        if isinstance(value, list):
+            normalized: list[str] = []
+            for item in value:
+                normalized.extend(normalize_tag_values(item))
+            return normalized
+        return []
+
+    def extract_tag_family(source: dict[str, Any], family: str, nested_keys: list[str]) -> list[str]:
+        if not isinstance(source, dict):
+            return []
+        family_value = source.get(family)
+        if not isinstance(family_value, dict):
+            return []
+        collected: list[str] = []
+        for key in nested_keys:
+            collected.extend(normalize_tag_values(family_value.get(key)))
+        deduped: list[str] = []
+        seen: set[str] = set()
+        for tag in collected:
+            if tag not in seen:
+                seen.add(tag)
+                deduped.append(tag)
+        return deduped
+
+    def extract_case_metadata(case_id: str) -> dict[str, Any]:
+        registry_row = case_registry_index.get(case_id, {})
+        inferred = case_root_for_case_id(case_id)
+        case_root = inferred[1] if inferred else None
+        manifest_path = case_root / "manifest.yaml" if case_root else None
+        manifest_obj = load_yaml_object(manifest_path) if manifest_path else None
+        taxonomy_paths = sorted(case_root.glob("taxonomy_trial*.yaml")) if case_root else []
+        taxonomy_obj = load_yaml_object(taxonomy_paths[0]) if taxonomy_paths else None
+
+        manifest_tags = manifest_obj.get("tags") if isinstance(manifest_obj, dict) else {}
+        taxonomy_tags = taxonomy_obj if isinstance(taxonomy_obj, dict) else {}
+        sql_feature_tags = extract_tag_family(manifest_tags, "sql_feature", ["primary", "secondary"])
+        if not sql_feature_tags:
+            sql_feature_tags = extract_tag_family(taxonomy_tags, "sql_feature", ["primary", "secondary"])
+        rewrite_opportunity_tags = extract_tag_family(manifest_tags, "rewrite_opportunity", ["primary", "secondary"])
+        if not rewrite_opportunity_tags:
+            rewrite_opportunity_tags = extract_tag_family(taxonomy_tags, "rewrite_opportunity", ["primary", "secondary"])
+        plan_operator_tags = extract_tag_family(manifest_tags, "plan_operator", ["present", "delta_relevant"])
+        portability_tags = extract_tag_family(manifest_tags, "portability", ["confirmed", "suspected"])
+        if not portability_tags:
+            portability_tags = extract_tag_family(taxonomy_tags, "portability", ["confirmed", "suspected"])
+        workload_realism_tags = extract_tag_family(manifest_tags, "workload_realism", ["source_inherited", "case_specific"])
+
+        metadata_missing_flags: list[str] = []
+        if not manifest_obj:
+            metadata_missing_flags.append("manifest_missing_or_unparseable")
+        if not sql_feature_tags:
+            metadata_missing_flags.append("sql_feature_tags_missing")
+        if not rewrite_opportunity_tags:
+            metadata_missing_flags.append("rewrite_opportunity_tags_missing")
+        if not plan_operator_tags:
+            metadata_missing_flags.append("plan_operator_tags_missing")
+        if not portability_tags:
+            metadata_missing_flags.append("portability_tags_missing")
+        if not workload_realism_tags:
+            metadata_missing_flags.append("workload_realism_tags_missing")
+        if not taxonomy_paths:
+            metadata_missing_flags.append("taxonomy_trial_missing")
+        elif isinstance(taxonomy_obj, dict) and str(taxonomy_obj.get("status", "")).strip() == "draft_trial_only":
+            metadata_missing_flags.append("taxonomy_trial_provisional")
+        elif isinstance(taxonomy_obj, dict) and not any(
+            [extract_tag_family(taxonomy_tags, "sql_feature", ["primary", "secondary"]),
+             extract_tag_family(taxonomy_tags, "rewrite_opportunity", ["primary", "secondary"]),
+             extract_tag_family(taxonomy_tags, "portability", ["confirmed", "suspected"])]
+        ):
+            metadata_missing_flags.append("taxonomy_trial_placeholder_or_empty")
+
+        benchmark_line = str(registry_row.get("benchmark_line", "")).strip() or str((manifest_obj or {}).get("expected_line", "")).strip()
+        current_role = str(registry_row.get("current_role", "")).strip() or str((manifest_obj or {}).get("official_case_status", "")).strip()
+        source_family = str(registry_row.get("source_family", "")).strip() or str((manifest_obj or {}).get("source_family", "")).strip()
+        pool = str(registry_row.get("primary_pool", "")).strip() or (inferred[0] if inferred else "")
+
+        return {
+            "pool": pool,
+            "source_family": source_family or None,
+            "benchmark_line_or_current_role": benchmark_line or current_role or None,
+            "sql_feature_tags": sql_feature_tags,
+            "rewrite_opportunity_tags": rewrite_opportunity_tags,
+            "plan_operator_tags": plan_operator_tags,
+            "portability_tags": portability_tags,
+            "workload_realism_tags": workload_realism_tags,
+            "metadata_missing_flags": metadata_missing_flags,
+        }
+
+    def aggregate_bucket(records: list[dict[str, Any]], extractor: Any, untagged_label: str) -> dict[str, Any]:
+        bucket_map: dict[str, dict[str, Any]] = {}
+        for record in records:
+            raw = extractor(record)
+            if isinstance(raw, list):
+                labels = raw or [untagged_label]
+            elif raw in (None, "", []):
+                labels = [untagged_label]
+            else:
+                labels = [str(raw)]
+            for label in labels:
+                entry = bucket_map.setdefault(
+                    str(label),
+                    {
+                        "case_count": 0,
+                        "cases": [],
+                        "correctness_closed_count": 0,
+                        "generated_method_consistency_closed_count": 0,
+                        "speedup_completed_count": 0,
+                        "plan_observable_count": 0,
+                        "port_snapshot_count": 0,
+                        "failure_case_study_count": 0,
+                        "not_yet_claimable_count": 0,
+                        "blocker_buckets": [],
+                    },
+                )
+                entry["case_count"] += 1
+                entry["cases"].append(record["case_id"])
+                if record.get("correctness_status") == "closed":
+                    entry["correctness_closed_count"] += 1
+                if record.get("generated_method_consistency_status") == "closed":
+                    entry["generated_method_consistency_closed_count"] += 1
+                if record.get("speedup_status") == "perf_speedup_completed":
+                    entry["speedup_completed_count"] += 1
+                if record.get("plan_observability_status") == "closed":
+                    entry["plan_observable_count"] += 1
+                if record.get("port_status") == "current_port_snapshot":
+                    entry["port_snapshot_count"] += 1
+                if record.get("port_status") == "failure_case_study":
+                    entry["failure_case_study_count"] += 1
+                if "not_yet_claimable" in record.get("claim_eligibility", []):
+                    entry["not_yet_claimable_count"] += 1
+                bucket_union = set(entry["blocker_buckets"])
+                bucket_union.update(record.get("failure_or_blocker_buckets", []))
+                entry["blocker_buckets"] = sorted(bucket_union)
+        return bucket_map
+
+    records: list[dict[str, Any]] = []
+    cases_with_taxonomy_tags_count = 0
+    cases_missing_taxonomy_tags_count = 0
+
+    for case_id in target_case_ids:
+        base = failure_record_index.get(case_id, {})
+        metadata = extract_case_metadata(case_id)
+        pool = metadata["pool"] or str(base.get("pool", "")).strip()
+        denominator_role = ""
+        claim_eligibility: list[str] = []
+        correctness_status = "open"
+        generated_method_consistency_status = "open"
+        speedup_status = "not_applicable"
+        plan_observability_status = "open"
+        port_status = "not_applicable"
+        failure_or_blocker_buckets = list(base.get("failure_or_blocker_buckets", []))
+        if case_id in common_core_case_ids:
+            if case_id.startswith("PERF_"):
+                denominator_role = "perf_speedup"
+                claim_eligibility = list(base.get("current_result_eligibility", []))
+                speedup_status = "perf_speedup_completed"
+            else:
+                denominator_role = "consistency_semantic_only"
+                claim_eligibility = list(base.get("current_result_eligibility", []))
+                speedup_status = "excluded_cons_semantic_only"
+            correctness_status = "closed" if base.get("control_consistency_status") == "passed_checker_backed_control" else "partial"
+            generated_method_consistency_status = "closed" if all(
+                status == "consistent" for status in (base.get("generated_method_consistency_status", {}) or {}).values()
+            ) else "open"
+            plan_observability_status = "closed" if base.get("plan_pair_ready_status") == "ready" else "open"
+            if case_id.startswith("CONS_"):
+                claim_eligibility = [item for item in claim_eligibility if item != "main_table_perf_speedup"]
+                if "not_yet_claimable" not in claim_eligibility:
+                    claim_eligibility.append("not_yet_claimable")
+            if "main_table_correctness" not in claim_eligibility:
+                claim_eligibility.append("main_table_correctness")
+            if "plan_observability" not in claim_eligibility:
+                claim_eligibility.append("plan_observability")
+        else:
+            denominator_role = (
+                "port_holdout_failure_analysis"
+                if str(base.get("denominator_role", "")).strip() == "holdout_failure_analysis"
+                else "clean_port_snapshot"
+            )
+            claim_flag = str(base.get("claim_eligibility", "")).strip()
+            if claim_flag == "failure_case_study":
+                claim_eligibility = ["failure_case_study"]
+                port_status = "failure_case_study"
+            else:
+                claim_eligibility = ["port_snapshot"]
+                port_status = "current_port_snapshot"
+            correctness_status = "not_applicable"
+            generated_method_consistency_status = "not_applicable"
+            speedup_status = "not_applicable"
+            plan_observability_status = "not_applicable"
+            failure_or_blocker_buckets = list(base.get("failure_bucket", []))
+
+        if any(
+            [
+                metadata["sql_feature_tags"],
+                metadata["rewrite_opportunity_tags"],
+                metadata["plan_operator_tags"],
+                metadata["portability_tags"],
+                metadata["workload_realism_tags"],
+            ]
+        ):
+            cases_with_taxonomy_tags_count += 1
+        else:
+            cases_missing_taxonomy_tags_count += 1
+
+        records.append(
+            {
+                "case_id": case_id,
+                "pool": pool,
+                "source_family": metadata["source_family"],
+                "benchmark_line_or_current_role": metadata["benchmark_line_or_current_role"],
+                "denominator_role": denominator_role,
+                "claim_eligibility": claim_eligibility,
+                "sql_feature_tags": metadata["sql_feature_tags"],
+                "rewrite_opportunity_tags": metadata["rewrite_opportunity_tags"],
+                "plan_operator_tags": metadata["plan_operator_tags"],
+                "portability_tags": metadata["portability_tags"],
+                "workload_realism_tags": metadata["workload_realism_tags"],
+                "metadata_missing_flags": metadata["metadata_missing_flags"],
+                "correctness_status": correctness_status,
+                "generated_method_consistency_status": generated_method_consistency_status,
+                "speedup_status": speedup_status,
+                "plan_observability_status": plan_observability_status,
+                "port_status": port_status,
+                "failure_or_blocker_buckets": failure_or_blocker_buckets,
+                "artifact_claim_boundary": "taxonomy_slicing_from_existing_metadata_only_not_final_taxonomy_or_leaderboard",
+            }
+        )
+
+    metadata_gap_summary = {
+        "manifest_or_parse_gap_count": sum(1 for r in records if "manifest_missing_or_unparseable" in r["metadata_missing_flags"]),
+        "sql_feature_gap_count": sum(1 for r in records if "sql_feature_tags_missing" in r["metadata_missing_flags"]),
+        "rewrite_opportunity_gap_count": sum(1 for r in records if "rewrite_opportunity_tags_missing" in r["metadata_missing_flags"]),
+        "plan_operator_gap_count": sum(1 for r in records if "plan_operator_tags_missing" in r["metadata_missing_flags"]),
+        "portability_tag_gap_count": sum(1 for r in records if "portability_tags_missing" in r["metadata_missing_flags"]),
+        "workload_realism_gap_count": sum(1 for r in records if "workload_realism_tags_missing" in r["metadata_missing_flags"]),
+        "taxonomy_trial_missing_count": sum(1 for r in records if "taxonomy_trial_missing" in r["metadata_missing_flags"]),
+        "taxonomy_trial_provisional_count": sum(1 for r in records if "taxonomy_trial_provisional" in r["metadata_missing_flags"]),
+        "taxonomy_trial_placeholder_or_empty_count": sum(1 for r in records if "taxonomy_trial_placeholder_or_empty" in r["metadata_missing_flags"]),
+    }
+
+    aggregation_dimensions = [
+        "by_pool",
+        "by_source_family",
+        "by_sql_feature_tag",
+        "by_rewrite_opportunity_tag",
+        "by_plan_operator_tag",
+        "by_portability_tag",
+        "by_denominator_role",
+        "by_failure_or_blocker_bucket",
+        "by_claim_eligibility",
+    ]
+
+    payload = {
+        "command": "formal-experiment-taxonomy-slicing",
+        "ok": len(issues) == 0,
+        "ran_at_utc": utc_now(),
+        "output_path": f"reports/formal_common_core/{output_name}",
+        "common_core_case_count": len(common_core_case_ids),
+        "port_case_count": len(port_case_ids),
+        "total_case_count": len(records),
+        "metadata_records_read_count": metadata_records_read_count,
+        "taxonomy_records_read_count": taxonomy_records_read_count,
+        "cases_with_taxonomy_tags_count": cases_with_taxonomy_tags_count,
+        "cases_missing_taxonomy_tags_count": cases_missing_taxonomy_tags_count,
+        "aggregation_dimensions": aggregation_dimensions,
+        "by_pool": aggregate_bucket(records, lambda r: r.get("pool"), "untagged"),
+        "by_source_family": aggregate_bucket(records, lambda r: r.get("source_family"), "untagged"),
+        "by_sql_feature_tag": aggregate_bucket(records, lambda r: r.get("sql_feature_tags"), "untagged"),
+        "by_rewrite_opportunity_tag": aggregate_bucket(records, lambda r: r.get("rewrite_opportunity_tags"), "untagged"),
+        "by_plan_operator_tag": aggregate_bucket(records, lambda r: r.get("plan_operator_tags"), "untagged"),
+        "by_portability_tag": aggregate_bucket(records, lambda r: r.get("portability_tags"), "untagged"),
+        "by_denominator_role": aggregate_bucket(records, lambda r: r.get("denominator_role"), "untagged"),
+        "by_failure_or_blocker_bucket": aggregate_bucket(records, lambda r: r.get("failure_or_blocker_buckets"), "untagged"),
+        "by_claim_eligibility": aggregate_bucket(records, lambda r: r.get("claim_eligibility"), "untagged"),
+        "metadata_gap_summary": metadata_gap_summary,
+        "warnings": warnings,
+        "records": records,
+        "issues": issues,
+        "guardrails": {
+            "database_execution": "disabled",
+            "sql_execution": "disabled",
+            "explain_execution": "disabled",
+            "model_api_call": "disabled",
+            "sqlglot_generation": "disabled",
+            "checker_execution": "disabled",
+            "metric_recomputation": "disabled",
+            "taxonomy_writeback": "disabled",
+            "case_artifact_write": "disabled",
+            "registry_writeback": "disabled",
+        },
+        "claim_boundary": "taxonomy_slicing_from_existing_metadata_only_not_final_taxonomy_or_leaderboard",
+    }
+    write_formal_common_core_report(output_name, payload)
+    return print_and_exit(payload, 0 if payload["ok"] else 1)
+
+
 def cmd_formal_common_core_method_result_checker_run(args: argparse.Namespace) -> int:
     output_name = normalize_formal_common_core_output_name(args.output)
     valid_routes = {
@@ -22263,6 +22667,14 @@ def build_parser() -> argparse.ArgumentParser:
     )
     formal_experiment_failure_slicing_preflight_parser.add_argument("--execute", action="store_true", default=False)
     formal_experiment_failure_slicing_preflight_parser.set_defaults(func=cmd_formal_experiment_failure_slicing_preflight)
+
+    formal_experiment_taxonomy_slicing_parser = subparsers.add_parser("formal-experiment-taxonomy-slicing")
+    formal_experiment_taxonomy_slicing_parser.add_argument(
+        "--output",
+        default="taxonomy_slicing_v0.json",
+    )
+    formal_experiment_taxonomy_slicing_parser.add_argument("--execute", action="store_true", default=False)
+    formal_experiment_taxonomy_slicing_parser.set_defaults(func=cmd_formal_experiment_taxonomy_slicing)
 
     formal_common_core_method_plan_collection_preflight_parser = subparsers.add_parser("formal-common-core-method-plan-collection-preflight")
     formal_common_core_method_plan_collection_preflight_parser.add_argument(
