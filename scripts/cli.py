@@ -20863,6 +20863,309 @@ def cmd_formal_batch2b_cons_backfill_preflight(args: argparse.Namespace) -> int:
     return print_and_exit(payload, 0 if payload["ok"] else 1)
 
 
+def cmd_formal_batch3b_perf_backfill_preflight(args: argparse.Namespace) -> int:
+    output_name = normalize_formal_expansion_output_name(args.output)
+    candidate_case_ids = [
+        "PERF_0027",
+        "PERF_0028",
+        "PERF_0029",
+        "PERF_0030",
+        "PERF_0031",
+        "PERF_0032",
+        "PERF_0037",
+        "PERF_0039",
+        "PERF_0040",
+        "PERF_0041",
+        "PERF_0042",
+    ]
+
+    if args.execute:
+        payload = {
+            "command": "formal-batch3b-perf-backfill-preflight",
+            "ok": False,
+            "ran_at_utc": utc_now(),
+            "output_path": "reports/formal_expansion/batch3b_perf_backfill_preflight_execute_refused_v0.json",
+            "issues": [
+                {
+                    "type": "execute_not_supported",
+                    "message": "formal-batch3b-perf-backfill-preflight is read-existing-files-only and does not support --execute",
+                }
+            ],
+            "guardrails": {
+                "database_execution": "disabled",
+                "sql_execution": "disabled",
+                "checker_execution": "disabled",
+                "model_api_call": "disabled",
+                "sqlglot_execution": "disabled",
+                "mysql_execution": "disabled",
+                "spark_execution": "disabled",
+                "case_artifact_write": "disabled",
+                "registry_writeback": "disabled",
+            },
+            "claim_boundary": "batch3b_perf_backfill_preflight_only_not_execution_or_admission",
+        }
+        write_formal_expansion_report("batch3b_perf_backfill_preflight_execute_refused_v0.json", payload)
+        return print_and_exit(payload, 1)
+
+    _, case_registry_rows = read_registry(CASE_REGISTRY)
+    case_registry_index = {str(row.get("case_id", "")).strip().upper(): row for row in case_registry_rows if row.get("case_id")}
+    issues: list[dict[str, Any]] = []
+    warnings: list[str] = []
+
+    yaml_module = None
+    if safe_module_available("yaml"):
+        try:
+            yaml_module = importlib.import_module("yaml")
+        except Exception as exc:
+            warnings.append(f"yaml_import_error:{exc}")
+
+    def load_yaml_object(path: Path) -> Any | None:
+        if not path.is_file() or yaml_module is None:
+            return None
+        try:
+            return yaml_module.safe_load(path.read_text(encoding="utf-8"))
+        except Exception:
+            warnings.append(f"failed_to_parse_yaml:{relative_to_root(path)}")
+            return None
+
+    def taxonomy_trial_status(case_root: Path) -> str:
+        taxonomy_paths = sorted(case_root.glob("taxonomy_trial*.yaml"))
+        if not taxonomy_paths:
+            return "missing"
+        taxonomy_obj = load_yaml_object(taxonomy_paths[0])
+        if not isinstance(taxonomy_obj, dict):
+            return "unknown"
+        status_value = str(taxonomy_obj.get("status", "")).strip()
+        if status_value in {"draft_trial_only", "provisional", "batch2b_taxonomy_draft"}:
+            return "provisional"
+        if status_value == "p0_taxonomy_hardened_draft":
+            return "usable_for_current_slicing"
+        if not any(
+            key in taxonomy_obj
+            for key in [
+                "sql_feature_tags",
+                "rewrite_opportunity_tags",
+                "portability_tags",
+                "workload_realism_tags",
+                "plan_operator_tags",
+            ]
+        ):
+            return "placeholder_or_empty"
+        return "usable_for_current_slicing"
+
+    records: list[dict[str, Any]] = []
+    ready_cases: list[str] = []
+    minor_backfill_cases: list[str] = []
+    major_blocked_cases: list[str] = []
+    diagnostic_only_cases: list[str] = []
+
+    for case_id in candidate_case_ids:
+        registry_row = case_registry_index.get(case_id, {})
+        inferred = case_root_for_case_id(case_id)
+        case_root = inferred[1] if inferred else None
+        if case_root is None:
+            issues.append({"type": "missing_case_root", "case_id": case_id})
+            continue
+
+        manifest_path = case_root / "manifest.yaml"
+        source_sql_path = case_root / "source.sql"
+        positive_rewrite_path = case_root / "rewrite_pos_01.sql"
+        negative_rewrite_path = case_root / "rewrite_neg_01.sql"
+        checker_yaml_path = case_root / "validation" / "checker.yaml"
+        root_result_check_path = case_root / "runs" / "result_check.json"
+        pg_result_check_path = case_root / "runs" / "pg" / "result_check.json"
+        source_tsv_path = case_root / "runs" / "pg" / "source.tsv"
+        positive_tsv_path = case_root / "runs" / "pg" / "rewrite_pos_01.tsv"
+        negative_tsv_path = case_root / "runs" / "pg" / "rewrite_neg_01.tsv"
+        source_plan_path = case_root / "runs" / "pg" / "plans" / "source.json"
+        positive_plan_path = case_root / "runs" / "pg" / "plans" / "rewrite_pos_01.json"
+        negative_plan_path = case_root / "runs" / "pg" / "plans" / "rewrite_neg_01.json"
+        plan_check_path = case_root / "runs" / "pg" / "plans" / "plan_check.json"
+
+        manifest_exists = manifest_path.is_file()
+        source_sql_exists = source_sql_path.is_file()
+        positive_rewrite_exists = positive_rewrite_path.is_file()
+        negative_rewrite_exists = negative_rewrite_path.is_file()
+        checker_yaml_exists = checker_yaml_path.is_file()
+        root_result_check_exists = root_result_check_path.is_file()
+        pg_result_check_exists = pg_result_check_path.is_file()
+        source_tsv_exists = source_tsv_path.is_file()
+        positive_tsv_exists = positive_tsv_path.is_file()
+        negative_tsv_exists = negative_tsv_path.is_file()
+        source_plan_exists = source_plan_path.is_file()
+        positive_plan_exists = positive_plan_path.is_file()
+        negative_plan_exists = negative_plan_path.is_file()
+        plan_check_exists = plan_check_path.is_file()
+        taxonomy_status = taxonomy_trial_status(case_root)
+
+        missing_artifacts: list[str] = []
+        recommended_backfill_actions: list[str] = []
+
+        for label, exists in [
+            ("manifest.yaml", manifest_exists),
+            ("source.sql", source_sql_exists),
+            ("rewrite_pos_01.sql", positive_rewrite_exists),
+            ("rewrite_neg_01.sql", negative_rewrite_exists),
+            ("validation/checker.yaml", checker_yaml_exists),
+            ("runs/pg/result_check.json", pg_result_check_exists),
+            ("runs/pg/source.tsv", source_tsv_exists),
+            ("runs/pg/rewrite_pos_01.tsv", positive_tsv_exists),
+            ("runs/pg/rewrite_neg_01.tsv", negative_tsv_exists),
+            ("runs/pg/plans/source.json", source_plan_exists),
+            ("runs/pg/plans/rewrite_pos_01.json", positive_plan_exists),
+            ("runs/pg/plans/rewrite_neg_01.json", negative_plan_exists),
+            ("runs/pg/plans/plan_check.json", plan_check_exists),
+        ]:
+            if not exists:
+                missing_artifacts.append(label)
+
+        if not root_result_check_exists:
+            missing_artifacts.append("runs/result_check.json")
+            recommended_backfill_actions.append("add top-level runs/result_check.json so the package has root-level checker evidence alongside runs/pg/result_check.json")
+        if taxonomy_status == "missing":
+            missing_artifacts.append("taxonomy_trial*.yaml")
+            recommended_backfill_actions.append("add a bounded taxonomy_trial draft so the Batch 3B PERF lane is aligned with current taxonomy hardening")
+        elif taxonomy_status in {"placeholder_or_empty", "provisional", "unknown"}:
+            missing_artifacts.append(f"taxonomy_trial_status:{taxonomy_status}")
+            recommended_backfill_actions.append("normalize taxonomy_trial metadata before treating this case as clean Batch 3B denominator material")
+
+        registry_stage_ready = (
+            str(registry_row.get("tri_engine_closure", "")).strip() == "yes"
+            and str(registry_row.get("admission_blockers", "")).strip() == "missing_formal_review_only"
+        )
+        registry_not_yet_staged = (
+            str(registry_row.get("admission_status", "")).strip() == "not_assessed"
+            or str(registry_row.get("promotion_status", "")).strip() == "not_assessed"
+            or str(registry_row.get("benchmark_line", "")).strip() == "not_assessed"
+        )
+
+        core_artifacts_ready = all(
+            [
+                manifest_exists,
+                source_sql_exists,
+                positive_rewrite_exists,
+                negative_rewrite_exists,
+                checker_yaml_exists,
+                pg_result_check_exists,
+                source_tsv_exists,
+                positive_tsv_exists,
+                negative_tsv_exists,
+                source_plan_exists,
+                positive_plan_exists,
+                negative_plan_exists,
+                plan_check_exists,
+            ]
+        )
+
+        if not core_artifacts_ready:
+            current_readiness_status = "blocked_major_missing_artifacts"
+            recommended_next_action = "backfill missing core checker/result/plan artifacts before any Batch 3B PERF execution consideration"
+            major_blocked_cases.append(case_id)
+        elif not registry_stage_ready:
+            current_readiness_status = "diagnostic_only"
+            recommended_next_action = "resolve tri-engine closure and governance blockers before treating this case as clean Batch 3B denominator material"
+            diagnostic_only_cases.append(case_id)
+        elif registry_not_yet_staged or not root_result_check_exists or taxonomy_status != "usable_for_current_slicing":
+            current_readiness_status = "minor_backfill_needed"
+            recommended_next_action = "backfill top-level result evidence and taxonomy draft, then rerun the Batch 3B PERF readiness gate"
+            minor_backfill_cases.append(case_id)
+        else:
+            current_readiness_status = "ready_for_batch3b_execution"
+            recommended_next_action = "run bounded Batch 3B PERF execution/checker on this case"
+            ready_cases.append(case_id)
+
+        if registry_not_yet_staged:
+            recommended_backfill_actions.append("freeze registry staging fields for this case after evidence review; current row remains not_assessed in benchmark_line/admission/promotion")
+
+        records.append(
+            {
+                "case_id": case_id,
+                "pool": str(registry_row.get("primary_pool", "")).strip(),
+                "source_family": str(registry_row.get("source_family", "")).strip(),
+                "benchmark_line": str(registry_row.get("benchmark_line", "")).strip(),
+                "current_role": str(registry_row.get("current_role", "")).strip(),
+                "admission_status": str(registry_row.get("admission_status", "")).strip(),
+                "promotion_status": str(registry_row.get("promotion_status", "")).strip(),
+                "tri_engine_closure": str(registry_row.get("tri_engine_closure", "")).strip(),
+                "admission_blockers": str(registry_row.get("admission_blockers", "")).strip(),
+                "manifest_exists": manifest_exists,
+                "source_sql_exists": source_sql_exists,
+                "positive_rewrite_exists": positive_rewrite_exists,
+                "negative_rewrite_exists": negative_rewrite_exists,
+                "checker_yaml_exists": checker_yaml_exists,
+                "root_result_check_exists": root_result_check_exists,
+                "pg_result_check_exists": pg_result_check_exists,
+                "source_tsv_exists": source_tsv_exists,
+                "positive_tsv_exists": positive_tsv_exists,
+                "negative_tsv_exists": negative_tsv_exists,
+                "source_plan_exists": source_plan_exists,
+                "positive_plan_exists": positive_plan_exists,
+                "negative_plan_exists": negative_plan_exists,
+                "plan_check_exists": plan_check_exists,
+                "taxonomy_trial_status": taxonomy_status,
+                "current_readiness_status": current_readiness_status,
+                "missing_artifacts": missing_artifacts,
+                "recommended_backfill_actions": recommended_backfill_actions,
+                "recommended_next_action": recommended_next_action,
+                "claim_boundary": "batch3b_perf_backfill_preflight_only_not_execution_or_admission",
+            }
+        )
+
+    recommended_batch3b_execution_cases = list(ready_cases)
+    if ready_cases and not minor_backfill_cases and not major_blocked_cases and not diagnostic_only_cases:
+        recommended_next_action = "run Batch 3B PERF PG execution/checker for the full 11-case candidate set."
+    elif minor_backfill_cases and not major_blocked_cases and not ready_cases and not diagnostic_only_cases:
+        recommended_next_action = "backfill top-level result_check and taxonomy_trial drafts for the Batch 3B PERF lane, then rerun this preflight before execution."
+    elif minor_backfill_cases or diagnostic_only_cases:
+        recommended_next_action = (
+            "backfill the narrow governance artifacts on the minor-backfill PERF cases and keep the unresolved tri-engine-closure cases as diagnostic-only "
+            "until closure/governance catches up."
+        )
+    else:
+        recommended_next_action = "resolve major blockers before selecting a Batch 3B PERF execution subset."
+
+    recommended_backfill_plan = {
+        case_id: next((record["recommended_backfill_actions"] for record in records if record["case_id"] == case_id), [])
+        for case_id in candidate_case_ids
+    }
+
+    payload = {
+        "command": "formal-batch3b-perf-backfill-preflight",
+        "ok": not issues,
+        "ran_at_utc": utc_now(),
+        "output_path": f"reports/formal_expansion/{output_name}",
+        "candidate_count": len(candidate_case_ids),
+        "ready_count": len(ready_cases),
+        "minor_backfill_count": len(minor_backfill_cases),
+        "major_blocked_count": len(major_blocked_cases),
+        "diagnostic_only_count": len(diagnostic_only_cases),
+        "ready_cases": ready_cases,
+        "minor_backfill_cases": minor_backfill_cases,
+        "major_blocked_cases": major_blocked_cases,
+        "diagnostic_only_cases": diagnostic_only_cases,
+        "recommended_batch3b_execution_cases": recommended_batch3b_execution_cases,
+        "recommended_backfill_plan": recommended_backfill_plan,
+        "recommended_next_action": recommended_next_action,
+        "records": records,
+        "issues": issues,
+        "warnings": warnings,
+        "guardrails": {
+            "database_execution": "disabled",
+            "sql_execution": "disabled",
+            "checker_execution": "disabled",
+            "model_api_call": "disabled",
+            "sqlglot_execution": "disabled",
+            "mysql_execution": "disabled",
+            "spark_execution": "disabled",
+            "case_artifact_write": "disabled",
+            "registry_writeback": "disabled",
+        },
+        "claim_boundary": "batch3b_perf_backfill_preflight_only_not_execution_or_admission",
+    }
+    write_formal_expansion_report(output_name, payload)
+    return print_and_exit(payload, 0 if payload["ok"] else 1)
+
+
 def cmd_formal_batch2b_cons_execution_scoring(args: argparse.Namespace) -> int:
     candidate_case_ids = ["CONS_0024", "CONS_0031", "CONS_0034"]
     selected_case_ids = [str(case_id).strip().upper() for case_id in (args.case_id or []) if str(case_id).strip()]
@@ -29899,6 +30202,14 @@ def build_parser() -> argparse.ArgumentParser:
     )
     formal_batch2b_cons_backfill_preflight_parser.add_argument("--execute", action="store_true", default=False)
     formal_batch2b_cons_backfill_preflight_parser.set_defaults(func=cmd_formal_batch2b_cons_backfill_preflight)
+
+    formal_batch3b_perf_backfill_preflight_parser = subparsers.add_parser("formal-batch3b-perf-backfill-preflight")
+    formal_batch3b_perf_backfill_preflight_parser.add_argument(
+        "--output",
+        default="batch3b_perf_backfill_preflight_v0.json",
+    )
+    formal_batch3b_perf_backfill_preflight_parser.add_argument("--execute", action="store_true", default=False)
+    formal_batch3b_perf_backfill_preflight_parser.set_defaults(func=cmd_formal_batch3b_perf_backfill_preflight)
 
     formal_batch2b_cons_execution_scoring_parser = subparsers.add_parser("formal-batch2b-cons-execution-scoring")
     formal_batch2b_cons_execution_scoring_parser.add_argument("--case-id", action="append", default=[])
