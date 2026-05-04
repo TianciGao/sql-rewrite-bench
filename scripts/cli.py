@@ -165,6 +165,19 @@ FORMAL_COMMON_CORE_BATCH2A_PERF_CASES = [
     "PERF_0035",
     "PERF_0036",
 ]
+FORMAL_COMMON_CORE_BATCH3A_PERF_CASES = [
+    "PERF_0043",
+    "PERF_0044",
+    "PERF_0047",
+    "PERF_0050",
+    "PERF_0052",
+    "PERF_0053",
+    "PERF_0056",
+    "PERF_0062",
+    "PERF_0063",
+    "PERF_0065",
+    "PERF_0066",
+]
 HUMAN_POSITIVE_PG_DEFAULT_CASES = [
     "PERF_0006",
     "PERF_0008",
@@ -17603,6 +17616,329 @@ def cmd_formal_common_core_batch2a_pg_execution(args: argparse.Namespace) -> int
     return print_and_exit(payload, 0 if payload["ok"] else 1)
 
 
+def cmd_formal_batch3a_perf_pg_execution(args: argparse.Namespace) -> int:
+    output_name = normalize_formal_expansion_output_name(args.output)
+    valid_case_ids = set(FORMAL_COMMON_CORE_BATCH3A_PERF_CASES)
+    valid_routes = {
+        "NATIVE_IDENTITY": {
+            "baseline_id": "NATIVE_IDENTITY",
+            "route": "native_identity",
+            "candidate_path": lambda case_root: case_root / "source.sql",
+            "generator": None,
+        },
+        "HUMAN_REFERENCE_POSITIVE": {
+            "baseline_id": "HUMAN_REFERENCE_POSITIVE",
+            "route": "human_reference_positive",
+            "candidate_path": lambda case_root: sorted(case_root.glob("rewrite_pos_*.sql"))[0]
+            if sorted(case_root.glob("rewrite_pos_*.sql"))
+            else case_root / "rewrite_pos_01.sql",
+            "generator": None,
+        },
+        "HARD_NEGATIVE_GUARD": {
+            "baseline_id": "HARD_NEGATIVE_GUARD",
+            "route": "hard_negative_guard",
+            "candidate_path": lambda case_root: sorted(case_root.glob("rewrite_neg_*.sql"))[0]
+            if sorted(case_root.glob("rewrite_neg_*.sql"))
+            else case_root / "rewrite_neg_01.sql",
+            "generator": None,
+        },
+        "SQLGLOT_OPT_SAME_DIALECT": {
+            "baseline_id": "SQLGLOT_OPT_SAME_DIALECT",
+            "route": "sqlglot_opt_same_dialect",
+            "candidate_path": lambda case_root: case_root / "source.sql",
+            "generator": "sqlglot_same_dialect_opt",
+        },
+        "SQLGLOT_TRANSPILE_SAME_DIALECT_NO_OPT": {
+            "baseline_id": "SQLGLOT_TRANSPILE_SAME_DIALECT_NO_OPT",
+            "route": "sqlglot_transpile_same_dialect_no_opt",
+            "candidate_path": lambda case_root: case_root / "source.sql",
+            "generator": "sqlglot_same_dialect_no_opt",
+        },
+    }
+    selected_case_ids = [str(case_id).strip().upper() for case_id in (args.case_id or []) if str(case_id).strip()]
+    selected_routes = [str(route).strip().upper() for route in (args.route or []) if str(route).strip()]
+    if not selected_case_ids:
+        selected_case_ids = list(FORMAL_COMMON_CORE_BATCH3A_PERF_CASES)
+    if not selected_routes:
+        selected_routes = list(valid_routes)
+
+    issues: list[dict[str, Any]] = []
+    invalid_cases = [case_id for case_id in selected_case_ids if case_id not in valid_case_ids]
+    invalid_routes = [route for route in selected_routes if route not in valid_routes]
+    if invalid_cases or invalid_routes:
+        if args.execute:
+            payload = {
+                "command": "formal-batch3a-perf-pg-execution",
+                "ok": False,
+                "ran_at_utc": utc_now(),
+                "output_path": "reports/formal_expansion/batch3a_perf_pg_execution_execute_refused_v0.json",
+                "case_count": len(selected_case_ids),
+                "route_count": len(selected_routes),
+                "issues": [
+                    *({"type": "unsupported_case_id", "case_id": case_id} for case_id in invalid_cases),
+                    *({"type": "unsupported_route", "route": route} for route in invalid_routes),
+                ],
+                "guardrails": {
+                    "database_execution": "enabled_only_with_execute",
+                    "sql_execution": "postgres_only_selected_routes_and_cases",
+                    "model_api_call": "disabled",
+                    "mysql_execution": "disabled",
+                    "spark_execution": "disabled",
+                    "checker_execution": "disabled",
+                    "speedup_scoring": "disabled",
+                    "plan_collection": "disabled",
+                    "case_artifact_write": "disabled",
+                    "registry_writeback": "disabled",
+                },
+                "claim_boundary": "batch3a_perf_pg_execution_expansion_not_correctness_or_speedup",
+            }
+            write_formal_expansion_report("batch3a_perf_pg_execution_execute_refused_v0.json", payload)
+            return print_and_exit(payload, 1)
+        issues.extend({"type": "unsupported_case_id", "case_id": case_id} for case_id in invalid_cases)
+        issues.extend({"type": "unsupported_route", "route": route} for route in invalid_routes)
+    selected_case_ids = [case_id for case_id in selected_case_ids if case_id in valid_case_ids]
+    selected_routes = [route for route in selected_routes if route in valid_routes]
+
+    env_visibility = pg_env_visibility()
+    required_env_visible = all(env_visibility[name] for name in ["PGHOST", "PGPORT", "PGDATABASE", "PGUSER"])
+    pg_password_present = env_visibility["PGPASSWORD"]
+    psycopg_available = safe_module_available("psycopg")
+    sqlglot_available = safe_module_available("sqlglot")
+
+    if args.execute and not required_env_visible:
+        issues.append({"type": "missing_pg_env", "message": "required env: PGHOST, PGPORT, PGDATABASE, PGUSER"})
+    if args.execute and not psycopg_available:
+        issues.append({"type": "psycopg_unavailable", "message": "psycopg is not installed"})
+    if any(route in selected_routes for route in ("SQLGLOT_OPT_SAME_DIALECT", "SQLGLOT_TRANSPILE_SAME_DIALECT_NO_OPT")) and not sqlglot_available:
+        issues.append({"type": "sqlglot_unavailable", "message": "sqlglot is not installed"})
+
+    payload = {
+        "command": "formal-batch3a-perf-pg-execution",
+        "ok": False,
+        "ran_at_utc": utc_now(),
+        "output_path": f"reports/formal_expansion/{output_name}",
+        "case_count": len(selected_case_ids),
+        "route_count": len(selected_routes),
+        "total_records": len(selected_case_ids) * len(selected_routes),
+        "execution_requested": bool(args.execute),
+        "pg_env_visible": required_env_visible,
+        "pg_password_present": pg_password_present,
+        "psycopg_available": psycopg_available,
+        "sqlglot_available": sqlglot_available,
+        "guardrails": {
+            "database_execution": "enabled_only_with_execute",
+            "sql_execution": "postgres_only_selected_routes_and_cases",
+            "model_api_call": "disabled",
+            "mysql_execution": "disabled",
+            "spark_execution": "disabled",
+            "checker_execution": "disabled",
+            "speedup_scoring": "disabled",
+            "plan_collection": "disabled",
+            "case_artifact_write": "disabled",
+            "registry_writeback": "disabled",
+        },
+        "claim_boundary": "batch3a_perf_pg_execution_expansion_not_correctness_or_speedup",
+    }
+
+    sqlglot_module = None
+    sqlglot_optimize = None
+    if sqlglot_available:
+        try:
+            sqlglot_module = importlib.import_module("sqlglot")
+            from sqlglot.optimizer import optimize as sqlglot_optimize  # type: ignore
+        except Exception as exc:
+            sqlglot_available = False
+            payload["sqlglot_available"] = False
+            issues.append({"type": "sqlglot_import_error", "message": str(exc)})
+
+    records: list[dict[str, Any]] = []
+    success_count_by_route: Counter[str] = Counter()
+    failed_count_by_route: Counter[str] = Counter()
+    failure_categories: Counter[str] = Counter()
+
+    for case_id in selected_case_ids:
+        inferred = case_root_for_case_id(case_id)
+        case_root = inferred[1] if inferred else None
+        validation_schema = validation_schema_hint(case_id)
+        for route in selected_routes:
+            config = valid_routes[route]
+            baseline_id = str(config["baseline_id"])
+            candidate_sql_source = ""
+            candidate_sql_exists_or_generated = False
+            parse_status = "not_applicable"
+            generation_status = "not_applicable"
+            execution_status = "not_requested"
+            row_count: int | None = None
+            runtime_ms: int | None = None
+            search_path_after_set = ""
+            failure_category = "none"
+            error_message = ""
+            source_sql_exists = False
+            sql_text = ""
+
+            if case_root is None:
+                execution_status = "failed"
+                failure_category = "case_not_resolved"
+                error_message = "could not resolve case root from case_id"
+            else:
+                source_sql_path = case_root / "source.sql"
+                source_sql_exists = source_sql_path.is_file()
+                if config["generator"] in {"sqlglot_same_dialect_opt", "sqlglot_same_dialect_no_opt"}:
+                    candidate_sql_source = relative_to_root(source_sql_path)
+                    if not source_sql_exists:
+                        parse_status = "failed"
+                        generation_status = "failed"
+                        execution_status = "failed" if args.execute else "skipped"
+                        failure_category = "missing_source_sql"
+                        error_message = "source.sql is missing"
+                    elif not sqlglot_available or sqlglot_module is None:
+                        parse_status = "failed"
+                        generation_status = "failed"
+                        execution_status = "failed" if args.execute else "skipped"
+                        failure_category = "sqlglot_unavailable"
+                        error_message = "sqlglot is unavailable"
+                    else:
+                        source_sql = source_sql_path.read_text(encoding="utf-8")
+                        try:
+                            parsed = sqlglot_module.parse_one(source_sql, dialect="postgres")
+                            parse_status = "success"
+                            if config["generator"] == "sqlglot_same_dialect_opt":
+                                if sqlglot_optimize is None:
+                                    raise RuntimeError("sqlglot optimizer is unavailable")
+                                optimized = sqlglot_optimize(parsed, dialect="postgres")
+                                sql_text = optimized.sql(dialect="postgres")
+                            else:
+                                sql_text = parsed.sql(dialect="postgres")
+                            generation_status = "success"
+                            candidate_sql_exists_or_generated = True
+                        except Exception as exc:
+                            if parse_status != "success":
+                                parse_status = "failed"
+                            generation_status = "failed"
+                            execution_status = "failed" if args.execute else "skipped"
+                            failure_category = type(exc).__name__
+                            error_message = str(exc)
+                else:
+                    candidate_sql_path = config["candidate_path"](case_root)
+                    candidate_sql_source = relative_to_root(candidate_sql_path)
+                    if candidate_sql_path.is_file():
+                        sql_text = candidate_sql_path.read_text(encoding="utf-8")
+                        candidate_sql_exists_or_generated = True
+                    else:
+                        execution_status = "failed" if args.execute else "skipped"
+                        failure_category = "missing_candidate_sql"
+                        error_message = f"candidate SQL missing for route {route}"
+
+                if candidate_sql_exists_or_generated and not args.execute:
+                    execution_status = "dry_run_only"
+                elif candidate_sql_exists_or_generated and args.execute:
+                    if issues:
+                        execution_status = "blocked_invalid_selection"
+                        failure_category = "environment_or_selection_blocked"
+                    else:
+                        started = time.perf_counter()
+                        try:
+                            psycopg = importlib.import_module("psycopg")
+                            with psycopg.connect(
+                                host=os.environ["PGHOST"],
+                                port=os.environ["PGPORT"],
+                                dbname=os.environ["PGDATABASE"],
+                                user=os.environ["PGUSER"],
+                                password=os.environ.get("PGPASSWORD"),
+                                autocommit=False,
+                            ) as conn:
+                                with conn.cursor() as cur:
+                                    cur.execute("SET SESSION CHARACTERISTICS AS TRANSACTION READ ONLY")
+                                    cur.execute("SELECT set_config('statement_timeout', %s, false)", ("30000",))
+                                    cur.execute("SELECT to_regnamespace(%s)", (validation_schema,))
+                                    schema_row = cur.fetchone()
+                                    schema_name = schema_row[0] if schema_row else None
+                                    if not schema_name:
+                                        execution_status = "failed"
+                                        failure_category = "missing_validation_schema"
+                                        error_message = f"validation schema not found: {validation_schema}"
+                                    else:
+                                        cur.execute(
+                                            psycopg.sql.SQL("SET search_path TO {}, public").format(
+                                                psycopg.sql.Identifier(validation_schema)
+                                            )
+                                        )
+                                        cur.execute("SHOW search_path")
+                                        search_path_row = cur.fetchone()
+                                        search_path_after_set = str(search_path_row[0]) if search_path_row else ""
+                                        cur.execute(sql_text)
+                                        if cur.description is not None:
+                                            rows = cur.fetchall()
+                                            row_count = len(rows)
+                                        else:
+                                            row_count = cur.rowcount if cur.rowcount >= 0 else None
+                                        execution_status = "success"
+                                    conn.rollback()
+                            runtime_ms = int((time.perf_counter() - started) * 1000)
+                        except Exception as exc:
+                            runtime_ms = int((time.perf_counter() - started) * 1000)
+                            execution_status = "failed"
+                            failure_category = type(exc).__name__
+                            error_message = str(exc)
+
+            record = {
+                "case_id": case_id,
+                "route": route,
+                "baseline_id": baseline_id,
+                "source_sql_exists": source_sql_exists,
+                "candidate_sql_source": candidate_sql_source,
+                "candidate_sql_exists_or_generated": candidate_sql_exists_or_generated,
+                "parse_status": parse_status,
+                "generation_status": generation_status,
+                "execution_requested": bool(args.execute),
+                "execution_status": execution_status,
+                "row_count": row_count,
+                "runtime_ms": runtime_ms,
+                "validation_schema": validation_schema,
+                "search_path_after_set": search_path_after_set,
+                "failure_category": failure_category,
+                "error_message": error_message,
+                "artifact_claim_boundary": "batch3a_perf_pg_execution_only_not_correctness_or_speedup",
+            }
+            records.append(record)
+            if execution_status == "success":
+                success_count_by_route[route] += 1
+            elif execution_status == "failed":
+                failed_count_by_route[route] += 1
+                failure_categories[failure_category] += 1
+
+    executed_count = sum(1 for r in records if r["execution_status"] in {"success", "failed"})
+    success_count = sum(1 for r in records if r["execution_status"] == "success")
+    failed_count = sum(1 for r in records if r["execution_status"] == "failed")
+    skipped_count = sum(
+        1
+        for r in records
+        if r["execution_status"] in {"skipped", "dry_run_only", "not_requested", "blocked_invalid_selection"}
+    )
+
+    payload.update(
+        {
+            "executed_count": executed_count,
+            "success_count": success_count,
+            "failed_count": failed_count,
+            "skipped_count": skipped_count,
+            "success_count_by_route": dict(success_count_by_route),
+            "failed_count_by_route": dict(failed_count_by_route),
+            "failure_categories": dict(failure_categories),
+            "records": records,
+            "issues": issues,
+        }
+    )
+    if args.execute:
+        payload["ok"] = not issues and failed_count == 0 and success_count == len(records)
+    else:
+        payload["ok"] = not issues and all(
+            r["execution_status"] == "dry_run_only" for r in records if r["candidate_sql_exists_or_generated"]
+        )
+    write_formal_expansion_report(output_name, payload)
+    return print_and_exit(payload, 0 if payload["ok"] else 1)
+
+
 def classify_batch2a_sqlglot_trigger_patterns(source_sql: str, source_family: str) -> list[str]:
     low = source_sql.lower()
     patterns: list[str] = []
@@ -28401,6 +28737,20 @@ def build_parser() -> argparse.ArgumentParser:
     )
     formal_common_core_batch2a_pg_execution_parser.add_argument("--execute", action="store_true", default=False)
     formal_common_core_batch2a_pg_execution_parser.set_defaults(func=cmd_formal_common_core_batch2a_pg_execution)
+
+    formal_batch3a_perf_pg_execution_parser = subparsers.add_parser("formal-batch3a-perf-pg-execution")
+    formal_batch3a_perf_pg_execution_parser.add_argument("--case-id", action="append", default=[])
+    formal_batch3a_perf_pg_execution_parser.add_argument(
+        "--route",
+        action="append",
+        default=[],
+    )
+    formal_batch3a_perf_pg_execution_parser.add_argument(
+        "--output",
+        default="batch3a_perf_pg_execution_v0.json",
+    )
+    formal_batch3a_perf_pg_execution_parser.add_argument("--execute", action="store_true", default=False)
+    formal_batch3a_perf_pg_execution_parser.set_defaults(func=cmd_formal_batch3a_perf_pg_execution)
 
     formal_batch2a_sqlglot_failure_analysis_parser = subparsers.add_parser("formal-batch2a-sqlglot-failure-analysis")
     formal_batch2a_sqlglot_failure_analysis_parser.add_argument(
