@@ -2,7 +2,7 @@
 
 ## Scope
 
-- Case: `CONS_0007`
+- Case: `CONS_0035`
 - Pair roles:
   - `source_positive`
   - `source_negative`
@@ -27,13 +27,13 @@ Canary execution:
 ```bash
 cd datasets/raw/verieql/staged/VeriEQL
 /tmp/verieql-probe-venv/bin/python -m parallel.cli_within_timeout \
-  -f /home/tianci_gao/code/sql-rewrite-bench/reports/formal_expansion/verieql_support/cons_0007_pairs.jsonl \
+  -f /home/tianci_gao/code/sql-rewrite-bench/reports/formal_expansion/verieql_support/cons_0035_pairs.jsonl \
   -s 2 \
   -t 600 \
   -m train \
   -c 1 \
   -i 0 \
-  -o /home/tianci_gao/code/sql-rewrite-bench/reports/formal_expansion/verieql_support/cons_0007_verieql_output.jsonl
+  -o /home/tianci_gao/code/sql-rewrite-bench/reports/formal_expansion/verieql_support/cons_0035_verieql_output.jsonl
 ```
 
 ## Result
@@ -42,29 +42,29 @@ cd datasets/raw/verieql/staged/VeriEQL
 - Wrapper input exists: `yes`
 - Wrapper input parseable: `yes`
 - Help probe status: `success`
-- Input-format mismatch resolved: `yes`
 - VeriEQL canary run status: `completed`
 - Return code: `0`
 - Output artifact produced: `yes`
-- Output artifact path: `reports/formal_expansion/verieql_support/cons_0007_verieql_output.jsonl`
+- Output artifact path: `reports/formal_expansion/verieql_support/cons_0035_verieql_output.jsonl`
+- Exact blocker: `runtime_exception`
 
 ## Per-Pair Result
 
 - `source_positive`: `error`
 - `source_negative`: `error`
 
-Parseable VeriEQL output was produced for both pairs. The terminal state on both records is `NSE`, and the reported error text is:
+Parseable VeriEQL output was produced for both pairs. The terminal state on both records is `OTE`, and the reported error text is:
 
 ```text
-Not supported feature: EXISTS
+Or() got an unexpected keyword argument 'ctx'
 ```
 
-That means the canary now reaches the verifier and returns per-pair support-table evidence, but the evidence is a bounded unsupported-feature outcome rather than an equivalence or non-equivalence verdict.
+That means the canary reaches the verifier, consumes the wrapper input contract correctly, and produces parseable output artifacts, but both pair evaluations terminate inside VeriEQL with a runtime exception rather than a verdict.
 
 ## Final Status
 
-- `source_positive`: `NSE` / unsupported feature
-- `source_negative`: `NSE` / unsupported feature
+- `source_positive`: `OTE` / runtime error
+- `source_negative`: `OTE` / runtime error
 - `prove_count=0`
 - `refute_count=0`
 - `unknown_count=0`
@@ -72,45 +72,31 @@ That means the canary now reaches the verifier and returns per-pair support-tabl
 - `error_count=2`
 - `support_rate_if_defined=0.0`
 
-## Contract Fix
-
-The previous `input_format_mismatch` is fixed.
-
-The batch runner expects one of:
-
-- `file`
-- `name`
-- `benchmark`
-
-The wrapper scaffold now emits all three, along with `case_id` and `pair_role`, so the runner no longer aborts before verification.
-
-## Exact Blocker After Contract Fix
-
-There is no longer an input-contract blocker. The remaining limitation is verifier feature support:
-
-```text
-Not supported feature: EXISTS
-```
-
-This is support-table evidence, not a runner/bootstrap failure. VeriEQL executed the bounded canary and explicitly reported that both `CONS_0007` pairs use a feature it does not support in this path.
-
 ## Interpretation
 
-This is real support-canary evidence, and it does promote the line beyond wrapper-only status. The line now has executed verifier evidence on `CONS_0007`. However, it is not support-clean evidence: both pairs terminate in `NSE`, so VeriEQL is still not usable on this canary as a practical support-table method for the current case.
+This is real support-canary evidence for `CONS_0035`. It improves on the `CONS_0007` path in one important way: the blocker is no longer unsupported `EXISTS`, and the wrapper/input contract is no longer the issue. The safe module-mode VeriEQL runner now accepts the `CONS_0035` records and produces a parseable output artifact.
 
-What is now established:
+The remaining blocker is internal VeriEQL runtime behavior:
 
-- dependency/runtime setup is good enough to launch the safe module-mode entrypoint
-- the wrapper artifact is readable, parseable, and contract-complete for the batch runner
-- the verifier produces parseable output artifacts on this canary
-- the remaining limitation is feature support for `EXISTS`
+```text
+Or() got an unexpected keyword argument 'ctx'
+```
+
+So this line is now beyond wrapper-only and beyond input-contract debugging, but it is still not support-clean on `CONS_0035`.
+
+## What Was Resolved
+
+- `--case-id` generalization works for the wrapper and canary commands
+- the runner-required record metadata contract is satisfied
+- `input_format_mismatch` is resolved
+- module-mode batch execution reaches pair processing and writes output
 
 ## Next Action
 
-Next action: do not spend more effort on this exact `CONS_0007` pair unless `EXISTS` support is a deliberate target.
+Next action: do not search for an even simpler SQL shape yet. The active blocker is now a VeriEQL runtime issue in the staged implementation, not the specific `CONS_0035` feature profile.
 
 Concretely:
 
-1. Keep the wrapper contract patch.
-2. Record this canary as executed support evidence with `NSE` outcomes.
-3. If the VeriEQL line is advanced further, choose a simpler consistency case without `EXISTS`, or treat `EXISTS` as a current unsupported-feature boundary for the support table.
+1. Treat `CONS_0035` as the current best executed support-canary evidence.
+2. If the VeriEQL line is advanced further, investigate the staged `constants.py` / z3 wrapper incompatibility behind `Or(..., ctx=...)`.
+3. Only after that runtime issue is addressed should another bounded support verdict attempt be considered meaningful.

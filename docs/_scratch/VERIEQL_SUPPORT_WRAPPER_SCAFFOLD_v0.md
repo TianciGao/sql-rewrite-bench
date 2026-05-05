@@ -2,24 +2,25 @@
 
 ## Scope
 
-- Case: `CONS_0007` only
+- Case: `CONS_0035`
 - Role: verifier/support-table scaffold only
-- Boundary: no verifier execution, no PostgreSQL, no checker, no speedup, not a baseline claim
+- Boundary: no verifier execution in the scaffold command itself, no PostgreSQL, no checker, no speedup, not a baseline claim
 
 ## Result
 
 - Wrapper jsonlines emitted: `yes`
-- Output path: `reports/formal_expansion/verieql_support/cons_0007_pairs.jsonl`
+- Output path: `reports/formal_expansion/verieql_support/cons_0035_pairs.jsonl`
 - Pair count: `2`
-- VeriEQL execution status: `not_run`
+- VeriEQL execution status in scaffold command: `not_run`
 - Runner input-contract patch applied: `yes`
+- `--case-id` generalization for wrapper scaffold: `yes`
 
 ## Emitted Pair Roles
 
 - `source_positive`
 - `source_negative`
 
-Both records were emitted with the top-level keys expected by the staged VeriEQL batch format:
+Both records now carry the full runner-safe metadata contract:
 
 - `index`
 - `file`
@@ -33,30 +34,26 @@ Both records were emitted with the top-level keys expected by the staged VeriEQL
 
 The emitted jsonlines was validated locally as parseable JSON on both lines.
 
-The extra runner metadata fields are now intentional. `parallel/cli_within_timeout.py` does not only read `index`, `schema`, `constraint`, and `pair`; it also assumes one of `file`, `name`, or `benchmark` is present and uses that to populate its internal `file_path`.
-
 ## Schema Mapping
 
 - Schema mapping result: `single_table_mapped`
-- DDL source: [ddl_pg.sql](/home/tianci_gao/code/sql-rewrite-bench/cases/CONS/CONS_0007/schema/ddl_pg.sql)
-- Table mapped: `TMP_EMPS`
-- Column count: `5`
+- DDL source: [ddl_pg.sql](/home/tianci_gao/code/sql-rewrite-bench/cases/CONS/CONS_0035/schema/ddl_pg.sql)
+- Table mapped: `EMP`
+- Column count: `3`
 
 Mapped schema object:
 
 ```json
 {
-  "TMP_EMPS": {
-    "EMPID": "INT",
-    "DEPTNO": "INT",
-    "NAME": "VARCHAR",
-    "SALARY": "DECIMAL",
-    "COMMISSION": "INT"
+  "EMP": {
+    "EMPNO": "INT",
+    "MGR": "INT",
+    "DEPTNO": "INT"
   }
 }
 ```
 
-The current first pass keeps constraints empty and explicitly unmodeled rather than inferring integrity semantics from PostgreSQL DDL.
+The first pass still keeps constraints empty and explicitly unmodeled.
 
 ## Policy
 
@@ -67,9 +64,9 @@ The current first pass keeps constraints empty and explicitly unmodeled rather t
 
 ## Mapping Status
 
-- Source SQL present: [source.sql](/home/tianci_gao/code/sql-rewrite-bench/cases/CONS/CONS_0007/source.sql)
-- Positive comparator present: [rewrite_pos_01.sql](/home/tianci_gao/code/sql-rewrite-bench/cases/CONS/CONS_0007/rewrite_pos_01.sql)
-- Negative comparator present: [rewrite_neg_01.sql](/home/tianci_gao/code/sql-rewrite-bench/cases/CONS/CONS_0007/rewrite_neg_01.sql)
+- Source SQL present: [source.sql](/home/tianci_gao/code/sql-rewrite-bench/cases/CONS/CONS_0035/source.sql)
+- Positive comparator present: [rewrite_pos_01.sql](/home/tianci_gao/code/sql-rewrite-bench/cases/CONS/CONS_0035/rewrite_pos_01.sql)
+- Negative comparator present: [rewrite_neg_01.sql](/home/tianci_gao/code/sql-rewrite-bench/cases/CONS/CONS_0035/rewrite_neg_01.sql)
 - Source-positive mapped: `yes`
 - Source-negative mapped: `yes`
 
@@ -79,16 +76,16 @@ The current first pass keeps constraints empty and explicitly unmodeled rather t
 
 Interpretation:
 
-The benchmark-to-VeriEQL bridge now exists at the wrapper-input level for `CONS_0007`, including the runner-specific metadata contract needed by the batch entrypoint. This command still only materializes the pair transport; it does not execute VeriEQL itself.
+At the wrapper stage, the benchmark-to-VeriEQL bridge is closed for `CONS_0035`. The command now emits case-local runner-ready jsonlines instead of a `CONS_0007`-specific artifact, and the output contract matches the VeriEQL batch runner’s actual metadata expectations.
 
 ## Next Action
 
-The next bounded step, if this support line is advanced, should be a dependency install/probe plus a strictly bounded no-side-effect VeriEQL execution canary over the emitted `source_positive` and `source_negative` records.
+Next action after this scaffold is the bounded module-mode canary on the emitted `CONS_0035` jsonlines.
 
 ## Boundary
 
 - Wrapper scaffold only
-- No verifier execution
+- No verifier execution inside this command
 - No PostgreSQL
 - No speedup
 - Not a baseline claim

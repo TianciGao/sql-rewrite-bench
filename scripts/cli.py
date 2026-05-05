@@ -10253,7 +10253,8 @@ def cmd_formal_verieql_support_wrapper_scaffold(args: argparse.Namespace) -> int
         "pair_scope": "source_positive_and_source_negative",
     }
     constraint_policy = "empty_or_explicitly_unmodeled_first_pass"
-    jsonl_output_path = FORMAL_EXPANSION_REPORT_DIR / "verieql_support" / "cons_0007_pairs.jsonl"
+    primary_case_id = selected_case_ids[0]
+    jsonl_output_path = verieql_support_wrapper_jsonl_path(primary_case_id)
 
     records: list[dict[str, Any]] = []
     jsonl_records: list[dict[str, Any]] = []
@@ -10584,6 +10585,9 @@ def cmd_formal_verieql_support_canary(args: argparse.Namespace) -> int:
         verifier_run_status = "failed"
         if not exact_blocker:
             exact_blocker = "output_parse_error"
+
+    if args.execute and output_parse_status == "parsed" and error_count > 0 and not exact_blocker:
+        exact_blocker = "runtime_exception"
 
     if not args.execute:
         source_positive_status = "planned"
