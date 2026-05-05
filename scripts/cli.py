@@ -754,6 +754,10 @@ def verieql_support_canary_case_ids() -> list[str]:
     return ["CONS_0007"]
 
 
+def verieql_support_candidate_scan_case_ids() -> list[str]:
+    return [f"CONS_{index:04d}" for index in range(1, 41)]
+
+
 def formal_common_core_case_ids() -> list[str]:
     return list(FORMAL_COMMON_CORE_CASES)
 
@@ -1927,6 +1931,37 @@ def verieql_state_to_status(state: str) -> tuple[str, str]:
     if state in {"SYN", "NIE", "NSE", "OOM", "OTE"}:
         return "error", "error"
     return "error", "unrecognized_state"
+
+
+def sql_shape_flags(sql_text: str) -> dict[str, bool]:
+    upper_sql = sql_text.upper()
+    padded = f" {upper_sql} "
+    has_exists = "EXISTS" in upper_sql
+    has_limit_offset = " LIMIT " in padded or " OFFSET " in padded
+    has_aggregate = any(token in upper_sql for token in ["COUNT(", "SUM(", "AVG(", "MIN(", "MAX(", "GROUP BY", "HAVING"])
+    has_join = " JOIN " in padded
+    has_subquery = bool(re.search(r"\(\s*SELECT\b", upper_sql))
+    has_correlated_subquery = bool(
+        re.search(
+            r"EXISTS\s*\(.*\b[A-Z_][A-Z0-9_]*\d+\.",
+            upper_sql,
+            flags=re.DOTALL,
+        )
+    )
+    has_dialect_sensitive_functions = any(
+        token in upper_sql for token in ["IFNULL(", "NVL(", "DATE_FORMAT(", "STR_TO_DATE(", "IIF("]
+    )
+    has_distinct_aggregate = bool(re.search(r"(COUNT|SUM|AVG|MIN|MAX)\s*\(\s*DISTINCT\b", upper_sql))
+    return {
+        "has_exists": has_exists,
+        "has_limit_offset": has_limit_offset,
+        "has_aggregate": has_aggregate,
+        "has_join": has_join,
+        "has_subquery": has_subquery,
+        "has_correlated_subquery": has_correlated_subquery,
+        "has_dialect_sensitive_functions": has_dialect_sensitive_functions,
+        "has_distinct_aggregate": has_distinct_aggregate,
+    }
 
 
 def resolve_repo_path(value: str) -> Path:
@@ -10591,6 +10626,170 @@ def cmd_formal_verieql_support_canary(args: argparse.Namespace) -> int:
         "exact_blocker": exact_blocker,
         "records": records,
         "claim_boundary": "verieql_support_canary_only_not_speedup_not_rewrite_baseline",
+    }
+    write_formal_expansion_report(output_name, payload)
+    return print_and_exit(payload, 0)
+
+
+def cmd_formal_verieql_support_candidate_scan(args: argparse.Namespace) -> int:
+    output_name = normalize_formal_expansion_output_name(args.output)
+    selected_case_ids = [str(case_id).strip().upper() for case_id in (args.case_id or []) if str(case_id).strip()]
+    if not selected_case_ids:
+        selected_case_ids = verieql_support_candidate_scan_case_ids()
+
+    records: list[dict[str, Any]] = []
+    first_verdict_candidates: list[dict[str, Any]] = []
+    maybe_later_candidates: list[dict[str, Any]] = []
+    excluded_candidates: list[dict[str, Any]] = []
+
+    for case_id in selected_case_ids:
+        inferred = case_root_for_case_id(case_id)
+        if inferred is None or inferred[0] != "consistency":
+            continue
+
+        _, case_root = inferred
+        source_sql_path = case_root / "source.sql"
+        positive_sql_path = case_root / "rewrite_pos_01.sql"
+        negative_sql_path = case_root / "rewrite_neg_01.sql"
+        ddl_pg_path = case_root / "schema" / "ddl_pg.sql"
+        checker_yaml_path = case_root / "validation" / "checker.yaml"
+        manifest_path = case_root / "manifest.yaml"
+
+        source_sql_exists = source_sql_path.is_file()
+        positive_sql_exists = positive_sql_path.is_file()
+        negative_sql_exists = negative_sql_path.is_file()
+        ddl_pg_exists = ddl_pg_path.is_file()
+        checker_yaml_exists = checker_yaml_path.is_file()
+        manifest_exists = manifest_path.is_file()
+
+        source_text = source_sql_path.read_text(encoding="utf-8") if source_sql_exists else ""
+        positive_text = positive_sql_path.read_text(encoding="utf-8") if positive_sql_exists else ""
+        negative_text = negative_sql_path.read_text(encoding="utf-8") if negative_sql_exists else ""
+        ddl_text = ddl_pg_path.read_text(encoding="utf-8") if ddl_pg_exists else ""
+
+        sql_texts = [text for text in [source_text, positive_text, negative_text] if text]
+        merged_flags = {
+            "has_exists": any(sql_shape_flags(text)["has_exists"] for text in sql_texts) if sql_texts else False,
+            "has_correlated_subquery": any(sql_shape_flags(text)["has_correlated_subquery"] for text in sql_texts)
+            if sql_texts
+            else False,
+            "has_limit_offset": any(sql_shape_flags(text)["has_limit_offset"] for text in sql_texts) if sql_texts else False,
+            "has_aggregate": any(sql_shape_flags(text)["has_aggregate"] for text in sql_texts) if sql_texts else False,
+            "has_join": any(sql_shape_flags(text)["has_join"] for text in sql_texts) if sql_texts else False,
+            "has_subquery": any(sql_shape_flags(text)["has_subquery"] for text in sql_texts) if sql_texts else False,
+            "has_dialect_sensitive_functions": any(sql_shape_flags(text)["has_dialect_sensitive_functions"] for text in sql_texts)
+            if sql_texts
+            else False,
+            "has_distinct_aggregate": any(sql_shape_flags(text)["has_distinct_aggregate"] for text in sql_texts)
+            if sql_texts
+            else False,
+        }
+
+        core_files_ready = source_sql_exists and positive_sql_exists and negative_sql_exists and ddl_pg_exists
+        ddl_table_count = len(re.findall(r"CREATE\s+TABLE\b", ddl_text, flags=re.IGNORECASE))
+
+        risk_parts: list[str] = []
+        if merged_flags["has_exists"]:
+            risk_parts.append("exists")
+        if merged_flags["has_correlated_subquery"]:
+            risk_parts.append("correlated_subquery")
+        if merged_flags["has_limit_offset"]:
+            risk_parts.append("limit_offset")
+        if merged_flags["has_dialect_sensitive_functions"]:
+            risk_parts.append("dialect_functions")
+        if merged_flags["has_subquery"]:
+            risk_parts.append("derived_subquery")
+        if merged_flags["has_join"]:
+            risk_parts.append("join")
+        if merged_flags["has_distinct_aggregate"]:
+            risk_parts.append("distinct_aggregate")
+        if merged_flags["has_aggregate"]:
+            risk_parts.append("aggregate")
+        if ddl_table_count > 1:
+            risk_parts.append("multi_table_schema")
+        likely_verieql_support_risk = "low"
+        if any(
+            merged_flags[key]
+            for key in [
+                "has_exists",
+                "has_correlated_subquery",
+                "has_limit_offset",
+                "has_dialect_sensitive_functions",
+            ]
+        ):
+            likely_verieql_support_risk = "high"
+        elif any(merged_flags[key] for key in ["has_subquery", "has_join", "has_distinct_aggregate"]):
+            likely_verieql_support_risk = "medium"
+
+        if not core_files_ready:
+            recommended_status = "exclude_unsupported_feature"
+            reason = "missing one of source.sql, rewrite_pos_01.sql, rewrite_neg_01.sql, or schema/ddl_pg.sql"
+        elif merged_flags["has_exists"] or merged_flags["has_correlated_subquery"] or merged_flags["has_limit_offset"]:
+            recommended_status = "exclude_unsupported_feature"
+            reason = "contains EXISTS, correlated subquery, or LIMIT/OFFSET, which is a known poor fit after CONS_0007"
+        elif not merged_flags["has_subquery"] and not merged_flags["has_join"] and not merged_flags["has_dialect_sensitive_functions"]:
+            recommended_status = "first_verdict_candidate"
+            if merged_flags["has_aggregate"]:
+                reason = "single-table simple aggregate shape with no EXISTS, no correlated subquery, no LIMIT/OFFSET, and no derived subquery"
+            else:
+                reason = "simple single-table SELECT/filter shape with no EXISTS, no correlated subquery, no LIMIT/OFFSET, and no derived subquery"
+        else:
+            recommended_status = "maybe_later"
+            reason = "core files are present, but derived subquery, join, or distinct aggregate complexity makes it a weaker first VeriEQL verdict candidate"
+
+        record = {
+            "case_id": case_id,
+            "source_sql_exists": source_sql_exists,
+            "positive_sql_exists": positive_sql_exists,
+            "negative_sql_exists": negative_sql_exists,
+            "ddl_pg_exists": ddl_pg_exists,
+            "checker_yaml_exists": checker_yaml_exists,
+            "manifest_exists": manifest_exists,
+            "has_exists": merged_flags["has_exists"],
+            "has_correlated_subquery": merged_flags["has_correlated_subquery"],
+            "has_limit_offset": merged_flags["has_limit_offset"],
+            "has_aggregate": merged_flags["has_aggregate"],
+            "has_join": merged_flags["has_join"],
+            "likely_verieql_support_risk": likely_verieql_support_risk,
+            "recommended_status": recommended_status,
+            "reason": reason,
+            "shape_notes": risk_parts,
+        }
+        records.append(record)
+        if recommended_status == "first_verdict_candidate":
+            first_verdict_candidates.append(record)
+        elif recommended_status == "maybe_later":
+            maybe_later_candidates.append(record)
+        else:
+            excluded_candidates.append(record)
+
+    def candidate_rank(record: dict[str, Any]) -> tuple[int, int, int, str]:
+        notes = set(record.get("shape_notes", []))
+        return (
+            0 if "aggregate" not in notes else 1,
+            0 if "join" not in notes else 1,
+            0 if "derived_subquery" not in notes else 1,
+            str(record.get("case_id", "")),
+        )
+
+    first_verdict_candidates = sorted(first_verdict_candidates, key=candidate_rank)
+    maybe_later_candidates = sorted(maybe_later_candidates, key=candidate_rank)
+    excluded_candidates = sorted(excluded_candidates, key=lambda record: str(record.get("case_id", "")))
+    top_recommended_candidate = first_verdict_candidates[0]["case_id"] if first_verdict_candidates else ""
+    backup_candidates = [record["case_id"] for record in (first_verdict_candidates[1:3] + maybe_later_candidates[:2])]
+
+    payload = {
+        "command": "formal-verieql-support-candidate-scan",
+        "ok": True,
+        "ran_at_utc": utc_now(),
+        "records": sorted(records, key=lambda record: str(record["case_id"])),
+        "top_recommended_candidate": top_recommended_candidate,
+        "backup_candidates": backup_candidates,
+        "first_verdict_candidate_count": len(first_verdict_candidates),
+        "maybe_later_count": len(maybe_later_candidates),
+        "exclude_unsupported_feature_count": len(excluded_candidates),
+        "should_scaffold_wrapper_next": bool(top_recommended_candidate),
+        "claim_boundary": "candidate_scan_only_not_verification_not_checker_not_speedup",
     }
     write_formal_expansion_report(output_name, payload)
     return print_and_exit(payload, 0)
@@ -36646,6 +36845,14 @@ def build_parser() -> argparse.ArgumentParser:
     )
     formal_verieql_support_canary_parser.add_argument("--execute", action="store_true", default=False)
     formal_verieql_support_canary_parser.set_defaults(func=cmd_formal_verieql_support_canary)
+
+    formal_verieql_support_candidate_scan_parser = subparsers.add_parser("formal-verieql-support-candidate-scan")
+    formal_verieql_support_candidate_scan_parser.add_argument("--case-id", action="append", default=[])
+    formal_verieql_support_candidate_scan_parser.add_argument(
+        "--output",
+        default="reports/formal_expansion/verieql_support_candidate_scan_v0.json",
+    )
+    formal_verieql_support_candidate_scan_parser.set_defaults(func=cmd_formal_verieql_support_candidate_scan)
 
     formal_expanded_perf_direct_llm_preflight_parser = subparsers.add_parser("formal-expanded-perf-direct-llm-preflight")
     formal_expanded_perf_direct_llm_preflight_parser.add_argument(
