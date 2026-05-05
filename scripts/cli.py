@@ -219,6 +219,7 @@ CALCITE_HEP_TEMP_ROOT = Path("/tmp/calcite-hep-wrapper")
 CALCITE_HEP_GRADLE_USER_HOME = Path("/tmp/calcite-gradle-home")
 RBOT_LLM4REWRITE_AUDIT_ROOT = Path("/tmp/rewritebench_prior_method_audit") / "LLM4Rewrite"
 RBOT_LLM4REWRITE_PREFLIGHT_ROOT = Path("/tmp/rewritebench_rbot_llm4rewrite_adapter_preflight")
+RBOT_LLM4REWRITE_SINGLE_CASE_SMOKE_ROOT = Path("/tmp/rewritebench_rbot_llm4rewrite_single_case_smoke")
 CALCITE_HEP_REAL_ROUTE_CANARY_CASES = ["PERF_0006", "PERF_0008", "PERF_0033", "PERF_0054"]
 PORT_TRANSLATE_SOURCE_DIALECT_FALLBACKS = {
     "PORT_0004": "mysql",
@@ -28141,6 +28142,311 @@ def cmd_formal_rbot_llm4rewrite_adapter_preflight(args: argparse.Namespace) -> i
     return print_and_exit(payload, 0 if payload["ok"] else 1)
 
 
+def cmd_formal_rbot_llm4rewrite_single_case_smoke_preflight(args: argparse.Namespace) -> int:
+    case_id = str(args.case).strip().upper()
+    inferred = case_root_for_case_id(case_id)
+    if inferred is None:
+        payload = {
+            "command": "formal-rbot-llm4rewrite-single-case-smoke-preflight",
+            "ok": False,
+            "ran_at_utc": utc_now(),
+            "case_id": case_id,
+            "blockers": ["case_id_not_resolved"],
+            "claim_boundary": "single_case_harness_preflight_only_not_rbot_result",
+        }
+        return print_and_exit(payload, 1)
+
+    pool, case_root = inferred
+    bundle_dir = RBOT_LLM4REWRITE_PREFLIGHT_ROOT / case_id
+    bundle_source_path = bundle_dir / "source.sql"
+    bundle_schema_path = bundle_dir / "create_tables.sql"
+    bundle_metadata_path = bundle_dir / "rewritebench_case_metadata.json"
+    bundle_config_stub_path = bundle_dir / "llm4rewrite_config_stub.py"
+    bundle_expected_command_path = bundle_dir / "expected_command.txt"
+    bundle_output_contract_path = bundle_dir / "output_capture_contract.md"
+    harness_dir = RBOT_LLM4REWRITE_SINGLE_CASE_SMOKE_ROOT / case_id
+    source_sql_path = case_root / "source.sql"
+    pg_schema_path = case_root / "schema" / "ddl_pg.sql"
+    harness_source_path = harness_dir / "source.sql"
+    harness_schema_path = harness_dir / "create_tables.sql"
+    harness_config_stub_path = harness_dir / "llm4rewrite_single_case_config_stub.py"
+    harness_command_path = harness_dir / "proposed_future_execute_command.txt"
+    harness_artifact_plan_path = harness_dir / "artifact_capture_plan.md"
+    harness_readiness_json_path = harness_dir / "readiness_summary.json"
+    harness_do_not_run_path = harness_dir / "DO_NOT_RUN_YET.txt"
+
+    harness_dir.mkdir(parents=True, exist_ok=True)
+
+    source_sql_found = source_sql_path.is_file() and bundle_source_path.is_file()
+    pg_schema_found = pg_schema_path.is_file() and bundle_schema_path.is_file()
+    llm4rewrite_clone_visible = RBOT_LLM4REWRITE_AUDIT_ROOT.is_dir()
+    upstream_readme_visible = (RBOT_LLM4REWRITE_AUDIT_ROOT / "README.md").is_file()
+    upstream_config_visible = (RBOT_LLM4REWRITE_AUDIT_ROOT / "my_rewriter" / "config.py").is_file()
+    upstream_test_runner_visible = (RBOT_LLM4REWRITE_AUDIT_ROOT / "my_rewriter" / "test.py").is_file()
+    upstream_db_utils_visible = (RBOT_LLM4REWRITE_AUDIT_ROOT / "my_rewriter" / "db_utils.py").is_file()
+    upstream_rag_rewrite_visible = (RBOT_LLM4REWRITE_AUDIT_ROOT / "my_rewriter" / "rag_rewrite.py").is_file()
+
+    if not bundle_dir.is_dir():
+        bundle_dir.mkdir(parents=True, exist_ok=True)
+        if source_sql_path.is_file():
+            bundle_source_path.write_text(source_sql_path.read_text(encoding="utf-8"), encoding="utf-8")
+        else:
+            bundle_source_path.write_text("-- missing RewriteBench source.sql\n", encoding="utf-8")
+        if pg_schema_path.is_file():
+            bundle_schema_path.write_text(pg_schema_path.read_text(encoding="utf-8"), encoding="utf-8")
+        else:
+            bundle_schema_path.write_text(
+                "-- schema_status=missing\n"
+                "-- RewriteBench PostgreSQL DDL was not found for this case.\n",
+                encoding="utf-8",
+            )
+        bundle_metadata_path.write_text(
+            json.dumps(
+                {
+                    "case_id": case_id,
+                    "source_sql_path": relative_to_root(source_sql_path),
+                    "schema_path": relative_to_root(pg_schema_path),
+                    "bundle_path": str(bundle_dir),
+                    "upstream_repo": "https://github.com/curtis-sun/LLM4Rewrite",
+                    "upstream_expected_runner": "my_rewriter/test.py (adapter-facing single-case harness required)",
+                    "method_label": "R-Bot via LLM4Rewrite",
+                    "claim_boundary": "no_execution_adapter_preflight_only",
+                },
+                indent=2,
+                sort_keys=True,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        bundle_config_stub_path.write_text(
+            "# Non-secret adapter preflight stub for R-Bot via LLM4Rewrite\n",
+            encoding="utf-8",
+        )
+        bundle_expected_command_path.write_text("NOT RUN\n", encoding="utf-8")
+        bundle_output_contract_path.write_text(
+            "# Output Capture Contract\n\nNo output_sql was generated in this preflight.\n",
+            encoding="utf-8",
+        )
+
+    if bundle_source_path.is_file():
+        harness_source_path.write_text(bundle_source_path.read_text(encoding="utf-8"), encoding="utf-8")
+    elif source_sql_path.is_file():
+        harness_source_path.write_text(source_sql_path.read_text(encoding="utf-8"), encoding="utf-8")
+    else:
+        harness_source_path.write_text("-- missing source.sql\n", encoding="utf-8")
+
+    if bundle_schema_path.is_file():
+        harness_schema_path.write_text(bundle_schema_path.read_text(encoding="utf-8"), encoding="utf-8")
+    elif pg_schema_path.is_file():
+        harness_schema_path.write_text(pg_schema_path.read_text(encoding="utf-8"), encoding="utf-8")
+    else:
+        harness_schema_path.write_text("-- missing create_tables.sql\n", encoding="utf-8")
+
+    openai_api_key_visible = bool(os.environ.get("OPENAI_API_KEY"))
+    pg_env_fields = {
+        "PGHOST": bool(os.environ.get("PGHOST")),
+        "PGPORT": bool(os.environ.get("PGPORT")),
+        "PGDATABASE": bool(os.environ.get("PGDATABASE")),
+        "PGUSER": bool(os.environ.get("PGUSER")),
+    }
+    pg_env_visible = all(pg_env_fields.values())
+
+    required_python_imports = {
+        "chromadb": safe_module_available("chromadb"),
+        "llama_index": safe_module_available("llama_index"),
+        "jpype": safe_module_available("jpype"),
+        "psycopg2": safe_module_available("psycopg2"),
+        "jsonlines": safe_module_available("jsonlines"),
+    }
+    required_imports_available = all(required_python_imports.values())
+
+    rag_assets_visible = (
+        (RBOT_LLM4REWRITE_AUDIT_ROOT / "rag").is_dir()
+        and (RBOT_LLM4REWRITE_AUDIT_ROOT / "knowledge-base").is_dir()
+        and (RBOT_LLM4REWRITE_AUDIT_ROOT / "knowledge-base" / "rule_cluster_summaries_structured.jsonl").is_file()
+        and (RBOT_LLM4REWRITE_AUDIT_ROOT / "rag" / "stackoverflow-rewrite-embed.zip").is_file()
+    )
+    chroma_index_visible = (
+        (RBOT_LLM4REWRITE_AUDIT_ROOT / "rag" / "chroma_db").exists()
+        or (harness_dir / "chroma_db").exists()
+    )
+    chroma_index_build_documented = True
+    single_case_command_documented = True
+
+    harness_config_stub_text = (
+        "# Non-secret single-case harness stub for R-Bot via LLM4Rewrite\n"
+        "# Preflight only. Do not run this file directly yet.\n\n"
+        "CASE_ID = 'PERF_0006'\n"
+        "BUNDLE_DIR = '/tmp/rewritebench_rbot_llm4rewrite_single_case_smoke/PERF_0006'\n"
+        "UPSTREAM_ROOT = '/tmp/rewritebench_prior_method_audit/LLM4Rewrite'\n"
+        "DATABASE = 'rewritebench_perf_0006'\n"
+        "INDEX_MODE = 'hybrid'\n\n"
+        "def init_db_config() -> dict[str, str | int]:\n"
+        "    return {\n"
+        "        'host': 'REPLACE_ME_PGHOST',\n"
+        "        'port': 5432,\n"
+        "        'user': 'REPLACE_ME_PGUSER',\n"
+        "        'password': 'REPLACE_ME_PGPASSWORD',\n"
+        "        'dbname': 'REPLACE_ME_PGDATABASE',\n"
+        "        'db': 'postgresql',\n"
+        "    }\n\n"
+        "# Real values required later:\n"
+        "# - OPENAI_API_KEY in environment\n"
+        "# - PostgreSQL env/runtime prepared\n"
+        "# - retrieval/index artifacts present or built from documented commands\n"
+        "# - single-case runner wired to upstream test/rewrite path\n"
+    )
+    harness_config_stub_path.write_text(harness_config_stub_text, encoding="utf-8")
+
+    proposed_future_command_text = (
+        "NOT RUN YET\n\n"
+        "Step 1: build or pin retrieval/index artifacts if missing:\n"
+        "cd /tmp/rewritebench_prior_method_audit/LLM4Rewrite/rag\n"
+        "unzip -n stackoverflow-rewrite-embed.zip\n"
+        "python3 rag_gen.py\n\n"
+        "Step 2: run a future single-case harness after explicit approval:\n"
+        "python3 -m scripts.cli formal-rbot-llm4rewrite-single-case-smoke-run \\\n"
+        "  --case PERF_0006 \\\n"
+        "  --bundle /tmp/rewritebench_rbot_llm4rewrite_single_case_smoke/PERF_0006 \\\n"
+        "  --database rewritebench_perf_0006 \\\n"
+        "  --index hybrid\n\n"
+        "Required environment assumptions:\n"
+        "- OPENAI_API_KEY visible in environment\n"
+        "- PGHOST, PGPORT, PGDATABASE, PGUSER visible in environment\n"
+        "- /tmp/rewritebench_prior_method_audit/LLM4Rewrite exists\n"
+        "- required Python imports available\n"
+        "- retrieval/index artifacts available\n"
+        "- no secrets written into repo artifacts\n"
+    )
+    harness_command_path.write_text(proposed_future_command_text, encoding="utf-8")
+
+    artifact_capture_plan_text = (
+        "# Artifact Capture Plan\n\n"
+        "No output_sql was generated in this preflight.\n\n"
+        "Later execution should capture:\n"
+        "- generated SQL from upstream `output_sql`\n"
+        "- selected rules from upstream logs\n"
+        "- retrieval trace from upstream logs\n"
+        "- token/cost information if model/API calls occur\n"
+        "- failure taxonomy mapping into RewriteBench categories\n"
+        "- handoff artifact for existing PostgreSQL checker and speedup pipeline\n\n"
+        "Boundaries:\n"
+        "- no registry writeback\n"
+        "- no leaderboard claim\n"
+        "- no R-Bot result until checker-backed execution actually occurs\n"
+    )
+    harness_artifact_plan_path.write_text(artifact_capture_plan_text, encoding="utf-8")
+
+    harness_do_not_run_path.write_text(
+        "DO NOT RUN YET\n"
+        "- no R-Bot execution approved in this preflight\n"
+        "- no database execution occurred\n"
+        "- no model call occurred\n"
+        "- this harness is readiness scaffolding only\n",
+        encoding="utf-8",
+    )
+
+    blockers: list[str] = []
+    if not source_sql_found:
+        blockers.append("missing_source_sql")
+    if not pg_schema_found:
+        blockers.append("missing_pg_schema")
+    if not openai_api_key_visible:
+        blockers.append("missing_OPENAI_API_KEY")
+    if not pg_env_visible:
+        blockers.append("missing_pg_env")
+    if not llm4rewrite_clone_visible:
+        blockers.append("missing_llm4rewrite_clone")
+    if not required_imports_available:
+        blockers.append("missing_required_python_imports")
+    if not rag_assets_visible:
+        blockers.append("missing_rag_assets")
+    if not chroma_index_visible and not chroma_index_build_documented:
+        blockers.append("missing_chroma_index_and_build_path")
+    if not single_case_command_documented:
+        blockers.append("missing_single_case_command_path")
+    if not upstream_test_runner_visible:
+        blockers.append("missing_upstream_test_runner")
+    if not upstream_db_utils_visible:
+        blockers.append("missing_upstream_output_capture_path")
+    if not upstream_rag_rewrite_visible:
+        blockers.append("missing_upstream_trace_capture_path")
+
+    can_execute_next = (
+        source_sql_found
+        and pg_schema_found
+        and openai_api_key_visible
+        and pg_env_visible
+        and llm4rewrite_clone_visible
+        and required_imports_available
+        and (chroma_index_visible or chroma_index_build_documented)
+        and single_case_command_documented
+    )
+
+    readiness_summary = {
+        "case_id": case_id,
+        "source_sql_found": source_sql_found,
+        "pg_schema_found": pg_schema_found,
+        "openai_api_key_visible": openai_api_key_visible,
+        "pg_env_visible": pg_env_visible,
+        "pg_env_fields": pg_env_fields,
+        "llm4rewrite_clone_visible": llm4rewrite_clone_visible,
+        "required_python_imports": required_python_imports,
+        "rag_assets_visible": rag_assets_visible,
+        "chroma_index_visible": chroma_index_visible,
+        "single_case_harness_created": harness_dir.is_dir(),
+        "can_execute_next": can_execute_next,
+        "blockers": blockers,
+        "claim_boundary": "single_case_harness_preflight_only_not_rbot_result",
+    }
+    harness_readiness_json_path.write_text(
+        json.dumps(readiness_summary, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+
+    payload = {
+        "command": "formal-rbot-llm4rewrite-single-case-smoke-preflight",
+        "ok": True,
+        "ran_at_utc": utc_now(),
+        "case_id": case_id,
+        "pool": pool,
+        "adapter_bundle_verified": bundle_dir.is_dir(),
+        "harness_dir": str(harness_dir),
+        "source_sql_found": source_sql_found,
+        "pg_schema_found": pg_schema_found,
+        "openai_api_key_visible": openai_api_key_visible,
+        "pg_env_visible": pg_env_visible,
+        "pg_env_fields": pg_env_fields,
+        "llm4rewrite_clone_visible": llm4rewrite_clone_visible,
+        "required_python_imports": required_python_imports,
+        "rag_assets_visible": rag_assets_visible,
+        "chroma_index_visible": chroma_index_visible,
+        "single_case_harness_created": harness_dir.is_dir(),
+        "can_execute_next": can_execute_next,
+        "blockers": blockers,
+        "upstream_contract_observed": {
+            "readme_present": upstream_readme_visible,
+            "config_present": upstream_config_visible,
+            "test_runner_present": upstream_test_runner_visible,
+            "db_utils_present": upstream_db_utils_visible,
+            "rag_rewrite_present": upstream_rag_rewrite_visible,
+            "single_case_command_documented": single_case_command_documented,
+            "chroma_index_build_documented": chroma_index_build_documented,
+        },
+        "harness_files": [
+            str(harness_source_path),
+            str(harness_schema_path),
+            str(harness_config_stub_path),
+            str(harness_command_path),
+            str(harness_artifact_plan_path),
+            str(harness_readiness_json_path),
+            str(harness_do_not_run_path),
+        ],
+        "claim_boundary": "single_case_harness_preflight_only_not_rbot_result",
+    }
+    return print_and_exit(payload, 0 if can_execute_next else 1)
+
+
 def cmd_formal_expanded_perf_direct_llm_preflight(args: argparse.Namespace) -> int:
     output_name = normalize_formal_expansion_output_name(args.output)
     execute_refused_name = "expanded_perf_direct_llm_preflight_execute_refused_v0.json"
@@ -38214,6 +38520,14 @@ def build_parser() -> argparse.ArgumentParser:
     formal_rbot_llm4rewrite_adapter_preflight_parser.add_argument("--case", required=True)
     formal_rbot_llm4rewrite_adapter_preflight_parser.set_defaults(
         func=cmd_formal_rbot_llm4rewrite_adapter_preflight
+    )
+
+    formal_rbot_llm4rewrite_single_case_smoke_preflight_parser = subparsers.add_parser(
+        "formal-rbot-llm4rewrite-single-case-smoke-preflight"
+    )
+    formal_rbot_llm4rewrite_single_case_smoke_preflight_parser.add_argument("--case", required=True)
+    formal_rbot_llm4rewrite_single_case_smoke_preflight_parser.set_defaults(
+        func=cmd_formal_rbot_llm4rewrite_single_case_smoke_preflight
     )
 
     formal_expanded_perf_direct_llm_preflight_parser = subparsers.add_parser("formal-expanded-perf-direct-llm-preflight")
