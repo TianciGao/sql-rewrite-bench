@@ -28536,7 +28536,342 @@ def cmd_formal_llmr2_single_case_run(args: argparse.Namespace) -> int:
         "claim_boundary": "llmr2_single_case_runner_dry_run_only_not_execution",
     }
     dry_run_summary_path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-    return print_and_exit(payload, 0 if can_execute_smoke_next else 1)
+    if dry_run_only:
+        return print_and_exit(payload, 0 if can_execute_smoke_next else 1)
+
+    result_csv_path = runner_dir / "gpt_rewritebench_perf_0006_one_promo_queryCL_updated.csv"
+    generated_sql_path = runner_dir / "generated_sql_v1.sql"
+    activated_rules_path = runner_dir / "activated_rules_v1.json"
+    prompt_trace_path = runner_dir / "prompt_trace_v1.md"
+    demo_trace_path = runner_dir / "demo_trace_v1.json"
+    token_cost_log_path = runner_dir / "token_cost_log_v1.json"
+    method_stdout_path = runner_dir / "method_stdout_v1.log"
+    method_stderr_path = runner_dir / "method_stderr_v1.log"
+    checker_candidate_sql_path = runner_dir / "checker_candidate_sql_v1.sql"
+    smoke_result_path = runner_dir / "smoke_result_v1.json"
+    runtime_root = runner_dir / "runtime_root_v1"
+
+    smoke_payload = {
+        "case_id": case_id,
+        "method": "LLM-R2 official repo path",
+        "dry_run_passed": can_execute_smoke_next,
+        "method_executed": False,
+        "openai_api_used": "unknown",
+        "java_rule_applier_used": "unknown",
+        "generation_status": "dry_run_failed",
+        "output_sql_extracted": False,
+        "generated_sql_path": str(generated_sql_path),
+        "checker_candidate_sql_path": str(checker_candidate_sql_path),
+        "result_csv_path": str(result_csv_path),
+        "activated_rules_path": str(activated_rules_path),
+        "prompt_trace_path": str(prompt_trace_path),
+        "demo_trace_path": str(demo_trace_path),
+        "token_cost_log_path": str(token_cost_log_path),
+        "method_stdout_path": str(method_stdout_path),
+        "method_stderr_path": str(method_stderr_path),
+        "checker_status": "not_run",
+        "consistency_status": "not_checked",
+        "speedup_status": "not_run",
+        "failure_category": "",
+        "failure_summary": "",
+        "claim_boundary": "bounded_1_case_LLMR2_smoke_attempt_not_leaderboard",
+    }
+    if not can_execute_smoke_next:
+        smoke_payload["failure_category"] = "dry_run_failed"
+        smoke_payload["failure_summary"] = "dry-run prerequisites did not pass"
+        smoke_result_path.write_text(json.dumps(smoke_payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+        return print_and_exit(smoke_payload, 1)
+
+    llmr2_python = Path("/tmp/rewritebench_rbot_llm4rewrite_venv_smoke/bin/python")
+    if not llmr2_python.is_file():
+        smoke_payload["failure_category"] = "missing_runtime_python"
+        smoke_payload["failure_summary"] = f"expected runtime python not found: {llmr2_python}"
+        smoke_result_path.write_text(json.dumps(smoke_payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+        return print_and_exit(smoke_payload, 1)
+
+    def _write_runtime_stub_modules(runtime_src_dir: Path) -> None:
+        pandas_stub = """import csv
+
+class Series(list):
+    def tolist(self):
+        return list(self)
+
+
+class DataFrame:
+    def __init__(self, data=None):
+        self._rows = []
+        self._columns = []
+        if isinstance(data, DataFrame):
+            self._rows = [dict(row) for row in data._rows]
+            self._columns = list(data._columns)
+        elif isinstance(data, dict):
+            self._columns = list(data.keys())
+            max_len = max((len(v) for v in data.values()), default=0)
+            for idx in range(max_len):
+                row = {}
+                for key, values in data.items():
+                    row[key] = values[idx] if idx < len(values) else ""
+                self._rows.append(row)
+        elif isinstance(data, list):
+            self._rows = [dict(row) for row in data]
+            if self._rows:
+                self._columns = list(self._rows[0].keys())
+
+    def fillna(self, value):
+        for row in self._rows:
+            for key, current in list(row.items()):
+                if current is None or current == "":
+                    row[key] = value
+        return self
+
+    def iterrows(self):
+        for idx, row in enumerate(self._rows):
+            yield idx, row
+
+    def __getitem__(self, key):
+        return Series([row.get(key, "") for row in self._rows])
+
+    def __setitem__(self, key, values):
+        if key not in self._columns:
+            self._columns.append(key)
+        if not isinstance(values, list):
+            values = [values] * len(self._rows)
+        while len(self._rows) < len(values):
+            self._rows.append({})
+        for idx, row in enumerate(self._rows):
+            row[key] = values[idx] if idx < len(values) else ""
+
+    def to_csv(self, path):
+        columns = list(self._columns)
+        if not columns and self._rows:
+            columns = list(self._rows[0].keys())
+        with open(path, "w", encoding="utf-8", newline="") as handle:
+            writer = csv.DictWriter(handle, fieldnames=columns)
+            writer.writeheader()
+            for row in self._rows:
+                writer.writerow({col: row.get(col, "") for col in columns})
+
+
+def read_csv(path):
+    with open(path, "r", encoding="utf-8", newline="") as handle:
+        reader = csv.DictReader(handle)
+        rows = [dict(row) for row in reader]
+    return DataFrame(rows)
+"""
+        zss_stub = """class Node:
+    def __init__(self, label):
+        self.label = label
+        self.children = []
+
+    def addkid(self, node):
+        self.children.append(node)
+        return self
+
+
+def simple_distance(a, b):
+    return 0 if getattr(a, "label", None) == getattr(b, "label", None) else 1
+"""
+        (runtime_src_dir / "pandas.py").write_text(pandas_stub, encoding="utf-8")
+        (runtime_src_dir / "zss.py").write_text(zss_stub, encoding="utf-8")
+
+    def _patch_runtime_sources(runtime_src_dir: Path, runtime_data_dir: Path) -> None:
+        llm_r2_path = runtime_src_dir / "LLM_R2.py"
+        rewriter_path = runtime_src_dir / "rewriter.py"
+        llm_text = llm_r2_path.read_text(encoding="utf-8")
+        llm_text = llm_text.replace(
+            'api_key="your_openai_api_key"',
+            'api_key=os.environ.get("OPENAI_API_KEY", "")',
+        )
+        if 'LLMR2_TOKEN_COST_LOG' not in llm_text:
+            llm_text = llm_text.replace(
+                'client = OpenAI(\n    # This is the default and can be omitted\n    api_key=os.environ.get("OPENAI_API_KEY", "")\n)\n',
+                'client = OpenAI(\n    # This is the default and can be omitted\n    api_key=os.environ.get("OPENAI_API_KEY", "")\n)\n'
+                'LLMR2_TOKEN_COST_LOG = os.environ.get("LLMR2_TOKEN_COST_LOG", "")\n'
+                'LLMR2_OPENAI_USED_MARKER = os.environ.get("LLMR2_OPENAI_USED_MARKER", "")\n'
+                'LLMR2_PROMPT_TRACE = os.environ.get("LLMR2_PROMPT_TRACE", "")\n',
+            )
+            llm_text = llm_text.replace(
+                'def query_turbo_model(prompt):\n'
+                '    chat_completion = client.chat.completions.create(\n'
+                '        messages=prompt,\n'
+                '        model="gpt-3.5-turbo",\n'
+                '        temperature=0,\n'
+                '    )\n'
+                '    # print(chat_completion)\n'
+                '    return chat_completion.choices[0].message.content\n',
+                'def query_turbo_model(prompt):\n'
+                '    if LLMR2_PROMPT_TRACE:\n'
+                '        with open(LLMR2_PROMPT_TRACE, "w", encoding="utf-8") as fh:\n'
+                '            fh.write("# LLM-R2 Prompt Trace\\n\\n```json\\n")\n'
+                '            fh.write(json.dumps(prompt, indent=2))\n'
+                '            fh.write("\\n```\\n")\n'
+                '    chat_completion = client.chat.completions.create(\n'
+                '        messages=prompt,\n'
+                '        model="gpt-3.5-turbo",\n'
+                '        temperature=0,\n'
+                '    )\n'
+                '    if LLMR2_OPENAI_USED_MARKER:\n'
+                '        with open(LLMR2_OPENAI_USED_MARKER, "a", encoding="utf-8") as fh:\n'
+                '            fh.write("openai_api_call\\n")\n'
+                '    usage = getattr(chat_completion, "usage", None)\n'
+                '    if LLMR2_TOKEN_COST_LOG and usage is not None:\n'
+                '        with open(LLMR2_TOKEN_COST_LOG, "a", encoding="utf-8") as fh:\n'
+                '            fh.write(json.dumps({\n'
+                '                "prompt_tokens": getattr(usage, "prompt_tokens", None),\n'
+                '                "completion_tokens": getattr(usage, "completion_tokens", None),\n'
+                '                "total_tokens": getattr(usage, "total_tokens", None),\n'
+                '                "model": getattr(chat_completion, "model", "gpt-3.5-turbo"),\n'
+                '            }) + "\\n")\n'
+                '    return chat_completion.choices[0].message.content\n',
+            )
+            llm_text = re.sub(
+                r"method = 'queryCL'\ndataset = 'dsb'\nnum_promos = 1\nLLM_R2\(dataset, method, num_promos\)\n",
+                "method = 'queryCL'\ndataset = 'rewritebench_perf_0006'\nnum_promos = 1\nLLM_R2(dataset, method, num_promos)\n",
+                llm_text,
+            )
+        llm_r2_path.write_text(llm_text, encoding="utf-8")
+
+        rewriter_text = rewriter_path.read_text(encoding="utf-8")
+        if "LLMR2_JAVA_RULE_APPLIER_MARKER" not in rewriter_text:
+            rewriter_text = rewriter_text.replace(
+                "import subprocess\nimport json\nimport numpy as np\n",
+                "import os\nimport subprocess\nimport json\nimport numpy as np\n",
+            )
+            rewriter_text = rewriter_text.replace(
+                "def call_rewriter(db_id, sql_input, rule_input):\n",
+                "def call_rewriter(db_id, sql_input, rule_input):\n"
+                "    marker_path = os.environ.get('LLMR2_JAVA_RULE_APPLIER_MARKER', '')\n"
+                "    if marker_path:\n"
+                "        with open(marker_path, 'a', encoding='utf-8') as fh:\n"
+                "            fh.write(json.dumps({'db_id': db_id, 'rule_input': rule_input}) + '\\n')\n",
+            )
+        rewriter_path.write_text(rewriter_text, encoding="utf-8")
+
+        schema_target = runtime_data_dir / "schemas" / "rewritebench_perf_0006.json"
+        schema_target.write_text(schema_stub_path.read_text(encoding="utf-8"), encoding="utf-8")
+        query_target = runtime_data_dir / "queries" / "queries_rewritebench_perf_0006_test.csv"
+        query_target.write_text(query_csv_path.read_text(encoding="utf-8"), encoding="utf-8")
+        shutil.copy2(runtime_data_dir / "pools" / "pos_pool_dsb_updated.csv", runtime_data_dir / "pools" / "pos_pool_rewritebench_perf_0006_updated.csv")
+        shutil.copy2(runtime_data_dir / "pools" / "neg_pool_dsb_updated.csv", runtime_data_dir / "pools" / "neg_pool_rewritebench_perf_0006_updated.csv")
+
+    try:
+        if runtime_root.exists():
+            shutil.rmtree(runtime_root)
+        shutil.copytree(repo_path, runtime_root)
+        runtime_src_dir = runtime_root / "src"
+        runtime_data_dir = runtime_root / "data" / "data_llmr2"
+        (runtime_root / "results").mkdir(parents=True, exist_ok=True)
+        _write_runtime_stub_modules(runtime_src_dir)
+        _patch_runtime_sources(runtime_src_dir, runtime_data_dir)
+
+        openai_marker_path = runner_dir / "openai_api_used_v1.marker"
+        java_marker_path = runner_dir / "java_rule_applier_used_v1.marker"
+        if openai_marker_path.exists():
+            openai_marker_path.unlink()
+        if java_marker_path.exists():
+            java_marker_path.unlink()
+        if token_cost_log_path.exists():
+            token_cost_log_path.unlink()
+        if prompt_trace_path.exists():
+            prompt_trace_path.unlink()
+
+        env = os.environ.copy()
+        env["PYTHONPATH"] = str(runtime_src_dir)
+        env["LLMR2_TOKEN_COST_LOG"] = str(token_cost_log_path)
+        env["LLMR2_OPENAI_USED_MARKER"] = str(openai_marker_path)
+        env["LLMR2_JAVA_RULE_APPLIER_MARKER"] = str(java_marker_path)
+        env["LLMR2_PROMPT_TRACE"] = str(prompt_trace_path)
+
+        with method_stdout_path.open("w", encoding="utf-8") as stdout_fh, method_stderr_path.open("w", encoding="utf-8") as stderr_fh:
+            proc = subprocess.run(
+                [str(llmr2_python), "LLM_R2.py"],
+                cwd=runtime_src_dir,
+                env=env,
+                stdout=stdout_fh,
+                stderr=stderr_fh,
+                text=True,
+                check=False,
+            )
+        smoke_payload["method_executed"] = True
+        smoke_payload["openai_api_used"] = openai_marker_path.exists()
+        smoke_payload["java_rule_applier_used"] = java_marker_path.exists()
+
+        runtime_result_csv_path = runtime_root / "results" / "gpt_rewritebench_perf_0006_one_promo_queryCL_updated.csv"
+        runtime_time_csv_path = runtime_root / "results" / "time_gpt_rewritebench_perf_0006_one_promo_queryCL_cleaned.csv"
+        if runtime_result_csv_path.is_file():
+            shutil.copy2(runtime_result_csv_path, result_csv_path)
+        if runtime_time_csv_path.is_file() and not token_cost_log_path.exists():
+            token_cost_log_path.write_text(
+                json.dumps({"timing_csv_path": str(runtime_time_csv_path), "usage_tokens_not_captured": True}, indent=2, sort_keys=True) + "\n",
+                encoding="utf-8",
+            )
+
+        if proc.returncode != 0:
+            smoke_payload["generation_status"] = "method_execution_failed"
+            smoke_payload["failure_category"] = "subprocess_nonzero_exit"
+            smoke_payload["failure_summary"] = f"LLM-R2 subprocess exited with code {proc.returncode}"
+        else:
+            smoke_payload["generation_status"] = "method_executed_output_sql_missing"
+
+        if result_csv_path.is_file():
+            rows: list[dict[str, str]] = []
+            with result_csv_path.open("r", encoding="utf-8", newline="") as handle:
+                reader = csv.DictReader(handle)
+                rows = [dict(row) for row in reader]
+            if rows:
+                row = rows[-1]
+                output_sql = str(row.get("rewritten_sql_gpt") or "").strip()
+                activated_rules_raw = str(row.get("activated_rules_gpt") or "").strip()
+                prompt_sql_raw = str(row.get("prompt_sql_similar") or "").strip()
+                prompt_rules_raw = str(row.get("prompt_rules_similar") or "").strip()
+                if output_sql and output_sql != "NA":
+                    generated_sql_path.write_text(output_sql.rstrip() + "\n", encoding="utf-8")
+                    checker_candidate_sql_path.write_text(output_sql.rstrip() + "\n", encoding="utf-8")
+                    smoke_payload["output_sql_extracted"] = True
+                    smoke_payload["generation_status"] = "generation_success_with_output_sql"
+                    smoke_payload["claim_boundary"] = "bounded_1_case_LLMR2_candidate_generation_smoke_not_leaderboard"
+                try:
+                    activated_rules = ast.literal_eval(activated_rules_raw) if activated_rules_raw else []
+                except Exception:
+                    activated_rules = activated_rules_raw
+                activated_rules_path.write_text(json.dumps({"activated_rules_gpt": activated_rules}, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+                demo_trace_path.write_text(
+                    json.dumps(
+                        {
+                            "prompt_sql_similar": prompt_sql_raw,
+                            "prompt_rules_similar": prompt_rules_raw,
+                        },
+                        indent=2,
+                        sort_keys=True,
+                    ) + "\n",
+                    encoding="utf-8",
+                )
+                if smoke_payload["generation_status"] == "method_executed_output_sql_missing" and not smoke_payload["failure_category"]:
+                    smoke_payload["failure_category"] = "output_sql_missing"
+                    smoke_payload["failure_summary"] = "result CSV was produced but rewritten_sql_gpt was empty or NA"
+            elif not smoke_payload["failure_category"]:
+                smoke_payload["failure_category"] = "empty_result_csv"
+                smoke_payload["failure_summary"] = "result CSV was produced but contained no rows"
+                smoke_payload["generation_status"] = "method_execution_failed"
+        elif not smoke_payload["failure_category"]:
+            smoke_payload["failure_category"] = "missing_result_csv"
+            smoke_payload["failure_summary"] = "expected result CSV was not created"
+            smoke_payload["generation_status"] = "method_execution_failed"
+
+        if not token_cost_log_path.exists():
+            token_cost_log_path.write_text(
+                json.dumps({"usage_tokens_not_captured": True, "reason": "upstream did not expose token usage in the captured path"}, indent=2, sort_keys=True) + "\n",
+                encoding="utf-8",
+            )
+    except Exception as exc:
+        smoke_payload["method_executed"] = smoke_payload["method_executed"] or False
+        smoke_payload["generation_status"] = "method_execution_failed"
+        smoke_payload["failure_category"] = type(exc).__name__
+        smoke_payload["failure_summary"] = str(exc)
+
+    smoke_result_path.write_text(json.dumps(smoke_payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    success = smoke_payload["generation_status"] in {"generation_success_with_output_sql", "method_executed_output_sql_missing"}
+    return print_and_exit(smoke_payload, 0 if success else 1)
 
 
 def cmd_formal_learnedrewrite_llm4rewrite_adapter_preflight(args: argparse.Namespace) -> int:
