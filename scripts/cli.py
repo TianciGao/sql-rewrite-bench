@@ -220,6 +220,7 @@ CALCITE_HEP_GRADLE_USER_HOME = Path("/tmp/calcite-gradle-home")
 RBOT_LLM4REWRITE_AUDIT_ROOT = Path("/tmp/rewritebench_prior_method_audit") / "LLM4Rewrite"
 RBOT_LLM4REWRITE_PREFLIGHT_ROOT = Path("/tmp/rewritebench_rbot_llm4rewrite_adapter_preflight")
 RBOT_LLM4REWRITE_SINGLE_CASE_SMOKE_ROOT = Path("/tmp/rewritebench_rbot_llm4rewrite_single_case_smoke")
+RBOT_LLM4REWRITE_PG_RUNTIME_VERIFY_JSON = Path("/tmp/rewritebench_rbot_llm4rewrite_pg_runtime_verify_perf_0006.json")
 CALCITE_HEP_REAL_ROUTE_CANARY_CASES = ["PERF_0006", "PERF_0008", "PERF_0033", "PERF_0054"]
 PORT_TRANSLATE_SOURCE_DIALECT_FALLBACKS = {
     "PORT_0004": "mysql",
@@ -28447,6 +28448,178 @@ def cmd_formal_rbot_llm4rewrite_single_case_smoke_preflight(args: argparse.Names
     return print_and_exit(payload, 0 if can_execute_next else 1)
 
 
+def cmd_formal_rbot_llm4rewrite_pg_runtime_verify(args: argparse.Namespace) -> int:
+    case_id = str(args.case).strip().upper()
+    inferred = case_root_for_case_id(case_id)
+    source_sql_path = ROOT / "missing.sql"
+    pg_ddl_path = ROOT / "missing.sql"
+    pg_data_sql_path = ROOT / "missing.sql"
+    pool = ""
+    if inferred is not None:
+        pool, case_root = inferred
+        source_sql_path = case_root / "source.sql"
+        pg_ddl_path = case_root / "schema" / "ddl_pg.sql"
+        pg_data_sql_path = case_root / "validation" / "pg_witness_data.sql"
+
+    source_sql_found = source_sql_path.is_file()
+    pg_ddl_found = pg_ddl_path.is_file()
+    pg_data_sql_found = pg_data_sql_path.is_file()
+
+    env_visibility = pg_env_visibility()
+    required_env_visible = all(env_visibility[name] for name in ["PGHOST", "PGPORT", "PGDATABASE", "PGUSER"])
+    psycopg_available = safe_module_available("psycopg")
+
+    isolated_schema = f"rbot_llm4rewrite_{case_id.lower()}_verify_{int(time.time())}"
+    connection_success = False
+    server_version = ""
+    schema_create_status = "not_attempted"
+    ddl_load_status = "not_attempted"
+    data_load_status = "not_present" if not pg_data_sql_found else "not_attempted"
+    source_explain_status = "not_attempted"
+    source_execution_status = "not_attempted"
+    row_count: int | None = None
+    cleanup_status = "not_attempted"
+    failure_category = ""
+    error_summary = ""
+
+    def _strip_sql_comments(text: str) -> str:
+        return "\n".join(line for line in text.splitlines() if not re.match(r"^\s*--", line))
+
+    def _read_statements(path: Path) -> list[str]:
+        text = _strip_sql_comments(path.read_text(encoding="utf-8"))
+        return [stmt.strip() for stmt in text.split(";") if stmt.strip()]
+
+    def _read_query(path: Path) -> str:
+        return _strip_sql_comments(path.read_text(encoding="utf-8")).strip().rstrip(";")
+
+    remaining_blockers = [
+        "single_case_runner_not_implemented_or_not_executed",
+        "token_cost_logging_path_still_needs_execution_time_validation",
+    ]
+    readiness_decision = "postgres_runtime_blocked_with_exact_reason"
+
+    if inferred is None:
+        failure_category = "case_id_not_resolved"
+        error_summary = f"could not resolve case root for {case_id}"
+    elif not source_sql_found:
+        failure_category = "missing_source_sql"
+        error_summary = f"missing source.sql for {case_id}"
+    elif not pg_ddl_found:
+        failure_category = "missing_pg_ddl"
+        error_summary = f"missing schema/ddl_pg.sql for {case_id}"
+    elif not required_env_visible:
+        failure_category = "missing_pg_env"
+        error_summary = "required env visibility missing for PGHOST/PGPORT/PGDATABASE/PGUSER"
+        remaining_blockers = ["postgres_runtime_not_verified", *remaining_blockers]
+    elif not psycopg_available:
+        failure_category = "psycopg_unavailable"
+        error_summary = "psycopg is not installed in the active Python environment"
+        remaining_blockers = ["postgres_runtime_not_verified", *remaining_blockers]
+    else:
+        try:
+            psycopg = importlib.import_module("psycopg")
+            source_sql = _read_query(source_sql_path)
+            ddl_statements = _read_statements(pg_ddl_path)
+            data_statements = _read_statements(pg_data_sql_path) if pg_data_sql_found else []
+
+            with psycopg.connect(
+                host=os.environ["PGHOST"],
+                port=os.environ["PGPORT"],
+                dbname=os.environ["PGDATABASE"],
+                user=os.environ["PGUSER"],
+                password=os.environ.get("PGPASSWORD"),
+                autocommit=False,
+            ) as conn:
+                with conn.cursor() as cur:
+                    connection_success = True
+                    cur.execute("SELECT set_config('statement_timeout', %s, false)", ("30000",))
+                    cur.execute("SHOW server_version")
+                    version_row = cur.fetchone()
+                    server_version = str(version_row[0]) if version_row else ""
+                    cur.execute(
+                        psycopg.sql.SQL("CREATE SCHEMA {}").format(
+                            psycopg.sql.Identifier(isolated_schema)
+                        )
+                    )
+                    schema_create_status = "success"
+                    cur.execute(
+                        psycopg.sql.SQL("SET search_path TO {}, public").format(
+                            psycopg.sql.Identifier(isolated_schema)
+                        )
+                    )
+                    for stmt in ddl_statements:
+                        cur.execute(stmt)
+                    ddl_load_status = "success"
+                    if data_statements:
+                        for stmt in data_statements:
+                            cur.execute(stmt)
+                        data_load_status = "success"
+                    cur.execute(f"EXPLAIN {source_sql}")
+                    cur.fetchall()
+                    source_explain_status = "success"
+                    cur.execute(source_sql)
+                    if cur.description is not None:
+                        rows = cur.fetchall()
+                        row_count = len(rows)
+                    else:
+                        row_count = cur.rowcount if cur.rowcount >= 0 else None
+                    source_execution_status = "success"
+                    conn.rollback()
+                    cleanup_status = "rolled_back_transaction"
+                    readiness_decision = "postgres_runtime_verified_for_perf_0006"
+        except Exception as exc:
+            failure_category = type(exc).__name__
+            error_summary = str(exc)
+            remaining_blockers = ["postgres_runtime_not_verified", *remaining_blockers]
+            source_execution_status = "failed" if source_execution_status == "not_attempted" else source_execution_status
+            source_explain_status = "failed" if source_explain_status == "not_attempted" else source_explain_status
+            if cleanup_status == "not_attempted":
+                cleanup_status = "rollback_attempted_or_connection_closed"
+
+    if readiness_decision == "postgres_runtime_verified_for_perf_0006":
+        remaining_blockers = [
+            "single_case_runner_not_implemented_or_not_executed",
+            "token_cost_logging_path_still_needs_execution_time_validation",
+        ]
+    elif "postgres_runtime_not_verified" not in remaining_blockers:
+        remaining_blockers = ["postgres_runtime_not_verified", *remaining_blockers]
+
+    payload = {
+        "command": "formal-rbot-llm4rewrite-pg-runtime-verify",
+        "ok": readiness_decision == "postgres_runtime_verified_for_perf_0006",
+        "ran_at_utc": utc_now(),
+        "case_id": case_id,
+        "pool": pool,
+        "source_sql_found": source_sql_found,
+        "pg_ddl_found": pg_ddl_found,
+        "pg_data_sql_found": pg_data_sql_found,
+        "source_sql_path": relative_to_root(source_sql_path) if inferred is not None else "",
+        "pg_ddl_path": relative_to_root(pg_ddl_path) if inferred is not None else "",
+        "pg_data_sql_path": relative_to_root(pg_data_sql_path) if inferred is not None and pg_data_sql_found else "",
+        "pg_env_visible": env_visibility,
+        "connection_success": connection_success,
+        "server_version": server_version,
+        "isolated_schema": isolated_schema,
+        "schema_create_status": schema_create_status,
+        "ddl_load_status": ddl_load_status,
+        "data_load_status": data_load_status,
+        "source_explain_status": source_explain_status,
+        "source_execution_status": source_execution_status,
+        "row_count": row_count,
+        "cleanup_status": cleanup_status,
+        "failure_category": failure_category,
+        "error_summary": error_summary,
+        "readiness_decision": readiness_decision,
+        "remaining_blockers": remaining_blockers,
+        "claim_boundary": "pg_runtime_verify_only_not_rbot_execution",
+    }
+    RBOT_LLM4REWRITE_PG_RUNTIME_VERIFY_JSON.write_text(
+        json.dumps(payload, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    return print_and_exit(payload, 0 if payload["ok"] else 1)
+
+
 def cmd_formal_expanded_perf_direct_llm_preflight(args: argparse.Namespace) -> int:
     output_name = normalize_formal_expansion_output_name(args.output)
     execute_refused_name = "expanded_perf_direct_llm_preflight_execute_refused_v0.json"
@@ -38528,6 +38701,14 @@ def build_parser() -> argparse.ArgumentParser:
     formal_rbot_llm4rewrite_single_case_smoke_preflight_parser.add_argument("--case", required=True)
     formal_rbot_llm4rewrite_single_case_smoke_preflight_parser.set_defaults(
         func=cmd_formal_rbot_llm4rewrite_single_case_smoke_preflight
+    )
+
+    formal_rbot_llm4rewrite_pg_runtime_verify_parser = subparsers.add_parser(
+        "formal-rbot-llm4rewrite-pg-runtime-verify"
+    )
+    formal_rbot_llm4rewrite_pg_runtime_verify_parser.add_argument("--case", required=True)
+    formal_rbot_llm4rewrite_pg_runtime_verify_parser.set_defaults(
+        func=cmd_formal_rbot_llm4rewrite_pg_runtime_verify
     )
 
     formal_expanded_perf_direct_llm_preflight_parser = subparsers.add_parser("formal-expanded-perf-direct-llm-preflight")
