@@ -28017,7 +28017,7 @@ def cmd_formal_rbot_llm4rewrite_adapter_preflight(args: argparse.Namespace) -> i
         "# This file is documentation-only and is not executable as-is.\n\n"
         "CACHE_PATH = 'cache'\n"
         "CASE_RULES_PATH = 'stackoverflow-rewrite-rules-query-optimization.jsonl'\n\n"
-        "def init_db_config(database: str = 'rewritebench_perf_0006') -> dict[str, str]:\n"
+        f"def init_db_config(database: str = 'rewritebench_{case_id.lower()}') -> dict[str, str]:\n"
         "    return {\n"
         "        'host': 'REPLACE_ME_HOST',\n"
         "        'port': 5432,\n"
@@ -28040,7 +28040,7 @@ def cmd_formal_rbot_llm4rewrite_adapter_preflight(args: argparse.Namespace) -> i
         "python3 -m scripts.cli formal-rbot-llm4rewrite-adapter-run \\\n"
         f"  --case {case_id} \\\n"
         f"  --bundle {bundle_dir} \\\n"
-        "  --database rewritebench_perf_0006 \\\n"
+        f"  --database rewritebench_{case_id.lower()} \\\n"
         "  --index hybrid\n\n"
         "Environment assumptions:\n"
         "- upstream LLM4Rewrite checkout available under /tmp/rewritebench_prior_method_audit/LLM4Rewrite\n"
@@ -28151,7 +28151,8 @@ def cmd_formal_rbot_llm4rewrite_adapter_preflight(args: argparse.Namespace) -> i
 
 def cmd_formal_learnedrewrite_llm4rewrite_adapter_preflight(args: argparse.Namespace) -> int:
     case_id = str(args.case).strip().upper()
-    if case_id != "PERF_0006":
+    supported_case_ids = {"PERF_0006", "PERF_0008", "PERF_0033"}
+    if case_id not in supported_case_ids:
         payload = {
             "command": "formal-learnedrewrite-llm4rewrite-adapter-preflight",
             "ok": False,
@@ -28159,7 +28160,7 @@ def cmd_formal_learnedrewrite_llm4rewrite_adapter_preflight(args: argparse.Names
             "case_id": case_id,
             "classification": "blocked_missing_input_contract",
             "failure_category": "unsupported_case_id",
-            "failure_summary": "only PERF_0006 is supported in this bounded preflight",
+            "failure_summary": "only PERF_0006 / PERF_0008 / PERF_0033 are supported in this bounded preflight",
             "claim_boundary": "no_execution_adapter_preflight_only",
         }
         return print_and_exit(payload, 1)
@@ -28243,7 +28244,7 @@ def cmd_formal_learnedrewrite_llm4rewrite_adapter_preflight(args: argparse.Names
     config_stub_text = (
         "# Non-secret config stub for embedded LearnedRewrite single-case execution.\n"
         "# Preflight only. Do not run this file as-is.\n\n"
-        "def init_db_config(database: str = 'rewritebench_perf_0006') -> dict[str, str | int]:\n"
+        f"def init_db_config(database: str = 'rewritebench_{case_id.lower()}') -> dict[str, str | int]:\n"
         "    return {\n"
         "        'host': 'REPLACE_ME_PGHOST',\n"
         "        'port': 5432,\n"
@@ -28253,7 +28254,7 @@ def cmd_formal_learnedrewrite_llm4rewrite_adapter_preflight(args: argparse.Names
         "        'db': 'postgresql',\n"
         "    }\n\n"
         "# Future execution will still need:\n"
-        "# - a PostgreSQL database loaded for PERF_0006\n"
+        f"# - a PostgreSQL database loaded for {case_id}\n"
         "# - JVM / JPype runtime verification\n"
         "# - a bounded single-case runner wrapper\n"
         "# - a writable logdir/<database>/res.jsonl path\n"
@@ -28265,7 +28266,7 @@ def cmd_formal_learnedrewrite_llm4rewrite_adapter_preflight(args: argparse.Names
         "Future bounded single-case command candidate:\n"
         "cd /tmp/rewritebench_prior_method_audit/LLM4Rewrite/my_rewriter\n"
         "PYTHONPATH=.. python3 test_learned_rewrite.py \\\n"
-        "  --database rewritebench_perf_0006 \\\n"
+        f"  --database rewritebench_{case_id.lower()} \\\n"
         "  --logdir /tmp/rewritebench_learnedrewrite_logs\n\n"
         "Assumptions:\n"
         "- cwd should be the upstream my_rewriter directory or an equivalent temp wrapper dir\n"
@@ -28347,7 +28348,8 @@ def cmd_formal_learnedrewrite_llm4rewrite_adapter_preflight(args: argparse.Names
 def cmd_formal_learnedrewrite_llm4rewrite_single_case_run(args: argparse.Namespace) -> int:
     case_id = str(args.case).strip().upper()
     dry_run_only = bool(args.dry_run)
-    if case_id != "PERF_0006":
+    supported_case_ids = {"PERF_0006", "PERF_0008", "PERF_0033"}
+    if case_id not in supported_case_ids:
         payload = {
             "command": "formal-learnedrewrite-llm4rewrite-single-case-run",
             "ok": False,
@@ -28476,7 +28478,7 @@ def cmd_formal_learnedrewrite_llm4rewrite_single_case_run(args: argparse.Namespa
     future_command_text = (
         "NOT RUN\n\n"
         "Future bounded single-case command candidate:\n"
-        "python -m scripts.cli formal-learnedrewrite-llm4rewrite-single-case-run --case PERF_0006\n\n"
+        f"python -m scripts.cli formal-learnedrewrite-llm4rewrite-single-case-run --case {case_id}\n\n"
         "Assumptions:\n"
         "- no execution occurred in this dry-run\n"
         f"- recovered temp unsigned jar is expected at:\n  {recovered_jar_path}\n"
@@ -28699,7 +28701,7 @@ def cmd_formal_learnedrewrite_llm4rewrite_single_case_run(args: argparse.Namespa
             "}\n"
             "pg_args = DBArgs(cfg)\n"
             "start = time.time()\n"
-            "out = {'name': 'PERF_0006'}\n"
+            f"out = {{'name': {case_id!r}}}\n"
             "try:\n"
             "  res = learned_rewrite(query, create_tables, 20, cfg['host'], str(cfg['port']), cfg['user'], cfg['password'], cfg['dbname'])\n"
             "  out['input_sql'] = str(res.get('input_sql'))\n"
@@ -29231,10 +29233,10 @@ def cmd_formal_rbot_llm4rewrite_single_case_smoke_preflight(args: argparse.Names
     harness_config_stub_text = (
         "# Non-secret single-case harness stub for R-Bot via LLM4Rewrite\n"
         "# Preflight only. Do not run this file directly yet.\n\n"
-        "CASE_ID = 'PERF_0006'\n"
-        "BUNDLE_DIR = '/tmp/rewritebench_rbot_llm4rewrite_single_case_smoke/PERF_0006'\n"
+        f"CASE_ID = '{case_id}'\n"
+        f"BUNDLE_DIR = '/tmp/rewritebench_rbot_llm4rewrite_single_case_smoke/{case_id}'\n"
         "UPSTREAM_ROOT = '/tmp/rewritebench_prior_method_audit/LLM4Rewrite'\n"
-        "DATABASE = 'rewritebench_perf_0006'\n"
+        f"DATABASE = 'rewritebench_{case_id.lower()}'\n"
         "INDEX_MODE = 'hybrid'\n\n"
         "def init_db_config() -> dict[str, str | int]:\n"
         "    return {\n"
@@ -29261,9 +29263,9 @@ def cmd_formal_rbot_llm4rewrite_single_case_smoke_preflight(args: argparse.Names
         "python3 rag_gen.py\n\n"
         "Step 2: run a future single-case harness after explicit approval:\n"
         "python3 -m scripts.cli formal-rbot-llm4rewrite-single-case-smoke-run \\\n"
-        "  --case PERF_0006 \\\n"
-        "  --bundle /tmp/rewritebench_rbot_llm4rewrite_single_case_smoke/PERF_0006 \\\n"
-        "  --database rewritebench_perf_0006 \\\n"
+        f"  --case {case_id} \\\n"
+        f"  --bundle /tmp/rewritebench_rbot_llm4rewrite_single_case_smoke/{case_id} \\\n"
+        f"  --database rewritebench_{case_id.lower()} \\\n"
         "  --index hybrid\n\n"
         "Required environment assumptions:\n"
         "- OPENAI_API_KEY visible in environment\n"
@@ -29974,7 +29976,7 @@ def cmd_formal_rbot_llm4rewrite_single_case_smoke_run(args: argparse.Namespace) 
     dry_run_only = bool(args.dry_run)
     fresh_run_name_requested = bool(getattr(args, "fresh_run_name", False))
     align_rule_vector_dim = int(getattr(args, "align_rule_vector_dim", 0) or 0)
-    supported_case_ids = {"PERF_0006"}
+    supported_case_ids = {"PERF_0006", "PERF_0008", "PERF_0033"}
     inferred = case_root_for_case_id(case_id)
 
     runner_dir = RBOT_LLM4REWRITE_SINGLE_CASE_RUNNER_ROOT / case_id
@@ -30046,7 +30048,7 @@ def cmd_formal_rbot_llm4rewrite_single_case_smoke_run(args: argparse.Namespace) 
         "Execution prerequisites:\n"
         "- OPENAI_API_KEY visible in environment\n"
         "- PGHOST, PGPORT, PGDATABASE, PGUSER visible in environment\n"
-        "- /tmp/rewritebench_rbot_llm4rewrite_single_case_smoke/PERF_0006 exists\n"
+        f"- /tmp/rewritebench_rbot_llm4rewrite_single_case_smoke/{case_id} exists\n"
         "- /tmp/rewritebench_rbot_llm4rewrite_rag_build_openai_like/rag/chroma_db exists\n"
         "- /tmp/rewritebench_rbot_llm4rewrite_venv_smoke exists\n"
         "- /tmp/rewritebench_prior_method_audit/LLM4Rewrite exists\n"
@@ -30327,7 +30329,7 @@ def cmd_formal_rbot_llm4rewrite_single_case_smoke_run(args: argparse.Namespace) 
             "from my_rewriter.database import DBArgs\n"
             "from my_rewriter.rag_retrieve import init_docstore\n"
             "from my_rewriter.test_utils import test\n"
-            "case_id = 'PERF_0006'\n"
+            f"case_id = {case_id!r}\n"
             f"query = Path({repr(str((harness_dir / 'source.sql')))}).read_text(encoding='utf-8')\n"
             f"schema = Path({repr(str((harness_dir / 'create_tables.sql')))}).read_text(encoding='utf-8')\n"
             "config = {\n"
