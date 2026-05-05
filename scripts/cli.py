@@ -28878,6 +28878,7 @@ def simple_distance(a, b):
 def cmd_formal_llmr2_one_row_fast_path(args: argparse.Namespace) -> int:
     case_id = str(args.case).strip().upper()
     dry_run_only = bool(args.dry_run)
+    force_cpu = bool(getattr(args, "force_cpu", False))
     if case_id != "PERF_0006":
         payload = {
             "command": "formal-llmr2-one-row-fast-path",
@@ -28919,14 +28920,15 @@ def cmd_formal_llmr2_one_row_fast_path(args: argparse.Namespace) -> int:
     do_not_run_yet_path = fast_path_dir / "DO_NOT_RUN_YET.txt"
 
     result_csv_path = fast_path_dir / "gpt_rewritebench_perf_0006_one_promo_queryCL_updated.csv"
-    generated_sql_path = fast_path_dir / "generated_sql_v1.sql"
-    activated_rules_path = fast_path_dir / "activated_rules_v1.json"
-    prompt_trace_path = fast_path_dir / "prompt_trace_v1.md"
-    demo_trace_path = fast_path_dir / "demo_trace_v1.json"
-    token_cost_log_path = fast_path_dir / "token_cost_log_v1.json"
-    method_stdout_path = fast_path_dir / "method_stdout_v1.log"
-    method_stderr_path = fast_path_dir / "method_stderr_v1.log"
-    checker_candidate_sql_path = fast_path_dir / "checker_candidate_sql_v1.sql"
+    run_suffix = "cpu_v1" if force_cpu else "v1"
+    generated_sql_path = fast_path_dir / f"generated_sql_{run_suffix}.sql"
+    activated_rules_path = fast_path_dir / f"activated_rules_{run_suffix}.json"
+    prompt_trace_path = fast_path_dir / f"prompt_trace_{run_suffix}.md"
+    demo_trace_path = fast_path_dir / f"demo_trace_{run_suffix}.json"
+    token_cost_log_path = fast_path_dir / f"token_cost_log_{run_suffix}.json"
+    method_stdout_path = fast_path_dir / f"method_stdout_{run_suffix}.log"
+    method_stderr_path = fast_path_dir / f"method_stderr_{run_suffix}.log"
+    checker_candidate_sql_path = fast_path_dir / f"checker_candidate_sql_{run_suffix}.sql"
 
     adapter_bundle_found = adapter_bundle_dir.is_dir()
     query_csv_found = query_csv_source.is_file()
@@ -29071,6 +29073,7 @@ def cmd_formal_llmr2_one_row_fast_path(args: argparse.Namespace) -> int:
     payload = {
         "case_id": case_id,
         "dry_run_only": True,
+        "force_cpu": force_cpu,
         "runtime_root_created": runtime_root_created,
         "one_row_query_csv_created": one_row_query_csv_created,
         "tiny_pos_pool_created": tiny_pos_pool_created,
@@ -29090,11 +29093,11 @@ def cmd_formal_llmr2_one_row_fast_path(args: argparse.Namespace) -> int:
     if dry_run_only:
         return print_and_exit(payload, 0 if can_execute_fast_path_next else 1)
 
-    smoke_result_path = fast_path_dir / "smoke_result_v1.json"
-    openai_marker_path = fast_path_dir / "openai_api_used_v1.marker"
-    java_marker_path = fast_path_dir / "java_rule_applier_used_v1.marker"
-    one_row_query_marker_path = fast_path_dir / "one_row_query_used_v1.marker"
-    tiny_pool_marker_path = fast_path_dir / "tiny_demo_pools_used_v1.marker"
+    smoke_result_path = fast_path_dir / f"smoke_result_{run_suffix}.json"
+    openai_marker_path = fast_path_dir / f"openai_api_used_{run_suffix}.marker"
+    java_marker_path = fast_path_dir / f"java_rule_applier_used_{run_suffix}.marker"
+    one_row_query_marker_path = fast_path_dir / f"one_row_query_used_{run_suffix}.marker"
+    tiny_pool_marker_path = fast_path_dir / f"tiny_demo_pools_used_{run_suffix}.marker"
 
     smoke_payload = {
         "case_id": case_id,
@@ -29104,6 +29107,8 @@ def cmd_formal_llmr2_one_row_fast_path(args: argparse.Namespace) -> int:
         "fast_path_runtime_used": False,
         "one_row_query_used": "unknown",
         "tiny_demo_pools_used": "unknown",
+        "force_cpu": force_cpu,
+        "cuda_visible_devices_value": "" if force_cpu else str(os.environ.get("CUDA_VISIBLE_DEVICES", "")),
         "openai_api_used": "unknown",
         "java_rule_applier_used": "unknown",
         "generation_status": "dry_run_failed",
@@ -29122,7 +29127,7 @@ def cmd_formal_llmr2_one_row_fast_path(args: argparse.Namespace) -> int:
         "speedup_status": "not_run",
         "failure_category": "",
         "failure_summary": "",
-        "claim_boundary": "bounded_1_case_LLMR2_fast_path_smoke_attempt_not_leaderboard",
+        "claim_boundary": "bounded_1_case_LLMR2_cpu_fast_path_smoke_attempt_not_leaderboard" if force_cpu else "bounded_1_case_LLMR2_fast_path_smoke_attempt_not_leaderboard",
     }
     if not can_execute_fast_path_next:
         smoke_payload["failure_category"] = "dry_run_failed"
@@ -29347,6 +29352,9 @@ def simple_distance(a, b):
         env["LLMR2_PROMPT_TRACE"] = str(prompt_trace_path)
         env["LLMR2_ONE_ROW_QUERY_MARKER"] = str(one_row_query_marker_path)
         env["LLMR2_TINY_POOL_MARKER"] = str(tiny_pool_marker_path)
+        if force_cpu:
+            env["CUDA_VISIBLE_DEVICES"] = ""
+            env["TOKENIZERS_PARALLELISM"] = "false"
 
         with method_stdout_path.open("w", encoding="utf-8") as stdout_fh, method_stderr_path.open("w", encoding="utf-8") as stderr_fh:
             proc = subprocess.run(
@@ -41914,6 +41922,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     formal_llmr2_one_row_fast_path_parser.add_argument("--case", required=True)
     formal_llmr2_one_row_fast_path_parser.add_argument("--dry-run", action="store_true", default=False)
+    formal_llmr2_one_row_fast_path_parser.add_argument("--force-cpu", action="store_true", default=False)
     formal_llmr2_one_row_fast_path_parser.set_defaults(
         func=cmd_formal_llmr2_one_row_fast_path
     )
