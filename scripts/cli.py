@@ -28879,6 +28879,7 @@ def cmd_formal_llmr2_one_row_fast_path(args: argparse.Namespace) -> int:
     case_id = str(args.case).strip().upper()
     dry_run_only = bool(args.dry_run)
     force_cpu = bool(getattr(args, "force_cpu", False))
+    schema_list_contract = bool(getattr(args, "schema_list_contract", False))
     if case_id != "PERF_0006":
         payload = {
             "command": "formal-llmr2-one-row-fast-path",
@@ -28920,7 +28921,12 @@ def cmd_formal_llmr2_one_row_fast_path(args: argparse.Namespace) -> int:
     do_not_run_yet_path = fast_path_dir / "DO_NOT_RUN_YET.txt"
 
     result_csv_path = fast_path_dir / "gpt_rewritebench_perf_0006_one_promo_queryCL_updated.csv"
-    run_suffix = "cpu_v1" if force_cpu else "v1"
+    if schema_list_contract:
+        run_suffix = "schema_fix_v1"
+    elif force_cpu:
+        run_suffix = "cpu_v1"
+    else:
+        run_suffix = "v1"
     generated_sql_path = fast_path_dir / f"generated_sql_{run_suffix}.sql"
     activated_rules_path = fast_path_dir / f"activated_rules_{run_suffix}.json"
     prompt_trace_path = fast_path_dir / f"prompt_trace_{run_suffix}.md"
@@ -28929,6 +28935,7 @@ def cmd_formal_llmr2_one_row_fast_path(args: argparse.Namespace) -> int:
     method_stdout_path = fast_path_dir / f"method_stdout_{run_suffix}.log"
     method_stderr_path = fast_path_dir / f"method_stderr_{run_suffix}.log"
     checker_candidate_sql_path = fast_path_dir / f"checker_candidate_sql_{run_suffix}.sql"
+    staged_schema_backup_path = runtime_schemas_dir / "rewritebench_perf_0006.schema_stub_before_schema_list_contract.json"
 
     adapter_bundle_found = adapter_bundle_dir.is_dir()
     query_csv_found = query_csv_source.is_file()
@@ -28944,6 +28951,9 @@ def cmd_formal_llmr2_one_row_fast_path(args: argparse.Namespace) -> int:
     schema_stub_staged = False
     upstream_pool_bypass_planned = False
     full_pool_preprocessing_avoided_by_staging = False
+    schema_list_contract_applied = False
+    schema_table_count = 0
+    schema_column_count = 0
 
     def _copy_single_row_csv(src: Path, dst: Path) -> bool:
         if not src.is_file():
@@ -28960,6 +28970,34 @@ def cmd_formal_llmr2_one_row_fast_path(args: argparse.Namespace) -> int:
             writer.writeheader()
             writer.writerow(first_row)
         return True
+
+    def _apply_schema_list_contract(schema_path: Path, backup_path: Path) -> tuple[bool, int, int]:
+        if not schema_path.is_file():
+            return False, 0, 0
+        raw_text = schema_path.read_text(encoding="utf-8")
+        parsed = json.loads(raw_text)
+        if isinstance(parsed, list):
+            table_count = len(parsed)
+            column_count = sum(len(item.get("columns", [])) for item in parsed if isinstance(item, dict))
+            return True, table_count, column_count
+        if isinstance(parsed, dict) and isinstance(parsed.get("tables"), list):
+            backup_path.write_text(raw_text, encoding="utf-8")
+            tables = []
+            for table in parsed.get("tables", []):
+                if not isinstance(table, dict):
+                    continue
+                tables.append(
+                    {
+                        "table": table.get("table", ""),
+                        "columns": table.get("columns", []),
+                        "rows": table.get("rows", "unknown"),
+                    }
+                )
+            schema_path.write_text(json.dumps(tables, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+            table_count = len(tables)
+            column_count = sum(len(item.get("columns", [])) for item in tables if isinstance(item, dict))
+            return True, table_count, column_count
+        return False, 0, 0
 
     try:
         if runtime_root.exists():
@@ -28979,6 +29017,12 @@ def cmd_formal_llmr2_one_row_fast_path(args: argparse.Namespace) -> int:
         if runtime_root_created and schema_stub_found:
             staged_schema_json_path.write_text(schema_stub_source.read_text(encoding="utf-8"), encoding="utf-8")
             schema_stub_staged = True
+        if runtime_root_created and schema_stub_staged and schema_list_contract:
+            (
+                schema_list_contract_applied,
+                schema_table_count,
+                schema_column_count,
+            ) = _apply_schema_list_contract(staged_schema_json_path, staged_schema_backup_path)
         if runtime_root_created:
             tiny_pos_pool_created = _copy_single_row_csv(upstream_pos_pool_path, staged_pos_pool_path)
             tiny_neg_pool_created = _copy_single_row_csv(upstream_neg_pool_path, staged_neg_pool_path)
@@ -29056,6 +29100,8 @@ def cmd_formal_llmr2_one_row_fast_path(args: argparse.Namespace) -> int:
         blockers.append("tiny_neg_pool_not_created")
     if not schema_stub_staged:
         blockers.append("schema_stub_not_staged")
+    if schema_list_contract and not schema_list_contract_applied:
+        blockers.append("schema_list_contract_not_applied")
     if not upstream_pool_bypass_planned:
         blockers.append("upstream_pool_bypass_not_planned")
     if not full_pool_preprocessing_avoided_by_staging:
@@ -29074,6 +29120,7 @@ def cmd_formal_llmr2_one_row_fast_path(args: argparse.Namespace) -> int:
         "case_id": case_id,
         "dry_run_only": True,
         "force_cpu": force_cpu,
+        "schema_list_contract": schema_list_contract,
         "runtime_root_created": runtime_root_created,
         "one_row_query_csv_created": one_row_query_csv_created,
         "tiny_pos_pool_created": tiny_pos_pool_created,
@@ -29083,6 +29130,9 @@ def cmd_formal_llmr2_one_row_fast_path(args: argparse.Namespace) -> int:
         "full_pool_preprocessing_avoided_by_staging": full_pool_preprocessing_avoided_by_staging,
         "openai_api_key_visible": openai_api_key_visible,
         "java_rule_applier_found": java_rule_applier_found,
+        "schema_list_contract_applied": schema_list_contract_applied,
+        "schema_table_count": schema_table_count,
+        "schema_column_count": schema_column_count,
         "future_command_written": future_execute_command_path.is_file(),
         "artifact_paths_written": artifact_paths_path.is_file(),
         "can_execute_fast_path_next": can_execute_fast_path_next,
@@ -29108,6 +29158,7 @@ def cmd_formal_llmr2_one_row_fast_path(args: argparse.Namespace) -> int:
         "one_row_query_used": "unknown",
         "tiny_demo_pools_used": "unknown",
         "force_cpu": force_cpu,
+        "schema_list_contract": schema_list_contract,
         "cuda_visible_devices_value": "" if force_cpu else str(os.environ.get("CUDA_VISIBLE_DEVICES", "")),
         "openai_api_used": "unknown",
         "java_rule_applier_used": "unknown",
@@ -29127,7 +29178,13 @@ def cmd_formal_llmr2_one_row_fast_path(args: argparse.Namespace) -> int:
         "speedup_status": "not_run",
         "failure_category": "",
         "failure_summary": "",
-        "claim_boundary": "bounded_1_case_LLMR2_cpu_fast_path_smoke_attempt_not_leaderboard" if force_cpu else "bounded_1_case_LLMR2_fast_path_smoke_attempt_not_leaderboard",
+        "claim_boundary": (
+            "bounded_1_case_LLMR2_schema_fix_fast_path_smoke_attempt_not_leaderboard"
+            if schema_list_contract
+            else "bounded_1_case_LLMR2_cpu_fast_path_smoke_attempt_not_leaderboard"
+            if force_cpu
+            else "bounded_1_case_LLMR2_fast_path_smoke_attempt_not_leaderboard"
+        ),
     }
     if not can_execute_fast_path_next:
         smoke_payload["failure_category"] = "dry_run_failed"
@@ -41923,6 +41980,7 @@ def build_parser() -> argparse.ArgumentParser:
     formal_llmr2_one_row_fast_path_parser.add_argument("--case", required=True)
     formal_llmr2_one_row_fast_path_parser.add_argument("--dry-run", action="store_true", default=False)
     formal_llmr2_one_row_fast_path_parser.add_argument("--force-cpu", action="store_true", default=False)
+    formal_llmr2_one_row_fast_path_parser.add_argument("--schema-list-contract", action="store_true", default=False)
     formal_llmr2_one_row_fast_path_parser.set_defaults(
         func=cmd_formal_llmr2_one_row_fast_path
     )
