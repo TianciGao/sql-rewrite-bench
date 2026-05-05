@@ -234,6 +234,7 @@ LLMR2_FAST_PATH_ROOT = Path("/tmp/rewritebench_llmr2_fast_path")
 LLMR2_10CASE_PREFLIGHT_ROOT = Path("/tmp/rewritebench_llmr2_10case_preflight")
 SQLSOLVER_AUDIT_ROOT = Path("/tmp/rewritebench_sqlsolver_audit") / "candidate"
 SQLSOLVER_ADAPTER_PREFLIGHT_ROOT = Path("/tmp/rewritebench_sqlsolver_adapter_preflight")
+SQLSOLVER_RUNNER_DRY_RUN_ROOT = Path("/tmp/rewritebench_sqlsolver_runner_dry_run")
 LLMR2_SUPPORTED_CASE_IDS = {
     "PERF_0006", "PERF_0008", "PERF_0013", "PERF_0017", "PERF_0019",
     "PERF_0024", "PERF_0033", "PERF_0052", "PERF_0054", "PERF_0063",
@@ -28720,6 +28721,235 @@ def cmd_formal_sqlsolver_adapter_preflight(args: argparse.Namespace) -> int:
     return print_and_exit(payload, 0 if payload["ok"] else 1)
 
 
+def cmd_formal_sqlsolver_runner_dry_run(args: argparse.Namespace) -> int:
+    case_ids = [str(case_id).strip().upper() for case_id in (args.cases or []) if str(case_id).strip()]
+    if not case_ids:
+        payload = {
+            "command": "formal-sqlsolver-runner-dry-run",
+            "ok": False,
+            "ran_at_utc": utc_now(),
+            "failure_category": "missing_cases",
+            "failure_summary": "at least one case id is required",
+            "claim_boundary": "sqlsolver_runner_dry_run_only_not_execution",
+        }
+        return print_and_exit(payload, 1)
+
+    repo_path = SQLSOLVER_AUDIT_ROOT
+    entrypoint_path = repo_path / "api" / "src" / "main" / "java" / "sqlsolver" / "api" / "Entry.java"
+    build_gradle_path = repo_path / "build.gradle"
+    gradlew_path = repo_path / "gradlew"
+    properties_path = repo_path / "sqlsolver.properties"
+    z3_lib_path = repo_path / "lib" / "libz3.so"
+    z3_java_lib_path = repo_path / "lib" / "libz3java.so"
+    z3_jar_path = repo_path / "lib" / "z3-4.13.0.jar"
+    built_jar_candidates = [
+        repo_path / "build" / "libs" / "sqlsolver-v1.1.0.jar",
+        repo_path / "build" / "libs" / "SQLSolver-v1.1.0.jar",
+        repo_path / "build" / "libs" / "sqlsolver.jar",
+        repo_path / "build" / "libs" / "SQLSolver.jar",
+    ]
+    built_jar_path = next((path for path in built_jar_candidates if path.is_file()), None)
+
+    properties_text = properties_path.read_text(encoding="utf-8") if properties_path.is_file() else ""
+    z3_timeout_ms = None
+    timeout_match = re.search(r"(?m)^\s*sqlsolver\.z3\.timeout\s*=\s*(\d+)\s*$", properties_text)
+    if timeout_match:
+        z3_timeout_ms = int(timeout_match.group(1))
+
+    timeout_policy = {
+        "future_wall_timeout_seconds_per_query_pair": 60,
+        "sqlsolver_z3_timeout_ms": z3_timeout_ms,
+        "execution_in_dry_run": False,
+    }
+    verdict_mapping = {
+        "EQ": "proved_equivalent",
+        "NEQ": "refuted_equivalence",
+        "TIMEOUT": "timeout",
+        "UNKNOWN": "unknown_or_unsupported",
+        "wrapper_parse_or_launch_failure": [
+            "parser_or_translation_failure",
+            "internal_error",
+        ],
+    }
+
+    per_case_dry_run: dict[str, dict[str, Any]] = {}
+    global_blockers: list[str] = []
+
+    for case_id in case_ids:
+        bundle_dir = SQLSOLVER_ADAPTER_PREFLIGHT_ROOT / case_id
+        runner_dir = SQLSOLVER_RUNNER_DRY_RUN_ROOT / case_id
+        runner_dir.mkdir(parents=True, exist_ok=True)
+
+        positive_sql1 = bundle_dir / "sql1_positive.sql"
+        positive_sql2 = bundle_dir / "sql2_positive.sql"
+        negative_sql1 = bundle_dir / "sql1_negative.sql"
+        negative_sql2 = bundle_dir / "sql2_negative.sql"
+        schema_path = bundle_dir / "schema.sql"
+        expected_verdicts_path = bundle_dir / "expected_verdicts.json"
+        metadata_path = bundle_dir / "sqlsolver_case_metadata.json"
+
+        future_positive_command_path = runner_dir / "future_positive_command_NOT_RUN.txt"
+        future_negative_command_path = runner_dir / "future_negative_command_NOT_RUN.txt"
+        artifact_paths_path = runner_dir / "artifact_paths.json"
+        dry_run_summary_path = runner_dir / "dry_run_summary.json"
+        do_not_run_yet_path = runner_dir / "DO_NOT_RUN_YET.txt"
+        positive_output_path = runner_dir / "positive_verdicts_NOT_RUN.txt"
+        negative_output_path = runner_dir / "negative_verdicts_NOT_RUN.txt"
+
+        expected_verdicts = load_json_if_present(expected_verdicts_path) or {}
+        negative_expected = ((expected_verdicts.get("negative_pair") or {}).get("expected_support_intent") or "").strip()
+        negative_pair_expected = negative_expected == "refute_equivalence"
+
+        positive_exists = positive_sql1.is_file() and positive_sql2.is_file()
+        negative_exists = negative_sql1.is_file() and negative_sql2.is_file()
+        schema_exists = schema_path.is_file()
+        expected_verdicts_exists = expected_verdicts_path.is_file()
+        metadata_exists = metadata_path.is_file()
+
+        jar_classpath = str(built_jar_path) if built_jar_path else "<built-or-distribution-jar-and-libs>"
+        positive_command = (
+            "NOT RUN\n\n"
+            "Future SQLSolver positive-pair command:\n"
+            "java -cp "
+            f"{jar_classpath} sqlsolver.api.Entry \\\n"
+            f"  -sql1={positive_sql1} \\\n"
+            f"  -sql2={positive_sql2} \\\n"
+            f"  -schema={schema_path} \\\n"
+            f"  -output={positive_output_path} \\\n"
+            "  -print\n\n"
+            f"Timeout policy:\n- wall timeout: {timeout_policy['future_wall_timeout_seconds_per_query_pair']}s per pair\n"
+            f"- sqlsolver.z3.timeout: {z3_timeout_ms if z3_timeout_ms is not None else 'not_found'} ms\n"
+        )
+        future_positive_command_path.write_text(positive_command, encoding="utf-8")
+
+        negative_command = (
+            "NOT RUN\n\n"
+            "Future SQLSolver negative-pair command:\n"
+            "java -cp "
+            f"{jar_classpath} sqlsolver.api.Entry \\\n"
+            f"  -sql1={negative_sql1} \\\n"
+            f"  -sql2={negative_sql2} \\\n"
+            f"  -schema={schema_path} \\\n"
+            f"  -output={negative_output_path} \\\n"
+            "  -print\n\n"
+            f"Timeout policy:\n- wall timeout: {timeout_policy['future_wall_timeout_seconds_per_query_pair']}s per pair\n"
+            f"- sqlsolver.z3.timeout: {z3_timeout_ms if z3_timeout_ms is not None else 'not_found'} ms\n"
+        )
+        future_negative_command_path.write_text(negative_command, encoding="utf-8")
+
+        artifact_paths_payload = {
+            "case_id": case_id,
+            "bundle_dir": str(bundle_dir),
+            "runner_dir": str(runner_dir),
+            "positive": {
+                "sql1": str(positive_sql1),
+                "sql2": str(positive_sql2),
+                "schema": str(schema_path),
+                "expected_verdicts": str(expected_verdicts_path),
+                "future_output": str(positive_output_path),
+                "future_command_not_run": str(future_positive_command_path),
+            },
+            "negative": {
+                "sql1": str(negative_sql1),
+                "sql2": str(negative_sql2),
+                "schema": str(schema_path),
+                "future_output": str(negative_output_path),
+                "future_command_not_run": str(future_negative_command_path),
+                "expected": negative_pair_expected,
+            },
+            "metadata": str(metadata_path),
+        }
+        artifact_paths_path.write_text(
+            json.dumps(artifact_paths_payload, indent=2, sort_keys=True) + "\n",
+            encoding="utf-8",
+        )
+
+        blockers: list[str] = []
+        if not repo_path.is_dir():
+            blockers.append("sqlsolver_repo_missing")
+        if not entrypoint_path.is_file():
+            blockers.append("entrypoint_source_missing")
+        if not build_gradle_path.is_file():
+            blockers.append("build_gradle_missing")
+        if not gradlew_path.is_file():
+            blockers.append("gradlew_missing")
+        if not positive_exists:
+            blockers.append("positive_pair_bundle_missing")
+        if negative_pair_expected and not negative_exists:
+            blockers.append("negative_pair_bundle_missing")
+        if not schema_exists:
+            blockers.append("schema_bundle_missing")
+        if not expected_verdicts_exists:
+            blockers.append("expected_verdicts_missing")
+        if not metadata_exists:
+            blockers.append("metadata_missing")
+        if built_jar_path is None:
+            blockers.append("build_artifact_missing_but_source_build_contract_visible")
+
+        can_execute_support_smoke_next = not blockers
+        if not can_execute_support_smoke_next:
+            global_blockers.extend(blockers)
+
+        dry_run_summary = {
+            "case_id": case_id,
+            "adapter_bundle_path": str(bundle_dir),
+            "future_positive_command_path": str(future_positive_command_path),
+            "future_negative_command_path": str(future_negative_command_path),
+            "artifact_paths_path": str(artifact_paths_path),
+            "positive_pair_files_found": positive_exists,
+            "negative_pair_files_found": negative_exists,
+            "negative_pair_expected": negative_pair_expected,
+            "schema_found": schema_exists,
+            "expected_verdicts_found": expected_verdicts_exists,
+            "can_execute_support_smoke_next": can_execute_support_smoke_next,
+            "blockers": blockers,
+            "timeout_policy": timeout_policy,
+            "verdict_mapping": verdict_mapping,
+            "claim_boundary": "sqlsolver_runner_dry_run_only_not_execution",
+        }
+        dry_run_summary_path.write_text(
+            json.dumps(dry_run_summary, indent=2, sort_keys=True) + "\n",
+            encoding="utf-8",
+        )
+
+        do_not_run_yet_path.write_text(
+            "DO NOT RUN YET\n\n"
+            "This directory is a no-execution dry-run scaffold only.\n"
+            "Blocked until a built SQLSolver jar is available or an approved build step is performed.\n",
+            encoding="utf-8",
+        )
+
+        per_case_dry_run[case_id] = dry_run_summary
+
+    global_blockers = sorted(set(global_blockers))
+    can_execute_support_smoke_next = not global_blockers
+    output_path = Path("/tmp/rewritebench_sqlsolver_runner_dry_run_cons_0007_0035_v1.json")
+    payload = {
+        "command": "formal-sqlsolver-runner-dry-run",
+        "ok": True,
+        "ran_at_utc": utc_now(),
+        "sqlsolver_repo_path": str(repo_path),
+        "entrypoint_found": entrypoint_path.is_file(),
+        "build_contract_found": build_gradle_path.is_file(),
+        "gradlew_found": gradlew_path.is_file(),
+        "z3_artifacts_found": {
+            "libz3.so": z3_lib_path.is_file(),
+            "libz3java.so": z3_java_lib_path.is_file(),
+            "z3_jar": z3_jar_path.is_file(),
+        },
+        "built_jar_found": built_jar_path is not None,
+        "built_jar_path": str(built_jar_path) if built_jar_path else "",
+        "timeout_policy": timeout_policy,
+        "verdict_mapping": verdict_mapping,
+        "per_case_dry_run": per_case_dry_run,
+        "can_execute_support_smoke_next": can_execute_support_smoke_next,
+        "blockers": global_blockers,
+        "claim_boundary": "sqlsolver_runner_dry_run_only_not_execution",
+    }
+    output_path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    return print_and_exit(payload, 0)
+
+
 def cmd_formal_llmr2_single_case_run(args: argparse.Namespace) -> int:
     case_id = str(args.case).strip().upper()
     dry_run_only = bool(args.dry_run)
@@ -43309,6 +43539,14 @@ def build_parser() -> argparse.ArgumentParser:
     formal_sqlsolver_adapter_preflight_parser.add_argument("--cases", nargs="+", required=True)
     formal_sqlsolver_adapter_preflight_parser.set_defaults(
         func=cmd_formal_sqlsolver_adapter_preflight
+    )
+
+    formal_sqlsolver_runner_dry_run_parser = subparsers.add_parser(
+        "formal-sqlsolver-runner-dry-run"
+    )
+    formal_sqlsolver_runner_dry_run_parser.add_argument("--cases", nargs="+", required=True)
+    formal_sqlsolver_runner_dry_run_parser.set_defaults(
+        func=cmd_formal_sqlsolver_runner_dry_run
     )
 
     formal_llmr2_single_case_run_parser = subparsers.add_parser(
