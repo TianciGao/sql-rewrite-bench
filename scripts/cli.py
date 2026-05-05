@@ -227,6 +227,8 @@ RBOT_LLM4REWRITE_PG_RUNTIME_VERIFY_JSON = Path("/tmp/rewritebench_rbot_llm4rewri
 LEARNEDREWRITE_LLM4REWRITE_ADAPTER_PREFLIGHT_ROOT = Path("/tmp/rewritebench_learnedrewrite_llm4rewrite_adapter_preflight")
 LEARNEDREWRITE_LLM4REWRITE_SINGLE_CASE_RUNNER_ROOT = Path("/tmp/rewritebench_learnedrewrite_llm4rewrite_single_case_runner")
 LEARNEDREWRITE_LLM4REWRITE_JVM_JAR_PREFLIGHT_JSON = Path("/tmp/rewritebench_learnedrewrite_llm4rewrite_jvm_jar_preflight.json")
+LLMR2_AUDIT_ROOT = Path("/tmp/rewritebench_llmr2_audit") / "LLM-R2"
+LLMR2_ADAPTER_PREFLIGHT_ROOT = Path("/tmp/rewritebench_llmr2_adapter_preflight")
 CALCITE_HEP_REAL_ROUTE_CANARY_CASES = ["PERF_0006", "PERF_0008", "PERF_0033", "PERF_0054"]
 PORT_TRANSLATE_SOURCE_DIALECT_FALLBACKS = {
     "PORT_0004": "mysql",
@@ -1809,6 +1811,47 @@ def validate_engine_values(rows: list[dict[str, str]], errors: list[dict[str, An
 
 def relative_to_root(path: Path) -> str:
     return str(path.relative_to(ROOT))
+
+
+def llmr2_schema_stub_from_pg_ddl(case_id: str, ddl_text: str, db_id: str) -> dict[str, Any]:
+    tables: list[dict[str, Any]] = []
+    create_table_pattern = re.compile(
+        r"create\s+table\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*\((.*?)\);",
+        re.IGNORECASE | re.DOTALL,
+    )
+    for table_name, body in create_table_pattern.findall(ddl_text):
+        columns: list[dict[str, str]] = []
+        for raw_line in body.splitlines():
+            line = raw_line.strip().rstrip(",")
+            if not line:
+                continue
+            lowered = line.lower()
+            if lowered.startswith(("primary key", "foreign key", "unique", "constraint", "check")):
+                continue
+            match = re.match(r'^"?([a-zA-Z_][a-zA-Z0-9_]*)"?\s+(.+)$', line)
+            if match is None:
+                continue
+            col_name = match.group(1)
+            col_decl = match.group(2)
+            type_part = re.split(
+                r"\s+(?:not\s+null|null|default|primary\s+key|references|constraint|check)\b",
+                col_decl,
+                maxsplit=1,
+                flags=re.IGNORECASE,
+            )[0].strip()
+            columns.append(
+                {
+                    "name": col_name,
+                    "type": type_part,
+                }
+            )
+        tables.append({"table": table_name, "rows": "unknown", "columns": columns})
+    return {
+        "db_id": db_id,
+        "tables": tables,
+        "note": "adapter stub generated from RewriteBench ddl_pg.sql; not an official LLM-R2 dataset schema file",
+        "source_case_id": case_id,
+    }
 
 
 def split_sql_top_level_commas(value: str) -> list[str]:
@@ -28149,6 +28192,195 @@ def cmd_formal_rbot_llm4rewrite_adapter_preflight(args: argparse.Namespace) -> i
     return print_and_exit(payload, 0 if payload["ok"] else 1)
 
 
+def cmd_formal_llmr2_adapter_preflight(args: argparse.Namespace) -> int:
+    case_id = str(args.case).strip().upper()
+    if case_id != "PERF_0006":
+        payload = {
+            "command": "formal-llmr2-adapter-preflight",
+            "ok": False,
+            "ran_at_utc": utc_now(),
+            "case_id": case_id,
+            "future_smoke_readiness": "blocked_missing_input_contract",
+            "failure_category": "unsupported_case_id",
+            "failure_summary": "only PERF_0006 is supported in this bounded no-execution preflight",
+            "claim_boundary": "no_execution_adapter_preflight_only",
+        }
+        return print_and_exit(payload, 1)
+
+    inferred = case_root_for_case_id(case_id)
+    if inferred is None:
+        payload = {
+            "command": "formal-llmr2-adapter-preflight",
+            "ok": False,
+            "ran_at_utc": utc_now(),
+            "case_id": case_id,
+            "future_smoke_readiness": "blocked_missing_input_contract",
+            "failure_category": "case_id_not_resolved",
+            "failure_summary": "PERF_0006 case root could not be resolved",
+            "claim_boundary": "no_execution_adapter_preflight_only",
+        }
+        return print_and_exit(payload, 1)
+
+    pool, case_root = inferred
+    source_sql_path = case_root / "source.sql"
+    ddl_pg_path = case_root / "schema" / "ddl_pg.sql"
+    witness_data_path = case_root / "validation" / "pg_witness_data.sql"
+
+    repo_path = LLMR2_AUDIT_ROOT
+    llmr2_main_path = repo_path / "src" / "LLM_R2.py"
+    learned_rewriter_path = repo_path / "src" / "learned_rewriter_pg.py"
+    rule_library_dir = repo_path / "src" / "rules_for_selected"
+    demo_pool_dir = repo_path / "data" / "data_llmr2" / "pools"
+    schema_examples_dir = repo_path / "data" / "data_llmr2" / "schemas"
+    model_checkpoint_path = repo_path / "src" / "simcse_models" / "tpch" / "pytorch_model.bin"
+
+    bundle_dir = LLMR2_ADAPTER_PREFLIGHT_ROOT / case_id
+    bundle_dir.mkdir(parents=True, exist_ok=True)
+    bundle_source_path = bundle_dir / "source.sql"
+    bundle_schema_path = bundle_dir / "create_tables.sql"
+    bundle_query_csv_path = bundle_dir / "perf_0006_queries.csv"
+    bundle_schema_stub_path = bundle_dir / "perf_0006_schema_stub.json"
+    bundle_metadata_path = bundle_dir / "llmr2_case_metadata.json"
+    bundle_expected_command_path = bundle_dir / "expected_command_NOT_RUN.txt"
+    bundle_output_contract_path = bundle_dir / "output_capture_contract.md"
+    bundle_summary_path = bundle_dir / "preflight_summary.json"
+
+    source_sql_exists = source_sql_path.is_file()
+    ddl_pg_exists = ddl_pg_path.is_file()
+    witness_data_exists = witness_data_path.is_file()
+    repo_exists = repo_path.is_dir()
+    llmr2_main_exists = llmr2_main_path.is_file()
+    learned_rewriter_exists = learned_rewriter_path.is_file()
+    rule_library_found = rule_library_dir.is_dir() and any(rule_library_dir.glob("*.txt"))
+    demo_pool_found = demo_pool_dir.is_dir() and any(demo_pool_dir.glob("*.csv"))
+    schema_examples_found = schema_examples_dir.is_dir() and any(schema_examples_dir.glob("*.json"))
+    model_checkpoint_found = model_checkpoint_path.is_file()
+    output_sql_contract_visible = llmr2_main_exists and learned_rewriter_exists
+
+    source_sql_text = source_sql_path.read_text(encoding="utf-8") if source_sql_exists else ""
+    ddl_pg_text = ddl_pg_path.read_text(encoding="utf-8") if ddl_pg_exists else ""
+    db_id = "rewritebench_perf_0006"
+
+    bundle_source_path.write_text(source_sql_text if source_sql_text else "-- missing source.sql\n", encoding="utf-8")
+    bundle_schema_path.write_text(ddl_pg_text if ddl_pg_text else "-- missing ddl_pg.sql\n", encoding="utf-8")
+
+    with bundle_query_csv_path.open("w", encoding="utf-8", newline="") as handle:
+        writer = csv.DictWriter(handle, fieldnames=["db_id", "original_sql"])
+        writer.writeheader()
+        writer.writerow({"db_id": db_id, "original_sql": source_sql_text.strip()})
+
+    schema_stub = llmr2_schema_stub_from_pg_ddl(case_id, ddl_pg_text, db_id)
+    bundle_schema_stub_path.write_text(json.dumps(schema_stub, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+    metadata_payload = {
+        "case_id": case_id,
+        "source_sql_path": relative_to_root(source_sql_path),
+        "ddl_pg_path": relative_to_root(ddl_pg_path),
+        "witness_data_path": relative_to_root(witness_data_path),
+        "llmr2_repo_path": str(repo_path),
+        "llmr2_main_path": str(llmr2_main_path),
+        "query_csv_path": str(bundle_query_csv_path),
+        "schema_stub_path": str(bundle_schema_stub_path),
+        "output_sql_contract_visible": output_sql_contract_visible,
+        "demo_pool_found": demo_pool_found,
+        "rule_library_found": rule_library_found,
+        "model_checkpoint_found": model_checkpoint_found,
+        "claim_boundary": "no_execution_adapter_preflight_only",
+    }
+    bundle_metadata_path.write_text(json.dumps(metadata_payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+    expected_command_text = (
+        "NOT RUN\n\n"
+        "Plausible future command shape based on src/LLM_R2.py:\n"
+        "cd /tmp/rewritebench_llmr2_audit/LLM-R2/src\n"
+        "PYTHONPATH=. python3 LLM_R2.py\n\n"
+        "Assumptions for a future bounded single-case wrapper:\n"
+        f"- query CSV staged at {bundle_query_csv_path}\n"
+        f"- schema stub staged at {bundle_schema_stub_path}\n"
+        "- positive/negative demo pools still expected under ../data/data_llmr2/pools/\n"
+        "- OpenAI/API access required for rule selection on the main LLM_R2.py path\n"
+        "- Java rule applier required through rewriter.py and rewriter_java.jar\n"
+        "- result CSV expected under ../results/ with rewritten_sql_gpt and activated_rules_gpt columns\n"
+        "- adapter wrapper would need to override dataset/path assumptions for a one-row RewriteBench case\n"
+    )
+    bundle_expected_command_path.write_text(expected_command_text, encoding="utf-8")
+
+    output_contract_text = (
+        "# Output Capture Contract\n\n"
+        "No output SQL was generated in this preflight.\n\n"
+        "Observed LLM-R2 output points:\n"
+        "- src/LLM_R2.py appends generated candidate SQL to `rewritten_queries_s`\n"
+        "- src/LLM_R2.py writes that field out as `rewritten_sql_gpt` in a result CSV under `../results/`\n"
+        "- src/learned_rewriter_pg.py returns `rewrite_query` and collects `activated_rules`\n\n"
+        "Future adapter extraction path:\n"
+        "- read the one-row result CSV from the bounded wrapper output location\n"
+        "- extract candidate SQL from the `rewritten_sql_gpt` column\n"
+        f"- copy that SQL into {bundle_dir / 'generated_sql.sql'}\n"
+        f"- copy checker handoff SQL into {bundle_dir / 'checker_candidate_sql.sql'}\n"
+        "- hand off the copied candidate SQL to the existing PostgreSQL checker only after explicit approval\n\n"
+        "No checker handoff occurred in this preflight.\n"
+    )
+    bundle_output_contract_path.write_text(output_contract_text, encoding="utf-8")
+
+    contract_gaps = [
+        "schema JSON may be approximate",
+        "demo pool selection contract",
+        "API/model requirement",
+        "rule applier Java path",
+        "result CSV capture",
+        "license unresolved",
+    ]
+
+    if all([
+        source_sql_exists,
+        ddl_pg_exists,
+        repo_exists,
+        llmr2_main_exists,
+        learned_rewriter_exists,
+        rule_library_found,
+        demo_pool_found,
+        schema_examples_found,
+        model_checkpoint_found,
+        output_sql_contract_visible,
+    ]):
+        future_smoke_readiness = "adapter_preflight_ready_not_executed"
+        ok = True
+    else:
+        future_smoke_readiness = "blocked_missing_input_contract"
+        ok = False
+
+    payload = {
+        "command": "formal-llmr2-adapter-preflight",
+        "ok": ok,
+        "ran_at_utc": utc_now(),
+        "case_id": case_id,
+        "pool": pool,
+        "source_sql_found": source_sql_exists,
+        "schema_found": ddl_pg_exists,
+        "witness_data_found": witness_data_exists,
+        "llmr2_repo_found": repo_exists,
+        "llmr2_main_found": llmr2_main_exists,
+        "learned_rewriter_found": learned_rewriter_exists,
+        "rule_library_found": rule_library_found,
+        "demo_pool_found": demo_pool_found,
+        "schema_examples_found": schema_examples_found,
+        "model_checkpoint_found": model_checkpoint_found,
+        "output_sql_contract_visible": output_sql_contract_visible,
+        "temp_bundle_path": str(bundle_dir),
+        "query_csv_created": bundle_query_csv_path.is_file(),
+        "schema_stub_created": bundle_schema_stub_path.is_file(),
+        "metadata_created": bundle_metadata_path.is_file(),
+        "expected_command_documented": bundle_expected_command_path.is_file(),
+        "output_capture_documented": bundle_output_contract_path.is_file(),
+        "future_smoke_readiness": future_smoke_readiness,
+        "recommended_next_step": "implement single-case LLM-R2 runner dry-run",
+        "contract_gaps": contract_gaps,
+        "claim_boundary": "no_execution_adapter_preflight_only",
+    }
+    bundle_summary_path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    return print_and_exit(payload, 0 if ok else 1)
+
+
 def cmd_formal_learnedrewrite_llm4rewrite_adapter_preflight(args: argparse.Namespace) -> int:
     case_id = str(args.case).strip().upper()
     supported_case_ids = {
@@ -40578,6 +40810,14 @@ def build_parser() -> argparse.ArgumentParser:
     formal_rbot_llm4rewrite_adapter_preflight_parser.add_argument("--case", required=True)
     formal_rbot_llm4rewrite_adapter_preflight_parser.set_defaults(
         func=cmd_formal_rbot_llm4rewrite_adapter_preflight
+    )
+
+    formal_llmr2_adapter_preflight_parser = subparsers.add_parser(
+        "formal-llmr2-adapter-preflight"
+    )
+    formal_llmr2_adapter_preflight_parser.add_argument("--case", required=True)
+    formal_llmr2_adapter_preflight_parser.set_defaults(
+        func=cmd_formal_llmr2_adapter_preflight
     )
 
     formal_learnedrewrite_llm4rewrite_adapter_preflight_parser = subparsers.add_parser(
