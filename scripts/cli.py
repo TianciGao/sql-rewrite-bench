@@ -28623,6 +28623,203 @@ def cmd_formal_rbot_llm4rewrite_pg_runtime_verify(args: argparse.Namespace) -> i
     return print_and_exit(payload, 0 if payload["ok"] else 1)
 
 
+def cmd_formal_rbot_llm4rewrite_checker_handoff(args: argparse.Namespace) -> int:
+    case_id = str(args.case).strip().upper()
+    candidate_sql_path = Path(str(args.candidate)).resolve()
+    inferred = case_root_for_case_id(case_id)
+    source_sql_path = ROOT / "missing.sql"
+    pg_ddl_path = ROOT / "missing.sql"
+    pg_data_sql_path = ROOT / "missing.sql"
+    checker_yaml_path = ROOT / "missing.yaml"
+    pool = ""
+    if inferred is not None:
+        pool, case_root = inferred
+        source_sql_path = case_root / "source.sql"
+        pg_ddl_path = case_root / "schema" / "ddl_pg.sql"
+        pg_data_sql_path = case_root / "validation" / "pg_witness_data.sql"
+        checker_yaml_path = case_root / "validation" / "checker.yaml"
+
+    runner_dir = RBOT_LLM4REWRITE_SINGLE_CASE_RUNNER_ROOT / case_id
+    runner_dir.mkdir(parents=True, exist_ok=True)
+    checker_result_path = runner_dir / "checker_result_v1.json"
+    source_output_path = runner_dir / "checker_source_v1.tsv"
+    candidate_output_path = runner_dir / "checker_candidate_v1.tsv"
+
+    source_sql_found = source_sql_path.is_file()
+    pg_ddl_found = pg_ddl_path.is_file()
+    pg_data_sql_found = pg_data_sql_path.is_file()
+    candidate_exists = candidate_sql_path.is_file()
+    candidate_text = candidate_sql_path.read_text(encoding="utf-8") if candidate_exists else ""
+    candidate_non_empty = bool(candidate_text.strip())
+
+    env_visibility = pg_env_visibility()
+    required_env_visible = all(env_visibility[name] for name in ["PGHOST", "PGPORT", "PGDATABASE", "PGUSER"])
+    psycopg_available = safe_module_available("psycopg")
+    isolated_schema = f"rbot_llm4rewrite_{case_id.lower()}_check_{int(time.time())}"
+
+    source_execution_status = "not_attempted"
+    candidate_execution_status = "not_attempted"
+    source_row_count: int | None = None
+    candidate_row_count: int | None = None
+    checker_status = "failed"
+    consistency_status = "not_checked"
+    failure_category = ""
+    failure_summary = ""
+    cleanup_status = "not_attempted"
+    normalization_policy = "sort_rows=true,trim_whitespace=true,normalize_numeric_format=true,normalize_null=true"
+
+    def _strip_sql_comments(text: str) -> str:
+        return "\n".join(line for line in text.splitlines() if not re.match(r"^\s*--", line))
+
+    def _read_statements(path: Path) -> list[str]:
+        text = _strip_sql_comments(path.read_text(encoding="utf-8"))
+        return [stmt.strip() for stmt in text.split(";") if stmt.strip()]
+
+    def _read_query(path: Path) -> str:
+        return _strip_sql_comments(path.read_text(encoding="utf-8")).strip().rstrip(";")
+
+    def _tsv_cell(value: Any) -> str:
+        if value is None:
+            return r"\N"
+        return str(value)
+
+    def _rows_to_tsv_lines(rows: list[Sequence[Any]]) -> list[str]:
+        return ["\t".join(_tsv_cell(cell) for cell in row) for row in rows]
+
+    if checker_yaml_path.is_file():
+        checker_yaml_text = checker_yaml_path.read_text(encoding="utf-8")
+        if "sort_rows: true" not in checker_yaml_text:
+            normalization_policy = "custom_checker_yaml_present_sort_rows_not_true"
+
+    if inferred is None:
+        failure_category = "case_id_not_resolved"
+        failure_summary = f"could not resolve case root for {case_id}"
+    elif not source_sql_found:
+        failure_category = "missing_source_sql"
+        failure_summary = f"missing source.sql for {case_id}"
+    elif not pg_ddl_found:
+        failure_category = "missing_pg_ddl"
+        failure_summary = f"missing schema/ddl_pg.sql for {case_id}"
+    elif not pg_data_sql_found:
+        failure_category = "missing_pg_witness_data"
+        failure_summary = f"missing validation/pg_witness_data.sql for {case_id}"
+    elif not candidate_exists:
+        failure_category = "missing_candidate_sql"
+        failure_summary = f"candidate SQL file not found: {candidate_sql_path}"
+    elif not candidate_non_empty:
+        failure_category = "empty_candidate_sql"
+        failure_summary = f"candidate SQL file was empty: {candidate_sql_path}"
+    elif not required_env_visible:
+        failure_category = "missing_pg_env"
+        failure_summary = "required env visibility missing for PGHOST/PGPORT/PGDATABASE/PGUSER"
+    elif not psycopg_available:
+        failure_category = "psycopg_unavailable"
+        failure_summary = "psycopg is not installed in the active Python environment"
+    else:
+        try:
+            psycopg = importlib.import_module("psycopg")
+            source_sql = _read_query(source_sql_path)
+            candidate_sql = _strip_sql_comments(candidate_text).strip().rstrip(";")
+            ddl_statements = _read_statements(pg_ddl_path)
+            data_statements = _read_statements(pg_data_sql_path)
+
+            with psycopg.connect(
+                host=os.environ["PGHOST"],
+                port=os.environ["PGPORT"],
+                dbname=os.environ["PGDATABASE"],
+                user=os.environ["PGUSER"],
+                password=os.environ.get("PGPASSWORD"),
+                autocommit=False,
+            ) as conn:
+                with conn.cursor() as cur:
+                    cur.execute("SELECT set_config('statement_timeout', %s, false)", ("30000",))
+                    cur.execute(
+                        psycopg.sql.SQL("CREATE SCHEMA {}").format(
+                            psycopg.sql.Identifier(isolated_schema)
+                        )
+                    )
+                    cur.execute(
+                        psycopg.sql.SQL("SET search_path TO {}, public").format(
+                            psycopg.sql.Identifier(isolated_schema)
+                        )
+                    )
+                    for stmt in ddl_statements:
+                        cur.execute(stmt)
+                    for stmt in data_statements:
+                        cur.execute(stmt)
+
+                    cur.execute(source_sql)
+                    source_rows = cur.fetchall() if cur.description is not None else []
+                    source_execution_status = "success"
+                    source_row_count = len(source_rows)
+                    source_lines = _rows_to_tsv_lines(source_rows)
+                    source_output_path.write_text(
+                        ("\n".join(source_lines) + ("\n" if source_lines else "")),
+                        encoding="utf-8",
+                    )
+
+                    cur.execute(candidate_sql)
+                    candidate_rows = cur.fetchall() if cur.description is not None else []
+                    candidate_execution_status = "success"
+                    candidate_row_count = len(candidate_rows)
+                    candidate_lines = _rows_to_tsv_lines(candidate_rows)
+                    candidate_output_path.write_text(
+                        ("\n".join(candidate_lines) + ("\n" if candidate_lines else "")),
+                        encoding="utf-8",
+                    )
+
+                    normalized_equal = normalize_tsv_lines(source_lines) == normalize_tsv_lines(candidate_lines)
+                    checker_status = "consistent" if normalized_equal else "inconsistent"
+                    consistency_status = "consistent" if normalized_equal else "inconsistent"
+                    conn.rollback()
+                    cleanup_status = "rolled_back_transaction"
+        except Exception as exc:
+            if source_execution_status == "not_attempted":
+                source_execution_status = "failed"
+            elif candidate_execution_status == "not_attempted":
+                candidate_execution_status = "failed"
+            else:
+                candidate_execution_status = "failed"
+            checker_status = "failed"
+            consistency_status = "not_checked"
+            failure_category = type(exc).__name__
+            failure_summary = str(exc)
+            if cleanup_status == "not_attempted":
+                cleanup_status = "rollback_attempted_or_connection_closed"
+
+    if checker_status == "consistent":
+        failure_category = ""
+        failure_summary = ""
+    elif checker_status == "inconsistent" and not failure_category:
+        failure_category = "result_mismatch"
+        failure_summary = "normalized TSV outputs differed"
+
+    payload = {
+        "case_id": case_id,
+        "method": "R-Bot via LLM4Rewrite",
+        "candidate_sql_path": str(candidate_sql_path),
+        "source_execution_status": source_execution_status,
+        "candidate_execution_status": candidate_execution_status,
+        "source_row_count": source_row_count,
+        "candidate_row_count": candidate_row_count,
+        "checker_status": checker_status,
+        "consistency_status": consistency_status,
+        "normalization_policy": normalization_policy,
+        "source_output_path": str(source_output_path),
+        "candidate_output_path": str(candidate_output_path),
+        "failure_category": failure_category,
+        "failure_summary": failure_summary,
+        "speedup_status": "not_run",
+        "cleanup_status": cleanup_status,
+        "claim_boundary": "bounded_1_case_RBot_LLM4Rewrite_checker_smoke_not_speedup_not_leaderboard",
+    }
+    checker_result_path.write_text(
+        json.dumps(payload, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    return print_and_exit(payload, 0 if checker_status == "consistent" else 1)
+
+
 def cmd_formal_rbot_llm4rewrite_single_case_smoke_run(args: argparse.Namespace) -> int:
     case_id = str(args.case).strip().upper()
     dry_run_only = bool(args.dry_run)
@@ -39248,6 +39445,15 @@ def build_parser() -> argparse.ArgumentParser:
     formal_rbot_llm4rewrite_pg_runtime_verify_parser.add_argument("--case", required=True)
     formal_rbot_llm4rewrite_pg_runtime_verify_parser.set_defaults(
         func=cmd_formal_rbot_llm4rewrite_pg_runtime_verify
+    )
+
+    formal_rbot_llm4rewrite_checker_handoff_parser = subparsers.add_parser(
+        "formal-rbot-llm4rewrite-checker-handoff"
+    )
+    formal_rbot_llm4rewrite_checker_handoff_parser.add_argument("--case", required=True)
+    formal_rbot_llm4rewrite_checker_handoff_parser.add_argument("--candidate", required=True)
+    formal_rbot_llm4rewrite_checker_handoff_parser.set_defaults(
+        func=cmd_formal_rbot_llm4rewrite_checker_handoff
     )
 
     formal_expanded_perf_direct_llm_preflight_parser = subparsers.add_parser("formal-expanded-perf-direct-llm-preflight")
