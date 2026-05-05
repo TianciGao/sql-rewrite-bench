@@ -226,6 +226,7 @@ RBOT_LLM4REWRITE_SINGLE_CASE_RUNNER_ROOT = Path("/tmp/rewritebench_rbot_llm4rewr
 RBOT_LLM4REWRITE_PG_RUNTIME_VERIFY_JSON = Path("/tmp/rewritebench_rbot_llm4rewrite_pg_runtime_verify_perf_0006.json")
 LEARNEDREWRITE_LLM4REWRITE_ADAPTER_PREFLIGHT_ROOT = Path("/tmp/rewritebench_learnedrewrite_llm4rewrite_adapter_preflight")
 LEARNEDREWRITE_LLM4REWRITE_SINGLE_CASE_RUNNER_ROOT = Path("/tmp/rewritebench_learnedrewrite_llm4rewrite_single_case_runner")
+LEARNEDREWRITE_LLM4REWRITE_JVM_JAR_PREFLIGHT_JSON = Path("/tmp/rewritebench_learnedrewrite_llm4rewrite_jvm_jar_preflight.json")
 CALCITE_HEP_REAL_ROUTE_CANARY_CASES = ["PERF_0006", "PERF_0008", "PERF_0033", "PERF_0054"]
 PORT_TRANSLATE_SOURCE_DIALECT_FALLBACKS = {
     "PORT_0004": "mysql",
@@ -28555,6 +28556,282 @@ def cmd_formal_learnedrewrite_llm4rewrite_single_case_run(args: argparse.Namespa
     return print_and_exit(payload, 0 if can_execute_smoke_next else 1)
 
 
+def cmd_formal_learnedrewrite_llm4rewrite_jvm_jar_preflight(args: argparse.Namespace) -> int:
+    case_id = str(args.case).strip().upper()
+    if case_id != "PERF_0006":
+        payload = {
+            "command": "formal-learnedrewrite-llm4rewrite-jvm-jar-preflight",
+            "ok": False,
+            "ran_at_utc": utc_now(),
+            "case_id": case_id,
+            "readiness_decision": "jvm_jar_preflight_blocked_with_exact_reason",
+            "failure_category": "unsupported_case_id",
+            "failure_summary": "only PERF_0006 is supported in this bounded preflight",
+            "claim_boundary": "jvm_jar_preflight_only_not_learnedrewrite_execution",
+        }
+        LEARNEDREWRITE_LLM4REWRITE_JVM_JAR_PREFLIGHT_JSON.write_text(
+            json.dumps(payload, indent=2, sort_keys=True) + "\n",
+            encoding="utf-8",
+        )
+        return print_and_exit(payload, 1)
+
+    jar_path = (
+        RBOT_LLM4REWRITE_AUDIT_ROOT
+        / "CalciteRewrite"
+        / "out"
+        / "artifacts"
+        / "LearnedRewrite_jar"
+        / "LearnedRewrite.jar"
+    )
+    runner_path = RBOT_LLM4REWRITE_AUDIT_ROOT / "my_rewriter" / "test_learned_rewrite.py"
+    java_source_path = RBOT_LLM4REWRITE_AUDIT_ROOT / "CalciteRewrite" / "src" / "learned" / "LearnedRewriter.java"
+    smoke_venv_python = Path("/tmp/rewritebench_rbot_llm4rewrite_venv_smoke/bin/python")
+
+    jar_exists = jar_path.is_file()
+    runner_exists = runner_path.is_file()
+    java_source_exists = java_source_path.is_file()
+    output_sql_contract_visible = runner_exists and java_source_exists
+
+    java_path = shutil.which("java")
+    jar_tool_path = shutil.which("jar")
+    java_visible = bool(java_path)
+    jar_tf_status = "not_run"
+    java_version_status = "not_run"
+    java_version_output = ""
+    important_classes: list[str] = []
+    jar_entry_count: int | None = None
+    failure_category = ""
+    failure_summary = ""
+
+    if java_visible:
+        version_proc = subprocess.run(
+            [java_path, "-version"],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        java_version_status = "success" if version_proc.returncode == 0 else "failed"
+        version_text = ((version_proc.stderr or "") + ("\n" if version_proc.stderr and version_proc.stdout else "") + (version_proc.stdout or "")).strip()
+        java_version_output = version_text[:4000]
+        if version_proc.returncode != 0 and not failure_category:
+            failure_category = "java_version_failed"
+            failure_summary = f"java -version exited with code {version_proc.returncode}"
+
+    if jar_exists and jar_tool_path:
+        jar_proc = subprocess.run(
+            [jar_tool_path, "tf", str(jar_path)],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        jar_tf_status = "success" if jar_proc.returncode == 0 else "failed"
+        jar_lines = [line.strip() for line in (jar_proc.stdout or "").splitlines() if line.strip()]
+        jar_entry_count = len(jar_lines)
+        important_classes = [
+            line for line in jar_lines
+            if line in {
+                "learned/LearnedRewriter.class",
+                "learned/Rewriter.class",
+                "learned/Node.class",
+                "rewriter/DBConn.class",
+                "rewriter/SqlIo.class",
+            }
+        ]
+        if jar_proc.returncode != 0 and not failure_category:
+            failure_category = "jar_tf_failed"
+            failure_summary = f"jar tf exited with code {jar_proc.returncode}"
+    elif jar_exists and not jar_tool_path and not failure_category:
+        jar_tf_status = "failed"
+        failure_category = "jar_tool_not_visible"
+        failure_summary = "jar tool is not visible on PATH"
+
+    jpype_import_success = False
+    jpype_version = None
+    jpype_error = ""
+    jvm_start_attempted = False
+    jvm_start_status = "not_attempted"
+    class_load_status = "not_attempted"
+    jvm_shutdown_status = "not_attempted"
+    jvm_probe_output = ""
+    no_learnedrewrite_method_invoked = True
+
+    if smoke_venv_python.is_file():
+        jpype_probe = subprocess.run(
+            [
+                str(smoke_venv_python),
+                "-c",
+                (
+                    "import json\n"
+                    "out={'jpype_import_success':False,'jpype_version':None,'error':None}\n"
+                    "try:\n"
+                    " import jpype\n"
+                    " out['jpype_import_success']=True\n"
+                    " out['jpype_version']=getattr(jpype,'__version__',None)\n"
+                    "except Exception as e:\n"
+                    " out['error']=f'{type(e).__name__}: {e}'\n"
+                    "print(json.dumps(out))\n"
+                ),
+            ],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        try:
+            jpype_payload = json.loads((jpype_probe.stdout or "").strip() or "{}")
+        except json.JSONDecodeError:
+            jpype_payload = {
+                "jpype_import_success": False,
+                "jpype_version": None,
+                "error": (jpype_probe.stderr or jpype_probe.stdout or "").strip()[:500],
+            }
+        jpype_import_success = bool(jpype_payload.get("jpype_import_success"))
+        jpype_version = jpype_payload.get("jpype_version")
+        jpype_error = str(jpype_payload.get("error") or "")
+
+    if jar_exists and java_visible and jpype_import_success and smoke_venv_python.is_file():
+        jvm_start_attempted = True
+        jvm_probe = subprocess.run(
+            [
+                str(smoke_venv_python),
+                "-c",
+                (
+                    "import json\n"
+                    "from pathlib import Path\n"
+                    "import jpype\n"
+                    "out={'jvm_start_status':'not_started','class_load_status':'not_attempted','jvm_shutdown_status':'not_attempted','error':None,'classes':[]}\n"
+                    f"jar_path=Path({str(str(jar_path.parent))!r})\n"
+                    "classpath=[str(p) for p in jar_path.glob('*.jar') if p.is_file()]\n"
+                    "try:\n"
+                    " jpype.startJVM(jpype.getDefaultJVMPath(), classpath=classpath)\n"
+                    " out['jvm_start_status']='success'\n"
+                    " try:\n"
+                    "  learned_cls=jpype.JClass('learned.LearnedRewriter')\n"
+                    "  rewrite_cls=jpype.JClass('rewriter.Rewriter')\n"
+                    "  out['classes']=[str(learned_cls), str(rewrite_cls)]\n"
+                    "  out['class_load_status']='success'\n"
+                    " except Exception as e:\n"
+                    "  out['class_load_status']='failed'\n"
+                    "  out['error']=f'{type(e).__name__}: {e}'\n"
+                    " finally:\n"
+                    "  try:\n"
+                    "   jpype.shutdownJVM()\n"
+                    "   out['jvm_shutdown_status']='success'\n"
+                    "  except Exception as e:\n"
+                    "   out['jvm_shutdown_status']=f'failed: {type(e).__name__}: {e}'\n"
+                    "except Exception as e:\n"
+                    " out['jvm_start_status']='failed'\n"
+                    " out['error']=f'{type(e).__name__}: {e}'\n"
+                    "print(json.dumps(out))\n"
+                ),
+            ],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        jvm_probe_output = ((jvm_probe.stdout or "") + ("\n" + jvm_probe.stderr if jvm_probe.stderr else "")).strip()[:4000]
+        try:
+            jvm_payload = json.loads((jvm_probe.stdout or "").strip() or "{}")
+        except json.JSONDecodeError:
+            jvm_payload = {
+                "jvm_start_status": "failed",
+                "class_load_status": "failed",
+                "jvm_shutdown_status": "not_attempted",
+                "error": (jvm_probe.stderr or jvm_probe.stdout or "").strip()[:500],
+                "classes": [],
+            }
+        jvm_start_status = str(jvm_payload.get("jvm_start_status") or "failed")
+        class_load_status = str(jvm_payload.get("class_load_status") or "failed")
+        jvm_shutdown_status = str(jvm_payload.get("jvm_shutdown_status") or "not_attempted")
+        if not important_classes:
+            important_classes = list(jvm_payload.get("classes") or [])
+        if (jvm_payload.get("error") and not failure_category):
+            failure_category = "jvm_probe_failed"
+            failure_summary = str(jvm_payload.get("error"))
+
+    blockers: list[str] = []
+    if not java_visible:
+        blockers.append("java_not_visible")
+    if java_version_status != "success":
+        blockers.append("java_version_failed")
+    if not jar_exists:
+        blockers.append("missing_learnedrewrite_jar")
+    if jar_tf_status != "success":
+        blockers.append("jar_tf_failed")
+    if not runner_exists:
+        blockers.append("missing_test_learned_rewrite_runner")
+    if not output_sql_contract_visible:
+        blockers.append("missing_output_sql_contract_visibility")
+    if not jpype_import_success:
+        blockers.append("jpype_import_unavailable")
+    if jvm_start_attempted and jvm_start_status != "success":
+        blockers.append("jvm_start_failed")
+    if jvm_start_attempted and class_load_status != "success":
+        blockers.append("class_load_failed")
+    blockers.extend(
+        [
+            "single_case_execution_not_implemented",
+            "output_sql_extraction_not_tested",
+            "checker_handoff_not_run",
+        ]
+    )
+
+    ready = (
+        java_visible
+        and java_version_status == "success"
+        and jar_exists
+        and jar_tf_status == "success"
+        and runner_exists
+        and output_sql_contract_visible
+        and jpype_import_success
+        and (not jvm_start_attempted or (jvm_start_status == "success" and class_load_status == "success"))
+    )
+    readiness_decision = (
+        "jvm_jar_preflight_ready_for_single_case_smoke"
+        if ready
+        else "jvm_jar_preflight_blocked_with_exact_reason"
+    )
+
+    payload = {
+        "command": "formal-learnedrewrite-llm4rewrite-jvm-jar-preflight",
+        "ok": ready,
+        "ran_at_utc": utc_now(),
+        "case_id": case_id,
+        "jar_path": str(jar_path),
+        "runner_path": str(runner_path),
+        "java_source_path": str(java_source_path),
+        "venv_path": str(smoke_venv_python.parent.parent),
+        "java_visible": java_visible,
+        "java_path": java_path or "",
+        "java_version_status": java_version_status,
+        "java_version_output": java_version_output,
+        "jar_exists": jar_exists,
+        "jar_tf_status": jar_tf_status,
+        "jar_entry_count": jar_entry_count,
+        "important_classes_found": important_classes,
+        "jpype_import_success": jpype_import_success,
+        "jpype_version": jpype_version,
+        "jpype_error": jpype_error,
+        "jvm_start_attempted": jvm_start_attempted,
+        "jvm_start_status": jvm_start_status,
+        "class_load_status": class_load_status,
+        "jvm_shutdown_status": jvm_shutdown_status,
+        "jvm_probe_output": jvm_probe_output,
+        "no_learnedrewrite_method_invoked": no_learnedrewrite_method_invoked,
+        "no_db_access_attempted": True,
+        "no_checker_or_speedup_attempted": True,
+        "readiness_decision": readiness_decision,
+        "remaining_blockers": blockers,
+        "failure_category": failure_category,
+        "failure_summary": failure_summary,
+        "claim_boundary": "jvm_jar_preflight_only_not_learnedrewrite_execution",
+    }
+    LEARNEDREWRITE_LLM4REWRITE_JVM_JAR_PREFLIGHT_JSON.write_text(
+        json.dumps(payload, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    return print_and_exit(payload, 0 if ready else 1)
+
+
 def cmd_formal_rbot_llm4rewrite_single_case_smoke_preflight(args: argparse.Namespace) -> int:
     case_id = str(args.case).strip().upper()
     inferred = case_root_for_case_id(case_id)
@@ -39844,6 +40121,14 @@ def build_parser() -> argparse.ArgumentParser:
     formal_learnedrewrite_llm4rewrite_single_case_run_parser.add_argument("--dry-run", action="store_true", default=False)
     formal_learnedrewrite_llm4rewrite_single_case_run_parser.set_defaults(
         func=cmd_formal_learnedrewrite_llm4rewrite_single_case_run
+    )
+
+    formal_learnedrewrite_llm4rewrite_jvm_jar_preflight_parser = subparsers.add_parser(
+        "formal-learnedrewrite-llm4rewrite-jvm-jar-preflight"
+    )
+    formal_learnedrewrite_llm4rewrite_jvm_jar_preflight_parser.add_argument("--case", required=True)
+    formal_learnedrewrite_llm4rewrite_jvm_jar_preflight_parser.set_defaults(
+        func=cmd_formal_learnedrewrite_llm4rewrite_jvm_jar_preflight
     )
 
     formal_rbot_llm4rewrite_single_case_smoke_preflight_parser = subparsers.add_parser(
