@@ -29528,6 +29528,7 @@ def simple_distance(a, b):
 
 def cmd_formal_llmr2_logical_plan_probe(args: argparse.Namespace) -> int:
     case_id = str(args.case).strip().upper()
+    schema_native_contract = bool(getattr(args, "schema_native_contract", False))
     if case_id != "PERF_0006":
         payload = {
             "command": "formal-llmr2-logical-plan-probe",
@@ -29545,14 +29546,28 @@ def cmd_formal_llmr2_logical_plan_probe(args: argparse.Namespace) -> int:
     runtime_src_dir = runtime_root / "src"
     staged_query_csv_path = runtime_root / "data" / "data_llmr2" / "queries" / "queries_rewritebench_perf_0006_test.csv"
     staged_schema_path = runtime_root / "data" / "data_llmr2" / "schemas" / "rewritebench_perf_0006.json"
-    stdout_path = fast_path_dir / "logical_plan_probe_stdout_v1.txt"
-    stderr_path = fast_path_dir / "logical_plan_probe_stderr_v1.txt"
+    if schema_native_contract:
+        stdout_path = fast_path_dir / "logical_plan_probe_stdout_schema_contract_v1.txt"
+        stderr_path = fast_path_dir / "logical_plan_probe_stderr_schema_contract_v1.txt"
+    else:
+        stdout_path = fast_path_dir / "logical_plan_probe_stdout_v1.txt"
+        stderr_path = fast_path_dir / "logical_plan_probe_stderr_v1.txt"
     smoke_result_path = fast_path_dir / "smoke_result_schema_fix_v1.json"
     result_csv_path = fast_path_dir / "gpt_rewritebench_perf_0006_one_promo_queryCL_updated.csv"
     generated_sql_path = fast_path_dir / "generated_sql_schema_fix_v1.sql"
-    report_path = ROOT / "docs" / "_scratch" / "LLMR2_LOGICAL_PLAN_PROBE_PERF_0006_v1.md"
-    json_path = Path("/tmp/rewritebench_llmr2_logical_plan_probe_perf_0006_v1.json")
+    if schema_native_contract:
+        report_path = ROOT / "docs" / "_scratch" / "LLMR2_SCHEMA_CONTRACT_LOGICAL_PLAN_PROBE_PERF_0006_v1.md"
+        json_path = Path("/tmp/rewritebench_llmr2_schema_contract_logical_plan_probe_perf_0006_v1.json")
+    else:
+        report_path = ROOT / "docs" / "_scratch" / "LLMR2_LOGICAL_PLAN_PROBE_PERF_0006_v1.md"
+        json_path = Path("/tmp/rewritebench_llmr2_logical_plan_probe_perf_0006_v1.json")
     db_id = "rewritebench_perf_0006"
+    native_schema_dir = LLMR2_AUDIT_ROOT / "data" / "data_llmr2" / "schemas"
+    tpch_schema_path = native_schema_dir / "tpch.json"
+    dsb_schema_path = native_schema_dir / "dsb.json"
+    staged_schema_backup_path = staged_schema_path.with_name(
+        "rewritebench_perf_0006.before_schema_native_contract_v1.json"
+    )
 
     def _read_staged_query_text(query_csv_path: Path) -> str:
         if not query_csv_path.is_file():
@@ -29566,6 +29581,61 @@ def cmd_formal_llmr2_logical_plan_probe(args: argparse.Namespace) -> int:
     def _strip_line_comments(sql_text: str) -> str:
         kept_lines = [line for line in sql_text.splitlines() if not line.lstrip().startswith("--")]
         return "\n".join(kept_lines).strip()
+
+    def _load_native_schema_examples() -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+        tpch = json.loads(tpch_schema_path.read_text(encoding="utf-8")) if tpch_schema_path.is_file() else []
+        dsb = json.loads(dsb_schema_path.read_text(encoding="utf-8")) if dsb_schema_path.is_file() else []
+        return tpch, dsb
+
+    def _normalize_native_type(type_name: str) -> str:
+        low = type_name.strip().lower()
+        if low.startswith("char") or low.startswith("character"):
+            return "character"
+        if low.startswith("varchar") or "varying" in low:
+            return "character varying"
+        if low.startswith("numeric") or low.startswith("decimal"):
+            return "numeric"
+        if low.startswith("int"):
+            return "integer"
+        return low
+
+    def _schema_native_contract_patch(schema_path: Path) -> dict[str, Any]:
+        parsed = json.loads(schema_path.read_text(encoding="utf-8"))
+        if not isinstance(parsed, list):
+            raise ValueError("staged schema must already be a list before native-contract patch")
+        if schema_path.is_file():
+            staged_schema_backup_path.write_text(schema_path.read_text(encoding="utf-8"), encoding="utf-8")
+        patched_tables: list[dict[str, Any]] = []
+        total_columns = 0
+        for table in parsed:
+            if not isinstance(table, dict):
+                continue
+            cols = []
+            for column in table.get("columns", []):
+                if not isinstance(column, dict):
+                    continue
+                col_type = _normalize_native_type(str(column.get("type", "")))
+                cols.append({"name": str(column.get("name", "")), "type": col_type})
+            total_columns += len(cols)
+            rows_value = table.get("rows", 4)
+            if isinstance(rows_value, str):
+                rows_value = 4
+            elif not isinstance(rows_value, int):
+                rows_value = 4
+            patched_tables.append(
+                {
+                    "table": str(table.get("table", "")),
+                    "rows": int(rows_value),
+                    "columns": cols,
+                }
+            )
+        schema_path.write_text(json.dumps(patched_tables, indent=2) + "\n", encoding="utf-8")
+        return {
+            "backup_path": str(staged_schema_backup_path),
+            "table_count": len(patched_tables),
+            "column_count": total_columns,
+            "rows_value_chosen": 4,
+        }
 
     def _analyze_plan_stdout(plan_stdout: str) -> dict[str, Any]:
         cleaned_lines = plan_stdout.replace("\u001B[32m", "").replace("\u001B[0m", "").splitlines()
@@ -29625,10 +29695,26 @@ def cmd_formal_llmr2_logical_plan_probe(args: argparse.Namespace) -> int:
 
     staged_query_text = _read_staged_query_text(staged_query_csv_path)
     stripped_query_text = _strip_line_comments(staged_query_text)
+    tpch_schema_example, dsb_schema_example = _load_native_schema_examples()
+    native_shape = "list_of_table_dicts" if isinstance(tpch_schema_example, list) and isinstance(dsb_schema_example, list) else "unknown"
+    native_table_fields = sorted(list(tpch_schema_example[0].keys())) if tpch_schema_example and isinstance(tpch_schema_example[0], dict) else []
+    native_column_fields = sorted(list(tpch_schema_example[0]["columns"][0].keys())) if tpch_schema_example and isinstance(tpch_schema_example[0], dict) and tpch_schema_example[0].get("columns") else []
+    native_rows_type = type(tpch_schema_example[0].get("rows")).__name__ if tpch_schema_example and isinstance(tpch_schema_example[0], dict) else "unknown"
     raw_has_leading_comments = bool(
         staged_query_text.strip() and staged_query_text.lstrip().startswith("--")
     )
     stripped_prepared = bool(stripped_query_text)
+    schema_patch_info = {
+        "applied": False,
+        "backup_path": "",
+        "table_count": 0,
+        "column_count": 0,
+        "rows_value_chosen": None,
+    }
+
+    if schema_native_contract and staged_schema_path.is_file():
+        schema_patch_info = _schema_native_contract_patch(staged_schema_path)
+        schema_patch_info["applied"] = True
 
     raw_status = {
         "attempted": False,
@@ -29682,32 +29768,47 @@ def cmd_formal_llmr2_logical_plan_probe(args: argparse.Namespace) -> int:
     stderr_path.write_text("".join(stderr_sections), encoding="utf-8")
 
     stderr_text = "".join(stderr_sections)
-    if "For input string: \"unknown\"" in stderr_text or "defaultSchema" in stderr_text:
+    explain_text_produced = raw_status["explain_text_produced"] or stripped_status["explain_text_produced"]
+
+    if explain_text_produced and (raw_status["parseable_by_create_nested_tree"] or stripped_status["parseable_by_create_nested_tree"]):
+        diagnosis = "schema_contract_fixed_logical_plan_ready"
+        recommended_next_step = "retry CPU fast-path LLM-R2 smoke"
+    elif "For input string: \"unknown\"" in stderr_text or "defaultSchema" in stderr_text:
         diagnosis = "schema_mapping_still_incomplete"
-        recommended_next_step = "patch db_id/schema mapping and retry"
+        recommended_next_step = "patch db_id/schema mapping and retry" if not schema_native_contract else "stop LLM-R2 path"
     elif raw_status["attempted"] and not raw_status["explain_text_produced"]:
         diagnosis = "java_extractor_output_malformed"
-        recommended_next_step = "implement bounded logical-plan probe"
+        recommended_next_step = "stop LLM-R2 path" if schema_native_contract else "implement bounded logical-plan probe"
+    elif stripped_status["attempted"] and stripped_status["parseable_by_create_nested_tree"] and not raw_status["parseable_by_create_nested_tree"]:
+        diagnosis = "query_formatting_still_blocks_plan"
+        recommended_next_step = "patch query formatting and re-probe"
     elif stripped_status["attempted"] and stripped_status["parseable_by_create_nested_tree"] and not raw_status["parseable_by_create_nested_tree"]:
         diagnosis = "comments_or_formatting_break_logical_plan"
         recommended_next_step = "patch query normalization and retry LLM-R2 fast path"
     elif raw_status["explain_text_produced"] and not raw_status["parseable_by_create_nested_tree"]:
-        diagnosis = "create_nested_tree_parser_assumption_failure"
-        recommended_next_step = "patch create_nested_tree fallback and retry"
+        diagnosis = "query_formatting_still_blocks_plan" if schema_native_contract else "create_nested_tree_parser_assumption_failure"
+        recommended_next_step = "patch query formatting and re-probe" if schema_native_contract else "patch create_nested_tree fallback and retry"
     elif raw_status["attempted"] and raw_status["exit_status"] not in (0, None):
-        diagnosis = "unsupported_sql_shape"
+        diagnosis = "calcite_sql_shape_unsupported" if schema_native_contract else "unsupported_sql_shape"
         recommended_next_step = "switch selector mode away from queryCL"
     elif not staged_schema_path.is_file():
         diagnosis = "schema_mapping_still_incomplete"
         recommended_next_step = "patch db_id/schema mapping and retry"
     else:
         diagnosis = "unknown"
-        recommended_next_step = "implement bounded logical-plan probe"
+        recommended_next_step = "stop LLM-R2 path" if schema_native_contract else "implement bounded logical-plan probe"
 
     json_payload = {
         "staged_query_csv_path": str(staged_query_csv_path),
         "staged_query_text": staged_query_text,
         "staged_schema_path": str(staged_schema_path),
+        "schema_native_contract": schema_native_contract,
+        "native_schema_example_paths": [str(tpch_schema_path), str(dsb_schema_path)],
+        "native_shape": native_shape,
+        "native_table_fields": native_table_fields,
+        "native_column_fields": native_column_fields,
+        "native_rows_type": native_rows_type,
+        "schema_patch_info": schema_patch_info,
         "result_csv_exists": result_csv_path.is_file(),
         "generated_sql_exists": generated_sql_path.is_file() and bool(generated_sql_path.read_text(encoding="utf-8").strip()) if generated_sql_path.is_file() else False,
         "get_logical_plan_definition_found": True,
@@ -29717,7 +29818,11 @@ def cmd_formal_llmr2_logical_plan_probe(args: argparse.Namespace) -> int:
         "comment_stripped_query_probe": stripped_status if stripped_status["attempted"] else None,
         "primary_diagnosis": diagnosis,
         "recommended_next_step": recommended_next_step,
-        "claim_boundary": "llmr2_logical_plan_probe_only_not_execution",
+        "claim_boundary": (
+            "llmr2_schema_contract_logical_plan_probe_only_not_execution"
+            if schema_native_contract
+            else "llmr2_logical_plan_probe_only_not_execution"
+        ),
     }
     json_path.write_text(json.dumps(json_payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
@@ -29728,43 +29833,76 @@ def cmd_formal_llmr2_logical_plan_probe(args: argparse.Namespace) -> int:
         except Exception:
             smoke_summary = {}
 
-    report_text = (
-        "# LLMR2_LOGICAL_PLAN_PROBE_PERF_0006_v1\n\n"
+    report_title = (
+        "# LLMR2_SCHEMA_CONTRACT_LOGICAL_PLAN_PROBE_PERF_0006_v1\n\n"
+        if schema_native_contract
+        else "# LLMR2_LOGICAL_PLAN_PROBE_PERF_0006_v1\n\n"
+    )
+    report_prefix = (
+        "## 0. Purpose And Boundary\n"
+        "This is a schema-contract patch + logical-plan probe only.\n\n"
+        "## 1. Prior Failure\n"
+        "- schema list shape fixed\n"
+        "- logical-plan probe still failed\n"
+        "- Java stderr had NumberFormatException on \"unknown\" and defaultSchema null\n\n"
+        "## 2. Native Schema Contract\n"
+        f"- native schema example inspected: `{tpch_schema_path}`, `{dsb_schema_path}`\n"
+        f"- native shape: `{native_shape}`\n"
+        f"- table fields: `{native_table_fields}`\n"
+        f"- column fields: `{native_column_fields}`\n"
+        f"- rows/cardinality field type: `{native_rows_type}`\n"
+        "- differences from prior staged schema: prior staged stub used non-native type strings and non-numeric `rows`\n\n"
+        "## 3. Patch Applied\n"
+        f"- staged schema path: `{staged_schema_path}`\n"
+        f"- backup path: `{schema_patch_info['backup_path']}`\n"
+        f"- rows/cardinality value chosen: `{schema_patch_info['rows_value_chosen']}`\n"
+        f"- table count: `{schema_patch_info['table_count']}`\n"
+        f"- column count: `{schema_patch_info['column_count']}`\n"
+        "- schema_native_contract=true\n"
+        "- only temp runtime root modified\n\n"
+        "## 4. Probe Result\n"
+    ) if schema_native_contract else (
         "## 0. Purpose And Boundary\n"
         "This is a bounded logical-plan extraction probe only.\n\n"
         "## 1. Inputs\n"
-        f"- staged query CSV path: `{staged_query_csv_path}`\n"
-        f"- staged schema path: `{staged_schema_path}`\n"
-        f"- db_id: `{db_id}`\n"
-        f"- raw query has leading comments: `{'yes' if raw_has_leading_comments else 'no'}`\n"
-        f"- comment-stripped query prepared: `{'yes' if stripped_prepared else 'no'}`\n\n"
-        "## 2. Raw Query Probe\n"
-        f"- command used: `{raw_status['command_used']}`\n"
-        f"- exit status: `{raw_status['exit_status']}`\n"
-        f"- stdout path: `{stdout_path}`\n"
-        f"- stderr path: `{stderr_path}`\n"
-        f"- explain text produced: `{'yes' if raw_status['explain_text_produced'] else 'no'}`\n"
-        f"- output appears parseable by create_nested_tree: `{'yes' if raw_status['parseable_by_create_nested_tree'] else 'no'}`\n"
-        f"- parser failure reason: `{raw_status['parser_failure_reason'] or 'none'}`\n\n"
-        "## 3. Comment-stripped Query Probe\n"
-        f"- attempted: `{'yes' if stripped_status['attempted'] else 'no'}`\n"
-        f"- command used: `{stripped_status['command_used']}`\n"
-        f"- exit status: `{stripped_status['exit_status']}`\n"
-        f"- stdout path: `{stdout_path}`\n"
-        f"- stderr path: `{stderr_path}`\n"
-        f"- explain text produced: `{'yes' if stripped_status['explain_text_produced'] else 'no'}`\n"
-        f"- output appears parseable by create_nested_tree: `{'yes' if stripped_status['parseable_by_create_nested_tree'] else 'no'}`\n"
-        f"- parser failure reason: `{stripped_status['parser_failure_reason'] or 'none'}`\n\n"
-        "## 4. Diagnosis\n"
-        f"- primary diagnosis: `{diagnosis}`\n"
-        f"- prior smoke generation_status: `{smoke_summary.get('generation_status', '')}`\n"
-        f"- generated SQL exists: `{'yes' if json_payload['generated_sql_exists'] else 'no'}`\n"
-        f"- result CSV exists: `{'yes' if json_payload['result_csv_exists'] else 'no'}`\n\n"
-        "## 5. Recommended Next Step\n"
-        f"- `{recommended_next_step}`\n\n"
-        "## 6. Non-Modification Note\n"
-        "No full LLM-R2 run occurred. No model/API call occurred. No DB, checker, or speedup step ran. "
-        "No registry or case files were modified.\n"
+    )
+    report_text = "".join(
+        [
+            report_title,
+            report_prefix,
+            f"- staged query CSV path: `{staged_query_csv_path}`\n",
+            f"- staged schema path: `{staged_schema_path}`\n",
+            f"- db_id: `{db_id}`\n",
+            f"- raw query has leading comments: `{'yes' if raw_has_leading_comments else 'no'}`\n",
+            f"- comment-stripped query prepared: `{'yes' if stripped_prepared else 'no'}`\n\n",
+            "## 5. Raw Query Probe\n" if schema_native_contract else "## 2. Raw Query Probe\n",
+            f"- command used: `{raw_status['command_used']}`\n",
+            f"- exit status: `{raw_status['exit_status']}`\n",
+            f"- stdout path: `{stdout_path}`\n",
+            f"- stderr path: `{stderr_path}`\n",
+            f"- explain text produced: `{'yes' if raw_status['explain_text_produced'] else 'no'}`\n",
+            f"- output appears parseable by create_nested_tree: `{'yes' if raw_status['parseable_by_create_nested_tree'] else 'no'}`\n",
+            f"- parser failure reason: `{raw_status['parser_failure_reason'] or 'none'}`\n\n",
+            "## 6. Comment-stripped Query Probe\n" if schema_native_contract else "## 3. Comment-stripped Query Probe\n",
+            f"- attempted: `{'yes' if stripped_status['attempted'] else 'no'}`\n",
+            f"- command used: `{stripped_status['command_used']}`\n",
+            f"- exit status: `{stripped_status['exit_status']}`\n",
+            f"- stdout path: `{stdout_path}`\n",
+            f"- stderr path: `{stderr_path}`\n",
+            f"- explain text produced: `{'yes' if stripped_status['explain_text_produced'] else 'no'}`\n",
+            f"- output appears parseable by create_nested_tree: `{'yes' if stripped_status['parseable_by_create_nested_tree'] else 'no'}`\n",
+            f"- parser failure reason: `{stripped_status['parser_failure_reason'] or 'none'}`\n\n",
+            "## 7. Diagnosis\n" if schema_native_contract else "## 4. Diagnosis\n",
+            f"- primary diagnosis: `{diagnosis}`\n",
+            f"- prior smoke generation_status: `{smoke_summary.get('generation_status', '')}`\n",
+            f"- generated SQL exists: `{'yes' if json_payload['generated_sql_exists'] else 'no'}`\n",
+            f"- result CSV exists: `{'yes' if json_payload['result_csv_exists'] else 'no'}`\n\n",
+            "## 8. Recommended Next Step\n" if schema_native_contract else "## 5. Recommended Next Step\n",
+            f"- `{recommended_next_step}`\n\n",
+            "## 9. Non-Modification Note\n" if schema_native_contract else "## 6. Non-Modification Note\n",
+            "No full LLM-R2 run occurred. No model/API call occurred. No DB, checker, or speedup step ran. ",
+            "No registry or case files were modified.\n",
+        ]
     )
     report_path.write_text(report_text, encoding="utf-8")
 
@@ -29774,6 +29912,7 @@ def cmd_formal_llmr2_logical_plan_probe(args: argparse.Namespace) -> int:
         "ok": ok,
         "ran_at_utc": utc_now(),
         "case_id": case_id,
+        "schema_native_contract": schema_native_contract,
         "raw_query_probe_status": raw_status,
         "comment_stripped_query_probe_status": stripped_status if stripped_status["attempted"] else None,
         "diagnosis": diagnosis,
@@ -29782,7 +29921,11 @@ def cmd_formal_llmr2_logical_plan_probe(args: argparse.Namespace) -> int:
         "stderr_path": str(stderr_path),
         "report_path": relative_to_root(report_path),
         "json_path": str(json_path),
-        "claim_boundary": "llmr2_logical_plan_probe_only_not_execution",
+        "claim_boundary": (
+            "llmr2_schema_contract_logical_plan_probe_only_not_execution"
+            if schema_native_contract
+            else "llmr2_logical_plan_probe_only_not_execution"
+        ),
     }
     return print_and_exit(payload, 0 if ok else 1)
 
@@ -42250,6 +42393,7 @@ def build_parser() -> argparse.ArgumentParser:
         "formal-llmr2-logical-plan-probe"
     )
     formal_llmr2_logical_plan_probe_parser.add_argument("--case", required=True)
+    formal_llmr2_logical_plan_probe_parser.add_argument("--schema-native-contract", action="store_true", default=False)
     formal_llmr2_logical_plan_probe_parser.set_defaults(
         func=cmd_formal_llmr2_logical_plan_probe
     )
