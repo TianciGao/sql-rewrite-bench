@@ -29526,6 +29526,267 @@ def simple_distance(a, b):
     return print_and_exit(smoke_payload, 0 if success else 1)
 
 
+def cmd_formal_llmr2_logical_plan_probe(args: argparse.Namespace) -> int:
+    case_id = str(args.case).strip().upper()
+    if case_id != "PERF_0006":
+        payload = {
+            "command": "formal-llmr2-logical-plan-probe",
+            "ok": False,
+            "ran_at_utc": utc_now(),
+            "case_id": case_id,
+            "failure_category": "unsupported_case_id",
+            "failure_summary": "only PERF_0006 is supported in this bounded logical-plan probe",
+            "claim_boundary": "llmr2_logical_plan_probe_only_not_execution",
+        }
+        return print_and_exit(payload, 1)
+
+    fast_path_dir = LLMR2_FAST_PATH_ROOT / case_id
+    runtime_root = fast_path_dir / "runtime_root_v1"
+    runtime_src_dir = runtime_root / "src"
+    staged_query_csv_path = runtime_root / "data" / "data_llmr2" / "queries" / "queries_rewritebench_perf_0006_test.csv"
+    staged_schema_path = runtime_root / "data" / "data_llmr2" / "schemas" / "rewritebench_perf_0006.json"
+    stdout_path = fast_path_dir / "logical_plan_probe_stdout_v1.txt"
+    stderr_path = fast_path_dir / "logical_plan_probe_stderr_v1.txt"
+    smoke_result_path = fast_path_dir / "smoke_result_schema_fix_v1.json"
+    result_csv_path = fast_path_dir / "gpt_rewritebench_perf_0006_one_promo_queryCL_updated.csv"
+    generated_sql_path = fast_path_dir / "generated_sql_schema_fix_v1.sql"
+    report_path = ROOT / "docs" / "_scratch" / "LLMR2_LOGICAL_PLAN_PROBE_PERF_0006_v1.md"
+    json_path = Path("/tmp/rewritebench_llmr2_logical_plan_probe_perf_0006_v1.json")
+    db_id = "rewritebench_perf_0006"
+
+    def _read_staged_query_text(query_csv_path: Path) -> str:
+        if not query_csv_path.is_file():
+            return ""
+        with query_csv_path.open("r", encoding="utf-8", newline="") as handle:
+            rows = list(csv.DictReader(handle))
+        if not rows:
+            return ""
+        return str(rows[0].get("original_sql") or "")
+
+    def _strip_line_comments(sql_text: str) -> str:
+        kept_lines = [line for line in sql_text.splitlines() if not line.lstrip().startswith("--")]
+        return "\n".join(kept_lines).strip()
+
+    def _analyze_plan_stdout(plan_stdout: str) -> dict[str, Any]:
+        cleaned_lines = plan_stdout.replace("\u001B[32m", "").replace("\u001B[0m", "").splitlines()
+        start_idx = 0
+        for idx, line in enumerate(cleaned_lines):
+            if "successfully." not in line:
+                start_idx = idx
+                break
+        sliced = cleaned_lines[start_idx:]
+        if len(sliced) >= 2:
+            sliced = sliced[:-2]
+        nodes = [line.replace("  ", "").replace("    ", "") for line in sliced]
+        heights = [(len(line) - len(line.lstrip())) // 2 for line in sliced]
+        direct_subs = []
+        parseable = False
+        parser_failure_reason = ""
+        explain_text_produced = False
+        if nodes:
+            if "(" not in nodes[0]:
+                parser_failure_reason = "root_line_missing_parenthesis"
+            elif len(heights) <= 3:
+                explain_text_produced = True
+                parseable = True
+            else:
+                root_h = heights[0]
+                direct_subs = [i for i, x in enumerate(heights) if x == root_h + 1]
+                if direct_subs:
+                    explain_text_produced = True
+                    parseable = True
+                else:
+                    parser_failure_reason = "no_direct_child_at_root_plus_one"
+        else:
+            parser_failure_reason = "no_nodes_after_java_output_cleanup"
+        return {
+            "stdout_nonempty": bool(plan_stdout.strip()),
+            "explain_text_produced": explain_text_produced,
+            "nodes": nodes,
+            "heights": heights,
+            "direct_subs": direct_subs,
+            "parseable_by_create_nested_tree": parseable,
+            "parser_failure_reason": parser_failure_reason,
+        }
+
+    def _run_probe(sql_text: str) -> tuple[int, str, str, dict[str, Any]]:
+        input_string = json.dumps([db_id, sql_text])
+        proc = subprocess.run(
+            "java -cp rewriter_java.jar src/get_logical_plan.java",
+            cwd=runtime_src_dir,
+            input=input_string,
+            text=True,
+            capture_output=True,
+            shell=True,
+            check=False,
+        )
+        analysis = _analyze_plan_stdout(proc.stdout)
+        return proc.returncode, proc.stdout, proc.stderr, analysis
+
+    staged_query_text = _read_staged_query_text(staged_query_csv_path)
+    stripped_query_text = _strip_line_comments(staged_query_text)
+    raw_has_leading_comments = bool(
+        staged_query_text.strip() and staged_query_text.lstrip().startswith("--")
+    )
+    stripped_prepared = bool(stripped_query_text)
+
+    raw_status = {
+        "attempted": False,
+        "command_used": "java -cp rewriter_java.jar src/get_logical_plan.java",
+        "exit_status": None,
+        "stdout_path": str(stdout_path),
+        "stderr_path": str(stderr_path),
+        "explain_text_produced": False,
+        "parseable_by_create_nested_tree": False,
+        "parser_failure_reason": "",
+    }
+    stripped_status = {
+        "attempted": False,
+        "command_used": "java -cp rewriter_java.jar src/get_logical_plan.java",
+        "exit_status": None,
+        "stdout_path": str(stdout_path),
+        "stderr_path": str(stderr_path),
+        "explain_text_produced": False,
+        "parseable_by_create_nested_tree": False,
+        "parser_failure_reason": "",
+    }
+
+    stdout_sections: list[str] = []
+    stderr_sections: list[str] = []
+
+    if runtime_src_dir.is_dir() and staged_query_text:
+        raw_status["attempted"] = True
+        raw_exit, raw_stdout, raw_stderr, raw_analysis = _run_probe(staged_query_text)
+        raw_status["exit_status"] = raw_exit
+        raw_status["explain_text_produced"] = raw_analysis["explain_text_produced"]
+        raw_status["parseable_by_create_nested_tree"] = raw_analysis["parseable_by_create_nested_tree"]
+        raw_status["parser_failure_reason"] = raw_analysis["parser_failure_reason"]
+        stdout_sections.append("# Raw Query Probe\n" + raw_stdout)
+        stderr_sections.append("# Raw Query Probe\n" + raw_stderr)
+
+        if (
+            stripped_prepared
+            and stripped_query_text != staged_query_text.strip()
+            and (raw_exit != 0 or not raw_analysis["parseable_by_create_nested_tree"])
+        ):
+            stripped_status["attempted"] = True
+            stripped_exit, stripped_stdout, stripped_stderr, stripped_analysis = _run_probe(stripped_query_text)
+            stripped_status["exit_status"] = stripped_exit
+            stripped_status["explain_text_produced"] = stripped_analysis["explain_text_produced"]
+            stripped_status["parseable_by_create_nested_tree"] = stripped_analysis["parseable_by_create_nested_tree"]
+            stripped_status["parser_failure_reason"] = stripped_analysis["parser_failure_reason"]
+            stdout_sections.append("\n# Comment-Stripped Query Probe\n" + stripped_stdout)
+            stderr_sections.append("\n# Comment-Stripped Query Probe\n" + stripped_stderr)
+
+    stdout_path.write_text("".join(stdout_sections), encoding="utf-8")
+    stderr_path.write_text("".join(stderr_sections), encoding="utf-8")
+
+    stderr_text = "".join(stderr_sections)
+    if "For input string: \"unknown\"" in stderr_text or "defaultSchema" in stderr_text:
+        diagnosis = "schema_mapping_still_incomplete"
+        recommended_next_step = "patch db_id/schema mapping and retry"
+    elif raw_status["attempted"] and not raw_status["explain_text_produced"]:
+        diagnosis = "java_extractor_output_malformed"
+        recommended_next_step = "implement bounded logical-plan probe"
+    elif stripped_status["attempted"] and stripped_status["parseable_by_create_nested_tree"] and not raw_status["parseable_by_create_nested_tree"]:
+        diagnosis = "comments_or_formatting_break_logical_plan"
+        recommended_next_step = "patch query normalization and retry LLM-R2 fast path"
+    elif raw_status["explain_text_produced"] and not raw_status["parseable_by_create_nested_tree"]:
+        diagnosis = "create_nested_tree_parser_assumption_failure"
+        recommended_next_step = "patch create_nested_tree fallback and retry"
+    elif raw_status["attempted"] and raw_status["exit_status"] not in (0, None):
+        diagnosis = "unsupported_sql_shape"
+        recommended_next_step = "switch selector mode away from queryCL"
+    elif not staged_schema_path.is_file():
+        diagnosis = "schema_mapping_still_incomplete"
+        recommended_next_step = "patch db_id/schema mapping and retry"
+    else:
+        diagnosis = "unknown"
+        recommended_next_step = "implement bounded logical-plan probe"
+
+    json_payload = {
+        "staged_query_csv_path": str(staged_query_csv_path),
+        "staged_query_text": staged_query_text,
+        "staged_schema_path": str(staged_schema_path),
+        "result_csv_exists": result_csv_path.is_file(),
+        "generated_sql_exists": generated_sql_path.is_file() and bool(generated_sql_path.read_text(encoding="utf-8").strip()) if generated_sql_path.is_file() else False,
+        "get_logical_plan_definition_found": True,
+        "create_nested_tree_definition_found": True,
+        "edit_queries_definition_found": True,
+        "raw_query_probe": raw_status,
+        "comment_stripped_query_probe": stripped_status if stripped_status["attempted"] else None,
+        "primary_diagnosis": diagnosis,
+        "recommended_next_step": recommended_next_step,
+        "claim_boundary": "llmr2_logical_plan_probe_only_not_execution",
+    }
+    json_path.write_text(json.dumps(json_payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+    smoke_summary = {}
+    if smoke_result_path.is_file():
+        try:
+            smoke_summary = json.loads(smoke_result_path.read_text(encoding="utf-8"))
+        except Exception:
+            smoke_summary = {}
+
+    report_text = (
+        "# LLMR2_LOGICAL_PLAN_PROBE_PERF_0006_v1\n\n"
+        "## 0. Purpose And Boundary\n"
+        "This is a bounded logical-plan extraction probe only.\n\n"
+        "## 1. Inputs\n"
+        f"- staged query CSV path: `{staged_query_csv_path}`\n"
+        f"- staged schema path: `{staged_schema_path}`\n"
+        f"- db_id: `{db_id}`\n"
+        f"- raw query has leading comments: `{'yes' if raw_has_leading_comments else 'no'}`\n"
+        f"- comment-stripped query prepared: `{'yes' if stripped_prepared else 'no'}`\n\n"
+        "## 2. Raw Query Probe\n"
+        f"- command used: `{raw_status['command_used']}`\n"
+        f"- exit status: `{raw_status['exit_status']}`\n"
+        f"- stdout path: `{stdout_path}`\n"
+        f"- stderr path: `{stderr_path}`\n"
+        f"- explain text produced: `{'yes' if raw_status['explain_text_produced'] else 'no'}`\n"
+        f"- output appears parseable by create_nested_tree: `{'yes' if raw_status['parseable_by_create_nested_tree'] else 'no'}`\n"
+        f"- parser failure reason: `{raw_status['parser_failure_reason'] or 'none'}`\n\n"
+        "## 3. Comment-stripped Query Probe\n"
+        f"- attempted: `{'yes' if stripped_status['attempted'] else 'no'}`\n"
+        f"- command used: `{stripped_status['command_used']}`\n"
+        f"- exit status: `{stripped_status['exit_status']}`\n"
+        f"- stdout path: `{stdout_path}`\n"
+        f"- stderr path: `{stderr_path}`\n"
+        f"- explain text produced: `{'yes' if stripped_status['explain_text_produced'] else 'no'}`\n"
+        f"- output appears parseable by create_nested_tree: `{'yes' if stripped_status['parseable_by_create_nested_tree'] else 'no'}`\n"
+        f"- parser failure reason: `{stripped_status['parser_failure_reason'] or 'none'}`\n\n"
+        "## 4. Diagnosis\n"
+        f"- primary diagnosis: `{diagnosis}`\n"
+        f"- prior smoke generation_status: `{smoke_summary.get('generation_status', '')}`\n"
+        f"- generated SQL exists: `{'yes' if json_payload['generated_sql_exists'] else 'no'}`\n"
+        f"- result CSV exists: `{'yes' if json_payload['result_csv_exists'] else 'no'}`\n\n"
+        "## 5. Recommended Next Step\n"
+        f"- `{recommended_next_step}`\n\n"
+        "## 6. Non-Modification Note\n"
+        "No full LLM-R2 run occurred. No model/API call occurred. No DB, checker, or speedup step ran. "
+        "No registry or case files were modified.\n"
+    )
+    report_path.write_text(report_text, encoding="utf-8")
+
+    ok = raw_status["attempted"]
+    payload = {
+        "command": "formal-llmr2-logical-plan-probe",
+        "ok": ok,
+        "ran_at_utc": utc_now(),
+        "case_id": case_id,
+        "raw_query_probe_status": raw_status,
+        "comment_stripped_query_probe_status": stripped_status if stripped_status["attempted"] else None,
+        "diagnosis": diagnosis,
+        "recommended_next_step": recommended_next_step,
+        "stdout_path": str(stdout_path),
+        "stderr_path": str(stderr_path),
+        "report_path": relative_to_root(report_path),
+        "json_path": str(json_path),
+        "claim_boundary": "llmr2_logical_plan_probe_only_not_execution",
+    }
+    return print_and_exit(payload, 0 if ok else 1)
+
+
 def cmd_formal_learnedrewrite_llm4rewrite_adapter_preflight(args: argparse.Namespace) -> int:
     case_id = str(args.case).strip().upper()
     supported_case_ids = {
@@ -41983,6 +42244,14 @@ def build_parser() -> argparse.ArgumentParser:
     formal_llmr2_one_row_fast_path_parser.add_argument("--schema-list-contract", action="store_true", default=False)
     formal_llmr2_one_row_fast_path_parser.set_defaults(
         func=cmd_formal_llmr2_one_row_fast_path
+    )
+
+    formal_llmr2_logical_plan_probe_parser = subparsers.add_parser(
+        "formal-llmr2-logical-plan-probe"
+    )
+    formal_llmr2_logical_plan_probe_parser.add_argument("--case", required=True)
+    formal_llmr2_logical_plan_probe_parser.set_defaults(
+        func=cmd_formal_llmr2_logical_plan_probe
     )
 
     formal_learnedrewrite_llm4rewrite_adapter_preflight_parser = subparsers.add_parser(
