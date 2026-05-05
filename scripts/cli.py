@@ -225,6 +225,7 @@ RBOT_LLM4REWRITE_SINGLE_CASE_SMOKE_ROOT = Path("/tmp/rewritebench_rbot_llm4rewri
 RBOT_LLM4REWRITE_SINGLE_CASE_RUNNER_ROOT = Path("/tmp/rewritebench_rbot_llm4rewrite_single_case_runner")
 RBOT_LLM4REWRITE_PG_RUNTIME_VERIFY_JSON = Path("/tmp/rewritebench_rbot_llm4rewrite_pg_runtime_verify_perf_0006.json")
 LEARNEDREWRITE_LLM4REWRITE_ADAPTER_PREFLIGHT_ROOT = Path("/tmp/rewritebench_learnedrewrite_llm4rewrite_adapter_preflight")
+LEARNEDREWRITE_LLM4REWRITE_SINGLE_CASE_RUNNER_ROOT = Path("/tmp/rewritebench_learnedrewrite_llm4rewrite_single_case_runner")
 CALCITE_HEP_REAL_ROUTE_CANARY_CASES = ["PERF_0006", "PERF_0008", "PERF_0033", "PERF_0054"]
 PORT_TRANSLATE_SOURCE_DIALECT_FALLBACKS = {
     "PORT_0004": "mysql",
@@ -28342,6 +28343,218 @@ def cmd_formal_learnedrewrite_llm4rewrite_adapter_preflight(args: argparse.Names
     return print_and_exit(payload, 0 if payload["ok"] else 1)
 
 
+def cmd_formal_learnedrewrite_llm4rewrite_single_case_run(args: argparse.Namespace) -> int:
+    case_id = str(args.case).strip().upper()
+    dry_run_only = bool(args.dry_run)
+    if case_id != "PERF_0006":
+        payload = {
+            "command": "formal-learnedrewrite-llm4rewrite-single-case-run",
+            "ok": False,
+            "ran_at_utc": utc_now(),
+            "case_id": case_id,
+            "dry_run_only": dry_run_only,
+            "blockers": ["unsupported_case_id"],
+            "claim_boundary": "learnedrewrite_single_case_runner_dry_run_only_not_execution",
+        }
+        return print_and_exit(payload, 1)
+    if not dry_run_only:
+        payload = {
+            "command": "formal-learnedrewrite-llm4rewrite-single-case-run",
+            "ok": False,
+            "ran_at_utc": utc_now(),
+            "case_id": case_id,
+            "dry_run_only": dry_run_only,
+            "blockers": ["execute_mode_not_supported"],
+            "claim_boundary": "learnedrewrite_single_case_runner_dry_run_only_not_execution",
+        }
+        return print_and_exit(payload, 1)
+
+    bundle_dir = LEARNEDREWRITE_LLM4REWRITE_ADAPTER_PREFLIGHT_ROOT / case_id
+    runner_dir = LEARNEDREWRITE_LLM4REWRITE_SINGLE_CASE_RUNNER_ROOT / case_id
+    runner_dir.mkdir(parents=True, exist_ok=True)
+
+    source_sql_path = bundle_dir / "source.sql"
+    schema_path = bundle_dir / "create_tables.sql"
+    metadata_path = bundle_dir / "learnedrewrite_case_metadata.json"
+    jar_path = (
+        RBOT_LLM4REWRITE_AUDIT_ROOT
+        / "CalciteRewrite"
+        / "out"
+        / "artifacts"
+        / "LearnedRewrite_jar"
+        / "LearnedRewrite.jar"
+    )
+    runner_path = RBOT_LLM4REWRITE_AUDIT_ROOT / "my_rewriter" / "test_learned_rewrite.py"
+    java_source_path = RBOT_LLM4REWRITE_AUDIT_ROOT / "CalciteRewrite" / "src" / "learned" / "LearnedRewriter.java"
+    smoke_venv_python = Path("/tmp/rewritebench_rbot_llm4rewrite_venv_smoke/bin/python")
+
+    future_command_path = runner_dir / "future_execute_command_NOT_RUN.txt"
+    artifact_paths_path = runner_dir / "artifact_paths.json"
+    dry_run_summary_path = runner_dir / "dry_run_summary.json"
+    do_not_run_path = runner_dir / "DO_NOT_RUN_YET.txt"
+
+    future_logdir = Path("/tmp/rewritebench_learnedrewrite_logs")
+    future_res_jsonl_path = future_logdir / "rewritebench_perf_0006" / "res.jsonl"
+    generated_sql_path = runner_dir / "generated_sql.sql"
+    checker_candidate_sql_path = runner_dir / "checker_candidate_sql.sql"
+    method_stdout_path = runner_dir / "method_stdout.log"
+    method_stderr_path = runner_dir / "method_stderr.log"
+
+    source_sql_found = source_sql_path.is_file() and bool(source_sql_path.read_text(encoding="utf-8").strip())
+    schema_found = schema_path.is_file() and bool(schema_path.read_text(encoding="utf-8").strip())
+    learnedrewrite_jar_found = jar_path.is_file()
+    runner_found = runner_path.is_file()
+    java_source_found = java_source_path.is_file()
+    output_sql_contract_visible = runner_found and java_source_found
+
+    pg_env_fields = {
+        "PGHOST": bool(os.environ.get("PGHOST")),
+        "PGPORT": bool(os.environ.get("PGPORT")),
+        "PGDATABASE": bool(os.environ.get("PGDATABASE")),
+        "PGUSER": bool(os.environ.get("PGUSER")),
+        "PGPASSWORD": bool(os.environ.get("PGPASSWORD")),
+    }
+    pg_env_visible = all(pg_env_fields.values())
+
+    java_path = shutil.which("java")
+    java_visible = bool(java_path)
+
+    current_python_jpype_available = safe_module_available("jpype")
+    temp_venv_found = smoke_venv_python.is_file()
+    venv_jpype_available = False
+    venv_jpype_error = ""
+    if temp_venv_found:
+        probe = subprocess.run(
+            [str(smoke_venv_python), "-c", "import jpype; print('ok')"],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        venv_jpype_available = probe.returncode == 0 and probe.stdout.strip() == "ok"
+        if not venv_jpype_available:
+            venv_jpype_error = (probe.stderr or probe.stdout).strip()[:500]
+    jpype_import_available = current_python_jpype_available or venv_jpype_available
+
+    future_logdir.mkdir(parents=True, exist_ok=True)
+    future_logdir_writable = future_logdir.is_dir()
+
+    future_command_text = (
+        "NOT RUN\n\n"
+        "Future bounded single-case command candidate:\n"
+        "cd /tmp/rewritebench_prior_method_audit/LLM4Rewrite/my_rewriter\n"
+        "PYTHONPATH=.. python3 test_learned_rewrite.py \\\n"
+        "  --database rewritebench_perf_0006 \\\n"
+        "  --logdir /tmp/rewritebench_learnedrewrite_logs\n\n"
+        "Assumptions:\n"
+        "- no execution occurred in this dry-run\n"
+        "- LearnedRewrite.jar must remain visible under CalciteRewrite/out/artifacts/LearnedRewrite_jar\n"
+        "- JVM startup and JPype bridge are deferred to a later preflight or execution step\n"
+        "- PostgreSQL runtime is required later for cost access\n"
+        "- future emitted res.jsonl is expected at:\n"
+        f"  {future_res_jsonl_path}\n"
+    )
+    future_command_path.write_text(future_command_text, encoding="utf-8")
+
+    artifact_paths_payload = {
+        "future_logdir": str(future_logdir),
+        "future_res_jsonl_path": str(future_res_jsonl_path),
+        "generated_sql_path": str(generated_sql_path),
+        "checker_candidate_sql_path": str(checker_candidate_sql_path),
+        "method_stdout_path": str(method_stdout_path),
+        "method_stderr_path": str(method_stderr_path),
+        "claim_boundary": "learnedrewrite_single_case_runner_dry_run_only_not_execution",
+    }
+    artifact_paths_path.write_text(
+        json.dumps(artifact_paths_payload, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+
+    do_not_run_path.write_text(
+        "DO NOT RUN YET\n"
+        "- dry-run only\n"
+        "- no LearnedRewrite execution occurred\n"
+        "- no JVM start occurred\n"
+        "- no DB connection occurred\n"
+        "- no checker or speedup occurred\n",
+        encoding="utf-8",
+    )
+
+    blockers: list[str] = []
+    if not source_sql_found:
+        blockers.append("missing_source_sql")
+    if not schema_found:
+        blockers.append("missing_create_tables_sql")
+    if not learnedrewrite_jar_found:
+        blockers.append("missing_learnedrewrite_jar")
+    if not runner_found:
+        blockers.append("missing_test_learned_rewrite_runner")
+    if not output_sql_contract_visible:
+        blockers.append("missing_output_sql_contract_visibility")
+    if not java_visible:
+        blockers.append("java_not_visible_on_path")
+    else:
+        blockers.append("java_version_not_checked_due_no_jvm_boundary")
+    if not jpype_import_available:
+        blockers.append("jpype_import_unavailable")
+    if not pg_env_visible:
+        blockers.append("pg_env_not_fully_visible")
+    if not future_logdir_writable:
+        blockers.append("future_logdir_not_writable")
+    if not future_command_path.is_file():
+        blockers.append("future_command_not_written")
+    if not artifact_paths_path.is_file():
+        blockers.append("artifact_paths_not_written")
+    if not metadata_path.is_file():
+        blockers.append("adapter_preflight_metadata_missing")
+    blockers.extend(
+        [
+            "jvm_runtime_not_verified",
+            "single_case_execution_not_implemented",
+            "output_sql_extraction_not_tested",
+            "checker_handoff_not_run",
+        ]
+    )
+
+    can_execute_smoke_next = (
+        source_sql_found
+        and schema_found
+        and learnedrewrite_jar_found
+        and runner_found
+        and output_sql_contract_visible
+        and java_visible
+        and jpype_import_available
+        and pg_env_visible
+        and future_command_path.is_file()
+        and artifact_paths_path.is_file()
+        and "jvm_runtime_not_verified" not in blockers
+    )
+
+    payload = {
+        "case_id": case_id,
+        "dry_run_only": True,
+        "source_sql_found": source_sql_found,
+        "schema_found": schema_found,
+        "learnedrewrite_jar_found": learnedrewrite_jar_found,
+        "runner_found": runner_found,
+        "java_visible": java_visible,
+        "java_path": java_path or "",
+        "jpype_import_available": jpype_import_available,
+        "jpype_import_current_python": current_python_jpype_available,
+        "jpype_import_tmp_venv": venv_jpype_available,
+        "jpype_import_tmp_venv_error": venv_jpype_error,
+        "pg_env_visible": pg_env_visible,
+        "pg_env_fields": pg_env_fields,
+        "output_sql_contract_visible": output_sql_contract_visible,
+        "future_command_written": future_command_path.is_file(),
+        "artifact_paths_written": artifact_paths_path.is_file(),
+        "can_execute_smoke_next": can_execute_smoke_next,
+        "blockers": blockers,
+        "claim_boundary": "learnedrewrite_single_case_runner_dry_run_only_not_execution",
+    }
+    dry_run_summary_path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    return print_and_exit(payload, 0 if can_execute_smoke_next else 1)
+
+
 def cmd_formal_rbot_llm4rewrite_single_case_smoke_preflight(args: argparse.Namespace) -> int:
     case_id = str(args.case).strip().upper()
     inferred = case_root_for_case_id(case_id)
@@ -39622,6 +39835,15 @@ def build_parser() -> argparse.ArgumentParser:
     formal_learnedrewrite_llm4rewrite_adapter_preflight_parser.add_argument("--case", required=True)
     formal_learnedrewrite_llm4rewrite_adapter_preflight_parser.set_defaults(
         func=cmd_formal_learnedrewrite_llm4rewrite_adapter_preflight
+    )
+
+    formal_learnedrewrite_llm4rewrite_single_case_run_parser = subparsers.add_parser(
+        "formal-learnedrewrite-llm4rewrite-single-case-run"
+    )
+    formal_learnedrewrite_llm4rewrite_single_case_run_parser.add_argument("--case", required=True)
+    formal_learnedrewrite_llm4rewrite_single_case_run_parser.add_argument("--dry-run", action="store_true", default=False)
+    formal_learnedrewrite_llm4rewrite_single_case_run_parser.set_defaults(
+        func=cmd_formal_learnedrewrite_llm4rewrite_single_case_run
     )
 
     formal_rbot_llm4rewrite_single_case_smoke_preflight_parser = subparsers.add_parser(
