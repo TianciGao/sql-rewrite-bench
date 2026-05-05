@@ -46,43 +46,46 @@ cd datasets/raw/verieql/staged/VeriEQL
 - Return code: `0`
 - Output artifact produced: `yes`
 - Output artifact path: `reports/formal_expansion/verieql_support/cons_0035_verieql_output.jsonl`
-- Exact blocker: `runtime_exception`
+- Exact blocker: ``
 
 ## Per-Pair Result
 
-- `source_positive`: `error`
-- `source_negative`: `error`
+- `source_positive`: `non_equivalent`
+- `source_negative`: `non_equivalent`
 
-Parseable VeriEQL output was produced for both pairs. The terminal state on both records is `OTE`, and the reported error text is:
+Parseable VeriEQL output was produced for both pairs. Both records now reach verdict stage and return counterexample-backed non-equivalence:
 
-```text
-Or() got an unexpected keyword argument 'ctx'
-```
-
-That means the canary reaches the verifier, consumes the wrapper input contract correctly, and produces parseable output artifacts, but both pair evaluations terminate inside VeriEQL with a runtime exception rather than a verdict.
+- `source_positive`: states `EQU -> NEQ`, final result `non_equivalent`
+- `source_negative`: states `NEQ`, final result `non_equivalent`
 
 ## Final Status
 
-- `source_positive`: `OTE` / runtime error
-- `source_negative`: `OTE` / runtime error
+- `source_positive`: `non_equivalent`
+- `source_negative`: `non_equivalent`
 - `prove_count=0`
-- `refute_count=0`
+- `refute_count=2`
 - `unknown_count=0`
 - `timeout_count=0`
-- `error_count=2`
-- `support_rate_if_defined=0.0`
+- `error_count=0`
+- `support_rate_if_defined=1.0`
 
 ## Interpretation
 
-This is real support-canary evidence for `CONS_0035`. It improves on the `CONS_0007` path in one important way: the blocker is no longer unsupported `EXISTS`, and the wrapper/input contract is no longer the issue. The safe module-mode VeriEQL runner now accepts the `CONS_0035` records and produces a parseable output artifact.
+This is real support-canary evidence for `CONS_0035`. The safe module-mode VeriEQL runner accepts the wrapper records, executes both pairs, and produces parseable verdict output.
 
-The remaining blocker is internal VeriEQL runtime behavior:
+The earlier runtime blocker:
 
 ```text
 Or() got an unexpected keyword argument 'ctx'
 ```
 
-So this line is now beyond wrapper-only and beyond input-contract debugging, but it is still not support-clean on `CONS_0035`.
+was resolved by a local compatibility patch in VeriEQL's z3 wrappers. This bounded canary is therefore beyond wrapper-only and beyond runtime-compatibility debugging.
+
+Interpretation of the verdicts should remain narrow:
+
+- `source_negative` refuting is expected support evidence.
+- `source_positive` also refuted under the current first-pass empty-constraint policy.
+- This does not mean the benchmark pair is wrong by itself; it means VeriEQL found a counterexample under the currently modeled schema and no extra constraints.
 
 ## What Was Resolved
 
@@ -90,13 +93,19 @@ So this line is now beyond wrapper-only and beyond input-contract debugging, but
 - the runner-required record metadata contract is satisfied
 - `input_format_mismatch` is resolved
 - module-mode batch execution reaches pair processing and writes output
+- z3 `ctx` runtime incompatibility is resolved for the executed path
 
 ## Next Action
 
-Next action: do not search for an even simpler SQL shape yet. The active blocker is now a VeriEQL runtime issue in the staged implementation, not the specific `CONS_0035` feature profile.
+Next action: treat `CONS_0035` as the first real VeriEQL support-canary verdict case, then decide whether to:
 
-Concretely:
+- keep the current first-pass empty-constraint policy and record this as bounded refutation evidence, or
+- add case-specific constraint modeling before interpreting positive-pair outcomes more strongly.
 
-1. Treat `CONS_0035` as the current best executed support-canary evidence.
-2. If the VeriEQL line is advanced further, investigate the staged `constants.py` / z3 wrapper incompatibility behind `Or(..., ctx=...)`.
-3. Only after that runtime issue is addressed should another bounded support verdict attempt be considered meaningful.
+Boundary remains unchanged:
+
+- verifier/support only
+- no speedup
+- no PostgreSQL
+- not a rewrite baseline
+- not final support-table result
