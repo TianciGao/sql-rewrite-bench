@@ -220,6 +220,7 @@ CALCITE_HEP_GRADLE_USER_HOME = Path("/tmp/calcite-gradle-home")
 RBOT_LLM4REWRITE_AUDIT_ROOT = Path("/tmp/rewritebench_prior_method_audit") / "LLM4Rewrite"
 RBOT_LLM4REWRITE_PREFLIGHT_ROOT = Path("/tmp/rewritebench_rbot_llm4rewrite_adapter_preflight")
 RBOT_LLM4REWRITE_SINGLE_CASE_SMOKE_ROOT = Path("/tmp/rewritebench_rbot_llm4rewrite_single_case_smoke")
+RBOT_LLM4REWRITE_SINGLE_CASE_RUNNER_ROOT = Path("/tmp/rewritebench_rbot_llm4rewrite_single_case_runner")
 RBOT_LLM4REWRITE_PG_RUNTIME_VERIFY_JSON = Path("/tmp/rewritebench_rbot_llm4rewrite_pg_runtime_verify_perf_0006.json")
 CALCITE_HEP_REAL_ROUTE_CANARY_CASES = ["PERF_0006", "PERF_0008", "PERF_0033", "PERF_0054"]
 PORT_TRANSLATE_SOURCE_DIALECT_FALLBACKS = {
@@ -28620,6 +28621,163 @@ def cmd_formal_rbot_llm4rewrite_pg_runtime_verify(args: argparse.Namespace) -> i
     return print_and_exit(payload, 0 if payload["ok"] else 1)
 
 
+def cmd_formal_rbot_llm4rewrite_single_case_smoke_run(args: argparse.Namespace) -> int:
+    case_id = str(args.case).strip().upper()
+    dry_run_only = bool(args.dry_run)
+    supported_case_ids = {"PERF_0006"}
+    inferred = case_root_for_case_id(case_id)
+
+    runner_dir = RBOT_LLM4REWRITE_SINGLE_CASE_RUNNER_ROOT / case_id
+    runner_dir.mkdir(parents=True, exist_ok=True)
+    future_command_path = runner_dir / "future_execute_command_NOT_RUN.txt"
+    artifact_paths_path = runner_dir / "artifact_paths.json"
+    dry_run_summary_path = runner_dir / "dry_run_summary.json"
+    do_not_run_path = runner_dir / "DO_NOT_RUN_YET.txt"
+
+    source_sql_path = ROOT / "missing.sql"
+    pg_schema_path = ROOT / "missing.sql"
+    pool = ""
+    if inferred is not None:
+        pool, case_root = inferred
+        source_sql_path = case_root / "source.sql"
+        pg_schema_path = case_root / "schema" / "ddl_pg.sql"
+
+    harness_dir = RBOT_LLM4REWRITE_SINGLE_CASE_SMOKE_ROOT / case_id
+    rag_index_dir = Path("/tmp/rewritebench_rbot_llm4rewrite_rag_build_openai_like/rag/chroma_db")
+    smoke_venv_python = Path("/tmp/rewritebench_rbot_llm4rewrite_venv_smoke/bin/python")
+
+    source_sql_found = source_sql_path.is_file()
+    pg_schema_found = pg_schema_path.is_file()
+    single_case_harness_found = harness_dir.is_dir()
+    rag_index_found = rag_index_dir.exists()
+    smoke_venv_found = smoke_venv_python.is_file()
+    llm4rewrite_clone_found = RBOT_LLM4REWRITE_AUDIT_ROOT.is_dir()
+    openai_api_key_visible = bool(os.environ.get("OPENAI_API_KEY"))
+    pg_env_fields = pg_env_visibility()
+    pg_env_visible = all(pg_env_fields[name] for name in ["PGHOST", "PGPORT", "PGDATABASE", "PGUSER"])
+
+    generated_sql_path = runner_dir / "generated_sql.sql"
+    selected_rules_path = runner_dir / "selected_rules.json"
+    retrieval_trace_path = runner_dir / "retrieval_trace.json"
+    token_cost_log_path = runner_dir / "token_cost_log.json"
+    method_stdout_path = runner_dir / "method_stdout.log"
+    method_stderr_path = runner_dir / "method_stderr.log"
+    checker_candidate_sql_path = runner_dir / "checker_candidate_sql.sql"
+
+    artifact_paths = {
+        "generated_sql_path": str(generated_sql_path),
+        "selected_rules_path": str(selected_rules_path),
+        "retrieval_trace_path": str(retrieval_trace_path),
+        "token_cost_log_path": str(token_cost_log_path),
+        "method_stdout_path": str(method_stdout_path),
+        "method_stderr_path": str(method_stderr_path),
+        "checker_candidate_sql_path": str(checker_candidate_sql_path),
+        "claim_boundary": "single_case_runner_dry_run_only_not_rbot_result",
+    }
+    artifact_paths_path.write_text(json.dumps(artifact_paths, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+    future_command_text = (
+        "NOT RUN\n\n"
+        "Future execution command candidate:\n"
+        "python -m scripts.cli formal-rbot-llm4rewrite-single-case-smoke-run \\\n"
+        f"  --case {case_id}\n\n"
+        "Execution prerequisites:\n"
+        "- OPENAI_API_KEY visible in environment\n"
+        "- PGHOST, PGPORT, PGDATABASE, PGUSER visible in environment\n"
+        "- /tmp/rewritebench_rbot_llm4rewrite_single_case_smoke/PERF_0006 exists\n"
+        "- /tmp/rewritebench_rbot_llm4rewrite_rag_build_openai_like/rag/chroma_db exists\n"
+        "- /tmp/rewritebench_rbot_llm4rewrite_venv_smoke exists\n"
+        "- /tmp/rewritebench_prior_method_audit/LLM4Rewrite exists\n"
+        "- PostgreSQL runtime already verified separately\n\n"
+        "Expected future artifact paths:\n"
+        f"- generated SQL: {generated_sql_path}\n"
+        f"- selected rules: {selected_rules_path}\n"
+        f"- retrieval trace: {retrieval_trace_path}\n"
+        f"- token/cost log: {token_cost_log_path}\n"
+        f"- method stdout: {method_stdout_path}\n"
+        f"- method stderr: {method_stderr_path}\n"
+        f"- checker handoff SQL: {checker_candidate_sql_path}\n"
+    )
+    future_command_path.write_text(future_command_text, encoding="utf-8")
+    do_not_run_path.write_text(
+        "DO NOT RUN YET\n"
+        "- dry-run scaffold only\n"
+        "- no R-Bot execution approved in this step\n"
+        "- no database execution occurred\n"
+        "- no model call occurred\n"
+        "- no checker or speedup invocation occurred\n",
+        encoding="utf-8",
+    )
+
+    blockers: list[str] = []
+    if not dry_run_only:
+        blockers.append("execute_mode_not_supported")
+    if case_id not in supported_case_ids:
+        blockers.append("unsupported_case_id")
+    if inferred is None:
+        blockers.append("case_id_not_resolved")
+    if not source_sql_found:
+        blockers.append("missing_source_sql")
+    if not pg_schema_found:
+        blockers.append("missing_pg_schema")
+    if not single_case_harness_found:
+        blockers.append("missing_single_case_harness")
+    if not rag_index_found:
+        blockers.append("missing_rag_index")
+    if not smoke_venv_found:
+        blockers.append("missing_smoke_venv")
+    if not llm4rewrite_clone_found:
+        blockers.append("missing_llm4rewrite_clone")
+    if not openai_api_key_visible:
+        blockers.append("missing_OPENAI_API_KEY")
+    if not pg_env_visible:
+        blockers.append("missing_pg_env")
+    if not future_command_path.is_file():
+        blockers.append("future_execute_command_not_written")
+    if not artifact_paths_path.is_file():
+        blockers.append("artifact_paths_not_written")
+
+    can_execute_smoke_next = (
+        dry_run_only
+        and case_id in supported_case_ids
+        and inferred is not None
+        and source_sql_found
+        and pg_schema_found
+        and single_case_harness_found
+        and rag_index_found
+        and smoke_venv_found
+        and llm4rewrite_clone_found
+        and openai_api_key_visible
+        and pg_env_visible
+        and artifact_paths_path.is_file()
+    )
+
+    payload = {
+        "command": "formal-rbot-llm4rewrite-single-case-smoke-run",
+        "ok": can_execute_smoke_next,
+        "ran_at_utc": utc_now(),
+        "case_id": case_id,
+        "pool": pool,
+        "dry_run_only": dry_run_only,
+        "source_sql_found": source_sql_found,
+        "pg_schema_found": pg_schema_found,
+        "single_case_harness_found": single_case_harness_found,
+        "rag_index_found": rag_index_found,
+        "smoke_venv_found": smoke_venv_found,
+        "llm4rewrite_clone_found": llm4rewrite_clone_found,
+        "openai_api_key_visible": openai_api_key_visible,
+        "pg_env_visible": pg_env_visible,
+        "pg_env_fields": pg_env_fields,
+        "future_execute_command_written": future_command_path.is_file(),
+        "artifact_paths_written": artifact_paths_path.is_file(),
+        "can_execute_smoke_next": can_execute_smoke_next,
+        "blockers": blockers,
+        "claim_boundary": "single_case_runner_dry_run_only_not_rbot_result",
+    }
+    dry_run_summary_path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    return print_and_exit(payload, 0 if can_execute_smoke_next else 1)
+
+
 def cmd_formal_expanded_perf_direct_llm_preflight(args: argparse.Namespace) -> int:
     output_name = normalize_formal_expansion_output_name(args.output)
     execute_refused_name = "expanded_perf_direct_llm_preflight_execute_refused_v0.json"
@@ -38701,6 +38859,15 @@ def build_parser() -> argparse.ArgumentParser:
     formal_rbot_llm4rewrite_single_case_smoke_preflight_parser.add_argument("--case", required=True)
     formal_rbot_llm4rewrite_single_case_smoke_preflight_parser.set_defaults(
         func=cmd_formal_rbot_llm4rewrite_single_case_smoke_preflight
+    )
+
+    formal_rbot_llm4rewrite_single_case_smoke_run_parser = subparsers.add_parser(
+        "formal-rbot-llm4rewrite-single-case-smoke-run"
+    )
+    formal_rbot_llm4rewrite_single_case_smoke_run_parser.add_argument("--case", required=True)
+    formal_rbot_llm4rewrite_single_case_smoke_run_parser.add_argument("--dry-run", action="store_true", default=False)
+    formal_rbot_llm4rewrite_single_case_smoke_run_parser.set_defaults(
+        func=cmd_formal_rbot_llm4rewrite_single_case_smoke_run
     )
 
     formal_rbot_llm4rewrite_pg_runtime_verify_parser = subparsers.add_parser(
