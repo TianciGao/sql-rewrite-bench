@@ -29997,6 +29997,312 @@ def cmd_formal_llmr2_logical_plan_probe(args: argparse.Namespace) -> int:
     return print_and_exit(payload, 0 if ok else 1)
 
 
+def cmd_formal_llmr2_10case_expansion_preflight(args: argparse.Namespace) -> int:
+    target_cases = [
+        "PERF_0006",
+        "PERF_0008",
+        "PERF_0013",
+        "PERF_0017",
+        "PERF_0019",
+        "PERF_0024",
+        "PERF_0033",
+        "PERF_0052",
+        "PERF_0054",
+        "PERF_0063",
+    ]
+    report_path = ROOT / "docs" / "_scratch" / "LLMR2_10CASE_EXPANSION_PREFLIGHT_v1.md"
+    json_path = Path("/tmp/rewritebench_llmr2_10case_expansion_preflight_v1.json")
+    bundle_root = Path("/tmp/rewritebench_llmr2_10case_preflight")
+    repo_path = LLMR2_AUDIT_ROOT
+    repo_exists = repo_path.is_dir()
+    java_probe_ready = (repo_path / "src" / "rewriter_java.jar").is_file() and (repo_path / "src" / "src" / "get_logical_plan.java").is_file()
+    pos_pool_source = repo_path / "data" / "data_llmr2" / "pools" / "pos_pool_dsb_updated.csv"
+    neg_pool_source = repo_path / "data" / "data_llmr2" / "pools" / "neg_pool_dsb_updated.csv"
+
+    def _normalize_native_type(type_name: str) -> str:
+        low = type_name.strip().lower()
+        if low.startswith("char") or low.startswith("character"):
+            return "character"
+        if low.startswith("varchar") or "varying" in low or low == "text":
+            return "character varying"
+        if low.startswith("numeric") or low.startswith("decimal"):
+            return "numeric"
+        if low.startswith("int") or low.startswith("bigint") or low.startswith("smallint"):
+            return "integer"
+        if low.startswith("date"):
+            return "date"
+        if low.startswith("timestamp"):
+            return "timestamp"
+        if low.startswith("bool"):
+            return "boolean"
+        if low.startswith("double") or low.startswith("float") or low.startswith("real"):
+            return "float"
+        return low or "character varying"
+
+    def _schema_native_from_stub(schema_stub: dict[str, Any], row_hint: int) -> list[dict[str, Any]]:
+        raw_tables = schema_stub.get("tables", []) if isinstance(schema_stub, dict) else []
+        native_tables: list[dict[str, Any]] = []
+        for raw_table in raw_tables:
+            if not isinstance(raw_table, dict):
+                continue
+            table_name = str(raw_table.get("table", "")).strip()
+            raw_columns = raw_table.get("columns", [])
+            columns: list[dict[str, Any]] = []
+            for raw_column in raw_columns:
+                if not isinstance(raw_column, dict):
+                    continue
+                column_name = str(raw_column.get("name", "")).strip()
+                column_type = _normalize_native_type(str(raw_column.get("type", "")))
+                if not column_name:
+                    continue
+                columns.append({"name": column_name, "type": column_type})
+            if not table_name:
+                continue
+            native_tables.append({"table": table_name, "rows": int(row_hint), "columns": columns})
+        return native_tables
+
+    def _row_hint_from_witness(witness_text: str) -> int:
+        insert_count = len(re.findall(r"\bINSERT\s+INTO\b", witness_text, flags=re.IGNORECASE))
+        return max(2, insert_count) if insert_count else 2
+
+    def _write_tiny_pool(src_path: Path, dst_path: Path, case_id: str, source_sql_text: str, label: str) -> bool:
+        if not src_path.is_file():
+            dst_path.write_text(f"# missing {label} pool\n", encoding="utf-8")
+            return False
+        with src_path.open("r", encoding="utf-8", newline="") as handle:
+            reader = csv.DictReader(handle)
+            fieldnames = list(reader.fieldnames or [])
+            first_row = next(reader, None)
+        if not fieldnames:
+            dst_path.write_text(f"# empty {label} pool\n", encoding="utf-8")
+            return False
+        row = dict(first_row) if first_row else {name: "" for name in fieldnames}
+        patched: dict[str, str] = {}
+        for key in fieldnames:
+            low = key.lower()
+            value = row.get(key, "")
+            if low == "db_id":
+                patched[key] = f"rewritebench_{case_id.lower()}"
+            elif "sql" in low or "query" in low:
+                patched[key] = source_sql_text.strip()
+            elif "rule" in low:
+                patched[key] = value or "adapter_stub_rule"
+            elif low in {"id", "qid", "query_id"}:
+                patched[key] = f"{case_id}_{label}_demo_01"
+            else:
+                patched[key] = value
+        with dst_path.open("w", encoding="utf-8", newline="") as handle:
+            writer = csv.DictWriter(handle, fieldnames=fieldnames)
+            writer.writeheader()
+            writer.writerow(patched)
+        return True
+
+    per_case_results: list[dict[str, Any]] = []
+
+    for case_id in target_cases:
+        inferred = case_root_for_case_id(case_id)
+        bundle_dir = bundle_root / case_id
+        bundle_dir.mkdir(parents=True, exist_ok=True)
+        row: dict[str, Any] = {
+            "case_id": case_id,
+            "source_sql_exists": False,
+            "pg_schema_exists": False,
+            "pg_witness_exists": False,
+            "one_row_csv_ready": False,
+            "schema_native_json_ready": False,
+            "tiny_pool_ready": False,
+            "logical_plan_probe_ready_or_status": "blocked_missing_java_probe_substrate" if not java_probe_ready else "ready_to_run_preflight_only_probe_not_yet_run",
+            "output_capture_contract_ready": repo_exists,
+            "checker_handoff_contract_ready": False,
+            "readiness_status": "blocked_missing_case_artifact",
+            "risk": "high",
+            "notes": "",
+        }
+        if inferred is None:
+            row["notes"] = "case_root_not_resolved"
+            per_case_results.append(row)
+            continue
+
+        _, case_root = inferred
+        source_sql_path = case_root / "source.sql"
+        ddl_pg_path = case_root / "schema" / "ddl_pg.sql"
+        witness_path = case_root / "validation" / "pg_witness_data.sql"
+        source_sql_text = source_sql_path.read_text(encoding="utf-8") if source_sql_path.is_file() else ""
+        ddl_pg_text = ddl_pg_path.read_text(encoding="utf-8") if ddl_pg_path.is_file() else ""
+        witness_text = witness_path.read_text(encoding="utf-8") if witness_path.is_file() else ""
+        row["source_sql_exists"] = source_sql_path.is_file()
+        row["pg_schema_exists"] = ddl_pg_path.is_file()
+        row["pg_witness_exists"] = witness_path.is_file()
+        row["checker_handoff_contract_ready"] = row["source_sql_exists"] and row["pg_schema_exists"] and row["pg_witness_exists"]
+
+        (bundle_dir / "source.sql").write_text(source_sql_text if source_sql_text else "-- missing source.sql\n", encoding="utf-8")
+        (bundle_dir / "create_tables.sql").write_text(ddl_pg_text if ddl_pg_text else "-- missing ddl_pg.sql\n", encoding="utf-8")
+
+        query_csv_path = bundle_dir / f"{case_id.lower()}_queries.csv"
+        if row["source_sql_exists"]:
+            with query_csv_path.open("w", encoding="utf-8", newline="") as handle:
+                writer = csv.DictWriter(handle, fieldnames=["db_id", "original_sql"])
+                writer.writeheader()
+                writer.writerow({"db_id": f"rewritebench_{case_id.lower()}", "original_sql": source_sql_text.strip()})
+            row["one_row_csv_ready"] = True
+        else:
+            query_csv_path.write_text("db_id,original_sql\n", encoding="utf-8")
+
+        schema_native_path = bundle_dir / f"{case_id.lower()}_schema_native.json"
+        schema_native: list[dict[str, Any]] = []
+        row_hint = _row_hint_from_witness(witness_text)
+        if row["pg_schema_exists"]:
+            schema_stub = llmr2_schema_stub_from_pg_ddl(case_id, ddl_pg_text, f"rewritebench_{case_id.lower()}")
+            schema_native = _schema_native_from_stub(schema_stub, row_hint)
+            row["schema_native_json_ready"] = bool(schema_native and any(table.get("columns") for table in schema_native))
+        schema_native_path.write_text(json.dumps(schema_native, indent=2) + "\n", encoding="utf-8")
+
+        pos_ok = _write_tiny_pool(pos_pool_source, bundle_dir / f"pos_pool_{case_id.lower()}_updated.csv", case_id, source_sql_text, "pos")
+        neg_ok = _write_tiny_pool(neg_pool_source, bundle_dir / f"neg_pool_{case_id.lower()}_updated.csv", case_id, source_sql_text, "neg")
+        row["tiny_pool_ready"] = pos_ok and neg_ok
+
+        notes: list[str] = []
+        if case_id == "PERF_0006":
+            row["logical_plan_probe_ready_or_status"] = "perf_0006_schema_native_probe_succeeded"
+            row["risk"] = "low"
+            notes.append("existing_perf_0006_anchor")
+        elif row["source_sql_exists"] and source_sql_text.lstrip().startswith("--"):
+            row["risk"] = "medium"
+            notes.append("leading_sql_comments_present")
+        else:
+            row["risk"] = "medium"
+        if row["source_sql_exists"] and row["pg_schema_exists"] and row["pg_witness_exists"] and row["one_row_csv_ready"] and row["schema_native_json_ready"] and row["tiny_pool_ready"] and repo_exists and java_probe_ready:
+            row["readiness_status"] = "ready_for_bounded_smoke"
+            notes.append("bounded_fast_path_contract_staged")
+            if case_id != "PERF_0006":
+                notes.append("logical_plan_probe_not_yet_run_for_this_case")
+        elif not (row["source_sql_exists"] and row["pg_schema_exists"] and row["pg_witness_exists"]):
+            row["readiness_status"] = "blocked_missing_case_artifact"
+            notes.append("missing_case_artifact")
+        elif not row["schema_native_json_ready"]:
+            row["readiness_status"] = "blocked_schema_contract"
+            notes.append("schema_native_json_not_derived")
+        elif not java_probe_ready:
+            row["readiness_status"] = "blocked_logical_plan"
+            notes.append("java_probe_substrate_missing")
+        else:
+            row["readiness_status"] = "ready_after_minor_patch"
+            notes.append("minor_contract_followup_needed")
+        row["notes"] = "; ".join(notes)
+
+        metadata_path = bundle_dir / "llmr2_case_metadata.json"
+        metadata_path.write_text(
+            json.dumps(
+                {
+                    "case_id": case_id,
+                    "source_sql_path": relative_to_root(source_sql_path),
+                    "ddl_pg_path": relative_to_root(ddl_pg_path),
+                    "witness_path": relative_to_root(witness_path),
+                    "query_csv_path": str(query_csv_path),
+                    "schema_native_json_path": str(schema_native_path),
+                    "expected_result_csv_path": str(bundle_dir / f"gpt_rewritebench_{case_id.lower()}_one_promo_queryCL_updated.csv"),
+                    "expected_generated_sql_path": str(bundle_dir / "generated_sql_v1.sql"),
+                    "expected_checker_handoff_path": str(bundle_dir / "checker_candidate_sql_v1.sql"),
+                    "row_hint": row_hint,
+                    "claim_boundary": "bounded_10case_LLMR2_smoke_subset_not_leaderboard",
+                },
+                indent=2,
+                sort_keys=True,
+            ) + "\n",
+            encoding="utf-8",
+        )
+
+        per_case_results.append(row)
+
+    recommended_next_step = "execute LLM-R2 Batch A"
+    if any(row["readiness_status"].startswith("blocked_") for row in per_case_results if row["case_id"] != "PERF_0006"):
+        recommended_next_step = "fix preflight blockers"
+
+    payload = {
+        "command": "formal-llmr2-10case-expansion-preflight",
+        "ok": True,
+        "ran_at_utc": utc_now(),
+        "cases": target_cases,
+        "per_case_results": per_case_results,
+        "recommended_execution_batches": {
+            "Batch A": ["PERF_0008", "PERF_0013", "PERF_0017"],
+            "Batch B": ["PERF_0019", "PERF_0024", "PERF_0033"],
+            "Batch C": ["PERF_0052", "PERF_0054", "PERF_0063"],
+        },
+        "metrics_to_report_later": [
+            "candidate_generation_rate@10",
+            "executable_rate@10",
+            "result_consistency_rate@10",
+            "output_extraction_failure_count",
+            "logical_plan_failure_count",
+            "checker_failed_count",
+            "speedup_status=not_run",
+        ],
+        "recommended_next_step": recommended_next_step,
+        "claim_boundary": "bounded_10case_LLMR2_smoke_subset_not_leaderboard",
+    }
+    json_path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+    table_lines = [
+        "| case_id | source_sql_exists | pg_schema_exists | pg_witness_exists | one_row_csv_ready | schema_native_json_ready | tiny_pool_ready | logical_plan_probe_ready_or_status | output_capture_contract_ready | checker_handoff_contract_ready | readiness_status | risk | notes |",
+        "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |",
+    ]
+    for row in per_case_results:
+        table_lines.append(
+            "| {case_id} | {source_sql_exists} | {pg_schema_exists} | {pg_witness_exists} | {one_row_csv_ready} | {schema_native_json_ready} | {tiny_pool_ready} | {logical_plan_probe_ready_or_status} | {output_capture_contract_ready} | {checker_handoff_contract_ready} | {readiness_status} | {risk} | {notes} |".format(**row)
+        )
+    report_text = (
+        "# LLMR2_10CASE_EXPANSION_PREFLIGHT_v1\n\n"
+        "## 0. Purpose And Boundary\n"
+        "This is no-execution preflight for LLM-R2 10-case expansion. It does not run LLM-R2, call any model/API, run Java rule application as a rewrite method, run any database, run checker, or run speedup.\n\n"
+        "## 1. Existing LLM-R2 Anchor\n"
+        "Bounded `PERF_0006` anchor:\n"
+        "- one-row fast path\n"
+        "- CPU-only\n"
+        "- schema-native contract\n"
+        "- output extraction cleanup\n"
+        "- checker consistent\n"
+        "- no speedup\n\n"
+        "## 2. Target Denominator\n"
+        + "".join(f"- `{case_id}`\n" for case_id in target_cases)
+        + "\n## 3. Per-case Readiness Table\n"
+        + "\n".join(table_lines)
+        + "\n\n## 4. Recommended Execution Batches\n"
+        "- Batch A:\n"
+        "  - `PERF_0008`\n"
+        "  - `PERF_0013`\n"
+        "  - `PERF_0017`\n"
+        "- Batch B:\n"
+        "  - `PERF_0019`\n"
+        "  - `PERF_0024`\n"
+        "  - `PERF_0033`\n"
+        "- Batch C:\n"
+        "  - `PERF_0052`\n"
+        "  - `PERF_0054`\n"
+        "  - `PERF_0063`\n\n"
+        "## 5. Metrics To Report Later\n"
+        "- `candidate_generation_rate@10`\n"
+        "- `executable_rate@10`\n"
+        "- `result_consistency_rate@10`\n"
+        "- `output_extraction_failure_count`\n"
+        "- `logical_plan_failure_count`\n"
+        "- `checker_failed_count`\n"
+        "- `speedup_status = not_run`\n\n"
+        "Do not compute:\n"
+        "- `gm_speedup`\n"
+        "- `regression_rate@20`\n"
+        "- leaderboard rank\n\n"
+        "## 6. Claim Boundary\n"
+        "- `bounded_10case_LLMR2_smoke_subset_not_leaderboard`\n\n"
+        "## 7. Recommended Next Step\n"
+        f"- `{recommended_next_step}`\n\n"
+        "## 8. Non-Modification Note\n"
+        "Confirm no execution/model/API/DB/checker/speedup and no case/registry/review/rules/EXECUTION_STATUS changes.\n"
+    )
+    report_path.write_text(report_text, encoding="utf-8")
+    return print_and_exit(payload, 0)
+
+
 def cmd_formal_learnedrewrite_llm4rewrite_adapter_preflight(args: argparse.Namespace) -> int:
     case_id = str(args.case).strip().upper()
     supported_case_ids = {
@@ -42665,6 +42971,13 @@ def build_parser() -> argparse.ArgumentParser:
     formal_llmr2_logical_plan_probe_parser.add_argument("--schema-native-contract", action="store_true", default=False)
     formal_llmr2_logical_plan_probe_parser.set_defaults(
         func=cmd_formal_llmr2_logical_plan_probe
+    )
+
+    formal_llmr2_10case_expansion_preflight_parser = subparsers.add_parser(
+        "formal-llmr2-10case-expansion-preflight"
+    )
+    formal_llmr2_10case_expansion_preflight_parser.set_defaults(
+        func=cmd_formal_llmr2_10case_expansion_preflight
     )
 
     formal_learnedrewrite_llm4rewrite_adapter_preflight_parser = subparsers.add_parser(
