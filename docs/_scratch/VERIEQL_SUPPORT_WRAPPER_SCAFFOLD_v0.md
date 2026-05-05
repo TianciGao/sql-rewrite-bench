@@ -12,6 +12,7 @@
 - Output path: `reports/formal_expansion/verieql_support/cons_0007_pairs.jsonl`
 - Pair count: `2`
 - VeriEQL execution status: `not_run`
+- Runner input-contract patch applied: `yes`
 
 ## Emitted Pair Roles
 
@@ -21,11 +22,18 @@
 Both records were emitted with the top-level keys expected by the staged VeriEQL batch format:
 
 - `index`
+- `file`
+- `name`
+- `benchmark`
+- `case_id`
+- `pair_role`
 - `schema`
 - `constraint`
 - `pair`
 
 The emitted jsonlines was validated locally as parseable JSON on both lines.
+
+The extra runner metadata fields are now intentional. `parallel/cli_within_timeout.py` does not only read `index`, `schema`, `constraint`, and `pair`; it also assumes one of `file`, `name`, or `benchmark` is present and uses that to populate its internal `file_path`.
 
 ## Schema Mapping
 
@@ -67,12 +75,11 @@ The current first pass keeps constraints empty and explicitly unmodeled rather t
 
 ## Exact Blockers To Actual Verification
 
-- `dependency_materialization_not_attempted`
 - `verieql_verification_not_run`
 
 Interpretation:
 
-The benchmark-to-VeriEQL bridge now exists at the wrapper-input level for `CONS_0007`. What still does not exist is any executed verifier result. This command only materializes the pair transport that a later bounded VeriEQL probe would consume.
+The benchmark-to-VeriEQL bridge now exists at the wrapper-input level for `CONS_0007`, including the runner-specific metadata contract needed by the batch entrypoint. This command still only materializes the pair transport; it does not execute VeriEQL itself.
 
 ## Next Action
 

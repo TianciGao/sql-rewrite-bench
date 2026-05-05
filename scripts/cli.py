@@ -10284,12 +10284,7 @@ def cmd_formal_verieql_support_wrapper_scaffold(args: argparse.Namespace) -> int
             exact_blockers.append("missing_ddl_pg")
         if not schema_parse["ok"]:
             exact_blockers.append("schema_parse_failed")
-        exact_blockers.extend(
-            [
-                "dependency_materialization_not_attempted",
-                "verieql_verification_not_run",
-            ]
-        )
+        exact_blockers.append("verieql_verification_not_run")
         for blocker in exact_blockers:
             blockers[blocker] += 1
 
@@ -10300,9 +10295,15 @@ def cmd_formal_verieql_support_wrapper_scaffold(args: argparse.Namespace) -> int
         for index, (pair_role, comparator_path, comparator_sql, mapped) in enumerate(pair_specs, start=1):
             if not mapped:
                 continue
+            record_id = f"{case_id}:{pair_role}"
             jsonl_records.append(
                 {
                     "index": index,
+                    "file": record_id,
+                    "name": record_id,
+                    "benchmark": record_id,
+                    "case_id": case_id,
+                    "pair_role": pair_role,
                     "schema": schema_parse["schema"],
                     "constraint": [],
                     "pair": [source_sql, comparator_sql],

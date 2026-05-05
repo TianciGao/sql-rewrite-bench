@@ -42,51 +42,75 @@ cd datasets/raw/verieql/staged/VeriEQL
 - Wrapper input exists: `yes`
 - Wrapper input parseable: `yes`
 - Help probe status: `success`
-- VeriEQL canary run status: `failed`
-- Return code: `1`
-- Output artifact produced: `no`
+- Input-format mismatch resolved: `yes`
+- VeriEQL canary run status: `completed`
+- Return code: `0`
+- Output artifact produced: `yes`
+- Output artifact path: `reports/formal_expansion/verieql_support/cons_0007_verieql_output.jsonl`
 
 ## Per-Pair Result
 
-- `source_positive`: `not_run`
-- `source_negative`: `not_run`
+- `source_positive`: `error`
+- `source_negative`: `error`
 
-No verifier verdicts were produced. There is no `EQU`, `NEQ`, `UNK`, or `TMO` pair result to report because the batch runner failed before processing the input records into runnable cases.
-
-## Exact Blocker
-
-- `input_format_mismatch`
-
-Observed failure:
+Parseable VeriEQL output was produced for both pairs. The terminal state on both records is `NSE`, and the reported error text is:
 
 ```text
-UnboundLocalError: cannot access local variable 'file_path' where it is not associated with a value
+Not supported feature: EXISTS
 ```
 
-The failure site is inside `parallel/cli_within_timeout.py` when it builds `parameters`. The runner accepts records with `index`, `schema`, `constraint`, and `pair`, but then also assumes one of:
+That means the canary now reaches the verifier and returns per-pair support-table evidence, but the evidence is a bounded unsupported-feature outcome rather than an equivalence or non-equivalence verdict.
+
+## Final Status
+
+- `source_positive`: `NSE` / unsupported feature
+- `source_negative`: `NSE` / unsupported feature
+- `prove_count=0`
+- `refute_count=0`
+- `unknown_count=0`
+- `timeout_count=0`
+- `error_count=2`
+- `support_rate_if_defined=0.0`
+
+## Contract Fix
+
+The previous `input_format_mismatch` is fixed.
+
+The batch runner expects one of:
 
 - `file`
 - `name`
 - `benchmark`
 
-Our wrapper scaffold intentionally emitted only the top-level keys documented in the earlier bootstrap pass, so the module-mode canary reaches the runner and then aborts on this hidden extra-field assumption.
+The wrapper scaffold now emits all three, along with `case_id` and `pair_role`, so the runner no longer aborts before verification.
+
+## Exact Blocker After Contract Fix
+
+There is no longer an input-contract blocker. The remaining limitation is verifier feature support:
+
+```text
+Not supported feature: EXISTS
+```
+
+This is support-table evidence, not a runner/bootstrap failure. VeriEQL executed the bounded canary and explicitly reported that both `CONS_0007` pairs use a feature it does not support in this path.
 
 ## Interpretation
 
-This is real support-canary evidence, but it is blocker evidence rather than solver-verdict evidence. VeriEQL cannot yet be promoted from wrapper-scaffold to usable support-canary verdict status for `CONS_0007` because the current wrapper transport does not satisfy the batch runner’s full record contract.
+This is real support-canary evidence, and it does promote the line beyond wrapper-only status. The line now has executed verifier evidence on `CONS_0007`. However, it is not support-clean evidence: both pairs terminate in `NSE`, so VeriEQL is still not usable on this canary as a practical support-table method for the current case.
 
 What is now established:
 
 - dependency/runtime setup is good enough to launch the safe module-mode entrypoint
-- the wrapper artifact is readable and parseable
-- the next concrete gap is not environment setup, but input contract closure
+- the wrapper artifact is readable, parseable, and contract-complete for the batch runner
+- the verifier produces parseable output artifacts on this canary
+- the remaining limitation is feature support for `EXISTS`
 
 ## Next Action
 
-Next action: patch the wrapper input contract, not the verifier route.
+Next action: do not spend more effort on this exact `CONS_0007` pair unless `EXISTS` support is a deliberate target.
 
 Concretely:
 
-1. Extend the wrapper-emitted jsonlines records with one accepted runner metadata field such as `benchmark` or `name`.
-2. Rerun the same bounded module-mode canary.
-3. Only after a successful batch output artifact exists should verdict parsing and support-rate reporting be attempted.
+1. Keep the wrapper contract patch.
+2. Record this canary as executed support evidence with `NSE` outcomes.
+3. If the VeriEQL line is advanced further, choose a simpler consistency case without `EXISTS`, or treat `EXISTS` as a current unsupported-feature boundary for the support table.
