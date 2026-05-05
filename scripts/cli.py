@@ -28358,17 +28358,6 @@ def cmd_formal_learnedrewrite_llm4rewrite_single_case_run(args: argparse.Namespa
             "claim_boundary": "learnedrewrite_single_case_runner_dry_run_only_not_execution",
         }
         return print_and_exit(payload, 1)
-    if not dry_run_only:
-        payload = {
-            "command": "formal-learnedrewrite-llm4rewrite-single-case-run",
-            "ok": False,
-            "ran_at_utc": utc_now(),
-            "case_id": case_id,
-            "dry_run_only": dry_run_only,
-            "blockers": ["execute_mode_not_supported"],
-            "claim_boundary": "learnedrewrite_single_case_runner_dry_run_only_not_execution",
-        }
-        return print_and_exit(payload, 1)
 
     bundle_dir = LEARNEDREWRITE_LLM4REWRITE_ADAPTER_PREFLIGHT_ROOT / case_id
     runner_dir = LEARNEDREWRITE_LLM4REWRITE_SINGLE_CASE_RUNNER_ROOT / case_id
@@ -28377,7 +28366,7 @@ def cmd_formal_learnedrewrite_llm4rewrite_single_case_run(args: argparse.Namespa
     source_sql_path = bundle_dir / "source.sql"
     schema_path = bundle_dir / "create_tables.sql"
     metadata_path = bundle_dir / "learnedrewrite_case_metadata.json"
-    jar_path = (
+    original_jar_path = (
         RBOT_LLM4REWRITE_AUDIT_ROOT
         / "CalciteRewrite"
         / "out"
@@ -28388,6 +28377,8 @@ def cmd_formal_learnedrewrite_llm4rewrite_single_case_run(args: argparse.Namespa
     runner_path = RBOT_LLM4REWRITE_AUDIT_ROOT / "my_rewriter" / "test_learned_rewrite.py"
     java_source_path = RBOT_LLM4REWRITE_AUDIT_ROOT / "CalciteRewrite" / "src" / "learned" / "LearnedRewriter.java"
     smoke_venv_python = Path("/tmp/rewritebench_rbot_llm4rewrite_venv_smoke/bin/python")
+    recovered_jar_path = Path("/tmp/rewritebench_learnedrewrite_classpath_recovery/LearnedRewrite_repacked_unsigned.jar")
+    runtime_root = runner_dir / "runtime_root_v1"
 
     future_command_path = runner_dir / "future_execute_command_NOT_RUN.txt"
     artifact_paths_path = runner_dir / "artifact_paths.json"
@@ -28395,15 +28386,16 @@ def cmd_formal_learnedrewrite_llm4rewrite_single_case_run(args: argparse.Namespa
     do_not_run_path = runner_dir / "DO_NOT_RUN_YET.txt"
 
     future_logdir = Path("/tmp/rewritebench_learnedrewrite_logs")
-    future_res_jsonl_path = future_logdir / "rewritebench_perf_0006" / "res.jsonl"
-    generated_sql_path = runner_dir / "generated_sql.sql"
-    checker_candidate_sql_path = runner_dir / "checker_candidate_sql.sql"
-    method_stdout_path = runner_dir / "method_stdout.log"
-    method_stderr_path = runner_dir / "method_stderr.log"
+    future_res_jsonl_path = runner_dir / "res_v1.jsonl"
+    generated_sql_path = runner_dir / "generated_sql_v1.sql"
+    checker_candidate_sql_path = runner_dir / "checker_candidate_sql_v1.sql"
+    method_stdout_path = runner_dir / "method_stdout_v1.log"
+    method_stderr_path = runner_dir / "method_stderr_v1.log"
+    smoke_result_path = runner_dir / "smoke_result_v1.json"
 
     source_sql_found = source_sql_path.is_file() and bool(source_sql_path.read_text(encoding="utf-8").strip())
     schema_found = schema_path.is_file() and bool(schema_path.read_text(encoding="utf-8").strip())
-    learnedrewrite_jar_found = jar_path.is_file()
+    learnedrewrite_jar_found = recovered_jar_path.is_file() or original_jar_path.is_file()
     runner_found = runner_path.is_file()
     java_source_found = java_source_path.is_file()
     output_sql_contract_visible = runner_found and java_source_found
@@ -28438,18 +28430,57 @@ def cmd_formal_learnedrewrite_llm4rewrite_single_case_run(args: argparse.Namespa
 
     future_logdir.mkdir(parents=True, exist_ok=True)
     future_logdir_writable = future_logdir.is_dir()
+    runner_dir.mkdir(parents=True, exist_ok=True)
+
+    def ensure_recovered_unsigned_jar() -> tuple[bool, str]:
+        if recovered_jar_path.is_file():
+            return True, ""
+        if not original_jar_path.is_file():
+            return False, "original LearnedRewrite.jar is missing"
+        jar_tool_path = shutil.which("jar")
+        if not jar_tool_path:
+            return False, "jar tool is not visible on PATH"
+        recovery_root = recovered_jar_path.parent
+        exploded_dir = recovery_root / "exploded"
+        recovery_root.mkdir(parents=True, exist_ok=True)
+        if exploded_dir.exists():
+            shutil.rmtree(exploded_dir)
+        exploded_dir.mkdir(parents=True, exist_ok=True)
+        extract_proc = subprocess.run(
+            [jar_tool_path, "xf", str(original_jar_path)],
+            cwd=exploded_dir,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        if extract_proc.returncode != 0:
+            return False, f"jar xf failed with code {extract_proc.returncode}: {(extract_proc.stderr or extract_proc.stdout).strip()[:500]}"
+        meta_inf = exploded_dir / "META-INF"
+        if meta_inf.is_dir():
+            for pattern in ("*.SF", "*.RSA", "*.DSA"):
+                for sig_path in meta_inf.glob(pattern):
+                    sig_path.unlink(missing_ok=True)
+        pack_proc = subprocess.run(
+            [jar_tool_path, "cf", str(recovered_jar_path), "."],
+            cwd=exploded_dir,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        if pack_proc.returncode != 0:
+            return False, f"jar cf failed with code {pack_proc.returncode}: {(pack_proc.stderr or pack_proc.stdout).strip()[:500]}"
+        if not recovered_jar_path.is_file():
+            return False, "recovered unsigned jar was not created"
+        return True, ""
 
     future_command_text = (
         "NOT RUN\n\n"
         "Future bounded single-case command candidate:\n"
-        "cd /tmp/rewritebench_prior_method_audit/LLM4Rewrite/my_rewriter\n"
-        "PYTHONPATH=.. python3 test_learned_rewrite.py \\\n"
-        "  --database rewritebench_perf_0006 \\\n"
-        "  --logdir /tmp/rewritebench_learnedrewrite_logs\n\n"
+        "python -m scripts.cli formal-learnedrewrite-llm4rewrite-single-case-run --case PERF_0006\n\n"
         "Assumptions:\n"
         "- no execution occurred in this dry-run\n"
-        "- LearnedRewrite.jar must remain visible under CalciteRewrite/out/artifacts/LearnedRewrite_jar\n"
-        "- JVM startup and JPype bridge are deferred to a later preflight or execution step\n"
+        f"- recovered temp unsigned jar is expected at:\n  {recovered_jar_path}\n"
+        "- JVM startup and JPype bridge are exercised only in the actual bounded smoke step\n"
         "- PostgreSQL runtime is required later for cost access\n"
         "- future emitted res.jsonl is expected at:\n"
         f"  {future_res_jsonl_path}\n"
@@ -28493,8 +28524,6 @@ def cmd_formal_learnedrewrite_llm4rewrite_single_case_run(args: argparse.Namespa
         blockers.append("missing_output_sql_contract_visibility")
     if not java_visible:
         blockers.append("java_not_visible_on_path")
-    else:
-        blockers.append("java_version_not_checked_due_no_jvm_boundary")
     if not jpype_import_available:
         blockers.append("jpype_import_unavailable")
     if not pg_env_visible:
@@ -28507,14 +28536,9 @@ def cmd_formal_learnedrewrite_llm4rewrite_single_case_run(args: argparse.Namespa
         blockers.append("artifact_paths_not_written")
     if not metadata_path.is_file():
         blockers.append("adapter_preflight_metadata_missing")
-    blockers.extend(
-        [
-            "jvm_runtime_not_verified",
-            "single_case_execution_not_implemented",
-            "output_sql_extraction_not_tested",
-            "checker_handoff_not_run",
-        ]
-    )
+    jar_recovery_ok, jar_recovery_error = ensure_recovered_unsigned_jar()
+    if not jar_recovery_ok:
+        blockers.append("jar_recovery_unavailable")
 
     can_execute_smoke_next = (
         source_sql_found
@@ -28527,7 +28551,8 @@ def cmd_formal_learnedrewrite_llm4rewrite_single_case_run(args: argparse.Namespa
         and pg_env_visible
         and future_command_path.is_file()
         and artifact_paths_path.is_file()
-        and "jvm_runtime_not_verified" not in blockers
+        and metadata_path.is_file()
+        and jar_recovery_ok
     )
 
     payload = {
@@ -28545,6 +28570,9 @@ def cmd_formal_learnedrewrite_llm4rewrite_single_case_run(args: argparse.Namespa
         "jpype_import_tmp_venv_error": venv_jpype_error,
         "pg_env_visible": pg_env_visible,
         "pg_env_fields": pg_env_fields,
+        "jar_path": str(recovered_jar_path if recovered_jar_path.is_file() else original_jar_path),
+        "jar_recovery_used": recovered_jar_path.is_file(),
+        "jar_recovery_error": jar_recovery_error,
         "output_sql_contract_visible": output_sql_contract_visible,
         "future_command_written": future_command_path.is_file(),
         "artifact_paths_written": artifact_paths_path.is_file(),
@@ -28553,7 +28581,244 @@ def cmd_formal_learnedrewrite_llm4rewrite_single_case_run(args: argparse.Namespa
         "claim_boundary": "learnedrewrite_single_case_runner_dry_run_only_not_execution",
     }
     dry_run_summary_path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-    return print_and_exit(payload, 0 if can_execute_smoke_next else 1)
+    if dry_run_only:
+        return print_and_exit(payload, 0 if can_execute_smoke_next else 1)
+
+    generation_status = "dry_run_failed"
+    method_executed = False
+    output_sql_extracted = False
+    checker_status = "not_run"
+    consistency_status = "not_checked"
+    speedup_status = "not_run"
+    failure_category = ""
+    failure_summary = ""
+    res_jsonl_path = future_res_jsonl_path
+    jar_recovery_used = recovered_jar_path.is_file()
+
+    smoke_payload = {
+        "case_id": case_id,
+        "method": "LearnedRewrite via LLM4Rewrite embedded path",
+        "dry_run_passed": can_execute_smoke_next,
+        "method_executed": method_executed,
+        "jar_recovery_used": jar_recovery_used,
+        "jar_path": str(recovered_jar_path if jar_recovery_used else original_jar_path),
+        "generation_status": generation_status,
+        "output_sql_extracted": output_sql_extracted,
+        "generated_sql_path": str(generated_sql_path),
+        "checker_candidate_sql_path": str(checker_candidate_sql_path),
+        "res_jsonl_path": str(res_jsonl_path),
+        "method_stdout_path": str(method_stdout_path),
+        "method_stderr_path": str(method_stderr_path),
+        "checker_status": checker_status,
+        "consistency_status": consistency_status,
+        "speedup_status": speedup_status,
+        "failure_category": failure_category,
+        "failure_summary": failure_summary,
+        "claim_boundary": "bounded_1_case_LearnedRewrite_smoke_attempt_not_leaderboard",
+    }
+    if not can_execute_smoke_next:
+        smoke_payload["failure_category"] = "dry_run_failed"
+        smoke_payload["failure_summary"] = "dry-run prerequisites did not pass"
+        smoke_result_path.write_text(json.dumps(smoke_payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+        return print_and_exit(smoke_payload, 1)
+
+    pg_schema_path = ROOT / "cases" / "PERF" / case_id / "schema" / "ddl_pg.sql"
+    pg_data_sql_path = ROOT / "cases" / "PERF" / case_id / "validation" / "pg_witness_data.sql"
+    pg_data_sql_found = pg_data_sql_path.is_file() and bool(pg_data_sql_path.read_text(encoding="utf-8").strip())
+    isolated_schema = f"learnedrewrite_{case_id.lower()}_smoke_{int(time.time())}"
+    schema_created = False
+
+    def _read_statements(path: Path) -> list[str]:
+        text = path.read_text(encoding="utf-8")
+        text = "\n".join(line for line in text.splitlines() if not re.match(r"^\s*--", line))
+        return [stmt.strip() for stmt in text.split(";") if stmt.strip()]
+
+    try:
+        if runtime_root.exists():
+            shutil.rmtree(runtime_root)
+        shutil.copytree(RBOT_LLM4REWRITE_AUDIT_ROOT / "my_rewriter", runtime_root / "my_rewriter")
+        runtime_jar_dir = runtime_root / "my_rewriter" / "CalciteRewrite" / "out" / "artifacts" / "LearnedRewrite_jar"
+        runtime_jar_dir.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(recovered_jar_path if recovered_jar_path.is_file() else original_jar_path, runtime_jar_dir / "LearnedRewrite.jar")
+        cache_dir = runtime_root / "my_rewriter" / "cache"
+        cache_dir.mkdir(parents=True, exist_ok=True)
+        cache_file = cache_dir / f"{os.environ['PGDATABASE']}.jsonl"
+        if not cache_file.exists():
+            cache_file.write_text("", encoding="utf-8")
+
+        psycopg = importlib.import_module("psycopg")
+        ddl_statements = _read_statements(pg_schema_path)
+        data_statements = _read_statements(pg_data_sql_path) if pg_data_sql_found else []
+        with psycopg.connect(
+            host=os.environ["PGHOST"],
+            port=os.environ["PGPORT"],
+            dbname=os.environ["PGDATABASE"],
+            user=os.environ["PGUSER"],
+            password=os.environ.get("PGPASSWORD"),
+            autocommit=False,
+        ) as conn:
+            with conn.cursor() as cur:
+                cur.execute("SELECT set_config('statement_timeout', %s, false)", ("30000",))
+                cur.execute(
+                    psycopg.sql.SQL("CREATE SCHEMA {}").format(
+                        psycopg.sql.Identifier(isolated_schema)
+                    )
+                )
+                cur.execute(
+                    psycopg.sql.SQL("SET search_path TO {}, public").format(
+                        psycopg.sql.Identifier(isolated_schema)
+                    )
+                )
+                for stmt in ddl_statements:
+                    cur.execute(stmt)
+                for stmt in data_statements:
+                    cur.execute(stmt)
+                conn.commit()
+                schema_created = True
+
+        runner_script = (
+            "import json\n"
+            "import os\n"
+            "import time\n"
+            "from pathlib import Path\n"
+            "import jpype\n"
+            "from my_rewriter.database import DBArgs, Database\n"
+            "from my_rewriter.rewrite import learned_rewrite\n"
+            f"query = Path({repr(str(source_sql_path))}).read_text(encoding='utf-8')\n"
+            f"schema = Path({repr(str(schema_path))}).read_text(encoding='utf-8')\n"
+            f"res_path = Path({repr(str(res_jsonl_path))})\n"
+            "res_path.parent.mkdir(parents=True, exist_ok=True)\n"
+            "create_tables = [x for x in schema.split(';') if x.strip()]\n"
+            "cfg = {\n"
+            "  'host': os.environ['PGHOST'],\n"
+            "  'port': int(os.environ['PGPORT']),\n"
+            "  'user': os.environ['PGUSER'],\n"
+            "  'password': os.environ.get('PGPASSWORD', ''),\n"
+            "  'dbname': os.environ['PGDATABASE'],\n"
+            "  'db': 'postgresql',\n"
+            "}\n"
+            "pg_args = DBArgs(cfg)\n"
+            "start = time.time()\n"
+            "out = {'name': 'PERF_0006'}\n"
+            "try:\n"
+            "  res = learned_rewrite(query, create_tables, 20, cfg['host'], str(cfg['port']), cfg['user'], cfg['password'], cfg['dbname'])\n"
+            "  out['input_sql'] = str(res.get('input_sql'))\n"
+            "  out['input_cost'] = float(str(res.get('input_cost')))\n"
+            "  out['output_sql'] = str(res.get('output_sql'))\n"
+            "  out['output_cost'] = float(str(res.get('output_cost')))\n"
+            "  out['used_rules'] = [str(r) for r in res.get('used_rules')]\n"
+            "  out['rewrite_time'] = int(res.get('time'))\n"
+            "  out['error'] = None\n"
+            "except jpype.JException as e:\n"
+            "  out['input_sql'] = query\n"
+            "  db = Database(pg_args)\n"
+            "  out['input_cost'] = db.cost_estimation(query)\n"
+            "  out['output_sql'] = 'None'\n"
+            "  out['output_cost'] = -1\n"
+            "  out['used_rules'] = []\n"
+            "  out['rewrite_time'] = int((time.time() - start) * 1000)\n"
+            "  out['error'] = f'{type(e).__name__}: {e}'\n"
+            "except Exception as e:\n"
+            "  out['input_sql'] = query\n"
+            "  out['input_cost'] = -1\n"
+            "  out['output_sql'] = 'None'\n"
+            "  out['output_cost'] = -1\n"
+            "  out['used_rules'] = []\n"
+            "  out['rewrite_time'] = int((time.time() - start) * 1000)\n"
+            "  out['error'] = f'{type(e).__name__}: {e}'\n"
+            "with res_path.open('w', encoding='utf-8') as fh:\n"
+            "  fh.write(json.dumps(out) + '\\n')\n"
+            "print(json.dumps(out, indent=2, sort_keys=True))\n"
+        )
+        env = os.environ.copy()
+        env["PYTHONPATH"] = str(runtime_root)
+        env["PGOPTIONS"] = f"-c search_path={isolated_schema},public -c statement_timeout=30000"
+        with method_stdout_path.open("w", encoding="utf-8") as stdout_fh, method_stderr_path.open("w", encoding="utf-8") as stderr_fh:
+            proc = subprocess.run(
+                [str(smoke_venv_python), "-c", runner_script],
+                cwd=runtime_root / "my_rewriter",
+                env=env,
+                stdout=stdout_fh,
+                stderr=stderr_fh,
+                text=True,
+            )
+        method_executed = True
+        if proc.returncode != 0:
+            generation_status = "method_execution_failed"
+            failure_category = "subprocess_nonzero_exit"
+            failure_summary = f"smoke subprocess exited with code {proc.returncode}"
+        else:
+            generation_status = "method_executed_output_sql_missing"
+
+        if res_jsonl_path.is_file():
+            try:
+                lines = [line for line in res_jsonl_path.read_text(encoding='utf-8').splitlines() if line.strip()]
+                if lines:
+                    record = json.loads(lines[-1])
+                    output_sql = str(record.get("output_sql") or "").strip()
+                    if output_sql and output_sql != "None":
+                        generated_sql_path.write_text(output_sql.rstrip() + "\n", encoding="utf-8")
+                        checker_candidate_sql_path.write_text(output_sql.rstrip() + "\n", encoding="utf-8")
+                        output_sql_extracted = True
+                        generation_status = "generation_success_with_output_sql"
+                    if record.get("error") and not failure_category:
+                        failure_category = "jpype_or_java_exception"
+                        failure_summary = str(record.get("error"))
+                elif not failure_category:
+                    failure_category = "empty_res_jsonl"
+                    failure_summary = "res.jsonl was created but contained no records"
+            except Exception as exc:
+                failure_category = type(exc).__name__
+                failure_summary = str(exc)
+                generation_status = "method_execution_failed"
+        elif not failure_category:
+            failure_category = "missing_res_jsonl"
+            failure_summary = "expected res.jsonl was not created"
+            generation_status = "method_execution_failed"
+
+        if generation_status == "method_executed_output_sql_missing" and not failure_category:
+            failure_category = "output_sql_missing"
+            failure_summary = "method executed but no non-None output_sql was captured"
+    except Exception as exc:
+        generation_status = "method_execution_failed"
+        failure_category = type(exc).__name__
+        failure_summary = str(exc)
+    finally:
+        if schema_created:
+            try:
+                psycopg = importlib.import_module("psycopg")
+                with psycopg.connect(
+                    host=os.environ["PGHOST"],
+                    port=os.environ["PGPORT"],
+                    dbname=os.environ["PGDATABASE"],
+                    user=os.environ["PGUSER"],
+                    password=os.environ.get("PGPASSWORD"),
+                    autocommit=True,
+                ) as conn:
+                    with conn.cursor() as cur:
+                        cur.execute(
+                            psycopg.sql.SQL("DROP SCHEMA IF EXISTS {} CASCADE").format(
+                                psycopg.sql.Identifier(isolated_schema)
+                            )
+                        )
+            except Exception:
+                pass
+
+    smoke_payload.update(
+        {
+            "method_executed": method_executed,
+            "jar_recovery_used": jar_recovery_used,
+            "jar_path": str(recovered_jar_path if jar_recovery_used else original_jar_path),
+            "generation_status": generation_status,
+            "output_sql_extracted": output_sql_extracted,
+            "failure_category": failure_category,
+            "failure_summary": failure_summary,
+        }
+    )
+    if generation_status == "generation_success_with_output_sql":
+        smoke_payload["claim_boundary"] = "bounded_1_case_LearnedRewrite_candidate_generation_smoke_not_leaderboard"
+    smoke_result_path.write_text(json.dumps(smoke_payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    return print_and_exit(smoke_payload, 0 if generation_status in {"generation_success_with_output_sql", "method_executed_output_sql_missing"} else 1)
 
 
 def cmd_formal_learnedrewrite_llm4rewrite_jvm_jar_preflight(args: argparse.Namespace) -> int:
