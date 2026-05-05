@@ -87,6 +87,31 @@ Interpretation of the verdicts should remain narrow:
 - `source_positive` also refuted under the current first-pass empty-constraint policy.
 - This does not mean the benchmark pair is wrong by itself; it means VeriEQL found a counterexample under the currently modeled schema and no extra constraints.
 
+More concretely, the positive pair is not universally equivalent as currently modeled:
+
+- source: `SELECT EMPNO, COUNT(MGR) FROM EMP GROUP BY EMPNO, DEPTNO`
+- positive: `SELECT EMPNO, CASE WHEN MGR IS NOT NULL THEN 1 ELSE 0 END FROM EMP`
+
+The source query aggregates over `(EMPNO, DEPTNO)` groups, while the positive comparator stays row-level. VeriEQL's counterexample uses two rows with the same `(EMPNO, DEPTNO)`, one with `MGR` non-null and one with `MGR` null. Under that data:
+
+- the source collapses the group and returns one row with count `1`
+- the positive comparator returns two rows, `1` and `0`
+
+So the `source_positive` refutation is best interpreted as missing constraint bridge evidence, not as a wrapper bug or a fresh VeriEQL runtime limitation.
+
+The `source_negative` refutation is much cleaner:
+
+- source: `COUNT(MGR)`
+- negative: `COUNT(*)`
+
+Those differ whenever a grouped row has `MGR IS NULL`, so `source_negative` being `non_equivalent` is expected under universal semantics.
+
+Current support-table reading:
+
+- yes, this can enter a bounded support table as executed verifier evidence
+- caveat: only the negative refutation is clean support evidence without extra assumptions
+- the positive refutation is constraint-sensitive under empty constraints and should not be treated as a clean failure of the benchmark pair itself
+
 ## What Was Resolved
 
 - `--case-id` generalization works for the wrapper and canary commands
@@ -97,10 +122,17 @@ Interpretation of the verdicts should remain narrow:
 
 ## Next Action
 
-Next action: treat `CONS_0035` as the first real VeriEQL support-canary verdict case, then decide whether to:
+Next action: add a bounded constraint-bridge experiment for `CONS_0035` rather than searching for an even simpler case first.
 
-- keep the current first-pass empty-constraint policy and record this as bounded refutation evidence, or
-- add case-specific constraint modeling before interpreting positive-pair outcomes more strongly.
+The most plausible first constraint is:
+
+- `UNIQUE (EMPNO, DEPTNO)`
+
+or equivalently:
+
+- at most one row per `(EMPNO, DEPTNO)` group
+
+That is the smallest bridge suggested by the observed counterexample. Do not treat the positive result as a final support-table outcome until that bridge question is tested.
 
 Boundary remains unchanged:
 

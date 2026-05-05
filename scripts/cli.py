@@ -10799,6 +10799,127 @@ def cmd_formal_verieql_support_candidate_scan(args: argparse.Namespace) -> int:
     return print_and_exit(payload, 0)
 
 
+def cmd_formal_verieql_support_verdict_interpretation(args: argparse.Namespace) -> int:
+    output_name = normalize_formal_expansion_output_name(args.output)
+    case_id = "CONS_0035"
+    inferred = case_root_for_case_id(case_id)
+    if inferred is None:
+        payload = {
+            "command": "formal-verieql-support-verdict-interpretation",
+            "ok": False,
+            "ran_at_utc": utc_now(),
+            "case_id": case_id,
+            "exact_blocker": "case_not_found",
+            "claim_boundary": "verieql_support_verdict_interpretation_only_not_speedup_not_rewrite_baseline",
+        }
+        write_formal_expansion_report(output_name, payload)
+        return print_and_exit(payload, 1)
+
+    _, case_root = inferred
+    source_sql_path = case_root / "source.sql"
+    positive_sql_path = case_root / "rewrite_pos_01.sql"
+    negative_sql_path = case_root / "rewrite_neg_01.sql"
+    ddl_path = case_root / "schema" / "ddl_pg.sql"
+    wrapper_jsonl_path = verieql_support_wrapper_jsonl_path(case_id)
+    output_jsonl_path = verieql_support_canary_output_path(case_id)
+    canary_report_path = FORMAL_EXPANSION_REPORT_DIR / "verieql_support_canary_v0.json"
+
+    source_sql = source_sql_path.read_text(encoding="utf-8").strip() if source_sql_path.is_file() else ""
+    positive_sql = positive_sql_path.read_text(encoding="utf-8").strip() if positive_sql_path.is_file() else ""
+    negative_sql = negative_sql_path.read_text(encoding="utf-8").strip() if negative_sql_path.is_file() else ""
+    ddl_text = ddl_path.read_text(encoding="utf-8").strip() if ddl_path.is_file() else ""
+
+    canary_report = load_json_if_present(canary_report_path) or {}
+    output_records: list[dict[str, Any]] = []
+    if output_jsonl_path.is_file():
+        try:
+            output_records = [
+                json.loads(line)
+                for line in output_jsonl_path.read_text(encoding="utf-8").splitlines()
+                if line.strip()
+            ]
+        except (json.JSONDecodeError, OSError):
+            output_records = []
+
+    wrapper_records: list[dict[str, Any]] = []
+    if wrapper_jsonl_path.is_file():
+        try:
+            wrapper_records = [
+                json.loads(line)
+                for line in wrapper_jsonl_path.read_text(encoding="utf-8").splitlines()
+                if line.strip()
+            ]
+        except (json.JSONDecodeError, OSError):
+            wrapper_records = []
+
+    positive_counterexample = ""
+    negative_counterexample = ""
+    for record in output_records:
+        if int(record.get("index", 0)) == 1:
+            positive_counterexample = str(record.get("counterexample") or "")
+        elif int(record.get("index", 0)) == 2:
+            negative_counterexample = str(record.get("counterexample") or "")
+
+    source_positive_interpretation = (
+        "expected_non_equivalence_under_universal_semantics_due_missing_constraint_bridge"
+    )
+    source_negative_interpretation = "expected_non_equivalence_under_universal_semantics"
+    overall_diagnosis = "missing_constraint_bridge"
+    candidate_constraints = [
+        "UNIQUE (EMPNO, DEPTNO)",
+        "or equivalently: at most one row per (EMPNO, DEPTNO) group",
+    ]
+
+    payload = {
+        "command": "formal-verieql-support-verdict-interpretation",
+        "ok": True,
+        "ran_at_utc": utc_now(),
+        "case_id": case_id,
+        "source_sql_path": relative_to_root(source_sql_path),
+        "positive_sql_path": relative_to_root(positive_sql_path),
+        "negative_sql_path": relative_to_root(negative_sql_path),
+        "ddl_path": relative_to_root(ddl_path),
+        "wrapper_jsonlines_path": relative_to_root(wrapper_jsonl_path),
+        "verieql_output_path": relative_to_root(output_jsonl_path),
+        "canary_report_path": relative_to_root(canary_report_path),
+        "source_sql": source_sql,
+        "positive_sql": positive_sql,
+        "negative_sql": negative_sql,
+        "ddl_sql": ddl_text,
+        "source_positive_status": canary_report.get("source_positive_status", ""),
+        "source_negative_status": canary_report.get("source_negative_status", ""),
+        "prove_count": canary_report.get("prove_count"),
+        "refute_count": canary_report.get("refute_count"),
+        "unknown_count": canary_report.get("unknown_count"),
+        "timeout_count": canary_report.get("timeout_count"),
+        "error_count": canary_report.get("error_count"),
+        "source_positive_interpretation": source_positive_interpretation,
+        "source_negative_interpretation": source_negative_interpretation,
+        "overall_diagnosis": overall_diagnosis,
+        "suggests": {
+            "expected_non_equivalence_under_universal_semantics": True,
+            "missing_constraint_bridge": True,
+            "wrapper_schema_bug": False,
+            "verieql_semantic_subset_limitation": False,
+            "unknown": False,
+        },
+        "candidate_constraints_if_equivalence_was_intended": candidate_constraints,
+        "positive_counterexample_excerpt": positive_counterexample,
+        "negative_counterexample_excerpt": negative_counterexample,
+        "wrapper_record_count": len(wrapper_records),
+        "output_record_count": len(output_records),
+        "support_table_ready_with_caveat": True,
+        "support_table_caveat": (
+            "negative refutation is usable support evidence; positive refutation is constraint-sensitive "
+            "under the current empty-constraint first pass and should not be treated as a clean negative on the benchmark pair itself"
+        ),
+        "recommended_next_action": "add_bounded_constraint_bridge_experiment",
+        "claim_boundary": "verieql_support_verdict_interpretation_only_not_speedup_not_rewrite_baseline",
+    }
+    write_formal_expansion_report(output_name, payload)
+    return print_and_exit(payload, 0)
+
+
 def cmd_formal_common_core_preflight(args: argparse.Namespace) -> int:
     output_name = normalize_formal_common_core_output_name(args.output)
 
@@ -36857,6 +36978,17 @@ def build_parser() -> argparse.ArgumentParser:
         default="reports/formal_expansion/verieql_support_candidate_scan_v0.json",
     )
     formal_verieql_support_candidate_scan_parser.set_defaults(func=cmd_formal_verieql_support_candidate_scan)
+
+    formal_verieql_support_verdict_interpretation_parser = subparsers.add_parser(
+        "formal-verieql-support-verdict-interpretation"
+    )
+    formal_verieql_support_verdict_interpretation_parser.add_argument(
+        "--output",
+        default="reports/formal_expansion/verieql_support_verdict_interpretation_v0.json",
+    )
+    formal_verieql_support_verdict_interpretation_parser.set_defaults(
+        func=cmd_formal_verieql_support_verdict_interpretation
+    )
 
     formal_expanded_perf_direct_llm_preflight_parser = subparsers.add_parser("formal-expanded-perf-direct-llm-preflight")
     formal_expanded_perf_direct_llm_preflight_parser.add_argument(
