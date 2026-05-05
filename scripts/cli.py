@@ -1910,6 +1910,18 @@ def verieql_support_canary_output_path(case_id: str) -> Path:
     return FORMAL_EXPANSION_REPORT_DIR / "verieql_support" / f"{normalize_case_id_for_filename(case_id)}_verieql_output.jsonl"
 
 
+def verieql_support_constrained_jsonl_path(case_id: str) -> Path:
+    return FORMAL_EXPANSION_REPORT_DIR / "verieql_support" / (
+        f"{normalize_case_id_for_filename(case_id)}_pairs_with_constraints.jsonl"
+    )
+
+
+def verieql_support_constraint_output_path(case_id: str) -> Path:
+    return FORMAL_EXPANSION_REPORT_DIR / "verieql_support" / (
+        f"{normalize_case_id_for_filename(case_id)}_verieql_constraint_output.jsonl"
+    )
+
+
 def verieql_support_canary_pair_role(index: int) -> str:
     pair_role_map = {
         1: "source_positive",
@@ -10915,6 +10927,240 @@ def cmd_formal_verieql_support_verdict_interpretation(args: argparse.Namespace) 
         ),
         "recommended_next_action": "add_bounded_constraint_bridge_experiment",
         "claim_boundary": "verieql_support_verdict_interpretation_only_not_speedup_not_rewrite_baseline",
+    }
+    write_formal_expansion_report(output_name, payload)
+    return print_and_exit(payload, 0)
+
+
+def cmd_formal_verieql_support_constraint_bridge(args: argparse.Namespace) -> int:
+    output_name = normalize_formal_expansion_output_name(args.output)
+    case_id = "CONS_0035"
+    wrapper_jsonl_path = verieql_support_wrapper_jsonl_path(case_id)
+    constrained_jsonl_path = verieql_support_constrained_jsonl_path(case_id)
+    constrained_output_path = verieql_support_constraint_output_path(case_id)
+    canary_report_path = FORMAL_EXPANSION_REPORT_DIR / "verieql_support_canary_v0.json"
+    verieql_root = ROOT / "datasets" / "raw" / "verieql" / "staged" / "VeriEQL"
+    venv_python = Path("/tmp/verieql-probe-venv/bin/python")
+    timeout_seconds = 600
+    bound_size = 2
+    constraint_policy = "report_local_unique_empno_deptno"
+    bridge_constraint = {
+        "primary": [
+            {"value": "EMP__EMPNO"},
+            {"value": "EMP__DEPTNO"},
+        ]
+    }
+
+    help_command = [
+        str(venv_python),
+        "-m",
+        "parallel.cli_within_timeout",
+        "--help",
+    ]
+    execute_command = [
+        str(venv_python),
+        "-m",
+        "parallel.cli_within_timeout",
+        "-f",
+        str(constrained_jsonl_path.resolve()),
+        "-s",
+        str(bound_size),
+        "-t",
+        str(timeout_seconds),
+        "-m",
+        "train",
+        "-c",
+        "1",
+        "-i",
+        "1",
+        "-o",
+        str(constrained_output_path.resolve()),
+    ]
+
+    canary_report = load_json_if_present(canary_report_path) or {}
+    empty_positive_status = str(canary_report.get("source_positive_status") or "")
+    empty_negative_status = str(canary_report.get("source_negative_status") or "")
+
+    base_records: list[dict[str, Any]] = []
+    exact_blocker = ""
+    constraint_encoding_status = "not_attempted"
+    if wrapper_jsonl_path.is_file():
+        try:
+            base_records = [
+                json.loads(line)
+                for line in wrapper_jsonl_path.read_text(encoding="utf-8").splitlines()
+                if line.strip()
+            ]
+        except (json.JSONDecodeError, OSError):
+            exact_blocker = "input_format_mismatch"
+    else:
+        exact_blocker = "input_format_mismatch"
+
+    constrained_records: list[dict[str, Any]] = []
+    if not exact_blocker:
+        for record in base_records:
+            patched = dict(record)
+            patched["constraint"] = [bridge_constraint]
+            constrained_records.append(patched)
+        constraint_encoding_status = "structured_primary_constraint_emitted"
+        constrained_jsonl_path.parent.mkdir(parents=True, exist_ok=True)
+        constrained_jsonl_path.write_text(
+            "".join(json.dumps(record, ensure_ascii=False) + "\n" for record in constrained_records),
+            encoding="utf-8",
+        )
+
+    help_run = subprocess.run(
+        help_command,
+        cwd=str(verieql_root),
+        capture_output=True,
+        text=True,
+    )
+
+    verifier_run_status = "blocked_pre_execution"
+    output_parse_status = "not_attempted"
+    stdout_excerpt = ""
+    stderr_excerpt = ""
+    execute_return_code: int | None = None
+    source_positive_constrained_status = "not_run"
+    source_negative_constrained_status = "not_run"
+    prove_count = 0
+    refute_count = 0
+    unknown_count = 0
+    timeout_count = 0
+    error_count = 0
+    parsed_records: list[dict[str, Any]] = []
+
+    if (
+        not exact_blocker
+        and venv_python.is_file()
+        and help_run.returncode == 0
+        and constrained_jsonl_path.is_file()
+    ):
+        if constrained_output_path.exists():
+            constrained_output_path.unlink()
+        execute_run = subprocess.run(
+            execute_command,
+            cwd=str(verieql_root),
+            capture_output=True,
+            text=True,
+        )
+        execute_return_code = execute_run.returncode
+        stdout_excerpt = execute_run.stdout[-4000:]
+        stderr_excerpt = execute_run.stderr[-4000:]
+        if execute_run.returncode != 0:
+            verifier_run_status = "failed"
+            stderr_upper = execute_run.stderr.upper()
+            stdout_upper = execute_run.stdout.upper()
+            if "MODULENOTFOUNDERROR" in stderr_upper or "NO MODULE NAMED" in stderr_upper:
+                exact_blocker = "dependency_runtime_error"
+            elif "TIMEOUT" in stderr_upper or "TIMEOUT" in stdout_upper:
+                exact_blocker = "timeout"
+            elif "TRACEBACK" in stderr_upper or "TYPEERROR" in stderr_upper or "EXCEPTION" in stderr_upper:
+                exact_blocker = "runtime_exception"
+            else:
+                exact_blocker = "entrypoint_contract_mismatch"
+        else:
+            verifier_run_status = "completed"
+    elif not exact_blocker:
+        if not venv_python.is_file():
+            exact_blocker = "dependency_runtime_error"
+        elif help_run.returncode != 0:
+            exact_blocker = "entrypoint_contract_mismatch"
+
+    if verifier_run_status == "completed" and constrained_output_path.is_file():
+        try:
+            output_lines = [
+                line
+                for line in constrained_output_path.read_text(encoding="utf-8").splitlines()
+                if line.strip()
+            ]
+            output_parse_status = "parsed"
+            for record in [json.loads(line) for line in output_lines]:
+                index = int(record.get("index", 0))
+                pair_role = verieql_support_canary_pair_role(index)
+                states = record.get("states") or []
+                terminal_state = states[-1] if states else ""
+                bucket, normalized_status = verieql_state_to_status(terminal_state)
+                if bucket == "prove":
+                    prove_count += 1
+                elif bucket == "refute":
+                    refute_count += 1
+                elif bucket == "unknown":
+                    unknown_count += 1
+                elif bucket == "timeout":
+                    timeout_count += 1
+                else:
+                    error_count += 1
+                if pair_role == "source_positive":
+                    source_positive_constrained_status = normalized_status
+                elif pair_role == "source_negative":
+                    source_negative_constrained_status = normalized_status
+                parsed_records.append(
+                    {
+                        "case_id": case_id,
+                        "pair_role": pair_role,
+                        "index": index,
+                        "states": states,
+                        "times": record.get("times"),
+                        "err": record.get("err"),
+                        "counterexample_present": bool(record.get("counterexample")),
+                        "status_bucket": bucket,
+                        "status": normalized_status,
+                    }
+                )
+        except (json.JSONDecodeError, OSError, ValueError, TypeError):
+            output_parse_status = "failed"
+            verifier_run_status = "failed"
+            exact_blocker = "output_parse_error"
+
+    if verifier_run_status == "completed" and output_parse_status != "parsed":
+        verifier_run_status = "failed"
+        exact_blocker = exact_blocker or "output_parse_error"
+    if verifier_run_status == "completed" and not parsed_records:
+        verifier_run_status = "failed"
+        exact_blocker = exact_blocker or "output_parse_error"
+    if verifier_run_status == "completed" and error_count > 0 and not exact_blocker:
+        exact_blocker = "runtime_exception"
+
+    resolved_count = prove_count + refute_count
+    support_rate_if_defined: float | None = None
+    if constrained_records:
+        support_rate_if_defined = resolved_count / len(constrained_records)
+
+    payload = {
+        "command": "formal-verieql-support-constraint-bridge",
+        "ok": True,
+        "ran_at_utc": utc_now(),
+        "case_id": case_id,
+        "constraint_policy": constraint_policy,
+        "constraint_encoding_status": constraint_encoding_status,
+        "constraint_object": bridge_constraint,
+        "wrapper_jsonlines_path": relative_to_root(wrapper_jsonl_path),
+        "constrained_jsonlines_path": relative_to_root(constrained_jsonl_path),
+        "constrained_jsonlines_exists": constrained_jsonl_path.is_file(),
+        "output_artifact_path": relative_to_root(constrained_output_path),
+        "output_artifact_exists": constrained_output_path.is_file(),
+        "help_command": "cd datasets/raw/verieql/staged/VeriEQL && " + " ".join(shlex.quote(part) for part in help_command),
+        "execute_command": "cd datasets/raw/verieql/staged/VeriEQL && " + " ".join(shlex.quote(part) for part in execute_command),
+        "help_return_code": help_run.returncode,
+        "return_code": execute_return_code,
+        "stdout_excerpt": stdout_excerpt,
+        "stderr_excerpt": stderr_excerpt,
+        "verifier_run_status": verifier_run_status,
+        "output_parse_status": output_parse_status,
+        "source_positive_empty_constraint_status": empty_positive_status,
+        "source_positive_constrained_status": source_positive_constrained_status,
+        "source_negative_empty_constraint_status": empty_negative_status,
+        "source_negative_constrained_status": source_negative_constrained_status,
+        "prove_count": prove_count,
+        "refute_count": refute_count,
+        "unknown_count": unknown_count,
+        "timeout_count": timeout_count,
+        "error_count": error_count,
+        "support_rate_if_defined": support_rate_if_defined,
+        "exact_blocker_if_any": exact_blocker,
+        "records": parsed_records,
+        "claim_boundary": "verieql_constraint_bridge_experiment_only_not_final_support_result",
     }
     write_formal_expansion_report(output_name, payload)
     return print_and_exit(payload, 0)
@@ -36988,6 +37234,17 @@ def build_parser() -> argparse.ArgumentParser:
     )
     formal_verieql_support_verdict_interpretation_parser.set_defaults(
         func=cmd_formal_verieql_support_verdict_interpretation
+    )
+
+    formal_verieql_support_constraint_bridge_parser = subparsers.add_parser(
+        "formal-verieql-support-constraint-bridge"
+    )
+    formal_verieql_support_constraint_bridge_parser.add_argument(
+        "--output",
+        default="reports/formal_expansion/verieql_support_constraint_bridge_v0.json",
+    )
+    formal_verieql_support_constraint_bridge_parser.set_defaults(
+        func=cmd_formal_verieql_support_constraint_bridge
     )
 
     formal_expanded_perf_direct_llm_preflight_parser = subparsers.add_parser("formal-expanded-perf-direct-llm-preflight")

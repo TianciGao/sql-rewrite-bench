@@ -112,6 +112,25 @@ Current support-table reading:
 - caveat: only the negative refutation is clean support evidence without extra assumptions
 - the positive refutation is constraint-sensitive under empty constraints and should not be treated as a clean failure of the benchmark pair itself
 
+Follow-up bounded constraint-bridge experiment:
+
+- report-local constraint tested: `UNIQUE (EMPNO, DEPTNO)`
+- encoding used: `{"primary":[{"value":"EMP__EMPNO"},{"value":"EMP__DEPTNO"}]}`
+- constrained `source_positive` result: `timeout`
+- constrained `source_negative` result: `non_equivalent`
+
+That changes the reading in an important way:
+
+- the positive pair no longer refutes once the uniqueness bridge is supplied
+- however, it also does not finish with a proof inside the bounded 600-second run
+- the negative pair remains a clean refutation even with the bridge present
+
+So the current best interpretation is:
+
+- empty-constraint `source_positive` refutation was genuinely constraint-sensitive
+- the bridge is accepted by VeriEQL and materially changes the search outcome
+- but the bridge experiment is not yet a final proof of positive equivalence
+
 ## What Was Resolved
 
 - `--case-id` generalization works for the wrapper and canary commands
@@ -122,17 +141,17 @@ Current support-table reading:
 
 ## Next Action
 
-Next action: add a bounded constraint-bridge experiment for `CONS_0035` rather than searching for an even simpler case first.
+Next action after the bridge experiment: keep `CONS_0035` as the active support canary and decide whether another bounded follow-up is worth the solver cost.
 
-The most plausible first constraint is:
+The current evidence already shows:
 
-- `UNIQUE (EMPNO, DEPTNO)`
+- unconstrained positive: `non_equivalent`
+- constrained positive: `timeout` after repeated `EQU` states through growing bounds
+- constrained negative: `non_equivalent`
 
-or equivalently:
+That is enough to support the narrow statement that the positive result is constraint-sensitive. It is not enough yet to claim a clean proved-positive support result.
 
-- at most one row per `(EMPNO, DEPTNO)` group
-
-That is the smallest bridge suggested by the observed counterexample. Do not treat the positive result as a final support-table outcome until that bridge question is tested.
+If this line is pushed further, the next step should be a bounded decision about whether to keep this as caveated support evidence or invest in a more targeted proof-oriented experiment.
 
 Boundary remains unchanged:
 

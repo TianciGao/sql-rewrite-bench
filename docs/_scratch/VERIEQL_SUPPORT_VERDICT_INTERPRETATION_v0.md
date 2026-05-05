@@ -35,13 +35,36 @@ DDL:
 CREATE TABLE EMP (EMPNO BIGINT, MGR BIGINT, DEPTNO BIGINT);
 ```
 
-## Verdicts
+## Empty-Constraint Verdicts
 
 - `source_positive_status=non_equivalent`
 - `source_negative_status=non_equivalent`
 - `prove_count=0`
 - `refute_count=2`
 - `error_count=0`
+
+## Constraint-Bridge Follow-Up
+
+A bounded report-local constraint bridge was then tested with:
+
+- `UNIQUE (EMPNO, DEPTNO)`
+
+encoded as:
+
+```json
+{"primary":[{"value":"EMP__EMPNO"},{"value":"EMP__DEPTNO"}]}
+```
+
+Constrained result:
+
+- `source_positive_constrained_status=timeout`
+- `source_negative_constrained_status=non_equivalent`
+- `prove_count=0`
+- `refute_count=1`
+- `timeout_count=1`
+- `error_count=0`
+
+This matters because the positive pair no longer refuted under the bridge. Instead, VeriEQL remained on repeated `EQU` states until the bounded 600-second limit was reached.
 
 ## Source-Positive Interpretation
 
@@ -91,7 +114,7 @@ Do not add these yet, but the smallest plausible bridge suggested by the counter
 - `UNIQUE (EMPNO, DEPTNO)`
 - equivalently: at most one row per `(EMPNO, DEPTNO)` group
 
-That would block the specific duplicate-group counterexample and is the first bounded constraint to test.
+That was the first bounded constraint tested, and it did block the earlier immediate duplicate-group refutation behavior. It did not, however, complete a final proof within the bounded run.
 
 ## Support-Table Readiness
 
@@ -104,8 +127,9 @@ Usable now:
 
 Required caveat:
 
-- positive pair refutation is constraint-sensitive under the current empty-constraint first pass
-- it should not be treated as a clean failure of the benchmark pair itself
+- under empty constraints, the positive pair refutes
+- under the tested uniqueness bridge, the positive pair times out rather than refuting or proving
+- so the positive side is clearly constraint-sensitive, but still not proof-closed
 
 So the correct status is:
 
@@ -113,6 +137,6 @@ So the correct status is:
 
 ## Recommended Next Step
 
-Recommended next step: add a bounded constraint-bridge experiment for `CONS_0035`.
+Recommended next step: record `CONS_0035` as bounded support evidence with caveat and stop short of stronger claims.
 
-That is better than scanning for an even simpler case first, because the current executed result already isolates a precise semantic reason for the positive refutation.
+If further work is justified later, it should be a narrowly scoped proof-oriented follow-up on the constrained positive pair, not another candidate scan.
