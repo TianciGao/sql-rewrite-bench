@@ -232,6 +232,8 @@ LLMR2_ADAPTER_PREFLIGHT_ROOT = Path("/tmp/rewritebench_llmr2_adapter_preflight")
 LLMR2_SINGLE_CASE_RUNNER_ROOT = Path("/tmp/rewritebench_llmr2_single_case_runner")
 LLMR2_FAST_PATH_ROOT = Path("/tmp/rewritebench_llmr2_fast_path")
 LLMR2_10CASE_PREFLIGHT_ROOT = Path("/tmp/rewritebench_llmr2_10case_preflight")
+SQLSOLVER_AUDIT_ROOT = Path("/tmp/rewritebench_sqlsolver_audit") / "candidate"
+SQLSOLVER_ADAPTER_PREFLIGHT_ROOT = Path("/tmp/rewritebench_sqlsolver_adapter_preflight")
 LLMR2_SUPPORTED_CASE_IDS = {
     "PERF_0006", "PERF_0008", "PERF_0013", "PERF_0017", "PERF_0019",
     "PERF_0024", "PERF_0033", "PERF_0052", "PERF_0054", "PERF_0063",
@@ -496,6 +498,13 @@ def llm_translate_report_name(kind: str, case_id: str) -> str:
 
 def normalize_sql_for_compare(sql_text: str) -> str:
     return re.sub(r"\s+", " ", sql_text).strip().lower()
+
+
+def normalize_sql_for_single_line_contract(sql_text: str) -> str:
+    normalized = re.sub(r"\s+", " ", sql_text).strip()
+    if normalized.endswith(";"):
+        normalized = normalized[:-1].rstrip()
+    return normalized
 
 
 def manifest_source_dialect_hint(manifest_text: str) -> str:
@@ -28388,6 +28397,329 @@ def cmd_formal_llmr2_adapter_preflight(args: argparse.Namespace) -> int:
     return print_and_exit(payload, 0 if ok else 1)
 
 
+def cmd_formal_sqlsolver_adapter_preflight(args: argparse.Namespace) -> int:
+    case_ids = [str(case_id).strip().upper() for case_id in (args.cases or []) if str(case_id).strip()]
+    if not case_ids:
+        payload = {
+            "command": "formal-sqlsolver-adapter-preflight",
+            "ok": False,
+            "ran_at_utc": utc_now(),
+            "failure_category": "missing_cases",
+            "failure_summary": "at least one case id is required",
+            "claim_boundary": "sqlsolver_adapter_preflight_only_not_execution",
+        }
+        return print_and_exit(payload, 1)
+
+    repo_path = SQLSOLVER_AUDIT_ROOT
+    entrypoint_path = repo_path / "api" / "src" / "main" / "java" / "sqlsolver" / "api" / "Entry.java"
+    build_gradle_path = repo_path / "build.gradle"
+    properties_path = repo_path / "sqlsolver.properties"
+    z3_lib_path = repo_path / "lib" / "libz3.so"
+    license_path = repo_path / "LICENSE"
+
+    repo_commit = ""
+    if (repo_path / ".git").exists():
+        try:
+            repo_commit = subprocess.run(
+                ["git", "-C", str(repo_path), "rev-parse", "HEAD"],
+                check=True,
+                capture_output=True,
+                text=True,
+                encoding="utf-8",
+            ).stdout.strip()
+        except subprocess.CalledProcessError:
+            repo_commit = ""
+
+    verdict_contract = {
+        "EQ": "proved_equivalent",
+        "NEQ": "refuted_equivalence",
+        "TIMEOUT": "timeout",
+        "UNKNOWN": "unknown_or_unsupported",
+    }
+
+    per_case_files: dict[str, dict[str, Any]] = {}
+    per_case_expected_verdicts: dict[str, dict[str, Any]] = {}
+    per_case_readiness: dict[str, dict[str, Any]] = {}
+    bundle_paths: list[str] = []
+    any_missing_artifact = False
+
+    for case_id in case_ids:
+        inferred = case_root_for_case_id(case_id)
+        if inferred is None:
+            per_case_files[case_id] = {"case_root": "", "resolved": False}
+            per_case_expected_verdicts[case_id] = {}
+            per_case_readiness[case_id] = {
+                "status": "blocked_missing_case_artifact",
+                "notes": ["case root could not be resolved"],
+                "contract_gaps": ["case resolution failed"],
+            }
+            any_missing_artifact = True
+            continue
+
+        pool, case_root = inferred
+        source_sql_path = case_root / "source.sql"
+        positive_sql_path = case_root / "rewrite_pos_01.sql"
+        negative_sql_path = case_root / "rewrite_neg_01.sql"
+        schema_path = case_root / "schema" / "ddl_pg.sql"
+        manifest_path = case_root / "manifest.yaml"
+        result_check_path = case_root / "runs" / "pg" / "result_check.json"
+        control_result_check_path = case_root / "runs" / "result_check.json"
+
+        source_sql_exists = source_sql_path.is_file()
+        positive_sql_exists = positive_sql_path.is_file()
+        negative_sql_exists = negative_sql_path.is_file()
+        schema_exists = schema_path.is_file()
+        manifest_exists = manifest_path.is_file()
+        result_check_exists = result_check_path.is_file()
+        control_result_check_exists = control_result_check_path.is_file()
+
+        manifest_text = manifest_path.read_text(encoding="utf-8") if manifest_exists else ""
+        source_sql_text = source_sql_path.read_text(encoding="utf-8") if source_sql_exists else ""
+        positive_sql_text = positive_sql_path.read_text(encoding="utf-8") if positive_sql_exists else ""
+        negative_sql_text = negative_sql_path.read_text(encoding="utf-8") if negative_sql_exists else ""
+        schema_text = schema_path.read_text(encoding="utf-8") if schema_exists else ""
+
+        bundle_dir = SQLSOLVER_ADAPTER_PREFLIGHT_ROOT / case_id
+        bundle_dir.mkdir(parents=True, exist_ok=True)
+
+        bundle_positive_sql1 = bundle_dir / "sql1_positive.sql"
+        bundle_positive_sql2 = bundle_dir / "sql2_positive.sql"
+        bundle_negative_sql1 = bundle_dir / "sql1_negative.sql"
+        bundle_negative_sql2 = bundle_dir / "sql2_negative.sql"
+        bundle_schema = bundle_dir / "schema.sql"
+        bundle_expected_verdicts = bundle_dir / "expected_verdicts.json"
+        bundle_metadata = bundle_dir / "sqlsolver_case_metadata.json"
+        bundle_future_command = bundle_dir / "future_command_NOT_RUN.txt"
+        bundle_output_contract = bundle_dir / "output_verdict_contract.md"
+
+        if source_sql_exists:
+            bundle_positive_sql1.write_text(normalize_sql_for_single_line_contract(source_sql_text) + "\n", encoding="utf-8")
+        else:
+            bundle_positive_sql1.write_text("-- missing source.sql\n", encoding="utf-8")
+        if positive_sql_exists:
+            bundle_positive_sql2.write_text(normalize_sql_for_single_line_contract(positive_sql_text) + "\n", encoding="utf-8")
+        else:
+            bundle_positive_sql2.write_text("-- missing rewrite_pos_01.sql\n", encoding="utf-8")
+        if negative_sql_exists:
+            negative_sql1_text = source_sql_text if source_sql_exists else "-- missing source.sql"
+            bundle_negative_sql1.write_text(normalize_sql_for_single_line_contract(negative_sql1_text) + "\n", encoding="utf-8")
+            bundle_negative_sql2.write_text(normalize_sql_for_single_line_contract(negative_sql_text) + "\n", encoding="utf-8")
+        else:
+            bundle_negative_sql1.write_text("-- negative pair not available\n", encoding="utf-8")
+            bundle_negative_sql2.write_text("-- negative pair not available\n", encoding="utf-8")
+        if schema_exists:
+            bundle_schema.write_text(schema_text, encoding="utf-8")
+        else:
+            bundle_schema.write_text("-- missing schema/ddl_pg.sql\n", encoding="utf-8")
+
+        expected_verdict_payload = {
+            "case_id": case_id,
+            "positive_pair": {
+                "available": source_sql_exists and positive_sql_exists,
+                "sql1_path": str(bundle_positive_sql1),
+                "sql2_path": str(bundle_positive_sql2),
+                "expected_support_intent": "prove_equivalent" if positive_sql_exists else "not_available",
+            },
+            "negative_pair": {
+                "available": source_sql_exists and negative_sql_exists,
+                "sql1_path": str(bundle_negative_sql1) if negative_sql_exists else "",
+                "sql2_path": str(bundle_negative_sql2) if negative_sql_exists else "",
+                "expected_support_intent": "refute_equivalence" if negative_sql_exists else "not_available",
+            },
+            "verdict_mapping_policy": verdict_contract,
+            "wrapper_side_failure_categories": [
+                "parser_or_translation_failure",
+                "internal_error",
+            ],
+        }
+        bundle_expected_verdicts.write_text(
+            json.dumps(expected_verdict_payload, indent=2, sort_keys=True) + "\n",
+            encoding="utf-8",
+        )
+
+        contract_gaps: list[str] = []
+        sql_shape_text = " ".join(filter(None, [source_sql_text, positive_sql_text, negative_sql_text])).lower()
+        if "exists" in sql_shape_text:
+            contract_gaps.append("schema_or_solver_gap_correlated_exists_support_risk")
+        if "count(" in sql_shape_text or "group by" in sql_shape_text:
+            contract_gaps.append("sql_subset_gap_aggregate_and_null_semantics_risk")
+        if schema_exists and "primary key" not in schema_text.lower() and "foreign key" not in schema_text.lower():
+            contract_gaps.append("schema_constraint_gap_no_pk_fk_metadata")
+        if schema_exists and "unique" not in schema_text.lower():
+            contract_gaps.append("schema_constraint_gap_no_uniqueness_metadata")
+        contract_gaps.extend(
+            [
+                "verdict_granularity_gap_unknown_conflates_unsupported_and_parse_failure",
+                "timeout_policy_not_yet_pinned",
+            ]
+        )
+
+        notes: list[str] = []
+        if manifest_exists:
+            source_family = manifest_source_family_hint(manifest_text)
+            source_dialect = manifest_source_dialect_hint(manifest_text)
+            if source_family:
+                notes.append(f"source_family={source_family}")
+            if source_dialect:
+                notes.append(f"source_dialect={source_dialect}")
+        if result_check_exists:
+            notes.append("pg_result_check_present")
+        if control_result_check_exists:
+            notes.append("cross_engine_result_check_present")
+
+        readiness_status = "adapter_preflight_ready_not_executed"
+        if not source_sql_exists or not positive_sql_exists or not schema_exists:
+            readiness_status = "blocked_missing_case_artifact"
+            any_missing_artifact = True
+
+        metadata_payload = {
+            "case_id": case_id,
+            "pool": pool,
+            "case_root": relative_to_root(case_root),
+            "sqlsolver_repo_path": str(repo_path),
+            "sqlsolver_repo_commit": repo_commit,
+            "entrypoint": "sqlsolver.api.Entry",
+            "source_sql_path": relative_to_root(source_sql_path),
+            "positive_sql_path": relative_to_root(positive_sql_path),
+            "negative_sql_path": relative_to_root(negative_sql_path) if negative_sql_exists else "",
+            "schema_path": relative_to_root(schema_path),
+            "manifest_path": relative_to_root(manifest_path),
+            "pg_result_check_path": relative_to_root(result_check_path) if result_check_exists else "",
+            "control_result_check_path": relative_to_root(control_result_check_path) if control_result_check_exists else "",
+            "expected_positive_verdict": "prove_equivalent",
+            "expected_negative_verdict": "refute_equivalence" if negative_sql_exists else "not_available",
+            "support_only_metrics": [
+                "prove_count",
+                "refute_count",
+                "unknown_count",
+                "timeout_count",
+                "unsupported_count",
+                "parser_or_translation_failure_count",
+                "internal_error_count",
+                "verifier_support_rate",
+            ],
+            "claim_boundary": "sqlsolver_adapter_preflight_only_not_execution",
+        }
+        bundle_metadata.write_text(
+            json.dumps(metadata_payload, indent=2, sort_keys=True) + "\n",
+            encoding="utf-8",
+        )
+
+        future_command_text = (
+            "NOT RUN\n\n"
+            "Future SQLSolver support-only command shape:\n"
+            "java -jar build/libs/sqlsolver.jar \\\n"
+            f"  -sql1={bundle_positive_sql1} \\\n"
+            f"  -sql2={bundle_positive_sql2} \\\n"
+            f"  -schema={bundle_schema} \\\n"
+            f"  -output={bundle_dir / 'positive_verdicts.txt'}\n\n"
+            "Negative-pair variant if available:\n"
+            "java -jar build/libs/sqlsolver.jar \\\n"
+            f"  -sql1={bundle_negative_sql1} \\\n"
+            f"  -sql2={bundle_negative_sql2} \\\n"
+            f"  -schema={bundle_schema} \\\n"
+            f"  -output={bundle_dir / 'negative_verdicts.txt'}\n\n"
+            "Not run in this preflight.\n"
+        )
+        bundle_future_command.write_text(future_command_text, encoding="utf-8")
+
+        output_contract_text = (
+            "# Output Verdict Contract\n\n"
+            "Support/verifier only. No execution occurred in this preflight.\n\n"
+            "SQLSolver verdict mapping:\n"
+            "- `EQ` -> `proved_equivalent`\n"
+            "- `NEQ` -> `refuted_equivalence`\n"
+            "- `TIMEOUT` -> `timeout`\n"
+            "- `UNKNOWN` -> `unknown_or_unsupported`\n\n"
+            "Wrapper-side categories, not SQLSolver verdicts:\n"
+            "- `parser_or_translation_failure`\n"
+            "- `internal_error`\n\n"
+            "Out of scope:\n"
+            "- no GM_Speedup\n"
+            "- no W/T/L\n"
+            "- no RegressionRate@20\n"
+            "- no rewrite leaderboard\n"
+        )
+        bundle_output_contract.write_text(output_contract_text, encoding="utf-8")
+
+        bundle_paths.extend(
+            [
+                str(bundle_positive_sql1),
+                str(bundle_positive_sql2),
+                str(bundle_negative_sql1),
+                str(bundle_negative_sql2),
+                str(bundle_schema),
+                str(bundle_expected_verdicts),
+                str(bundle_metadata),
+                str(bundle_future_command),
+                str(bundle_output_contract),
+            ]
+        )
+
+        per_case_files[case_id] = {
+            "case_root": relative_to_root(case_root),
+            "source_sql_path": relative_to_root(source_sql_path),
+            "positive_sql_path": relative_to_root(positive_sql_path),
+            "negative_sql_path": relative_to_root(negative_sql_path) if negative_sql_exists else "",
+            "schema_path": relative_to_root(schema_path),
+            "manifest_path": relative_to_root(manifest_path),
+            "pg_result_check_path": relative_to_root(result_check_path) if result_check_exists else "",
+            "control_result_check_path": relative_to_root(control_result_check_path) if control_result_check_exists else "",
+            "bundle_path": str(bundle_dir),
+            "bundle_files": {
+                "sql1_positive": str(bundle_positive_sql1),
+                "sql2_positive": str(bundle_positive_sql2),
+                "sql1_negative": str(bundle_negative_sql1) if negative_sql_exists else "",
+                "sql2_negative": str(bundle_negative_sql2) if negative_sql_exists else "",
+                "schema": str(bundle_schema),
+                "expected_verdicts": str(bundle_expected_verdicts),
+                "metadata": str(bundle_metadata),
+                "future_command_not_run": str(bundle_future_command),
+                "output_verdict_contract": str(bundle_output_contract),
+            },
+            "files_found": {
+                "source_sql": source_sql_exists,
+                "positive_sql": positive_sql_exists,
+                "negative_sql": negative_sql_exists,
+                "schema": schema_exists,
+                "manifest": manifest_exists,
+                "pg_result_check": result_check_exists,
+                "control_result_check": control_result_check_exists,
+            },
+        }
+        per_case_expected_verdicts[case_id] = expected_verdict_payload
+        per_case_readiness[case_id] = {
+            "status": readiness_status,
+            "notes": notes,
+            "contract_gaps": contract_gaps,
+        }
+
+    output_path = Path("/tmp/rewritebench_sqlsolver_adapter_preflight_cons_0007_0035_v1.json")
+    payload = {
+        "command": "formal-sqlsolver-adapter-preflight",
+        "ok": not any_missing_artifact,
+        "ran_at_utc": utc_now(),
+        "cases": case_ids,
+        "sqlsolver_repo_path": str(repo_path),
+        "sqlsolver_repo_commit": repo_commit,
+        "entrypoint_found": entrypoint_path.is_file(),
+        "entrypoint": "sqlsolver.api.Entry",
+        "verdict_contract": verdict_contract,
+        "build_contract_found": build_gradle_path.is_file(),
+        "solver_dependency_found": z3_lib_path.is_file(),
+        "license_found": license_path.is_file(),
+        "properties_file_found": properties_path.is_file(),
+        "per_case_files": per_case_files,
+        "per_case_expected_verdicts": per_case_expected_verdicts,
+        "per_case_readiness": per_case_readiness,
+        "bundle_paths": bundle_paths,
+        "output_path": str(output_path),
+        "claim_boundary": "sqlsolver_adapter_preflight_only_not_execution",
+    }
+    output_path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    return print_and_exit(payload, 0 if payload["ok"] else 1)
+
+
 def cmd_formal_llmr2_single_case_run(args: argparse.Namespace) -> int:
     case_id = str(args.case).strip().upper()
     dry_run_only = bool(args.dry_run)
@@ -42969,6 +43301,14 @@ def build_parser() -> argparse.ArgumentParser:
     formal_llmr2_adapter_preflight_parser.add_argument("--case", required=True)
     formal_llmr2_adapter_preflight_parser.set_defaults(
         func=cmd_formal_llmr2_adapter_preflight
+    )
+
+    formal_sqlsolver_adapter_preflight_parser = subparsers.add_parser(
+        "formal-sqlsolver-adapter-preflight"
+    )
+    formal_sqlsolver_adapter_preflight_parser.add_argument("--cases", nargs="+", required=True)
+    formal_sqlsolver_adapter_preflight_parser.set_defaults(
+        func=cmd_formal_sqlsolver_adapter_preflight
     )
 
     formal_llmr2_single_case_run_parser = subparsers.add_parser(
