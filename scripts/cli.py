@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import ast
 import csv
 import hashlib
 import importlib
@@ -9,6 +10,7 @@ import math
 import os
 import re
 import shlex
+import shutil
 import statistics
 import subprocess
 import sys
@@ -28633,21 +28635,26 @@ def cmd_formal_rbot_llm4rewrite_single_case_smoke_run(args: argparse.Namespace) 
     artifact_paths_path = runner_dir / "artifact_paths.json"
     dry_run_summary_path = runner_dir / "dry_run_summary.json"
     do_not_run_path = runner_dir / "DO_NOT_RUN_YET.txt"
+    smoke_result_path = runner_dir / "smoke_result.json"
 
     source_sql_path = ROOT / "missing.sql"
     pg_schema_path = ROOT / "missing.sql"
+    pg_data_sql_path = ROOT / "missing.sql"
     pool = ""
     if inferred is not None:
         pool, case_root = inferred
         source_sql_path = case_root / "source.sql"
         pg_schema_path = case_root / "schema" / "ddl_pg.sql"
+        pg_data_sql_path = case_root / "validation" / "pg_witness_data.sql"
 
     harness_dir = RBOT_LLM4REWRITE_SINGLE_CASE_SMOKE_ROOT / case_id
     rag_index_dir = Path("/tmp/rewritebench_rbot_llm4rewrite_rag_build_openai_like/rag/chroma_db")
+    rag_build_root = Path("/tmp/rewritebench_rbot_llm4rewrite_rag_build_openai_like")
     smoke_venv_python = Path("/tmp/rewritebench_rbot_llm4rewrite_venv_smoke/bin/python")
 
     source_sql_found = source_sql_path.is_file()
     pg_schema_found = pg_schema_path.is_file()
+    pg_data_sql_found = pg_data_sql_path.is_file()
     single_case_harness_found = harness_dir.is_dir()
     rag_index_found = rag_index_dir.exists()
     smoke_venv_found = smoke_venv_python.is_file()
@@ -28663,6 +28670,8 @@ def cmd_formal_rbot_llm4rewrite_single_case_smoke_run(args: argparse.Namespace) 
     method_stdout_path = runner_dir / "method_stdout.log"
     method_stderr_path = runner_dir / "method_stderr.log"
     checker_candidate_sql_path = runner_dir / "checker_candidate_sql.sql"
+    runtime_root = runner_dir / "runtime_root"
+    internal_method_log_path = runner_dir / "method_internal.log"
 
     artifact_paths = {
         "generated_sql_path": str(generated_sql_path),
@@ -28738,8 +28747,7 @@ def cmd_formal_rbot_llm4rewrite_single_case_smoke_run(args: argparse.Namespace) 
         blockers.append("artifact_paths_not_written")
 
     can_execute_smoke_next = (
-        dry_run_only
-        and case_id in supported_case_ids
+        case_id in supported_case_ids
         and inferred is not None
         and source_sql_found
         and pg_schema_found
@@ -28775,7 +28783,299 @@ def cmd_formal_rbot_llm4rewrite_single_case_smoke_run(args: argparse.Namespace) 
         "claim_boundary": "single_case_runner_dry_run_only_not_rbot_result",
     }
     dry_run_summary_path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-    return print_and_exit(payload, 0 if can_execute_smoke_next else 1)
+    if dry_run_only:
+        return print_and_exit(payload, 0 if can_execute_smoke_next else 1)
+
+    generation_status = "generation_failed"
+    output_sql_extracted = False
+    checker_status = "not_run"
+    consistency_status = "not_checked"
+    speedup_status = "not_run"
+    failure_category = ""
+    failure_summary = ""
+    method_executed = False
+    selected_rules_payload: dict[str, Any] = {"available": False}
+    retrieval_trace_payload: dict[str, Any] = {"available": False}
+    token_cost_payload: dict[str, Any] = {"available": False}
+    dry_run_passed = can_execute_smoke_next
+
+    smoke_payload = {
+        "case_id": case_id,
+        "method": "R-Bot via LLM4Rewrite",
+        "dry_run_passed": dry_run_passed,
+        "method_executed": method_executed,
+        "generation_status": generation_status,
+        "output_sql_extracted": output_sql_extracted,
+        "generated_sql_path": str(generated_sql_path),
+        "selected_rules_path": str(selected_rules_path),
+        "retrieval_trace_path": str(retrieval_trace_path),
+        "token_cost_log_path": str(token_cost_log_path),
+        "method_stdout_path": str(method_stdout_path),
+        "method_stderr_path": str(method_stderr_path),
+        "checker_status": checker_status,
+        "consistency_status": consistency_status,
+        "speedup_status": speedup_status,
+        "failure_category": failure_category,
+        "failure_summary": failure_summary,
+        "claim_boundary": "bounded_1_case_RBot_LLM4Rewrite_generation_smoke_not_leaderboard",
+    }
+
+    if not dry_run_passed:
+        smoke_payload["failure_category"] = "dry_run_failed"
+        smoke_payload["failure_summary"] = "dry-run prerequisites did not pass"
+        smoke_result_path.write_text(json.dumps(smoke_payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+        return print_and_exit(smoke_payload, 1)
+
+    def _strip_sql_comments(text: str) -> str:
+        return "\n".join(line for line in text.splitlines() if not re.match(r"^\s*--", line))
+
+    def _read_statements(path: Path) -> list[str]:
+        text = _strip_sql_comments(path.read_text(encoding="utf-8"))
+        return [stmt.strip() for stmt in text.split(";") if stmt.strip()]
+
+    isolated_schema = f"rbot_llm4rewrite_{case_id.lower()}_smoke_{int(time.time())}"
+    schema_created = False
+    try:
+        if runtime_root.exists():
+            shutil.rmtree(runtime_root)
+        shutil.copytree(rag_build_root, runtime_root)
+        upstream_gen_rules = RBOT_LLM4REWRITE_AUDIT_ROOT / "rag" / "gen_rewrites_from_rules.py"
+        runtime_gen_rules = runtime_root / "rag" / "gen_rewrites_from_rules.py"
+        if upstream_gen_rules.is_file():
+            runtime_gen_rules.write_text(upstream_gen_rules.read_text(encoding="utf-8"), encoding="utf-8")
+        for rel in ["knowledge-base/rule_cluster_funcs/24.py", "rag/gen_sql_templates.py"]:
+            shim_path = runtime_root / rel
+            if shim_path.is_file():
+                shim_text = shim_path.read_text(encoding="utf-8")
+                shim_text = shim_text.replace(
+                    "from sqlglot.optimizer.simplify import NONDETERMINISTIC",
+                    "from sqlglot.optimizer.simplify import Simplifier\nNONDETERMINISTIC = Simplifier.NONDETERMINISTIC",
+                )
+                shim_path.write_text(shim_text, encoding="utf-8")
+        calcite_src_jar_dir = (
+            RBOT_LLM4REWRITE_AUDIT_ROOT
+            / "CalciteRewrite"
+            / "out"
+            / "artifacts"
+            / "LearnedRewrite_jar"
+        )
+        calcite_dst_jar_dir = (
+            runtime_root
+            / "my_rewriter"
+            / "CalciteRewrite"
+            / "out"
+            / "artifacts"
+            / "LearnedRewrite_jar"
+        )
+        calcite_dst_jar_dir.mkdir(parents=True, exist_ok=True)
+        for jar_path in calcite_src_jar_dir.iterdir():
+            if jar_path.is_file():
+                shutil.copy2(jar_path, calcite_dst_jar_dir / jar_path.name)
+        temp_learnedrewrite_jar = calcite_dst_jar_dir / "LearnedRewrite.jar"
+        if temp_learnedrewrite_jar.is_file():
+            import zipfile
+            temp_unsigned_jar = calcite_dst_jar_dir / "LearnedRewrite.unsigned.jar"
+            with zipfile.ZipFile(temp_learnedrewrite_jar, "r") as zin, zipfile.ZipFile(temp_unsigned_jar, "w") as zout:
+                for item in zin.infolist():
+                    upper_name = item.filename.upper()
+                    if upper_name.startswith("META-INF/") and (
+                        upper_name.endswith(".SF") or upper_name.endswith(".RSA") or upper_name.endswith(".DSA")
+                    ):
+                        continue
+                    zout.writestr(item, zin.read(item.filename))
+            temp_unsigned_jar.replace(temp_learnedrewrite_jar)
+        cache_dir = runtime_root / "my_rewriter" / "cache"
+        cache_dir.mkdir(parents=True, exist_ok=True)
+        cache_file = cache_dir / f"{os.environ['PGDATABASE']}.jsonl"
+        if not cache_file.exists():
+            cache_file.write_text("", encoding="utf-8")
+
+        psycopg = importlib.import_module("psycopg")
+        ddl_statements = _read_statements(pg_schema_path)
+        data_statements = _read_statements(pg_data_sql_path) if pg_data_sql_found else []
+        with psycopg.connect(
+            host=os.environ["PGHOST"],
+            port=os.environ["PGPORT"],
+            dbname=os.environ["PGDATABASE"],
+            user=os.environ["PGUSER"],
+            password=os.environ.get("PGPASSWORD"),
+            autocommit=False,
+        ) as conn:
+            with conn.cursor() as cur:
+                cur.execute("SELECT set_config('statement_timeout', %s, false)", ("30000",))
+                cur.execute(
+                    psycopg.sql.SQL("CREATE SCHEMA {}").format(
+                        psycopg.sql.Identifier(isolated_schema)
+                    )
+                )
+                cur.execute(
+                    psycopg.sql.SQL("SET search_path TO {}, public").format(
+                        psycopg.sql.Identifier(isolated_schema)
+                    )
+                )
+                for stmt in ddl_statements:
+                    cur.execute(stmt)
+                for stmt in data_statements:
+                    cur.execute(stmt)
+                conn.commit()
+                schema_created = True
+
+        runner_script = (
+            "import json\n"
+            "import os\n"
+            "from pathlib import Path\n"
+            "from my_rewriter.config import init_llms\n"
+            "from my_rewriter.database import DBArgs\n"
+            "from my_rewriter.rag_retrieve import init_docstore\n"
+            "from my_rewriter.test_utils import test\n"
+            "case_id = 'PERF_0006'\n"
+            f"query = Path({repr(str((harness_dir / 'source.sql')))}).read_text(encoding='utf-8')\n"
+            f"schema = Path({repr(str((harness_dir / 'create_tables.sql')))}).read_text(encoding='utf-8')\n"
+            "config = {\n"
+            "  'host': os.environ['PGHOST'],\n"
+            "  'port': int(os.environ['PGPORT']),\n"
+            "  'user': os.environ['PGUSER'],\n"
+            "  'password': os.environ.get('PGPASSWORD', ''),\n"
+            "  'dbname': os.environ['PGDATABASE'],\n"
+            "  'db': 'postgresql',\n"
+            "}\n"
+            "model_args = init_llms('', load_model=True)\n"
+            "pg_args = DBArgs(config)\n"
+            "docstore = init_docstore()\n"
+            f"test('method_stdout', query, schema, pg_args, model_args, docstore, {repr(str(runner_dir))}, RETRIEVER_TOP_K=10, CASE_BATCH=5, RULE_BATCH=10, REWRITE_ROUNDS=1, index='hybrid')\n"
+        )
+        env = os.environ.copy()
+        env["PYTHONPATH"] = str(runtime_root)
+        env["PGOPTIONS"] = f"-c search_path={isolated_schema},public -c statement_timeout=30000"
+
+        with internal_method_log_path.open("w", encoding="utf-8") as stdout_fh, method_stderr_path.open("w", encoding="utf-8") as stderr_fh:
+            proc = subprocess.run(
+                [str(smoke_venv_python), "-c", runner_script],
+                cwd=runtime_root / "my_rewriter",
+                env=env,
+                stdout=stdout_fh,
+                stderr=stderr_fh,
+                text=True,
+            )
+        method_executed = True
+        generation_status = "generation_success" if proc.returncode == 0 else "generation_failed"
+        if proc.returncode != 0:
+            failure_category = "subprocess_nonzero_exit"
+            failure_summary = f"smoke subprocess exited with code {proc.returncode}"
+
+        log_path = runner_dir / "method_stdout.log"
+        if log_path.exists():
+            log_text = log_path.read_text(encoding="utf-8", errors="ignore")
+            internal_method_log_path.write_text(log_text, encoding="utf-8")
+            rewrite_matches = re.findall(r"Rewrite Execution Results: (\{.*?\})", log_text)
+            rewrite_payload = None
+            if rewrite_matches:
+                try:
+                    rewrite_payload = ast.literal_eval(rewrite_matches[-1])
+                except Exception:
+                    rewrite_payload = None
+            if rewrite_payload and str(rewrite_payload.get("output_sql", "")).strip() not in {"", "None"}:
+                generated_sql = str(rewrite_payload.get("output_sql", "")).strip()
+                generated_sql_path.write_text(generated_sql.rstrip() + "\n", encoding="utf-8")
+                checker_candidate_sql_path.write_text(generated_sql.rstrip() + "\n", encoding="utf-8")
+                output_sql_extracted = True
+                token_cost_payload = {
+                    "available": True,
+                    "input_cost": None,
+                    "output_cost": rewrite_payload.get("output_cost"),
+                    "rewrite_time_ms": rewrite_payload.get("time"),
+                    "used_rules_count": len(rewrite_payload.get("used_rules", [])),
+                    "token_usage_available": False,
+                }
+                selected_rules_payload = {
+                    "available": True,
+                    "used_rules": rewrite_payload.get("used_rules", []),
+                }
+            input_cost_match = re.search(r"Input Cost: ([^\n]+)", log_text)
+            if input_cost_match:
+                token_cost_payload.setdefault("available", True)
+                token_cost_payload["input_cost"] = input_cost_match.group(1).strip()
+            rules_after = re.findall(r"Rules After the \d+th Selection: ([^\n]+)", log_text)
+            arranged = re.findall(r"Arranged Rule Sequence: ([^\n]+)", log_text)
+            rearranged = re.findall(r"Rearranged Rule Sequence: ([^\n]+)", log_text)
+            retrieval_line = re.search(r"Retrieved Rewrite Cases: ([^\n]+)", log_text)
+            selected_rules_payload = {
+                **selected_rules_payload,
+                "selection_rounds": rules_after,
+                "arranged_rule_sequence": arranged[-1] if arranged else "",
+                "rearranged_rule_sequence": rearranged[-1] if rearranged else "",
+            }
+            retrieval_trace_payload = {
+                "available": retrieval_line is not None,
+                "retrieved_cases_log_excerpt": retrieval_line.group(1)[:4000] if retrieval_line else "",
+                "log_path": str(log_path),
+            }
+
+        selected_rules_path.write_text(json.dumps(selected_rules_payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+        retrieval_trace_path.write_text(json.dumps(retrieval_trace_payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+        token_cost_log_path.write_text(json.dumps(token_cost_payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+        if generation_status == "generation_success" and not output_sql_extracted and not failure_category:
+            failure_category = "output_sql_missing"
+            failure_summary = "method finished without extractable output_sql"
+        elif generation_status == "generation_success" and output_sql_extracted:
+            failure_category = ""
+            failure_summary = ""
+    except Exception as exc:
+        generation_status = "generation_failed"
+        failure_category = type(exc).__name__
+        failure_summary = str(exc)
+        method_executed = False
+    finally:
+        if schema_created:
+            try:
+                psycopg = importlib.import_module("psycopg")
+                with psycopg.connect(
+                    host=os.environ["PGHOST"],
+                    port=os.environ["PGPORT"],
+                    dbname=os.environ["PGDATABASE"],
+                    user=os.environ["PGUSER"],
+                    password=os.environ.get("PGPASSWORD"),
+                    autocommit=True,
+                ) as conn:
+                    with conn.cursor() as cur:
+                        cur.execute(
+                            psycopg.sql.SQL("DROP SCHEMA IF EXISTS {} CASCADE").format(
+                                psycopg.sql.Identifier(isolated_schema)
+                            )
+                        )
+            except Exception:
+                pass
+
+    if not selected_rules_path.exists():
+        selected_rules_path.write_text(json.dumps(selected_rules_payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    if not retrieval_trace_path.exists():
+        retrieval_trace_path.write_text(json.dumps(retrieval_trace_payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    if not token_cost_log_path.exists():
+        token_cost_log_path.write_text(json.dumps(token_cost_payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+    smoke_payload = {
+        "case_id": case_id,
+        "method": "R-Bot via LLM4Rewrite",
+        "dry_run_passed": dry_run_passed,
+        "method_executed": method_executed,
+        "generation_status": generation_status,
+        "output_sql_extracted": output_sql_extracted,
+        "generated_sql_path": str(generated_sql_path),
+        "selected_rules_path": str(selected_rules_path),
+        "retrieval_trace_path": str(retrieval_trace_path),
+        "token_cost_log_path": str(token_cost_log_path),
+        "method_stdout_path": str(method_stdout_path),
+        "method_stderr_path": str(method_stderr_path),
+        "checker_status": checker_status,
+        "consistency_status": consistency_status,
+        "speedup_status": speedup_status,
+        "failure_category": failure_category,
+        "failure_summary": failure_summary,
+        "claim_boundary": "bounded_1_case_RBot_LLM4Rewrite_generation_smoke_not_leaderboard",
+    }
+    smoke_result_path.write_text(json.dumps(smoke_payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    return print_and_exit(smoke_payload, 0 if generation_status == "generation_success" else 1)
 
 
 def cmd_formal_expanded_perf_direct_llm_preflight(args: argparse.Namespace) -> int:
