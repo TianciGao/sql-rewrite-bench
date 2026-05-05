@@ -230,6 +230,7 @@ LEARNEDREWRITE_LLM4REWRITE_JVM_JAR_PREFLIGHT_JSON = Path("/tmp/rewritebench_lear
 LLMR2_AUDIT_ROOT = Path("/tmp/rewritebench_llmr2_audit") / "LLM-R2"
 LLMR2_ADAPTER_PREFLIGHT_ROOT = Path("/tmp/rewritebench_llmr2_adapter_preflight")
 LLMR2_SINGLE_CASE_RUNNER_ROOT = Path("/tmp/rewritebench_llmr2_single_case_runner")
+LLMR2_FAST_PATH_ROOT = Path("/tmp/rewritebench_llmr2_fast_path")
 CALCITE_HEP_REAL_ROUTE_CANARY_CASES = ["PERF_0006", "PERF_0008", "PERF_0033", "PERF_0054"]
 PORT_TRANSLATE_SOURCE_DIALECT_FALLBACKS = {
     "PORT_0004": "mysql",
@@ -28874,6 +28875,231 @@ def simple_distance(a, b):
     return print_and_exit(smoke_payload, 0 if success else 1)
 
 
+def cmd_formal_llmr2_one_row_fast_path(args: argparse.Namespace) -> int:
+    case_id = str(args.case).strip().upper()
+    dry_run_only = bool(args.dry_run)
+    if case_id != "PERF_0006":
+        payload = {
+            "command": "formal-llmr2-one-row-fast-path",
+            "ok": False,
+            "ran_at_utc": utc_now(),
+            "case_id": case_id,
+            "dry_run_only": dry_run_only,
+            "blockers": ["unsupported_case_id"],
+            "claim_boundary": "llmr2_one_row_fast_path_dry_run_only_not_execution",
+        }
+        return print_and_exit(payload, 1)
+
+    adapter_bundle_dir = LLMR2_ADAPTER_PREFLIGHT_ROOT / case_id
+    fast_path_dir = LLMR2_FAST_PATH_ROOT / case_id
+    runtime_root = fast_path_dir / "runtime_root_v1"
+    runtime_data_root = runtime_root / "data" / "data_llmr2"
+    runtime_queries_dir = runtime_data_root / "queries"
+    runtime_schemas_dir = runtime_data_root / "schemas"
+    runtime_pools_dir = runtime_data_root / "pools"
+    fast_path_dir.mkdir(parents=True, exist_ok=True)
+
+    query_csv_source = adapter_bundle_dir / "perf_0006_queries.csv"
+    schema_stub_source = adapter_bundle_dir / "perf_0006_schema_stub.json"
+    metadata_source = adapter_bundle_dir / "llmr2_case_metadata.json"
+
+    repo_path = LLMR2_AUDIT_ROOT
+    java_rule_applier_path = repo_path / "src" / "rewriter_java.jar"
+    upstream_pos_pool_path = repo_path / "data" / "data_llmr2" / "pools" / "pos_pool_dsb_updated.csv"
+    upstream_neg_pool_path = repo_path / "data" / "data_llmr2" / "pools" / "neg_pool_dsb_updated.csv"
+
+    staged_query_csv_path = runtime_queries_dir / "queries_rewritebench_perf_0006_test.csv"
+    staged_schema_json_path = runtime_schemas_dir / "rewritebench_perf_0006.json"
+    staged_pos_pool_path = runtime_pools_dir / "pos_pool_rewritebench_perf_0006_updated.csv"
+    staged_neg_pool_path = runtime_pools_dir / "neg_pool_rewritebench_perf_0006_updated.csv"
+
+    future_execute_command_path = fast_path_dir / "future_execute_command_NOT_RUN.txt"
+    artifact_paths_path = fast_path_dir / "artifact_paths.json"
+    dry_run_summary_path = fast_path_dir / "dry_run_summary.json"
+    do_not_run_yet_path = fast_path_dir / "DO_NOT_RUN_YET.txt"
+
+    result_csv_path = fast_path_dir / "gpt_rewritebench_perf_0006_one_promo_queryCL_updated.csv"
+    generated_sql_path = fast_path_dir / "generated_sql_v1.sql"
+    activated_rules_path = fast_path_dir / "activated_rules_v1.json"
+    prompt_trace_path = fast_path_dir / "prompt_trace_v1.md"
+    demo_trace_path = fast_path_dir / "demo_trace_v1.json"
+    token_cost_log_path = fast_path_dir / "token_cost_log_v1.json"
+    method_stdout_path = fast_path_dir / "method_stdout_v1.log"
+    method_stderr_path = fast_path_dir / "method_stderr_v1.log"
+    checker_candidate_sql_path = fast_path_dir / "checker_candidate_sql_v1.sql"
+
+    adapter_bundle_found = adapter_bundle_dir.is_dir()
+    query_csv_found = query_csv_source.is_file()
+    schema_stub_found = schema_stub_source.is_file()
+    llmr2_repo_found = repo_path.is_dir()
+    java_rule_applier_found = java_rule_applier_path.is_file()
+    openai_api_key_visible = bool(os.environ.get("OPENAI_API_KEY"))
+
+    runtime_root_created = False
+    one_row_query_csv_created = False
+    tiny_pos_pool_created = False
+    tiny_neg_pool_created = False
+    schema_stub_staged = False
+    upstream_pool_bypass_planned = False
+    full_pool_preprocessing_avoided_by_staging = False
+
+    def _copy_single_row_csv(src: Path, dst: Path) -> bool:
+        if not src.is_file():
+            return False
+        with src.open("r", encoding="utf-8", newline="") as handle:
+            reader = csv.DictReader(handle)
+            fieldnames = list(reader.fieldnames or [])
+            first_row = next(reader, None)
+        if not fieldnames or first_row is None:
+            return False
+        dst.parent.mkdir(parents=True, exist_ok=True)
+        with dst.open("w", encoding="utf-8", newline="") as handle:
+            writer = csv.DictWriter(handle, fieldnames=fieldnames)
+            writer.writeheader()
+            writer.writerow(first_row)
+        return True
+
+    try:
+        if runtime_root.exists():
+            shutil.rmtree(runtime_root)
+        if llmr2_repo_found:
+            shutil.copytree(repo_path, runtime_root)
+            runtime_root_created = True
+        if runtime_root_created:
+            runtime_queries_dir.mkdir(parents=True, exist_ok=True)
+            runtime_schemas_dir.mkdir(parents=True, exist_ok=True)
+            runtime_pools_dir.mkdir(parents=True, exist_ok=True)
+        if runtime_root_created and query_csv_found:
+            staged_query_csv_path.write_text(query_csv_source.read_text(encoding="utf-8"), encoding="utf-8")
+            with staged_query_csv_path.open("r", encoding="utf-8", newline="") as handle:
+                row_count = sum(1 for _ in csv.DictReader(handle))
+            one_row_query_csv_created = row_count == 1
+        if runtime_root_created and schema_stub_found:
+            staged_schema_json_path.write_text(schema_stub_source.read_text(encoding="utf-8"), encoding="utf-8")
+            schema_stub_staged = True
+        if runtime_root_created:
+            tiny_pos_pool_created = _copy_single_row_csv(upstream_pos_pool_path, staged_pos_pool_path)
+            tiny_neg_pool_created = _copy_single_row_csv(upstream_neg_pool_path, staged_neg_pool_path)
+        if runtime_root_created and one_row_query_csv_created and tiny_pos_pool_created and tiny_neg_pool_created:
+            upstream_pool_bypass_planned = True
+            full_pool_preprocessing_avoided_by_staging = True
+    except Exception:
+        runtime_root_created = runtime_root.is_dir()
+
+    future_execute_command_text = (
+        "NOT RUN\n\n"
+        "Future bounded one-row fast-path command candidate:\n"
+        f"cd {runtime_root / 'src'}\n"
+        "PYTHONPATH=. OPENAI_API_KEY=${OPENAI_API_KEY} python3 LLM_R2.py\n\n"
+        "Fast-path staging assumptions:\n"
+        f"- query CSV staged at: {staged_query_csv_path}\n"
+        f"- schema JSON staged at: {staged_schema_json_path}\n"
+        f"- positive demo pool staged at: {staged_pos_pool_path}\n"
+        f"- negative demo pool staged at: {staged_neg_pool_path}\n"
+        "- staged file names match upstream naming conventions for dataset-scoped queryCL inputs\n"
+        "- the staged tiny pools are intended to bypass full upstream pool preprocessing for this bounded one-row path\n"
+        f"- output result CSV would be captured at: {result_csv_path}\n"
+        f"- generated SQL would be extracted to: {generated_sql_path}\n"
+        f"- checker handoff SQL would be written to: {checker_candidate_sql_path}\n"
+        "- this future execution path would call OpenAI/API\n"
+        "- this future execution path would invoke the Java rule applier\n"
+    )
+    future_execute_command_path.write_text(future_execute_command_text, encoding="utf-8")
+
+    artifact_paths_payload = {
+        "result_csv_path": str(result_csv_path),
+        "generated_sql_path": str(generated_sql_path),
+        "activated_rules_path": str(activated_rules_path),
+        "prompt_trace_path": str(prompt_trace_path),
+        "demo_trace_path": str(demo_trace_path),
+        "token_cost_log_path": str(token_cost_log_path),
+        "method_stdout_path": str(method_stdout_path),
+        "method_stderr_path": str(method_stderr_path),
+        "checker_candidate_sql_path": str(checker_candidate_sql_path),
+        "claim_boundary": "llmr2_one_row_fast_path_dry_run_only_not_execution",
+    }
+    artifact_paths_path.write_text(
+        json.dumps(artifact_paths_payload, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+
+    do_not_run_yet_path.write_text(
+        "DO NOT RUN YET\n"
+        "- dry-run scaffold only\n"
+        "- no LLM-R2 execution occurred\n"
+        "- no OpenAI/API call occurred\n"
+        "- no Java rule applier ran\n"
+        "- no DB, checker, or speedup execution occurred\n",
+        encoding="utf-8",
+    )
+
+    blockers: list[str] = []
+    if not adapter_bundle_found:
+        blockers.append("missing_adapter_bundle")
+    if not query_csv_found:
+        blockers.append("missing_query_csv")
+    if not schema_stub_found:
+        blockers.append("missing_schema_stub")
+    if not metadata_source.is_file():
+        blockers.append("missing_adapter_metadata")
+    if not llmr2_repo_found:
+        blockers.append("missing_llmr2_repo")
+    if not runtime_root_created:
+        blockers.append("runtime_root_not_created")
+    if not one_row_query_csv_created:
+        blockers.append("one_row_query_csv_not_created")
+    if not tiny_pos_pool_created:
+        blockers.append("tiny_pos_pool_not_created")
+    if not tiny_neg_pool_created:
+        blockers.append("tiny_neg_pool_not_created")
+    if not schema_stub_staged:
+        blockers.append("schema_stub_not_staged")
+    if not upstream_pool_bypass_planned:
+        blockers.append("upstream_pool_bypass_not_planned")
+    if not full_pool_preprocessing_avoided_by_staging:
+        blockers.append("full_pool_preprocessing_not_avoided_by_staging")
+    if not openai_api_key_visible:
+        blockers.append("openai_api_key_not_visible")
+    if not java_rule_applier_found:
+        blockers.append("missing_java_rule_applier")
+    if not future_execute_command_path.is_file():
+        blockers.append("future_command_not_written")
+    if not artifact_paths_path.is_file():
+        blockers.append("artifact_paths_not_written")
+
+    can_execute_fast_path_next = not blockers
+    payload = {
+        "case_id": case_id,
+        "dry_run_only": True,
+        "runtime_root_created": runtime_root_created,
+        "one_row_query_csv_created": one_row_query_csv_created,
+        "tiny_pos_pool_created": tiny_pos_pool_created,
+        "tiny_neg_pool_created": tiny_neg_pool_created,
+        "schema_stub_staged": schema_stub_staged,
+        "upstream_pool_bypass_planned": upstream_pool_bypass_planned,
+        "full_pool_preprocessing_avoided_by_staging": full_pool_preprocessing_avoided_by_staging,
+        "openai_api_key_visible": openai_api_key_visible,
+        "java_rule_applier_found": java_rule_applier_found,
+        "future_command_written": future_execute_command_path.is_file(),
+        "artifact_paths_written": artifact_paths_path.is_file(),
+        "can_execute_fast_path_next": can_execute_fast_path_next,
+        "blockers": blockers,
+        "claim_boundary": "llmr2_one_row_fast_path_dry_run_only_not_execution",
+    }
+    dry_run_summary_path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    if dry_run_only:
+        return print_and_exit(payload, 0 if can_execute_fast_path_next else 1)
+
+    payload.update(
+        {
+            "ok": False,
+            "failure_category": "execution_not_implemented",
+            "failure_summary": "fast-path command is dry-run only in this bounded scaffold",
+        }
+    )
+    return print_and_exit(payload, 1)
+
+
 def cmd_formal_learnedrewrite_llm4rewrite_adapter_preflight(args: argparse.Namespace) -> int:
     case_id = str(args.case).strip().upper()
     supported_case_ids = {
@@ -41320,6 +41546,15 @@ def build_parser() -> argparse.ArgumentParser:
     formal_llmr2_single_case_run_parser.add_argument("--dry-run", action="store_true", default=False)
     formal_llmr2_single_case_run_parser.set_defaults(
         func=cmd_formal_llmr2_single_case_run
+    )
+
+    formal_llmr2_one_row_fast_path_parser = subparsers.add_parser(
+        "formal-llmr2-one-row-fast-path"
+    )
+    formal_llmr2_one_row_fast_path_parser.add_argument("--case", required=True)
+    formal_llmr2_one_row_fast_path_parser.add_argument("--dry-run", action="store_true", default=False)
+    formal_llmr2_one_row_fast_path_parser.set_defaults(
+        func=cmd_formal_llmr2_one_row_fast_path
     )
 
     formal_learnedrewrite_llm4rewrite_adapter_preflight_parser = subparsers.add_parser(
