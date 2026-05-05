@@ -750,6 +750,10 @@ def verieql_support_wrapper_scaffold_case_ids() -> list[str]:
     return ["CONS_0007"]
 
 
+def verieql_support_canary_case_ids() -> list[str]:
+    return ["CONS_0007"]
+
+
 def formal_common_core_case_ids() -> list[str]:
     return list(FORMAL_COMMON_CORE_CASES)
 
@@ -1892,6 +1896,37 @@ def parse_simple_pg_ddl_to_verieql_schema(ddl_text: str) -> dict[str, Any]:
         "column_count": len(schema_columns),
         "unmodeled_constraints": unmodeled_constraints,
     }
+
+
+def verieql_support_wrapper_jsonl_path(case_id: str) -> Path:
+    return FORMAL_EXPANSION_REPORT_DIR / "verieql_support" / f"{normalize_case_id_for_filename(case_id)}_pairs.jsonl"
+
+
+def verieql_support_canary_output_path(case_id: str) -> Path:
+    return FORMAL_EXPANSION_REPORT_DIR / "verieql_support" / f"{normalize_case_id_for_filename(case_id)}_verieql_output.jsonl"
+
+
+def verieql_support_canary_pair_role(index: int) -> str:
+    pair_role_map = {
+        1: "source_positive",
+        2: "source_negative",
+    }
+    return pair_role_map.get(index, f"pair_{index}")
+
+
+def verieql_state_to_status(state: str) -> tuple[str, str]:
+    state = (state or "").strip().upper()
+    if state == "EQU":
+        return "prove", "equivalent"
+    if state == "NEQ":
+        return "refute", "non_equivalent"
+    if state == "UNK":
+        return "unknown", "unknown"
+    if state == "TMO":
+        return "timeout", "timeout"
+    if state in {"SYN", "NIE", "NSE", "OOM", "OTE"}:
+        return "error", "error"
+    return "error", "unrecognized_state"
 
 
 def resolve_repo_path(value: str) -> Path:
@@ -10344,6 +10379,217 @@ def cmd_formal_verieql_support_wrapper_scaffold(args: argparse.Namespace) -> int
         "records": records,
         "blockers_by_type": dict(sorted(blockers.items())),
         "claim_boundary": "verieql_wrapper_scaffold_only_no_verification",
+    }
+    write_formal_expansion_report(output_name, payload)
+    return print_and_exit(payload, 0)
+
+
+def cmd_formal_verieql_support_canary(args: argparse.Namespace) -> int:
+    output_name = normalize_formal_expansion_output_name(args.output)
+    selected_case_ids = [str(case_id).strip().upper() for case_id in (args.case_id or []) if str(case_id).strip()]
+    if not selected_case_ids:
+        selected_case_ids = verieql_support_canary_case_ids()
+
+    case_id = selected_case_ids[0]
+    wrapper_jsonl_path = verieql_support_wrapper_jsonl_path(case_id)
+    output_artifact_path = verieql_support_canary_output_path(case_id)
+    verieql_root = ROOT / "datasets" / "raw" / "verieql" / "staged" / "VeriEQL"
+    venv_python = Path("/tmp/verieql-probe-venv/bin/python")
+    timeout_seconds = 600
+    bound_size = 2
+    mode_command = [
+        str(venv_python),
+        "-m",
+        "parallel.cli_within_timeout",
+    ]
+    help_command = mode_command + ["--help"]
+    execute_command = mode_command + [
+        "-f",
+        str(wrapper_jsonl_path.resolve()),
+        "-s",
+        str(bound_size),
+        "-t",
+        str(timeout_seconds),
+        "-m",
+        "train",
+        "-c",
+        "1",
+        "-i",
+        "0",
+        "-o",
+        str(output_artifact_path.resolve()),
+    ]
+
+    help_run = subprocess.run(
+        help_command,
+        cwd=str(verieql_root),
+        capture_output=True,
+        text=True,
+    )
+    help_ok = help_run.returncode == 0
+
+    wrapper_exists = wrapper_jsonl_path.is_file()
+    wrapper_line_count = 0
+    wrapper_parseable = False
+    if wrapper_exists:
+        wrapper_lines = [line for line in wrapper_jsonl_path.read_text(encoding="utf-8").splitlines() if line.strip()]
+        wrapper_line_count = len(wrapper_lines)
+        try:
+            for line in wrapper_lines:
+                json.loads(line)
+            wrapper_parseable = True
+        except json.JSONDecodeError:
+            wrapper_parseable = False
+
+    records: list[dict[str, Any]] = []
+    stdout_excerpt = ""
+    stderr_excerpt = ""
+    execute_return_code: int | None = None
+    verifier_run_status = "dry_run_only"
+    exact_blocker = ""
+
+    if args.execute and help_ok and wrapper_exists and wrapper_parseable and venv_python.is_file():
+        if output_artifact_path.exists():
+            output_artifact_path.unlink()
+        execute_run = subprocess.run(
+            execute_command,
+            cwd=str(verieql_root),
+            capture_output=True,
+            text=True,
+        )
+        execute_return_code = execute_run.returncode
+        stdout_excerpt = execute_run.stdout[-4000:]
+        stderr_excerpt = execute_run.stderr[-4000:]
+
+        if execute_run.returncode != 0:
+            verifier_run_status = "failed"
+            stderr_upper = execute_run.stderr.upper()
+            stdout_upper = execute_run.stdout.upper()
+            if "UNBOUNDLOCALERROR" in stderr_upper and "FILE_PATH" in stderr_upper:
+                exact_blocker = "input_format_mismatch"
+            elif "MODULENOTFOUNDERROR" in stderr_upper or "NO MODULE NAMED" in stderr_upper:
+                exact_blocker = "dependency_runtime_error"
+            elif "TRACEBACK" in stderr_upper or "TYPEERROR" in stderr_upper or "EXCEPTION" in stderr_upper:
+                exact_blocker = "runtime_exception"
+            elif "TIMEOUT" in stderr_upper or "TIMEOUT" in stdout_upper:
+                exact_blocker = "timeout"
+            else:
+                exact_blocker = "runtime_exception"
+        else:
+            verifier_run_status = "completed"
+    elif args.execute:
+        verifier_run_status = "blocked_pre_execution"
+        if not venv_python.is_file():
+            exact_blocker = "dependency_runtime_error"
+        elif not help_ok:
+            exact_blocker = "entrypoint_contract_mismatch"
+        elif not wrapper_exists or not wrapper_parseable:
+            exact_blocker = "input_format_mismatch"
+
+    prove_count = 0
+    refute_count = 0
+    unknown_count = 0
+    timeout_count = 0
+    error_count = 0
+    source_positive_status = "not_run"
+    source_negative_status = "not_run"
+
+    output_parse_status = "not_attempted"
+    if args.execute and output_artifact_path.is_file():
+        try:
+            output_lines = [line for line in output_artifact_path.read_text(encoding="utf-8").splitlines() if line.strip()]
+            parsed_outputs = [json.loads(line) for line in output_lines]
+            output_parse_status = "parsed"
+            for record in parsed_outputs:
+                index = int(record.get("index", 0))
+                pair_role = verieql_support_canary_pair_role(index)
+                states = record.get("states") or []
+                terminal_state = states[-1] if states else ""
+                bucket, normalized_status = verieql_state_to_status(terminal_state)
+                if bucket == "prove":
+                    prove_count += 1
+                elif bucket == "refute":
+                    refute_count += 1
+                elif bucket == "unknown":
+                    unknown_count += 1
+                elif bucket == "timeout":
+                    timeout_count += 1
+                else:
+                    error_count += 1
+                if pair_role == "source_positive":
+                    source_positive_status = normalized_status
+                elif pair_role == "source_negative":
+                    source_negative_status = normalized_status
+                records.append(
+                    {
+                        "case_id": case_id,
+                        "pair_role": pair_role,
+                        "index": index,
+                        "states": states,
+                        "times": record.get("times"),
+                        "err": record.get("err"),
+                        "counterexample_present": bool(record.get("counterexample")),
+                        "status_bucket": bucket,
+                        "status": normalized_status,
+                    }
+                )
+        except (json.JSONDecodeError, OSError, ValueError, TypeError):
+            output_parse_status = "failed"
+            verifier_run_status = "failed"
+            if not exact_blocker:
+                exact_blocker = "output_parse_error"
+
+    if args.execute and verifier_run_status == "completed" and output_parse_status != "parsed":
+        verifier_run_status = "failed"
+        if not exact_blocker:
+            exact_blocker = "output_parse_error"
+
+    if args.execute and verifier_run_status == "completed" and not records:
+        verifier_run_status = "failed"
+        if not exact_blocker:
+            exact_blocker = "output_parse_error"
+
+    if not args.execute:
+        source_positive_status = "planned"
+        source_negative_status = "planned"
+
+    resolved_count = prove_count + refute_count
+    support_rate_if_defined: float | None = None
+    if wrapper_line_count:
+        support_rate_if_defined = resolved_count / wrapper_line_count
+
+    payload = {
+        "command": "formal-verieql-support-canary",
+        "ok": True,
+        "ran_at_utc": utc_now(),
+        "case_id": case_id,
+        "pair_count": wrapper_line_count,
+        "help_command": "cd datasets/raw/verieql/staged/VeriEQL && " + " ".join(shlex.quote(part) for part in help_command),
+        "execute_command": "cd datasets/raw/verieql/staged/VeriEQL && " + " ".join(shlex.quote(part) for part in execute_command),
+        "help_return_code": help_run.returncode,
+        "help_stdout_excerpt": help_run.stdout[-2000:],
+        "help_stderr_excerpt": help_run.stderr[-2000:],
+        "wrapper_jsonlines_path": relative_to_root(wrapper_jsonl_path),
+        "wrapper_jsonlines_exists": wrapper_exists,
+        "wrapper_jsonlines_parseable": wrapper_parseable,
+        "output_artifact_path": relative_to_root(output_artifact_path),
+        "output_artifact_exists": output_artifact_path.is_file(),
+        "return_code": execute_return_code,
+        "stdout_excerpt": stdout_excerpt,
+        "stderr_excerpt": stderr_excerpt,
+        "output_parse_status": output_parse_status,
+        "source_positive_status": source_positive_status,
+        "source_negative_status": source_negative_status,
+        "verifier_run_status": verifier_run_status,
+        "prove_count": prove_count,
+        "refute_count": refute_count,
+        "unknown_count": unknown_count,
+        "timeout_count": timeout_count,
+        "error_count": error_count,
+        "support_rate_if_defined": support_rate_if_defined,
+        "exact_blocker": exact_blocker,
+        "records": records,
+        "claim_boundary": "verieql_support_canary_only_not_speedup_not_rewrite_baseline",
     }
     write_formal_expansion_report(output_name, payload)
     return print_and_exit(payload, 0)
@@ -36390,6 +36636,15 @@ def build_parser() -> argparse.ArgumentParser:
     )
     formal_verieql_support_wrapper_scaffold_parser.add_argument("--execute", action="store_true", default=False)
     formal_verieql_support_wrapper_scaffold_parser.set_defaults(func=cmd_formal_verieql_support_wrapper_scaffold)
+
+    formal_verieql_support_canary_parser = subparsers.add_parser("formal-verieql-support-canary")
+    formal_verieql_support_canary_parser.add_argument("--case-id", action="append", default=[])
+    formal_verieql_support_canary_parser.add_argument(
+        "--output",
+        default="reports/formal_expansion/verieql_support_canary_v0.json",
+    )
+    formal_verieql_support_canary_parser.add_argument("--execute", action="store_true", default=False)
+    formal_verieql_support_canary_parser.set_defaults(func=cmd_formal_verieql_support_canary)
 
     formal_expanded_perf_direct_llm_preflight_parser = subparsers.add_parser("formal-expanded-perf-direct-llm-preflight")
     formal_expanded_perf_direct_llm_preflight_parser.add_argument(
