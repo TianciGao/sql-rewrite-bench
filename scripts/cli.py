@@ -28880,6 +28880,7 @@ def cmd_formal_llmr2_one_row_fast_path(args: argparse.Namespace) -> int:
     dry_run_only = bool(args.dry_run)
     force_cpu = bool(getattr(args, "force_cpu", False))
     schema_list_contract = bool(getattr(args, "schema_list_contract", False))
+    schema_native_contract = bool(getattr(args, "schema_native_contract", False))
     if case_id != "PERF_0006":
         payload = {
             "command": "formal-llmr2-one-row-fast-path",
@@ -28921,7 +28922,9 @@ def cmd_formal_llmr2_one_row_fast_path(args: argparse.Namespace) -> int:
     do_not_run_yet_path = fast_path_dir / "DO_NOT_RUN_YET.txt"
 
     result_csv_path = fast_path_dir / "gpt_rewritebench_perf_0006_one_promo_queryCL_updated.csv"
-    if schema_list_contract:
+    if schema_native_contract:
+        run_suffix = "schema_native_v1"
+    elif schema_list_contract:
         run_suffix = "schema_fix_v1"
     elif force_cpu:
         run_suffix = "cpu_v1"
@@ -28936,6 +28939,7 @@ def cmd_formal_llmr2_one_row_fast_path(args: argparse.Namespace) -> int:
     method_stderr_path = fast_path_dir / f"method_stderr_{run_suffix}.log"
     checker_candidate_sql_path = fast_path_dir / f"checker_candidate_sql_{run_suffix}.sql"
     staged_schema_backup_path = runtime_schemas_dir / "rewritebench_perf_0006.schema_stub_before_schema_list_contract.json"
+    staged_schema_native_backup_path = runtime_schemas_dir / "rewritebench_perf_0006.before_schema_native_contract_v1.json"
 
     adapter_bundle_found = adapter_bundle_dir.is_dir()
     query_csv_found = query_csv_source.is_file()
@@ -28952,6 +28956,7 @@ def cmd_formal_llmr2_one_row_fast_path(args: argparse.Namespace) -> int:
     upstream_pool_bypass_planned = False
     full_pool_preprocessing_avoided_by_staging = False
     schema_list_contract_applied = False
+    schema_native_contract_applied = False
     schema_table_count = 0
     schema_column_count = 0
 
@@ -28999,6 +29004,54 @@ def cmd_formal_llmr2_one_row_fast_path(args: argparse.Namespace) -> int:
             return True, table_count, column_count
         return False, 0, 0
 
+    def _normalize_native_type(type_name: str) -> str:
+        low = str(type_name).strip().lower()
+        if low.startswith("char") or low.startswith("character"):
+            return "character"
+        if low.startswith("varchar") or "varying" in low:
+            return "character varying"
+        if low.startswith("numeric") or low.startswith("decimal"):
+            return "numeric"
+        if low.startswith("int"):
+            return "integer"
+        return low
+
+    def _apply_schema_native_contract(schema_path: Path, backup_path: Path) -> tuple[bool, int, int]:
+        if not schema_path.is_file():
+            return False, 0, 0
+        raw_text = schema_path.read_text(encoding="utf-8")
+        parsed = json.loads(raw_text)
+        if isinstance(parsed, dict) and isinstance(parsed.get("tables"), list):
+            parsed = parsed.get("tables", [])
+        if not isinstance(parsed, list):
+            return False, 0, 0
+        backup_path.write_text(raw_text, encoding="utf-8")
+        patched_tables = []
+        for table in parsed:
+            if not isinstance(table, dict):
+                continue
+            patched_columns = []
+            for column in table.get("columns", []):
+                if not isinstance(column, dict):
+                    continue
+                patched_columns.append(
+                    {
+                        "name": str(column.get("name", "")),
+                        "type": _normalize_native_type(column.get("type", "")),
+                    }
+                )
+            patched_tables.append(
+                {
+                    "table": str(table.get("table", "")),
+                    "rows": 4,
+                    "columns": patched_columns,
+                }
+            )
+        schema_path.write_text(json.dumps(patched_tables, indent=2) + "\n", encoding="utf-8")
+        table_count = len(patched_tables)
+        column_count = sum(len(item.get("columns", [])) for item in patched_tables if isinstance(item, dict))
+        return True, table_count, column_count
+
     try:
         if runtime_root.exists():
             shutil.rmtree(runtime_root)
@@ -29023,6 +29076,12 @@ def cmd_formal_llmr2_one_row_fast_path(args: argparse.Namespace) -> int:
                 schema_table_count,
                 schema_column_count,
             ) = _apply_schema_list_contract(staged_schema_json_path, staged_schema_backup_path)
+        if runtime_root_created and schema_stub_staged and schema_native_contract:
+            (
+                schema_native_contract_applied,
+                schema_table_count,
+                schema_column_count,
+            ) = _apply_schema_native_contract(staged_schema_json_path, staged_schema_native_backup_path)
         if runtime_root_created:
             tiny_pos_pool_created = _copy_single_row_csv(upstream_pos_pool_path, staged_pos_pool_path)
             tiny_neg_pool_created = _copy_single_row_csv(upstream_neg_pool_path, staged_neg_pool_path)
@@ -29102,6 +29161,8 @@ def cmd_formal_llmr2_one_row_fast_path(args: argparse.Namespace) -> int:
         blockers.append("schema_stub_not_staged")
     if schema_list_contract and not schema_list_contract_applied:
         blockers.append("schema_list_contract_not_applied")
+    if schema_native_contract and not schema_native_contract_applied:
+        blockers.append("schema_native_contract_not_applied")
     if not upstream_pool_bypass_planned:
         blockers.append("upstream_pool_bypass_not_planned")
     if not full_pool_preprocessing_avoided_by_staging:
@@ -29121,6 +29182,7 @@ def cmd_formal_llmr2_one_row_fast_path(args: argparse.Namespace) -> int:
         "dry_run_only": True,
         "force_cpu": force_cpu,
         "schema_list_contract": schema_list_contract,
+        "schema_native_contract": schema_native_contract,
         "runtime_root_created": runtime_root_created,
         "one_row_query_csv_created": one_row_query_csv_created,
         "tiny_pos_pool_created": tiny_pos_pool_created,
@@ -29131,6 +29193,7 @@ def cmd_formal_llmr2_one_row_fast_path(args: argparse.Namespace) -> int:
         "openai_api_key_visible": openai_api_key_visible,
         "java_rule_applier_found": java_rule_applier_found,
         "schema_list_contract_applied": schema_list_contract_applied,
+        "schema_native_contract_applied": schema_native_contract_applied,
         "schema_table_count": schema_table_count,
         "schema_column_count": schema_column_count,
         "future_command_written": future_execute_command_path.is_file(),
@@ -29159,6 +29222,7 @@ def cmd_formal_llmr2_one_row_fast_path(args: argparse.Namespace) -> int:
         "tiny_demo_pools_used": "unknown",
         "force_cpu": force_cpu,
         "schema_list_contract": schema_list_contract,
+        "schema_native_contract": schema_native_contract,
         "cuda_visible_devices_value": "" if force_cpu else str(os.environ.get("CUDA_VISIBLE_DEVICES", "")),
         "openai_api_used": "unknown",
         "java_rule_applier_used": "unknown",
@@ -29179,7 +29243,9 @@ def cmd_formal_llmr2_one_row_fast_path(args: argparse.Namespace) -> int:
         "failure_category": "",
         "failure_summary": "",
         "claim_boundary": (
-            "bounded_1_case_LLMR2_schema_fix_fast_path_smoke_attempt_not_leaderboard"
+            "bounded_1_case_LLMR2_schema_native_fast_path_smoke_attempt_not_leaderboard"
+            if schema_native_contract
+            else "bounded_1_case_LLMR2_schema_fix_fast_path_smoke_attempt_not_leaderboard"
             if schema_list_contract
             else "bounded_1_case_LLMR2_cpu_fast_path_smoke_attempt_not_leaderboard"
             if force_cpu
@@ -29380,6 +29446,7 @@ def simple_distance(a, b):
 
     try:
         runtime_src_dir = runtime_root / "src"
+        (runtime_root / "results").mkdir(parents=True, exist_ok=True)
         _write_runtime_stub_modules(runtime_src_dir)
         _patch_runtime_sources(runtime_src_dir)
 
@@ -42385,6 +42452,7 @@ def build_parser() -> argparse.ArgumentParser:
     formal_llmr2_one_row_fast_path_parser.add_argument("--dry-run", action="store_true", default=False)
     formal_llmr2_one_row_fast_path_parser.add_argument("--force-cpu", action="store_true", default=False)
     formal_llmr2_one_row_fast_path_parser.add_argument("--schema-list-contract", action="store_true", default=False)
+    formal_llmr2_one_row_fast_path_parser.add_argument("--schema-native-contract", action="store_true", default=False)
     formal_llmr2_one_row_fast_path_parser.set_defaults(
         func=cmd_formal_llmr2_one_row_fast_path
     )
