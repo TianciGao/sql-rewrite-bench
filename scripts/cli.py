@@ -14862,6 +14862,19 @@ def port_cross_engine_feasibility_case_ids() -> list[str]:
     return ["PORT_0004", "PORT_0012", "PORT_0022", "PORT_0013", "PORT_0024", "PORT_0025"]
 
 
+def port_cross_engine_bounded_execution_case_ids() -> list[str]:
+    return ["PORT_0022", "PORT_0024", "PORT_0025"]
+
+
+def port_cross_engine_bounded_execution_checker_policy(case_id: str) -> str:
+    policy_map = {
+        "PORT_0022": "normalized_tsv_report_local",
+        "PORT_0024": "normalized_tsv_report_local",
+        "PORT_0025": "exact_tsv_report_local",
+    }
+    return policy_map.get(case_id, "exact_tsv_report_local")
+
+
 def port_cross_engine_policy_doc_candidates(case_id: str) -> list[Path]:
     mapping = {
         "PORT_0004": [
@@ -15433,6 +15446,493 @@ def cmd_formal_port_cross_engine_feasibility_preflight(args: argparse.Namespace)
     }
     write_formal_expansion_report(output_name, payload)
     return print_and_exit(payload, 0)
+
+
+def cmd_formal_port_cross_engine_bounded_execution(args: argparse.Namespace) -> int:
+    output_name = normalize_formal_expansion_output_name(args.output)
+    valid_case_ids = port_cross_engine_bounded_execution_case_ids()
+    valid_engines = ["mysql", "spark"]
+    selected_case_ids = [str(case_id).strip().upper() for case_id in (args.cases or []) if str(case_id).strip()]
+    selected_engines = [str(engine).strip().lower() for engine in (args.engines or []) if str(engine).strip()]
+    if not selected_case_ids:
+        selected_case_ids = list(valid_case_ids)
+    if not selected_engines:
+        selected_engines = list(valid_engines)
+
+    issues: list[dict[str, Any]] = []
+    invalid_case_ids = [case_id for case_id in selected_case_ids if case_id not in valid_case_ids]
+    invalid_engines = [engine for engine in selected_engines if engine not in valid_engines]
+    for case_id in invalid_case_ids:
+        issues.append({"type": "unsupported_case_id", "case_id": case_id})
+    for engine in invalid_engines:
+        issues.append({"type": "unsupported_engine", "engine": engine})
+    selected_case_ids = [case_id for case_id in selected_case_ids if case_id in valid_case_ids]
+    selected_engines = [engine for engine in selected_engines if engine in valid_engines]
+
+    def write_log(path: Path, completed: subprocess.CompletedProcess[str]) -> None:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        payload = [
+            f"returncode={completed.returncode}",
+            "",
+            "[stdout]",
+            completed.stdout or "",
+            "",
+            "[stderr]",
+            completed.stderr or "",
+        ]
+        path.write_text("\n".join(payload), encoding="utf-8")
+
+    def mysql_command_env() -> dict[str, str]:
+        env = os.environ.copy()
+        env.setdefault("MYSQL_HOST", "127.0.0.1")
+        env.setdefault("MYSQL_PORT", "3306")
+        env.setdefault("MYSQL_DATABASE", "bench")
+        env.setdefault("MYSQL_USER", "bench")
+        env.setdefault("MYSQL_PASSWORD", "benchpass")
+        return env
+
+    def spark_command_env() -> dict[str, str]:
+        env = os.environ.copy()
+        if not env.get("SPARK_LOCAL_IP"):
+            hostname_ip = subprocess.run(
+                ["bash", "-lc", "hostname -I 2>/dev/null | awk '{print $1}'"],
+                cwd=ROOT,
+                capture_output=True,
+                text=True,
+            )
+            candidate_ip = (hostname_ip.stdout or "").strip()
+            if candidate_ip:
+                env["SPARK_LOCAL_IP"] = candidate_ip
+        env.setdefault("SPARK_DRIVER_MEMORY", "8g")
+        return env
+
+    def execute_mysql_case(case_id: str, case_root: Path, run_dir: Path) -> dict[str, Any]:
+        load_log_path = run_dir / "load.log"
+        source_log_path = run_dir / "source.log"
+        rewrite_log_path = run_dir / "rewrite_pos_01.log"
+        source_tsv_path = run_dir / "source.tsv"
+        rewrite_tsv_path = run_dir / "rewrite_pos_01.tsv"
+        result_check_path = run_dir / "result_check.json"
+        checker_policy = port_cross_engine_bounded_execution_checker_policy(case_id)
+        env = mysql_command_env()
+
+        common_preamble = f"""
+set -euo pipefail
+source "{ROOT / 'scripts' / 'env_mysql.sh'}" >/dev/null
+CASE_ROOT="{case_root}"
+MYSQL_BIN="${{MYSQL_BIN:-mysql}}"
+MYSQL_ARGS=()
+if [[ -n "${{MYSQL_HOST:-}}" ]]; then MYSQL_ARGS+=(--host="${{MYSQL_HOST}}"); fi
+if [[ -n "${{MYSQL_PORT:-}}" ]]; then MYSQL_ARGS+=(--port="${{MYSQL_PORT}}"); fi
+if [[ -n "${{MYSQL_USER:-}}" ]]; then MYSQL_ARGS+=(--user="${{MYSQL_USER}}"); fi
+if [[ -n "${{MYSQL_PASSWORD:-}}" ]]; then MYSQL_ARGS+=(--password="${{MYSQL_PASSWORD}}"); fi
+mysql_cmd() {{
+  "${{MYSQL_BIN}}" "${{MYSQL_ARGS[@]}}" --batch --raw --skip-column-names "$@"
+}}
+emit_drop_table_sql() {{
+  awk '
+    toupper($1) == "CREATE" && toupper($2) == "TABLE" {{
+      name = $3
+      sub(/\\(.*/, "", name)
+      gsub(/`/, "", name)
+      tables[++count] = name
+    }}
+    END {{
+      for (idx = count; idx >= 1; --idx) {{
+        printf "drop table if exists `%s`;\\n", tables[idx]
+      }}
+    }}
+  ' "${{CASE_ROOT}}/schema/ddl_mysql.sql"
+}}
+"""
+
+        load_script = common_preamble + """
+{
+  printf 'use `%s`;\n' "${MYSQL_DATABASE}"
+  emit_drop_table_sql
+  cat "${CASE_ROOT}/schema/ddl_mysql.sql"
+  cat "${CASE_ROOT}/validation/mysql_witness_data.sql"
+} | mysql_cmd >/dev/null
+"""
+        source_script = common_preamble + f"""
+{{
+  printf 'use `%s`;\\n' "${{MYSQL_DATABASE}}"
+  cat "${{CASE_ROOT}}/source.sql"
+}} | mysql_cmd > "{source_tsv_path}"
+"""
+        rewrite_script = common_preamble + f"""
+{{
+  printf 'use `%s`;\\n' "${{MYSQL_DATABASE}}"
+  cat "${{CASE_ROOT}}/rewrite_pos_01.sql"
+}} | mysql_cmd > "{rewrite_tsv_path}"
+"""
+
+        schema_load_status = "not_attempted"
+        witness_load_status = "not_attempted"
+        source_execution_status = "not_attempted"
+        rewrite_execution_status = "not_attempted"
+        checker_status = "not_checked"
+        consistency_status = "not_checked"
+        failure_category = "none"
+        failure_detail = ""
+        row_count_source: int | None = None
+        row_count_rewrite: int | None = None
+        byte_equal: bool | None = None
+        normalized_equal: bool | None = None
+
+        load_completed = subprocess.run(["bash", "-lc", load_script], cwd=ROOT, env=env, capture_output=True, text=True)
+        write_log(load_log_path, load_completed)
+        if load_completed.returncode == 0:
+            schema_load_status = "success"
+            witness_load_status = "success"
+        else:
+            schema_load_status = "failed"
+            witness_load_status = "failed"
+            failure_category = "load_failed"
+            failure_detail = (load_completed.stderr or load_completed.stdout or f"returncode={load_completed.returncode}").strip()
+
+        if schema_load_status == "success":
+            source_completed = subprocess.run(["bash", "-lc", source_script], cwd=ROOT, env=env, capture_output=True, text=True)
+            write_log(source_log_path, source_completed)
+            if source_completed.returncode == 0 and source_tsv_path.is_file():
+                source_execution_status = "success"
+                row_count_source = len(read_tsv_lines_if_present(source_tsv_path) or [])
+            else:
+                source_execution_status = "failed"
+                failure_category = "source_execution_failed"
+                failure_detail = (source_completed.stderr or source_completed.stdout or f"returncode={source_completed.returncode}").strip()
+
+        if source_execution_status == "success":
+            rewrite_completed = subprocess.run(["bash", "-lc", rewrite_script], cwd=ROOT, env=env, capture_output=True, text=True)
+            write_log(rewrite_log_path, rewrite_completed)
+            if rewrite_completed.returncode == 0 and rewrite_tsv_path.is_file():
+                rewrite_execution_status = "success"
+                row_count_rewrite = len(read_tsv_lines_if_present(rewrite_tsv_path) or [])
+            else:
+                rewrite_execution_status = "failed"
+                failure_category = "rewrite_execution_failed"
+                failure_detail = (rewrite_completed.stderr or rewrite_completed.stdout or f"returncode={rewrite_completed.returncode}").strip()
+
+        if source_execution_status == "success" and rewrite_execution_status == "success":
+            source_lines = read_tsv_lines_if_present(source_tsv_path) or []
+            rewrite_lines = read_tsv_lines_if_present(rewrite_tsv_path) or []
+            byte_equal = source_tsv_path.read_bytes() == rewrite_tsv_path.read_bytes()
+            normalized_equal = normalize_tsv_lines(source_lines) == normalize_tsv_lines(rewrite_lines)
+            if checker_policy == "normalized_tsv_report_local":
+                checker_status = "consistent" if normalized_equal else "inconsistent"
+            else:
+                checker_status = "consistent" if byte_equal else "inconsistent"
+            consistency_status = checker_status
+            if checker_status == "inconsistent":
+                failure_category = "checker_inconsistent"
+                diff = diff_sample(source_lines, rewrite_lines)
+                failure_detail = json.dumps(diff, ensure_ascii=True)
+        elif failure_category == "none":
+            failure_category = "checker_not_run"
+
+        checker_payload = {
+            "case_id": case_id,
+            "engine": "mysql",
+            "schema_load_status": schema_load_status,
+            "witness_load_status": witness_load_status,
+            "source_execution_status": source_execution_status,
+            "rewrite_execution_status": rewrite_execution_status,
+            "checker_status": checker_status,
+            "consistency_status": consistency_status,
+            "row_count_source": row_count_source,
+            "row_count_rewrite": row_count_rewrite,
+            "normalization_policy_used": checker_policy,
+            "byte_equal": byte_equal,
+            "normalized_equal": normalized_equal,
+            "failure_category": failure_category,
+            "failure_detail": failure_detail,
+            "artifact_paths": {
+                "source_tsv": relative_to_root(source_tsv_path),
+                "rewrite_tsv": relative_to_root(rewrite_tsv_path),
+                "load_log": relative_to_root(load_log_path),
+                "source_log": relative_to_root(source_log_path),
+                "rewrite_log": relative_to_root(rewrite_log_path),
+            },
+            "claim_boundary": "bounded_3_case_mysql_spark_execution_not_full_port_closure",
+        }
+        result_check_path.write_text(json.dumps(checker_payload, indent=2) + "\n", encoding="utf-8")
+        checker_payload["artifact_paths"]["result_check"] = relative_to_root(result_check_path)
+        return checker_payload
+
+    def execute_spark_case(case_id: str, case_root: Path, run_dir: Path) -> dict[str, Any]:
+        load_log_path = run_dir / "load_and_execute.log"
+        stderr_log_path = run_dir / "stderr.log"
+        source_tsv_path = run_dir / "source.tsv"
+        rewrite_tsv_path = run_dir / "rewrite_pos_01.tsv"
+        result_check_path = run_dir / "result_check.json"
+        checker_policy = port_cross_engine_bounded_execution_checker_policy(case_id)
+        env = spark_command_env()
+
+        spark_script = f"""
+set -euo pipefail
+source "{ROOT / 'scripts' / 'env_spark.sh'}" >/dev/null
+PYTHON_BIN="${{PYTHON_BIN:-python}}"
+CASE_ROOT="{case_root}" RUN_DIR="{run_dir}" CASE_ID="{case_id}" "$PYTHON_BIN" - <<'PY'
+import json
+import os
+import pathlib
+import re
+import shutil
+from pyspark.sql import SparkSession
+
+
+def strip_comments(text: str) -> str:
+    return "\\n".join(line for line in text.splitlines() if not re.match(r"^\\s*--", line))
+
+
+def read_statements(path: pathlib.Path):
+    text = strip_comments(path.read_text(encoding="utf-8"))
+    return [stmt.strip() for stmt in text.split(";") if stmt.strip()]
+
+
+def read_query(path: pathlib.Path) -> str:
+    return strip_comments(path.read_text(encoding="utf-8")).strip().rstrip(";")
+
+
+def write_rows(path: pathlib.Path, rows) -> int:
+    lines = ["\\t".join("\\\\N" if value is None else str(value) for value in row) for row in rows]
+    if len(lines) > 1:
+        lines.sort()
+    path.write_text("".join(f"{{line}}\\n" for line in lines), encoding="utf-8")
+    return len(lines)
+
+
+case_root = pathlib.Path(os.environ["CASE_ROOT"])
+run_dir = pathlib.Path(os.environ["RUN_DIR"])
+case_id = os.environ["CASE_ID"]
+warehouse_dir = run_dir / "_tmp_spark_validation" / "warehouse"
+database_name = f"{{case_id.lower()}}_spark_validation"
+tmp_root = run_dir / "_tmp_spark_validation"
+if tmp_root.exists():
+    shutil.rmtree(tmp_root)
+warehouse_dir.mkdir(parents=True, exist_ok=True)
+
+payload = {{
+    "schema_load_status": "not_attempted",
+    "witness_load_status": "not_attempted",
+    "source_execution_status": "not_attempted",
+    "rewrite_execution_status": "not_attempted",
+    "row_count_source": None,
+    "row_count_rewrite": None,
+    "failure_stage": "",
+    "failure_message": "",
+}}
+
+spark = (
+    SparkSession.builder.master("local[*]")
+    .appName(f"{{case_id}}_bounded_port_validation")
+    .config("spark.ui.enabled", "false")
+    .config("spark.sql.shuffle.partitions", "1")
+    .config("spark.sql.warehouse.dir", str(warehouse_dir))
+    .getOrCreate()
+)
+spark.sparkContext.setLogLevel("ERROR")
+
+try:
+    spark.sql(f"DROP DATABASE IF EXISTS {{database_name}} CASCADE")
+    spark.sql(f"CREATE DATABASE {{database_name}}")
+    spark.sql(f"USE {{database_name}}")
+    for stmt in read_statements(case_root / "schema/ddl_spark.sql"):
+        spark.sql(stmt)
+    payload["schema_load_status"] = "success"
+    for stmt in read_statements(case_root / "validation/spark_witness_data.sql"):
+        spark.sql(stmt)
+    payload["witness_load_status"] = "success"
+    source_rows = spark.sql(read_query(case_root / "source.sql")).collect()
+    payload["row_count_source"] = write_rows(run_dir / "source.tsv", source_rows)
+    payload["source_execution_status"] = "success"
+    rewrite_rows = spark.sql(read_query(case_root / "rewrite_pos_01.sql")).collect()
+    payload["row_count_rewrite"] = write_rows(run_dir / "rewrite_pos_01.tsv", rewrite_rows)
+    payload["rewrite_execution_status"] = "success"
+except Exception as exc:
+    payload["failure_stage"] = (
+        "schema_load" if payload["schema_load_status"] != "success"
+        else "witness_load" if payload["witness_load_status"] != "success"
+        else "source_execution" if payload["source_execution_status"] != "success"
+        else "rewrite_execution"
+    )
+    if payload["failure_stage"] == "schema_load":
+        payload["schema_load_status"] = "failed"
+    elif payload["failure_stage"] == "witness_load":
+        payload["witness_load_status"] = "failed"
+    elif payload["failure_stage"] == "source_execution":
+        payload["source_execution_status"] = "failed"
+    else:
+        payload["rewrite_execution_status"] = "failed"
+    payload["failure_message"] = str(exc)
+finally:
+    spark.stop()
+
+print(json.dumps(payload))
+PY
+"""
+
+        completed = subprocess.run(["bash", "-lc", spark_script], cwd=ROOT, env=env, capture_output=True, text=True)
+        load_log_path.parent.mkdir(parents=True, exist_ok=True)
+        load_log_path.write_text(completed.stdout or "", encoding="utf-8")
+        stderr_log_path.write_text(completed.stderr or "", encoding="utf-8")
+
+        schema_load_status = "failed"
+        witness_load_status = "failed"
+        source_execution_status = "failed"
+        rewrite_execution_status = "failed"
+        checker_status = "not_checked"
+        consistency_status = "not_checked"
+        failure_category = "runtime_exception"
+        failure_detail = (completed.stderr or completed.stdout or f"returncode={completed.returncode}").strip()
+        row_count_source: int | None = None
+        row_count_rewrite: int | None = None
+        byte_equal: bool | None = None
+        normalized_equal: bool | None = None
+
+        payload_data: dict[str, Any] | None = None
+        stdout_lines = [line for line in (completed.stdout or "").splitlines() if line.strip()]
+        if stdout_lines:
+            try:
+                payload_data = json.loads(stdout_lines[-1])
+            except json.JSONDecodeError:
+                payload_data = None
+
+        if completed.returncode == 0 and payload_data is not None:
+            schema_load_status = str(payload_data.get("schema_load_status", "failed"))
+            witness_load_status = str(payload_data.get("witness_load_status", "failed"))
+            source_execution_status = str(payload_data.get("source_execution_status", "failed"))
+            rewrite_execution_status = str(payload_data.get("rewrite_execution_status", "failed"))
+            row_count_source = payload_data.get("row_count_source")
+            row_count_rewrite = payload_data.get("row_count_rewrite")
+
+            if source_execution_status == "success" and rewrite_execution_status == "success":
+                source_lines = read_tsv_lines_if_present(source_tsv_path) or []
+                rewrite_lines = read_tsv_lines_if_present(rewrite_tsv_path) or []
+                byte_equal = source_tsv_path.read_bytes() == rewrite_tsv_path.read_bytes()
+                normalized_equal = normalize_tsv_lines(source_lines) == normalize_tsv_lines(rewrite_lines)
+                if checker_policy == "normalized_tsv_report_local":
+                    checker_status = "consistent" if normalized_equal else "inconsistent"
+                else:
+                    checker_status = "consistent" if byte_equal else "inconsistent"
+                consistency_status = checker_status
+                failure_category = "none" if checker_status == "consistent" else "checker_inconsistent"
+                if checker_status == "inconsistent":
+                    failure_detail = json.dumps(diff_sample(source_lines, rewrite_lines), ensure_ascii=True)
+                else:
+                    failure_detail = ""
+            else:
+                stage = str(payload_data.get("failure_stage", "") or "execution")
+                failure_category = f"{stage}_failed"
+                failure_detail = str(payload_data.get("failure_message", "") or failure_detail)
+        elif payload_data is None and completed.returncode == 0:
+            failure_category = "output_parse_error"
+
+        checker_payload = {
+            "case_id": case_id,
+            "engine": "spark",
+            "schema_load_status": schema_load_status,
+            "witness_load_status": witness_load_status,
+            "source_execution_status": source_execution_status,
+            "rewrite_execution_status": rewrite_execution_status,
+            "checker_status": checker_status,
+            "consistency_status": consistency_status,
+            "row_count_source": row_count_source,
+            "row_count_rewrite": row_count_rewrite,
+            "normalization_policy_used": checker_policy,
+            "byte_equal": byte_equal,
+            "normalized_equal": normalized_equal,
+            "failure_category": failure_category,
+            "failure_detail": failure_detail,
+            "artifact_paths": {
+                "source_tsv": relative_to_root(source_tsv_path),
+                "rewrite_tsv": relative_to_root(rewrite_tsv_path),
+                "stdout_log": relative_to_root(load_log_path),
+                "stderr_log": relative_to_root(stderr_log_path),
+            },
+            "claim_boundary": "bounded_3_case_mysql_spark_execution_not_full_port_closure",
+        }
+        result_check_path.write_text(json.dumps(checker_payload, indent=2) + "\n", encoding="utf-8")
+        checker_payload["artifact_paths"]["result_check"] = relative_to_root(result_check_path)
+        return checker_payload
+
+    records: list[dict[str, Any]] = []
+    failures_by_engine: dict[str, int] = {}
+    failures_by_category: dict[str, int] = {}
+
+    for case_id in selected_case_ids:
+        case_root = PORT_CASE_ROOT / case_id
+        for engine in selected_engines:
+            run_dir = case_root / "runs" / engine
+            run_dir.mkdir(parents=True, exist_ok=True)
+            if engine == "mysql":
+                record = execute_mysql_case(case_id, case_root, run_dir)
+            else:
+                record = execute_spark_case(case_id, case_root, run_dir)
+            records.append(record)
+            if record["failure_category"] != "none":
+                failures_by_engine[engine] = failures_by_engine.get(engine, 0) + 1
+                failures_by_category[record["failure_category"]] = failures_by_category.get(record["failure_category"], 0) + 1
+
+    mysql_records = [record for record in records if record["engine"] == "mysql"]
+    spark_records = [record for record in records if record["engine"] == "spark"]
+    mysql_execution_success_count = sum(
+        1 for record in mysql_records if record["source_execution_status"] == "success" and record["rewrite_execution_status"] == "success"
+    )
+    mysql_consistency_success_count = sum(1 for record in mysql_records if record["consistency_status"] == "consistent")
+    spark_execution_success_count = sum(
+        1 for record in spark_records if record["source_execution_status"] == "success" and record["rewrite_execution_status"] == "success"
+    )
+    spark_consistency_success_count = sum(1 for record in spark_records if record["consistency_status"] == "consistent")
+
+    case_both_execution = 0
+    case_both_consistency = 0
+    for case_id in selected_case_ids:
+        case_records = [record for record in records if record["case_id"] == case_id]
+        if case_records and all(
+            record["source_execution_status"] == "success" and record["rewrite_execution_status"] == "success" for record in case_records
+        ):
+            case_both_execution += 1
+        if case_records and all(record["consistency_status"] == "consistent" for record in case_records):
+            case_both_consistency += 1
+
+    if case_both_consistency == len(selected_case_ids) and selected_case_ids:
+        recommended_next_action = "record bounded MySQL+Spark consistency evidence on the approved 3-case subset only; keep the broader PORT packet blocked"
+    elif case_both_execution == len(selected_case_ids) and selected_case_ids:
+        recommended_next_action = "execution closure exists on the approved subset, but investigate inconsistent engine outputs before making any broader portability claim"
+    else:
+        recommended_next_action = "fix the failed engine/case pairs inside the approved subset before any broader portability step"
+
+    payload = {
+        "command": "formal-port-cross-engine-bounded-execution",
+        "ok": not issues and all(
+            record["source_execution_status"] == "success" and record["rewrite_execution_status"] == "success" for record in records
+        ),
+        "ran_at_utc": utc_now(),
+        "case_count": len(selected_case_ids),
+        "engine_count": len(selected_engines),
+        "mysql_execution_success_count": mysql_execution_success_count,
+        "mysql_consistency_success_count": mysql_consistency_success_count,
+        "spark_execution_success_count": spark_execution_success_count,
+        "spark_consistency_success_count": spark_consistency_success_count,
+        "both_engine_execution_success_count": case_both_execution,
+        "both_engine_consistency_success_count": case_both_consistency,
+        "failures_by_engine": dict(sorted(failures_by_engine.items())),
+        "failures_by_category": dict(sorted(failures_by_category.items())),
+        "records": records,
+        "issues": issues,
+        "recommended_next_action": recommended_next_action,
+        "guardrails": {
+            "postgres_execution": "disabled",
+            "sqlglot_generation": "disabled",
+            "model_api_call": "disabled",
+            "registry_writeback": "disabled",
+            "case_scope": ",".join(selected_case_ids),
+        },
+        "claim_boundary": "bounded_3_case_mysql_spark_execution_not_full_port_closure",
+    }
+    write_formal_expansion_report(output_name, payload)
+    return print_and_exit(payload, 0 if payload["ok"] else 1)
 
 
 def cmd_formal_port_pg_translation_consistency_run(args: argparse.Namespace) -> int:
@@ -37030,6 +37530,19 @@ def build_parser() -> argparse.ArgumentParser:
     formal_port_cross_engine_feasibility_preflight_parser.add_argument("--execute", action="store_true", default=False)
     formal_port_cross_engine_feasibility_preflight_parser.set_defaults(
         func=cmd_formal_port_cross_engine_feasibility_preflight
+    )
+
+    formal_port_cross_engine_bounded_execution_parser = subparsers.add_parser(
+        "formal-port-cross-engine-bounded-execution"
+    )
+    formal_port_cross_engine_bounded_execution_parser.add_argument("--cases", nargs="+", default=[])
+    formal_port_cross_engine_bounded_execution_parser.add_argument("--engines", nargs="+", default=[])
+    formal_port_cross_engine_bounded_execution_parser.add_argument(
+        "--output",
+        default="reports/formal_expansion/port_cross_engine_bounded_execution_v0.json",
+    )
+    formal_port_cross_engine_bounded_execution_parser.set_defaults(
+        func=cmd_formal_port_cross_engine_bounded_execution
     )
 
     formal_port_port0012_pg_reference_normalization_check_parser = subparsers.add_parser(

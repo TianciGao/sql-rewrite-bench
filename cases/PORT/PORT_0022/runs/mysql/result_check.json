@@ -1,0 +1,25 @@
+{
+  "case_id": "PORT_0022",
+  "engine": "mysql",
+  "schema_load_status": "success",
+  "witness_load_status": "success",
+  "source_execution_status": "success",
+  "rewrite_execution_status": "failed",
+  "checker_status": "not_checked",
+  "consistency_status": "not_checked",
+  "row_count_source": 1,
+  "row_count_rewrite": null,
+  "normalization_policy_used": "normalized_tsv_report_local",
+  "byte_equal": null,
+  "normalized_equal": null,
+  "failure_category": "rewrite_execution_failed",
+  "failure_detail": "mysql: [Warning] Using a password on the command line interface can be insecure.\nERROR 1064 (42000) at line 2: You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'TIMESTAMP)) = 2010' at line 1",
+  "artifact_paths": {
+    "source_tsv": "cases/PORT/PORT_0022/runs/mysql/source.tsv",
+    "rewrite_tsv": "cases/PORT/PORT_0022/runs/mysql/rewrite_pos_01.tsv",
+    "load_log": "cases/PORT/PORT_0022/runs/mysql/load.log",
+    "source_log": "cases/PORT/PORT_0022/runs/mysql/source.log",
+    "rewrite_log": "cases/PORT/PORT_0022/runs/mysql/rewrite_pos_01.log"
+  },
+  "claim_boundary": "bounded_3_case_mysql_spark_execution_not_full_port_closure"
+}
