@@ -28627,6 +28627,7 @@ def cmd_formal_rbot_llm4rewrite_single_case_smoke_run(args: argparse.Namespace) 
     case_id = str(args.case).strip().upper()
     dry_run_only = bool(args.dry_run)
     fresh_run_name_requested = bool(getattr(args, "fresh_run_name", False))
+    align_rule_vector_dim = int(getattr(args, "align_rule_vector_dim", 0) or 0)
     supported_case_ids = {"PERF_0006"}
     inferred = case_root_for_case_id(case_id)
 
@@ -28636,8 +28637,8 @@ def cmd_formal_rbot_llm4rewrite_single_case_smoke_run(args: argparse.Namespace) 
     artifact_paths_path = runner_dir / "artifact_paths.json"
     dry_run_summary_path = runner_dir / "dry_run_summary.json"
     do_not_run_path = runner_dir / "DO_NOT_RUN_YET.txt"
-    use_v2_artifacts = fresh_run_name_requested and not dry_run_only
-    smoke_result_path = runner_dir / ("smoke_result_v2.json" if use_v2_artifacts else "smoke_result.json")
+    artifact_suffix = "_v3" if (align_rule_vector_dim > 0 and not dry_run_only) else ("_v2" if (fresh_run_name_requested and not dry_run_only) else "")
+    smoke_result_path = runner_dir / f"smoke_result{artifact_suffix}.json"
 
     source_sql_path = ROOT / "missing.sql"
     pg_schema_path = ROOT / "missing.sql"
@@ -28665,15 +28666,15 @@ def cmd_formal_rbot_llm4rewrite_single_case_smoke_run(args: argparse.Namespace) 
     pg_env_fields = pg_env_visibility()
     pg_env_visible = all(pg_env_fields[name] for name in ["PGHOST", "PGPORT", "PGDATABASE", "PGUSER"])
 
-    generated_sql_path = runner_dir / ("generated_sql_v2.sql" if use_v2_artifacts else "generated_sql.sql")
-    selected_rules_path = runner_dir / ("selected_rules_v2.json" if use_v2_artifacts else "selected_rules.json")
-    retrieval_trace_path = runner_dir / ("retrieval_trace_v2.json" if use_v2_artifacts else "retrieval_trace.json")
-    token_cost_log_path = runner_dir / ("token_cost_log_v2.json" if use_v2_artifacts else "token_cost_log.json")
-    method_stdout_path = runner_dir / ("method_stdout_v2.log" if use_v2_artifacts else "method_stdout.log")
-    method_stderr_path = runner_dir / ("method_stderr_v2.log" if use_v2_artifacts else "method_stderr.log")
-    checker_candidate_sql_path = runner_dir / ("checker_candidate_sql_v2.sql" if use_v2_artifacts else "checker_candidate_sql.sql")
-    runtime_root = runner_dir / "runtime_root"
-    internal_method_log_path = runner_dir / ("method_internal_v2.log" if use_v2_artifacts else "method_internal.log")
+    generated_sql_path = runner_dir / f"generated_sql{artifact_suffix}.sql"
+    selected_rules_path = runner_dir / f"selected_rules{artifact_suffix}.json"
+    retrieval_trace_path = runner_dir / f"retrieval_trace{artifact_suffix}.json"
+    token_cost_log_path = runner_dir / f"token_cost_log{artifact_suffix}.json"
+    method_stdout_path = runner_dir / f"method_stdout{artifact_suffix}.log"
+    method_stderr_path = runner_dir / f"method_stderr{artifact_suffix}.log"
+    checker_candidate_sql_path = runner_dir / f"checker_candidate_sql{artifact_suffix}.sql"
+    runtime_root = runner_dir / ("runtime_patch_v3" if align_rule_vector_dim > 0 and not dry_run_only else "runtime_root")
+    internal_method_log_path = runner_dir / f"method_internal{artifact_suffix}.log"
     fresh_run_name = f"rbot_{case_id.lower()}_{int(time.time() * 1000)}"
     upstream_log_path = runner_dir / f"{fresh_run_name}.log"
 
@@ -28807,6 +28808,9 @@ def cmd_formal_rbot_llm4rewrite_single_case_smoke_run(args: argparse.Namespace) 
     token_cost_payload: dict[str, Any] = {"available": False}
     dry_run_passed = can_execute_smoke_next
     upstream_log_short_circuit_avoided: str | bool = "unknown"
+    retrieval_vector_patch_applied = False
+    retrieval_vector_expected_dim = align_rule_vector_dim if align_rule_vector_dim > 0 else None
+    retrieval_vector_actual_dim_if_observed: int | None = None
 
     smoke_payload = {
         "case_id": case_id,
@@ -28815,6 +28819,9 @@ def cmd_formal_rbot_llm4rewrite_single_case_smoke_run(args: argparse.Namespace) 
         "method_executed": method_executed,
         "fresh_run_name": fresh_run_name,
         "fresh_run_name_used": fresh_run_name_requested,
+        "retrieval_vector_patch_applied": retrieval_vector_patch_applied,
+        "retrieval_vector_expected_dim": retrieval_vector_expected_dim,
+        "retrieval_vector_actual_dim_if_observed": retrieval_vector_actual_dim_if_observed,
         "upstream_log_path": str(upstream_log_path),
         "upstream_log_short_circuit_avoided": upstream_log_short_circuit_avoided,
         "generation_status": generation_status,
@@ -28866,6 +28873,35 @@ def cmd_formal_rbot_llm4rewrite_single_case_smoke_run(args: argparse.Namespace) 
                     "from sqlglot.optimizer.simplify import Simplifier\nNONDETERMINISTIC = Simplifier.NONDETERMINISTIC",
                 )
                 shim_path.write_text(shim_text, encoding="utf-8")
+        if align_rule_vector_dim > 0:
+            runtime_query_fusion_path = runtime_root / "rag" / "my_query_fusion_retriver.py"
+            if runtime_query_fusion_path.is_file():
+                runtime_query_fusion_text = runtime_query_fusion_path.read_text(encoding="utf-8")
+                original_block = (
+                    "        rules_one_hot: List[float] = []\n"
+                    "        rules_one_hot.extend(get_one_hot(NL_RULES, matched_rules['nl']))\n"
+                    "        rules_one_hot.extend(get_one_hot(NORMAL_RULES, matched_rules['calcite_normal']))\n"
+                    "        one_cnt = sum(rules_one_hot)\n"
+                    "        if one_cnt > 0:\n"
+                    "            rules_one_hot = [x / math.sqrt(one_cnt) for x in rules_one_hot]\n"
+                )
+                patched_block = (
+                    "        rules_one_hot: List[float] = []\n"
+                    "        rules_one_hot.extend(get_one_hot(NL_RULES, matched_rules['nl']))\n"
+                    "        rules_one_hot.extend(get_one_hot(NORMAL_RULES, matched_rules['calcite_normal']))\n"
+                    f"        target_rule_vector_dim = {align_rule_vector_dim}\n"
+                    "        if len(rules_one_hot) < target_rule_vector_dim:\n"
+                    "            rules_one_hot.extend([0.0] * (target_rule_vector_dim - len(rules_one_hot)))\n"
+                    "        elif len(rules_one_hot) > target_rule_vector_dim:\n"
+                    "            rules_one_hot = rules_one_hot[:target_rule_vector_dim]\n"
+                    "        one_cnt = sum(rules_one_hot)\n"
+                    "        if one_cnt > 0:\n"
+                    "            rules_one_hot = [x / math.sqrt(one_cnt) for x in rules_one_hot]\n"
+                )
+                if original_block in runtime_query_fusion_text:
+                    runtime_query_fusion_text = runtime_query_fusion_text.replace(original_block, patched_block, 1)
+                    runtime_query_fusion_path.write_text(runtime_query_fusion_text, encoding="utf-8")
+                    retrieval_vector_patch_applied = True
         calcite_src_jar_dir = (
             RBOT_LLM4REWRITE_AUDIT_ROOT
             / "CalciteRewrite"
@@ -28985,6 +29021,10 @@ def cmd_formal_rbot_llm4rewrite_single_case_smoke_run(args: argparse.Namespace) 
             log_text = log_path.read_text(encoding="utf-8", errors="ignore")
             internal_method_log_path.write_text(log_text, encoding="utf-8")
             method_stdout_path.write_text(log_text, encoding="utf-8")
+            dim_match = re.search(r"expecting embedding with dimension of (\d+), got (\d+)", log_text)
+            if dim_match:
+                retrieval_vector_expected_dim = int(dim_match.group(1))
+                retrieval_vector_actual_dim_if_observed = int(dim_match.group(2))
             rewrite_matches = re.findall(r"Rewrite Execution Results: (\{.*?\})", log_text)
             rewrite_payload = None
             if rewrite_matches:
@@ -29081,6 +29121,9 @@ def cmd_formal_rbot_llm4rewrite_single_case_smoke_run(args: argparse.Namespace) 
         "method_executed": method_executed,
         "fresh_run_name": fresh_run_name,
         "fresh_run_name_used": fresh_run_name_requested,
+        "retrieval_vector_patch_applied": retrieval_vector_patch_applied,
+        "retrieval_vector_expected_dim": retrieval_vector_expected_dim,
+        "retrieval_vector_actual_dim_if_observed": retrieval_vector_actual_dim_if_observed,
         "upstream_log_path": str(upstream_log_path),
         "upstream_log_short_circuit_avoided": upstream_log_short_circuit_avoided,
         "generation_status": generation_status,
@@ -29097,12 +29140,10 @@ def cmd_formal_rbot_llm4rewrite_single_case_smoke_run(args: argparse.Namespace) 
         "speedup_status": speedup_status,
         "failure_category": failure_category,
         "failure_summary": failure_summary,
-        "claim_boundary": "bounded_1_case_RBot_LLM4Rewrite_generation_smoke_not_leaderboard",
+        "claim_boundary": "bounded_1_case_RBot_LLM4Rewrite_smoke_attempt_not_leaderboard",
     }
     if generation_status == "generation_success_with_output_sql":
         smoke_payload["claim_boundary"] = "bounded_1_case_RBot_LLM4Rewrite_candidate_generation_smoke_not_leaderboard"
-    elif generation_status == "method_executed_output_sql_missing":
-        smoke_payload["claim_boundary"] = "bounded_1_case_RBot_LLM4Rewrite_smoke_attempt_output_sql_missing_not_leaderboard"
     smoke_result_path.write_text(json.dumps(smoke_payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     return print_and_exit(smoke_payload, 0 if generation_status in {"generation_success_with_output_sql", "method_executed_output_sql_missing"} else 1)
 
@@ -39196,6 +39237,7 @@ def build_parser() -> argparse.ArgumentParser:
     formal_rbot_llm4rewrite_single_case_smoke_run_parser.add_argument("--case", required=True)
     formal_rbot_llm4rewrite_single_case_smoke_run_parser.add_argument("--dry-run", action="store_true", default=False)
     formal_rbot_llm4rewrite_single_case_smoke_run_parser.add_argument("--fresh-run-name", action="store_true", default=False)
+    formal_rbot_llm4rewrite_single_case_smoke_run_parser.add_argument("--align-rule-vector-dim", type=int, default=0)
     formal_rbot_llm4rewrite_single_case_smoke_run_parser.set_defaults(
         func=cmd_formal_rbot_llm4rewrite_single_case_smoke_run
     )
