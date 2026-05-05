@@ -28151,7 +28151,7 @@ def cmd_formal_rbot_llm4rewrite_adapter_preflight(args: argparse.Namespace) -> i
 
 def cmd_formal_learnedrewrite_llm4rewrite_adapter_preflight(args: argparse.Namespace) -> int:
     case_id = str(args.case).strip().upper()
-    supported_case_ids = {"PERF_0006", "PERF_0008", "PERF_0033"}
+    supported_case_ids = {"PERF_0006", "PERF_0008", "PERF_0013", "PERF_0017", "PERF_0019", "PERF_0033"}
     if case_id not in supported_case_ids:
         payload = {
             "command": "formal-learnedrewrite-llm4rewrite-adapter-preflight",
@@ -28160,7 +28160,7 @@ def cmd_formal_learnedrewrite_llm4rewrite_adapter_preflight(args: argparse.Names
             "case_id": case_id,
             "classification": "blocked_missing_input_contract",
             "failure_category": "unsupported_case_id",
-            "failure_summary": "only PERF_0006 / PERF_0008 / PERF_0033 are supported in this bounded preflight",
+            "failure_summary": "only PERF_0006 / PERF_0008 / PERF_0013 / PERF_0017 / PERF_0019 / PERF_0033 are supported in this bounded preflight",
             "claim_boundary": "no_execution_adapter_preflight_only",
         }
         return print_and_exit(payload, 1)
@@ -28348,7 +28348,7 @@ def cmd_formal_learnedrewrite_llm4rewrite_adapter_preflight(args: argparse.Names
 def cmd_formal_learnedrewrite_llm4rewrite_single_case_run(args: argparse.Namespace) -> int:
     case_id = str(args.case).strip().upper()
     dry_run_only = bool(args.dry_run)
-    supported_case_ids = {"PERF_0006", "PERF_0008", "PERF_0033"}
+    supported_case_ids = {"PERF_0006", "PERF_0008", "PERF_0013", "PERF_0017", "PERF_0019", "PERF_0033"}
     if case_id not in supported_case_ids:
         payload = {
             "command": "formal-learnedrewrite-llm4rewrite-single-case-run",
@@ -29976,7 +29976,7 @@ def cmd_formal_rbot_llm4rewrite_single_case_smoke_run(args: argparse.Namespace) 
     dry_run_only = bool(args.dry_run)
     fresh_run_name_requested = bool(getattr(args, "fresh_run_name", False))
     align_rule_vector_dim = int(getattr(args, "align_rule_vector_dim", 0) or 0)
-    supported_case_ids = {"PERF_0006", "PERF_0008", "PERF_0033"}
+    supported_case_ids = {"PERF_0006", "PERF_0008", "PERF_0013", "PERF_0017", "PERF_0019", "PERF_0033"}
     inferred = case_root_for_case_id(case_id)
 
     runner_dir = RBOT_LLM4REWRITE_SINGLE_CASE_RUNNER_ROOT / case_id
