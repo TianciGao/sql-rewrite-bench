@@ -231,6 +231,11 @@ LLMR2_AUDIT_ROOT = Path("/tmp/rewritebench_llmr2_audit") / "LLM-R2"
 LLMR2_ADAPTER_PREFLIGHT_ROOT = Path("/tmp/rewritebench_llmr2_adapter_preflight")
 LLMR2_SINGLE_CASE_RUNNER_ROOT = Path("/tmp/rewritebench_llmr2_single_case_runner")
 LLMR2_FAST_PATH_ROOT = Path("/tmp/rewritebench_llmr2_fast_path")
+LLMR2_10CASE_PREFLIGHT_ROOT = Path("/tmp/rewritebench_llmr2_10case_preflight")
+LLMR2_SUPPORTED_CASE_IDS = {
+    "PERF_0006", "PERF_0008", "PERF_0013", "PERF_0017", "PERF_0019",
+    "PERF_0024", "PERF_0033", "PERF_0052", "PERF_0054", "PERF_0063",
+}
 CALCITE_HEP_REAL_ROUTE_CANARY_CASES = ["PERF_0006", "PERF_0008", "PERF_0033", "PERF_0054"]
 PORT_TRANSLATE_SOURCE_DIALECT_FALLBACKS = {
     "PORT_0004": "mysql",
@@ -28877,11 +28882,13 @@ def simple_distance(a, b):
 
 def cmd_formal_llmr2_one_row_fast_path(args: argparse.Namespace) -> int:
     case_id = str(args.case).strip().upper()
+    case_slug = case_id.lower()
+    db_id = f"rewritebench_{case_slug}"
     dry_run_only = bool(args.dry_run)
     force_cpu = bool(getattr(args, "force_cpu", False))
     schema_list_contract = bool(getattr(args, "schema_list_contract", False))
     schema_native_contract = bool(getattr(args, "schema_native_contract", False))
-    if case_id != "PERF_0006":
+    if case_id not in LLMR2_SUPPORTED_CASE_IDS:
         payload = {
             "command": "formal-llmr2-one-row-fast-path",
             "ok": False,
@@ -28893,7 +28900,11 @@ def cmd_formal_llmr2_one_row_fast_path(args: argparse.Namespace) -> int:
         }
         return print_and_exit(payload, 1)
 
-    adapter_bundle_dir = LLMR2_ADAPTER_PREFLIGHT_ROOT / case_id
+    adapter_bundle_dir = (
+        LLMR2_ADAPTER_PREFLIGHT_ROOT / case_id
+        if case_id == "PERF_0006"
+        else LLMR2_10CASE_PREFLIGHT_ROOT / case_id
+    )
     fast_path_dir = LLMR2_FAST_PATH_ROOT / case_id
     runtime_root = fast_path_dir / "runtime_root_v1"
     runtime_data_root = runtime_root / "data" / "data_llmr2"
@@ -28902,8 +28913,16 @@ def cmd_formal_llmr2_one_row_fast_path(args: argparse.Namespace) -> int:
     runtime_pools_dir = runtime_data_root / "pools"
     fast_path_dir.mkdir(parents=True, exist_ok=True)
 
-    query_csv_source = adapter_bundle_dir / "perf_0006_queries.csv"
-    schema_stub_source = adapter_bundle_dir / "perf_0006_schema_stub.json"
+    query_csv_source = (
+        adapter_bundle_dir / "perf_0006_queries.csv"
+        if case_id == "PERF_0006"
+        else adapter_bundle_dir / f"{case_slug}_queries.csv"
+    )
+    schema_stub_source = (
+        adapter_bundle_dir / "perf_0006_schema_stub.json"
+        if case_id == "PERF_0006"
+        else adapter_bundle_dir / f"{case_slug}_schema_native.json"
+    )
     metadata_source = adapter_bundle_dir / "llmr2_case_metadata.json"
 
     repo_path = LLMR2_AUDIT_ROOT
@@ -28911,17 +28930,17 @@ def cmd_formal_llmr2_one_row_fast_path(args: argparse.Namespace) -> int:
     upstream_pos_pool_path = repo_path / "data" / "data_llmr2" / "pools" / "pos_pool_dsb_updated.csv"
     upstream_neg_pool_path = repo_path / "data" / "data_llmr2" / "pools" / "neg_pool_dsb_updated.csv"
 
-    staged_query_csv_path = runtime_queries_dir / "queries_rewritebench_perf_0006_test.csv"
-    staged_schema_json_path = runtime_schemas_dir / "rewritebench_perf_0006.json"
-    staged_pos_pool_path = runtime_pools_dir / "pos_pool_rewritebench_perf_0006_updated.csv"
-    staged_neg_pool_path = runtime_pools_dir / "neg_pool_rewritebench_perf_0006_updated.csv"
+    staged_query_csv_path = runtime_queries_dir / f"queries_{db_id}_test.csv"
+    staged_schema_json_path = runtime_schemas_dir / f"{db_id}.json"
+    staged_pos_pool_path = runtime_pools_dir / f"pos_pool_{db_id}_updated.csv"
+    staged_neg_pool_path = runtime_pools_dir / f"neg_pool_{db_id}_updated.csv"
 
     future_execute_command_path = fast_path_dir / "future_execute_command_NOT_RUN.txt"
     artifact_paths_path = fast_path_dir / "artifact_paths.json"
     dry_run_summary_path = fast_path_dir / "dry_run_summary.json"
     do_not_run_yet_path = fast_path_dir / "DO_NOT_RUN_YET.txt"
 
-    result_csv_path = fast_path_dir / "gpt_rewritebench_perf_0006_one_promo_queryCL_updated.csv"
+    result_csv_path = fast_path_dir / f"gpt_{db_id}_one_promo_queryCL_updated.csv"
     if schema_native_contract:
         run_suffix = "schema_native_v1"
     elif schema_list_contract:
@@ -28938,8 +28957,8 @@ def cmd_formal_llmr2_one_row_fast_path(args: argparse.Namespace) -> int:
     method_stdout_path = fast_path_dir / f"method_stdout_{run_suffix}.log"
     method_stderr_path = fast_path_dir / f"method_stderr_{run_suffix}.log"
     checker_candidate_sql_path = fast_path_dir / f"checker_candidate_sql_{run_suffix}.sql"
-    staged_schema_backup_path = runtime_schemas_dir / "rewritebench_perf_0006.schema_stub_before_schema_list_contract.json"
-    staged_schema_native_backup_path = runtime_schemas_dir / "rewritebench_perf_0006.before_schema_native_contract_v1.json"
+    staged_schema_backup_path = runtime_schemas_dir / f"{db_id}.schema_stub_before_schema_list_contract.json"
+    staged_schema_native_backup_path = runtime_schemas_dir / f"{db_id}.before_schema_native_contract_v1.json"
 
     adapter_bundle_found = adapter_bundle_dir.is_dir()
     query_csv_found = query_csv_source.is_file()
@@ -29423,7 +29442,7 @@ def simple_distance(a, b):
             )
             llm_text = re.sub(
                 r"method = 'queryCL'\ndataset = 'dsb'\nnum_promos = 1\nLLM_R2\(dataset, method, num_promos\)\n",
-                "method = 'queryCL'\ndataset = 'rewritebench_perf_0006'\nnum_promos = 1\nLLM_R2(dataset, method, num_promos)\n",
+                f"method = 'queryCL'\ndataset = '{db_id}'\nnum_promos = 1\nLLM_R2(dataset, method, num_promos)\n",
                 llm_text,
             )
         llm_r2_path.write_text(llm_text, encoding="utf-8")
@@ -29499,8 +29518,8 @@ def simple_distance(a, b):
         smoke_payload["openai_api_used"] = openai_marker_path.exists()
         smoke_payload["java_rule_applier_used"] = java_marker_path.exists()
 
-        runtime_result_csv_path = runtime_root / "results" / "gpt_rewritebench_perf_0006_one_promo_queryCL_updated.csv"
-        runtime_time_csv_path = runtime_root / "results" / "time_gpt_rewritebench_perf_0006_one_promo_queryCL_cleaned.csv"
+        runtime_result_csv_path = runtime_root / "results" / f"gpt_{db_id}_one_promo_queryCL_updated.csv"
+        runtime_time_csv_path = runtime_root / "results" / f"time_gpt_{db_id}_one_promo_queryCL_cleaned.csv"
         if runtime_result_csv_path.is_file():
             shutil.copy2(runtime_result_csv_path, result_csv_path)
         if runtime_time_csv_path.is_file() and not token_cost_log_path.exists():
@@ -29595,15 +29614,17 @@ def simple_distance(a, b):
 
 def cmd_formal_llmr2_logical_plan_probe(args: argparse.Namespace) -> int:
     case_id = str(args.case).strip().upper()
+    case_slug = case_id.lower()
+    db_id = f"rewritebench_{case_slug}"
     schema_native_contract = bool(getattr(args, "schema_native_contract", False))
-    if case_id != "PERF_0006":
+    if case_id not in LLMR2_SUPPORTED_CASE_IDS:
         payload = {
             "command": "formal-llmr2-logical-plan-probe",
             "ok": False,
             "ran_at_utc": utc_now(),
             "case_id": case_id,
             "failure_category": "unsupported_case_id",
-            "failure_summary": "only PERF_0006 is supported in this bounded logical-plan probe",
+            "failure_summary": "only the bounded 10-case denominator is supported in this logical-plan probe",
             "claim_boundary": "llmr2_logical_plan_probe_only_not_execution",
         }
         return print_and_exit(payload, 1)
@@ -29611,8 +29632,8 @@ def cmd_formal_llmr2_logical_plan_probe(args: argparse.Namespace) -> int:
     fast_path_dir = LLMR2_FAST_PATH_ROOT / case_id
     runtime_root = fast_path_dir / "runtime_root_v1"
     runtime_src_dir = runtime_root / "src"
-    staged_query_csv_path = runtime_root / "data" / "data_llmr2" / "queries" / "queries_rewritebench_perf_0006_test.csv"
-    staged_schema_path = runtime_root / "data" / "data_llmr2" / "schemas" / "rewritebench_perf_0006.json"
+    staged_query_csv_path = runtime_root / "data" / "data_llmr2" / "queries" / f"queries_{db_id}_test.csv"
+    staged_schema_path = runtime_root / "data" / "data_llmr2" / "schemas" / f"{db_id}.json"
     if schema_native_contract:
         stdout_path = fast_path_dir / "logical_plan_probe_stdout_schema_contract_v1.txt"
         stderr_path = fast_path_dir / "logical_plan_probe_stderr_schema_contract_v1.txt"
@@ -29620,20 +29641,27 @@ def cmd_formal_llmr2_logical_plan_probe(args: argparse.Namespace) -> int:
         stdout_path = fast_path_dir / "logical_plan_probe_stdout_v1.txt"
         stderr_path = fast_path_dir / "logical_plan_probe_stderr_v1.txt"
     smoke_result_path = fast_path_dir / "smoke_result_schema_fix_v1.json"
-    result_csv_path = fast_path_dir / "gpt_rewritebench_perf_0006_one_promo_queryCL_updated.csv"
+    result_csv_path = fast_path_dir / f"gpt_{db_id}_one_promo_queryCL_updated.csv"
     generated_sql_path = fast_path_dir / "generated_sql_schema_fix_v1.sql"
     if schema_native_contract:
-        report_path = ROOT / "docs" / "_scratch" / "LLMR2_SCHEMA_CONTRACT_LOGICAL_PLAN_PROBE_PERF_0006_v1.md"
-        json_path = Path("/tmp/rewritebench_llmr2_schema_contract_logical_plan_probe_perf_0006_v1.json")
+        if case_id == "PERF_0006":
+            report_path = ROOT / "docs" / "_scratch" / "LLMR2_SCHEMA_CONTRACT_LOGICAL_PLAN_PROBE_PERF_0006_v1.md"
+            json_path = Path("/tmp/rewritebench_llmr2_schema_contract_logical_plan_probe_perf_0006_v1.json")
+        else:
+            report_path = fast_path_dir / f"LLMR2_SCHEMA_CONTRACT_LOGICAL_PLAN_PROBE_{case_id}_v1.md"
+            json_path = fast_path_dir / "logical_plan_probe_schema_contract_v1.json"
     else:
-        report_path = ROOT / "docs" / "_scratch" / "LLMR2_LOGICAL_PLAN_PROBE_PERF_0006_v1.md"
-        json_path = Path("/tmp/rewritebench_llmr2_logical_plan_probe_perf_0006_v1.json")
-    db_id = "rewritebench_perf_0006"
+        if case_id == "PERF_0006":
+            report_path = ROOT / "docs" / "_scratch" / "LLMR2_LOGICAL_PLAN_PROBE_PERF_0006_v1.md"
+            json_path = Path("/tmp/rewritebench_llmr2_logical_plan_probe_perf_0006_v1.json")
+        else:
+            report_path = fast_path_dir / f"LLMR2_LOGICAL_PLAN_PROBE_{case_id}_v1.md"
+            json_path = fast_path_dir / "logical_plan_probe_v1.json"
     native_schema_dir = LLMR2_AUDIT_ROOT / "data" / "data_llmr2" / "schemas"
     tpch_schema_path = native_schema_dir / "tpch.json"
     dsb_schema_path = native_schema_dir / "dsb.json"
     staged_schema_backup_path = staged_schema_path.with_name(
-        "rewritebench_perf_0006.before_schema_native_contract_v1.json"
+        f"{db_id}.before_schema_native_contract_v1.json"
     )
 
     def _read_staged_query_text(query_csv_path: Path) -> str:
@@ -29986,7 +30014,7 @@ def cmd_formal_llmr2_logical_plan_probe(args: argparse.Namespace) -> int:
         "recommended_next_step": recommended_next_step,
         "stdout_path": str(stdout_path),
         "stderr_path": str(stderr_path),
-        "report_path": relative_to_root(report_path),
+        "report_path": relative_to_root(report_path) if report_path.is_relative_to(ROOT) else str(report_path),
         "json_path": str(json_path),
         "claim_boundary": (
             "llmr2_schema_contract_logical_plan_probe_only_not_execution"
@@ -32199,9 +32227,9 @@ def cmd_formal_llmr2_checker_handoff(args: argparse.Namespace) -> int:
         if "sort_rows: true" not in checker_yaml_text:
             normalization_policy = "custom_checker_yaml_present_sort_rows_not_true"
 
-    if case_id != "PERF_0006":
+    if case_id not in LLMR2_SUPPORTED_CASE_IDS:
         failure_category = "unsupported_case_id"
-        failure_summary = "only PERF_0006 is supported in this bounded LLM-R2 checker handoff"
+        failure_summary = "only the bounded 10-case denominator is supported in this bounded LLM-R2 checker handoff"
     elif inferred is None:
         failure_category = "case_id_not_resolved"
         failure_summary = f"could not resolve case root for {case_id}"
