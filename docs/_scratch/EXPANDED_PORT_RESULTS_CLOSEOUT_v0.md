@@ -8,16 +8,45 @@ It consolidates the current RQ3 / PORT evidence after the seed PORT packet and t
 
 ## 2. Executive Summary
 
-Current bounded PostgreSQL-side PORT evidence has expanded from `3` to `6` cases.
+Current consolidated PORT evidence should now be read in four explicit layers.
 
-- SQLGlot PG success is `4 / 6`
-- SQLGlot PG failure is `2 / 6`
-- Direct LLM PG success is `6 / 6`
-- Batch 2C Direct LLM consistency is `3 / 3` under the selected checker policies
+1. PG-side PORT evidence:
+   - denominator: `6` PORT cases
+   - SQLGlot Transpile remains PG-side only and partial
+   - LLM Translate remains PG-side only on the bounded slice
+   - claim boundary: PostgreSQL-side portability evidence only, not cross-engine closure
+2. Cross-engine feasibility preflight:
+   - denominator: `6` PORT cases
+   - `mysql_ready_count=3`
+   - `spark_ready_count=3`
+   - `both_engine_ready_count=3`
+   - recommended bounded execution subset: `PORT_0022`, `PORT_0024`, `PORT_0025`
+   - blocked before execution:
+     - `PORT_0004`: witness-file contract not normalized
+     - `PORT_0012`: datetime_formatting / dialect_functions
+     - `PORT_0013`: boolean_aggregation
+   - claim boundary: `preflight_only_not_cross_engine_closure`
+3. Bounded MySQL+Spark execution attempt:
+   - denominator: `3` approved cases x `2` engines
+   - approved cases: `PORT_0022`, `PORT_0024`, `PORT_0025`
+   - MySQL execution occurred: yes
+   - Spark execution occurred: yes
+   - PostgreSQL execution occurred: no
+   - model calls: no
+   - SQLGlot: no
+   - claim boundary: `bounded_3_case_mysql_spark_execution_not_full_port_closure`
+4. Actual bounded result:
+   - `mysql_execution_success_count=1`
+   - `mysql_consistency_success_count=1`
+   - `spark_execution_success_count=1`
+   - `spark_consistency_success_count=1`
+   - `both_engine_execution_success_count=1`
+   - `both_engine_consistency_success_count=1`
+   - only `PORT_0024` closed on both engines
+   - `PORT_0024` required the existing normalized numeric policy
+   - `PORT_0022` and `PORT_0025` remain execution-blocked before checker comparison
 
-This is useful bounded RQ3 evidence.
-
-It is still PostgreSQL-side evidence only, not full cross-engine translation correctness.
+“A bounded 3-case MySQL+Spark execution attempt was recorded for PORT_0022, PORT_0024, and PORT_0025. Only PORT_0024 closed on both engines under the existing normalized numeric policy. PORT_0022 and PORT_0025 remain execution-blocked before checker comparison. This is not full PORT closure and not a final cross-engine matrix.”
 
 ## 3. PORT Denominator / Packets
 
@@ -81,56 +110,103 @@ Combined route summary:
 - reference normalization
   - `PORT_0012` required a report-local PG-normalized reference variant because the original positive reference used PostgreSQL-incompatible constructs such as `AS DOUBLE` and `YEAR(...)`
 
-## 7. Interpretation For RQ3
+## 7. Cross-Engine Feasibility Preflight
 
-The expanded PORT slice shows that SQLGlot transpile has lower PostgreSQL-side robustness than Direct LLM on the current bounded sample.
+- denominator: `6` PORT cases
+- `mysql_ready_count=3`
+- `spark_ready_count=3`
+- `both_engine_ready_count=3`
+- recommended bounded execution subset:
+  - `PORT_0022`
+  - `PORT_0024`
+  - `PORT_0025`
+- blocked before execution:
+  - `PORT_0004`: witness-file contract not normalized
+  - `PORT_0012`: datetime_formatting / dialect_functions
+  - `PORT_0013`: boolean_aggregation
+- claim boundary: `preflight_only_not_cross_engine_closure`
 
-The SQLGlot failures are concrete and diagnosable rather than vague route noise:
+Interpretation:
 
-- `PORT_0012` fails on datetime / identifier normalization
-- `PORT_0013` fails on boolean aggregation / function compatibility
+- this layer is a read-only readiness screen across the `6`-case packet
+- readiness does not establish cross-engine closure
 
-Direct LLM shows stronger PostgreSQL execution coverage on the current bounded packet:
+## 8. Bounded MySQL+Spark Execution Attempt
 
-- PG success `6 / 6`
-- Batch 2C policy-consistent `3 / 3`
+- denominator: `3` approved cases x `2` engines
+- approved cases:
+  - `PORT_0022`
+  - `PORT_0024`
+  - `PORT_0025`
+- MySQL execution occurred: yes
+- Spark execution occurred: yes
+- PostgreSQL execution occurred: no
+- model calls: no
+- SQLGlot: no
+- claim boundary: `bounded_3_case_mysql_spark_execution_not_full_port_closure`
 
-That is still bounded route evidence only, not full translation correctness.
+Accepted paper wording:
 
-This packet also reinforces that the benchmark benefits from separating:
+“A bounded 3-case MySQL+Spark execution attempt was recorded for PORT_0022, PORT_0024, and PORT_0025. Only PORT_0024 closed on both engines under the existing normalized numeric policy. PORT_0022 and PORT_0025 remain execution-blocked before checker comparison. This is not full PORT closure and not a final cross-engine matrix.”
 
-- PostgreSQL execution coverage
-- PG-side reference consistency
-- broader cross-engine closure
+## 9. Actual Bounded Cross-Engine Result
 
-## 8. Boundaries / Non-Claims
+- `mysql_execution_success_count=1`
+- `mysql_consistency_success_count=1`
+- `spark_execution_success_count=1`
+- `spark_consistency_success_count=1`
+- `both_engine_execution_success_count=1`
+- `both_engine_consistency_success_count=1`
+- only `PORT_0024` closed on both engines
+- `PORT_0024` required the existing normalized numeric policy
+- `PORT_0022` and `PORT_0025` remain execution-blocked before checker comparison
 
-- PostgreSQL only
-- not MySQL / Spark
+Failure classification:
+
+- `PORT_0022` / MySQL:
+  - `rewrite_execution_failed` because MySQL rejected the positive rewrite near `CAST(... AS TIMESTAMP)`
+- `PORT_0022` / Spark:
+  - `source_execution_failed` because Spark rejected source-side `CAST(... AS DATETIME)`
+- `PORT_0025` / MySQL:
+  - `rewrite_execution_failed` because MySQL rejected the positive rewrite near `CAST(... AS TIMESTAMP)`
+- `PORT_0025` / Spark:
+  - `source_execution_failed` because Spark rejected source-side `CAST(... AS DATETIME)`
+- these are execution blockers, not checker mismatches
+
+## 10. Boundaries / Non-Claims
+
+- PG-side route evidence is PostgreSQL-side portability evidence only, not cross-engine closure
+- cross-engine feasibility is `preflight_only_not_cross_engine_closure`
+- bounded execution evidence is `bounded_3_case_mysql_spark_execution_not_full_port_closure`
 - not full cross-engine matrix
+- not full PORT closure
+- not final portability closure
+- not MySQL and Spark portability proven
+- not final cross-engine evidence for the PORT packet
 - not final translation correctness
 - not final PORT leaderboard
+- not `6`-case PORT closure
+- not all approved cases closed
 - not automatic denominator expansion
 - some reference normalization is report-local
 - no registry writeback
 - no formal review update
 
-## 9. Remaining Work
+## 11. Remaining Work
 
-- MySQL / Spark matrix
 - `PORT_0003` / `PORT_0006` backfill
 - `PORT_0016` diagnostic policy
 - normalized checker policy across all PORT
 - full translation correctness protocol
 - final denominator expansion decision
 
-## 10. Recommended Next Action
+## 12. Recommended Next Action
 
-- freeze the current `6`-case PostgreSQL-side PORT packet for paper draft, and keep `PORT_0003`, `PORT_0006`, and `PORT_0016` as future diagnostic / backfill work
+- carry the `6`-case PG-side packet, the `6`-case preflight boundary, and the bounded `3`-case MySQL+Spark execution result as separate paper-facing evidence layers without merging them into a single closure claim
 
-## 11. Verification / Non-Modification Note
+## 13. Verification / Non-Modification Note
 
-- only this closeout doc was created
+- only this closeout doc was modified
 - no SQL / database / model / SQLGlot / checker execution
 - no reports were force-added
 - no registry / `docs/EXECUTION_STATUS.md` / formal review changes
