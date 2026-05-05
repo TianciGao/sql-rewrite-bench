@@ -224,6 +224,7 @@ RBOT_LLM4REWRITE_PREFLIGHT_ROOT = Path("/tmp/rewritebench_rbot_llm4rewrite_adapt
 RBOT_LLM4REWRITE_SINGLE_CASE_SMOKE_ROOT = Path("/tmp/rewritebench_rbot_llm4rewrite_single_case_smoke")
 RBOT_LLM4REWRITE_SINGLE_CASE_RUNNER_ROOT = Path("/tmp/rewritebench_rbot_llm4rewrite_single_case_runner")
 RBOT_LLM4REWRITE_PG_RUNTIME_VERIFY_JSON = Path("/tmp/rewritebench_rbot_llm4rewrite_pg_runtime_verify_perf_0006.json")
+LEARNEDREWRITE_LLM4REWRITE_ADAPTER_PREFLIGHT_ROOT = Path("/tmp/rewritebench_learnedrewrite_llm4rewrite_adapter_preflight")
 CALCITE_HEP_REAL_ROUTE_CANARY_CASES = ["PERF_0006", "PERF_0008", "PERF_0033", "PERF_0054"]
 PORT_TRANSLATE_SOURCE_DIALECT_FALLBACKS = {
     "PORT_0004": "mysql",
@@ -28146,6 +28147,201 @@ def cmd_formal_rbot_llm4rewrite_adapter_preflight(args: argparse.Namespace) -> i
     return print_and_exit(payload, 0 if payload["ok"] else 1)
 
 
+def cmd_formal_learnedrewrite_llm4rewrite_adapter_preflight(args: argparse.Namespace) -> int:
+    case_id = str(args.case).strip().upper()
+    if case_id != "PERF_0006":
+        payload = {
+            "command": "formal-learnedrewrite-llm4rewrite-adapter-preflight",
+            "ok": False,
+            "ran_at_utc": utc_now(),
+            "case_id": case_id,
+            "classification": "blocked_missing_input_contract",
+            "failure_category": "unsupported_case_id",
+            "failure_summary": "only PERF_0006 is supported in this bounded preflight",
+            "claim_boundary": "no_execution_adapter_preflight_only",
+        }
+        return print_and_exit(payload, 1)
+
+    inferred = case_root_for_case_id(case_id)
+    if inferred is None:
+        payload = {
+            "command": "formal-learnedrewrite-llm4rewrite-adapter-preflight",
+            "ok": False,
+            "ran_at_utc": utc_now(),
+            "case_id": case_id,
+            "classification": "blocked_missing_input_contract",
+            "failure_category": "case_id_not_resolved",
+            "failure_summary": "PERF_0006 case root could not be resolved",
+            "claim_boundary": "no_execution_adapter_preflight_only",
+        }
+        return print_and_exit(payload, 1)
+
+    pool, case_root = inferred
+    source_sql_path = case_root / "source.sql"
+    pg_schema_path = case_root / "schema" / "ddl_pg.sql"
+    witness_data_path = case_root / "validation" / "pg_witness_data.sql"
+    jar_path = (
+        RBOT_LLM4REWRITE_AUDIT_ROOT
+        / "CalciteRewrite"
+        / "out"
+        / "artifacts"
+        / "LearnedRewrite_jar"
+        / "LearnedRewrite.jar"
+    )
+    runner_path = RBOT_LLM4REWRITE_AUDIT_ROOT / "my_rewriter" / "test_learned_rewrite.py"
+    java_source_path = RBOT_LLM4REWRITE_AUDIT_ROOT / "CalciteRewrite" / "src" / "learned" / "LearnedRewriter.java"
+
+    source_sql_exists = source_sql_path.is_file()
+    pg_schema_exists = pg_schema_path.is_file()
+    witness_data_exists = witness_data_path.is_file()
+    jar_exists = jar_path.is_file()
+    runner_exists = runner_path.is_file()
+    java_source_exists = java_source_path.is_file()
+
+    bundle_dir = LEARNEDREWRITE_LLM4REWRITE_ADAPTER_PREFLIGHT_ROOT / case_id
+    bundle_dir.mkdir(parents=True, exist_ok=True)
+    bundle_source_path = bundle_dir / "source.sql"
+    bundle_schema_path = bundle_dir / "create_tables.sql"
+    bundle_metadata_path = bundle_dir / "learnedrewrite_case_metadata.json"
+    bundle_config_stub_path = bundle_dir / "learnedrewrite_config_stub.py"
+    bundle_expected_command_path = bundle_dir / "expected_command_NOT_RUN.txt"
+    bundle_output_contract_path = bundle_dir / "output_capture_contract.md"
+    bundle_summary_path = bundle_dir / "preflight_summary.json"
+
+    source_copied = False
+    if source_sql_exists:
+        bundle_source_path.write_text(source_sql_path.read_text(encoding="utf-8"), encoding="utf-8")
+        source_copied = True
+    else:
+        bundle_source_path.write_text("-- missing source.sql\n", encoding="utf-8")
+
+    schema_copied = False
+    if pg_schema_exists:
+        bundle_schema_path.write_text(pg_schema_path.read_text(encoding="utf-8"), encoding="utf-8")
+        schema_copied = True
+    else:
+        bundle_schema_path.write_text("-- missing create_tables.sql\n", encoding="utf-8")
+
+    output_sql_contract_visible = runner_exists and java_source_exists
+    metadata_payload = {
+        "case_id": case_id,
+        "source_sql_path": relative_to_root(source_sql_path),
+        "schema_path": relative_to_root(pg_schema_path),
+        "witness_data_path": relative_to_root(witness_data_path),
+        "learnedrewrite_jar_path": str(jar_path),
+        "runner_path": str(runner_path),
+        "output_sql_contract_visible": output_sql_contract_visible,
+        "claim_boundary": "no_execution_adapter_preflight_only",
+    }
+    bundle_metadata_path.write_text(
+        json.dumps(metadata_payload, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+
+    config_stub_text = (
+        "# Non-secret config stub for embedded LearnedRewrite single-case execution.\n"
+        "# Preflight only. Do not run this file as-is.\n\n"
+        "def init_db_config(database: str = 'rewritebench_perf_0006') -> dict[str, str | int]:\n"
+        "    return {\n"
+        "        'host': 'REPLACE_ME_PGHOST',\n"
+        "        'port': 5432,\n"
+        "        'user': 'REPLACE_ME_PGUSER',\n"
+        "        'password': 'REPLACE_ME_PGPASSWORD',\n"
+        "        'dbname': database,\n"
+        "        'db': 'postgresql',\n"
+        "    }\n\n"
+        "# Future execution will still need:\n"
+        "# - a PostgreSQL database loaded for PERF_0006\n"
+        "# - JVM / JPype runtime verification\n"
+        "# - a bounded single-case runner wrapper\n"
+        "# - a writable logdir/<database>/res.jsonl path\n"
+    )
+    bundle_config_stub_path.write_text(config_stub_text, encoding="utf-8")
+
+    expected_command_text = (
+        "NOT RUN\n\n"
+        "Future bounded single-case command candidate:\n"
+        "cd /tmp/rewritebench_prior_method_audit/LLM4Rewrite/my_rewriter\n"
+        "PYTHONPATH=.. python3 test_learned_rewrite.py \\\n"
+        "  --database rewritebench_perf_0006 \\\n"
+        "  --logdir /tmp/rewritebench_learnedrewrite_logs\n\n"
+        "Assumptions:\n"
+        "- cwd should be the upstream my_rewriter directory or an equivalent temp wrapper dir\n"
+        "- PYTHONPATH must expose the upstream repository root\n"
+        "- Calcite / JPype classpath is resolved by my_rewriter/rewrite.py from:\n"
+        "  CalciteRewrite/out/artifacts/LearnedRewrite_jar\n"
+        "- PostgreSQL runtime is required for input/output cost access\n"
+        "- stock upstream runner scans dataset folders, so a RewriteBench single-case wrapper is still needed\n"
+        "- res.jsonl is expected under <logdir>/<database>/res.jsonl\n"
+    )
+    bundle_expected_command_path.write_text(expected_command_text, encoding="utf-8")
+
+    output_capture_contract_text = (
+        "# Output Capture Contract\n\n"
+        "No output_sql was generated in this preflight.\n\n"
+        "Observed upstream emission points:\n"
+        "- CalciteRewrite/src/learned/LearnedRewriter.java puts `output_sql` into a JSON object\n"
+        "- my_rewriter/test_learned_rewrite.py copies `output_sql` into `out_dict`\n"
+        "- my_rewriter/test_learned_rewrite.py appends `out_dict` to `<logdir>/<database>/res.jsonl`\n\n"
+        "Future RewriteBench capture path:\n"
+        "- read `output_sql` from the emitted JSONL record in `res.jsonl`\n"
+        "- copy that SQL into a bounded RewriteBench candidate SQL artifact path\n"
+        "- hand off the copied candidate SQL to a PostgreSQL checker path only after explicit approval\n\n"
+        "Checker handoff expectation:\n"
+        "- future candidate SQL should be copied into a temp checker handoff path under /tmp\n"
+        "- no checker was run in this preflight\n"
+    )
+    bundle_output_contract_path.write_text(output_capture_contract_text, encoding="utf-8")
+
+    if jar_exists and runner_exists and output_sql_contract_visible and source_sql_exists and pg_schema_exists:
+        readiness = "adapter_preflight_ready_not_executed"
+        classification = "embedded_substrate_found_adapter_preflight_possible"
+    elif not runner_exists:
+        readiness = "blocked_missing_runner"
+        classification = "blocked_missing_runner_or_output_sql"
+    elif not output_sql_contract_visible:
+        readiness = "blocked_missing_output_sql_contract"
+        classification = "blocked_missing_runner_or_output_sql"
+    else:
+        readiness = "blocked_missing_input_contract"
+        classification = "embedded_substrate_found_but_contract_unclear"
+
+    remaining_blockers = [
+        "Java/JVM runtime verification",
+        "PostgreSQL runtime verification if needed",
+        "single-case execution harness not implemented",
+        "output_sql extraction not tested",
+        "checker handoff not run",
+    ]
+
+    payload = {
+        "command": "formal-learnedrewrite-llm4rewrite-adapter-preflight",
+        "ok": readiness == "adapter_preflight_ready_not_executed",
+        "ran_at_utc": utc_now(),
+        "case_id": case_id,
+        "pool": pool,
+        "jar_exists": jar_exists,
+        "runner_exists": runner_exists,
+        "java_source_exists": java_source_exists,
+        "output_sql_contract_visible": output_sql_contract_visible,
+        "source_sql_found": source_sql_exists,
+        "pg_ddl_found": pg_schema_exists,
+        "pg_data_sql_found": witness_data_exists,
+        "temp_bundle_path": str(bundle_dir),
+        "source_copied": source_copied,
+        "schema_copied": schema_copied,
+        "config_stub_created": bundle_config_stub_path.is_file(),
+        "expected_command_documented": bundle_expected_command_path.is_file(),
+        "output_capture_documented": bundle_output_contract_path.is_file(),
+        "readiness": readiness,
+        "classification": classification,
+        "remaining_blockers": remaining_blockers,
+        "claim_boundary": "no_execution_adapter_preflight_only",
+    }
+    bundle_summary_path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    return print_and_exit(payload, 0 if payload["ok"] else 1)
+
+
 def cmd_formal_rbot_llm4rewrite_single_case_smoke_preflight(args: argparse.Namespace) -> int:
     case_id = str(args.case).strip().upper()
     inferred = case_root_for_case_id(case_id)
@@ -39418,6 +39614,14 @@ def build_parser() -> argparse.ArgumentParser:
     formal_rbot_llm4rewrite_adapter_preflight_parser.add_argument("--case", required=True)
     formal_rbot_llm4rewrite_adapter_preflight_parser.set_defaults(
         func=cmd_formal_rbot_llm4rewrite_adapter_preflight
+    )
+
+    formal_learnedrewrite_llm4rewrite_adapter_preflight_parser = subparsers.add_parser(
+        "formal-learnedrewrite-llm4rewrite-adapter-preflight"
+    )
+    formal_learnedrewrite_llm4rewrite_adapter_preflight_parser.add_argument("--case", required=True)
+    formal_learnedrewrite_llm4rewrite_adapter_preflight_parser.set_defaults(
+        func=cmd_formal_learnedrewrite_llm4rewrite_adapter_preflight
     )
 
     formal_rbot_llm4rewrite_single_case_smoke_preflight_parser = subparsers.add_parser(
