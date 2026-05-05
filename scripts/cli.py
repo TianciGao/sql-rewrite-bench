@@ -28626,6 +28626,7 @@ def cmd_formal_rbot_llm4rewrite_pg_runtime_verify(args: argparse.Namespace) -> i
 def cmd_formal_rbot_llm4rewrite_single_case_smoke_run(args: argparse.Namespace) -> int:
     case_id = str(args.case).strip().upper()
     dry_run_only = bool(args.dry_run)
+    fresh_run_name_requested = bool(getattr(args, "fresh_run_name", False))
     supported_case_ids = {"PERF_0006"}
     inferred = case_root_for_case_id(case_id)
 
@@ -28635,7 +28636,8 @@ def cmd_formal_rbot_llm4rewrite_single_case_smoke_run(args: argparse.Namespace) 
     artifact_paths_path = runner_dir / "artifact_paths.json"
     dry_run_summary_path = runner_dir / "dry_run_summary.json"
     do_not_run_path = runner_dir / "DO_NOT_RUN_YET.txt"
-    smoke_result_path = runner_dir / "smoke_result.json"
+    use_v2_artifacts = fresh_run_name_requested and not dry_run_only
+    smoke_result_path = runner_dir / ("smoke_result_v2.json" if use_v2_artifacts else "smoke_result.json")
 
     source_sql_path = ROOT / "missing.sql"
     pg_schema_path = ROOT / "missing.sql"
@@ -28663,15 +28665,17 @@ def cmd_formal_rbot_llm4rewrite_single_case_smoke_run(args: argparse.Namespace) 
     pg_env_fields = pg_env_visibility()
     pg_env_visible = all(pg_env_fields[name] for name in ["PGHOST", "PGPORT", "PGDATABASE", "PGUSER"])
 
-    generated_sql_path = runner_dir / "generated_sql.sql"
-    selected_rules_path = runner_dir / "selected_rules.json"
-    retrieval_trace_path = runner_dir / "retrieval_trace.json"
-    token_cost_log_path = runner_dir / "token_cost_log.json"
-    method_stdout_path = runner_dir / "method_stdout.log"
-    method_stderr_path = runner_dir / "method_stderr.log"
-    checker_candidate_sql_path = runner_dir / "checker_candidate_sql.sql"
+    generated_sql_path = runner_dir / ("generated_sql_v2.sql" if use_v2_artifacts else "generated_sql.sql")
+    selected_rules_path = runner_dir / ("selected_rules_v2.json" if use_v2_artifacts else "selected_rules.json")
+    retrieval_trace_path = runner_dir / ("retrieval_trace_v2.json" if use_v2_artifacts else "retrieval_trace.json")
+    token_cost_log_path = runner_dir / ("token_cost_log_v2.json" if use_v2_artifacts else "token_cost_log.json")
+    method_stdout_path = runner_dir / ("method_stdout_v2.log" if use_v2_artifacts else "method_stdout.log")
+    method_stderr_path = runner_dir / ("method_stderr_v2.log" if use_v2_artifacts else "method_stderr.log")
+    checker_candidate_sql_path = runner_dir / ("checker_candidate_sql_v2.sql" if use_v2_artifacts else "checker_candidate_sql.sql")
     runtime_root = runner_dir / "runtime_root"
-    internal_method_log_path = runner_dir / "method_internal.log"
+    internal_method_log_path = runner_dir / ("method_internal_v2.log" if use_v2_artifacts else "method_internal.log")
+    fresh_run_name = f"rbot_{case_id.lower()}_{int(time.time() * 1000)}"
+    upstream_log_path = runner_dir / f"{fresh_run_name}.log"
 
     artifact_paths = {
         "generated_sql_path": str(generated_sql_path),
@@ -28681,6 +28685,7 @@ def cmd_formal_rbot_llm4rewrite_single_case_smoke_run(args: argparse.Namespace) 
         "method_stdout_path": str(method_stdout_path),
         "method_stderr_path": str(method_stderr_path),
         "checker_candidate_sql_path": str(checker_candidate_sql_path),
+        "upstream_log_path": str(upstream_log_path),
         "claim_boundary": "single_case_runner_dry_run_only_not_rbot_result",
     }
     artifact_paths_path.write_text(json.dumps(artifact_paths, indent=2, sort_keys=True) + "\n", encoding="utf-8")
@@ -28689,7 +28694,8 @@ def cmd_formal_rbot_llm4rewrite_single_case_smoke_run(args: argparse.Namespace) 
         "NOT RUN\n\n"
         "Future execution command candidate:\n"
         "python -m scripts.cli formal-rbot-llm4rewrite-single-case-smoke-run \\\n"
-        f"  --case {case_id}\n\n"
+        f"  --case {case_id} \\\n"
+        "  --fresh-run-name\n\n"
         "Execution prerequisites:\n"
         "- OPENAI_API_KEY visible in environment\n"
         "- PGHOST, PGPORT, PGDATABASE, PGUSER visible in environment\n"
@@ -28706,6 +28712,7 @@ def cmd_formal_rbot_llm4rewrite_single_case_smoke_run(args: argparse.Namespace) 
         f"- method stdout: {method_stdout_path}\n"
         f"- method stderr: {method_stderr_path}\n"
         f"- checker handoff SQL: {checker_candidate_sql_path}\n"
+        f"- upstream method log: {upstream_log_path}\n"
     )
     future_command_path.write_text(future_command_text, encoding="utf-8")
     do_not_run_path.write_text(
@@ -28778,6 +28785,7 @@ def cmd_formal_rbot_llm4rewrite_single_case_smoke_run(args: argparse.Namespace) 
         "pg_env_fields": pg_env_fields,
         "future_execute_command_written": future_command_path.is_file(),
         "artifact_paths_written": artifact_paths_path.is_file(),
+        "fresh_run_name_requested": fresh_run_name_requested,
         "can_execute_smoke_next": can_execute_smoke_next,
         "blockers": blockers,
         "claim_boundary": "single_case_runner_dry_run_only_not_rbot_result",
@@ -28798,15 +28806,21 @@ def cmd_formal_rbot_llm4rewrite_single_case_smoke_run(args: argparse.Namespace) 
     retrieval_trace_payload: dict[str, Any] = {"available": False}
     token_cost_payload: dict[str, Any] = {"available": False}
     dry_run_passed = can_execute_smoke_next
+    upstream_log_short_circuit_avoided: str | bool = "unknown"
 
     smoke_payload = {
         "case_id": case_id,
         "method": "R-Bot via LLM4Rewrite",
         "dry_run_passed": dry_run_passed,
         "method_executed": method_executed,
+        "fresh_run_name": fresh_run_name,
+        "fresh_run_name_used": fresh_run_name_requested,
+        "upstream_log_path": str(upstream_log_path),
+        "upstream_log_short_circuit_avoided": upstream_log_short_circuit_avoided,
         "generation_status": generation_status,
         "output_sql_extracted": output_sql_extracted,
         "generated_sql_path": str(generated_sql_path),
+        "checker_candidate_sql_path": str(checker_candidate_sql_path),
         "selected_rules_path": str(selected_rules_path),
         "retrieval_trace_path": str(retrieval_trace_path),
         "token_cost_log_path": str(token_cost_log_path),
@@ -28889,6 +28903,9 @@ def cmd_formal_rbot_llm4rewrite_single_case_smoke_run(args: argparse.Namespace) 
         cache_file = cache_dir / f"{os.environ['PGDATABASE']}.jsonl"
         if not cache_file.exists():
             cache_file.write_text("", encoding="utf-8")
+        if upstream_log_path.exists():
+            upstream_log_path.unlink()
+        upstream_log_short_circuit_avoided = fresh_run_name_requested and not upstream_log_path.exists()
 
         psycopg = importlib.import_module("psycopg")
         ddl_statements = _read_statements(pg_schema_path)
@@ -28942,7 +28959,7 @@ def cmd_formal_rbot_llm4rewrite_single_case_smoke_run(args: argparse.Namespace) 
             "model_args = init_llms('', load_model=True)\n"
             "pg_args = DBArgs(config)\n"
             "docstore = init_docstore()\n"
-            f"test('method_stdout', query, schema, pg_args, model_args, docstore, {repr(str(runner_dir))}, RETRIEVER_TOP_K=10, CASE_BATCH=5, RULE_BATCH=10, REWRITE_ROUNDS=1, index='hybrid')\n"
+            f"test({repr(fresh_run_name)}, query, schema, pg_args, model_args, docstore, {repr(str(runner_dir))}, RETRIEVER_TOP_K=10, CASE_BATCH=5, RULE_BATCH=10, REWRITE_ROUNDS=1, index='hybrid')\n"
         )
         env = os.environ.copy()
         env["PYTHONPATH"] = str(runtime_root)
@@ -28958,15 +28975,16 @@ def cmd_formal_rbot_llm4rewrite_single_case_smoke_run(args: argparse.Namespace) 
                 text=True,
             )
         method_executed = True
-        generation_status = "generation_success" if proc.returncode == 0 else "generation_failed"
+        generation_status = "generation_success" if proc.returncode == 0 else "method_execution_failed"
         if proc.returncode != 0:
             failure_category = "subprocess_nonzero_exit"
             failure_summary = f"smoke subprocess exited with code {proc.returncode}"
 
-        log_path = runner_dir / "method_stdout.log"
+        log_path = upstream_log_path
         if log_path.exists():
             log_text = log_path.read_text(encoding="utf-8", errors="ignore")
             internal_method_log_path.write_text(log_text, encoding="utf-8")
+            method_stdout_path.write_text(log_text, encoding="utf-8")
             rewrite_matches = re.findall(r"Rewrite Execution Results: (\{.*?\})", log_text)
             rewrite_payload = None
             if rewrite_matches:
@@ -29018,11 +29036,13 @@ def cmd_formal_rbot_llm4rewrite_single_case_smoke_run(args: argparse.Namespace) 
         if generation_status == "generation_success" and not output_sql_extracted and not failure_category:
             failure_category = "output_sql_missing"
             failure_summary = "method finished without extractable output_sql"
+            generation_status = "method_executed_output_sql_missing"
         elif generation_status == "generation_success" and output_sql_extracted:
             failure_category = ""
             failure_summary = ""
+            generation_status = "generation_success_with_output_sql"
     except Exception as exc:
-        generation_status = "generation_failed"
+        generation_status = "method_execution_failed"
         failure_category = type(exc).__name__
         failure_summary = str(exc)
         method_executed = False
@@ -29059,9 +29079,14 @@ def cmd_formal_rbot_llm4rewrite_single_case_smoke_run(args: argparse.Namespace) 
         "method": "R-Bot via LLM4Rewrite",
         "dry_run_passed": dry_run_passed,
         "method_executed": method_executed,
+        "fresh_run_name": fresh_run_name,
+        "fresh_run_name_used": fresh_run_name_requested,
+        "upstream_log_path": str(upstream_log_path),
+        "upstream_log_short_circuit_avoided": upstream_log_short_circuit_avoided,
         "generation_status": generation_status,
         "output_sql_extracted": output_sql_extracted,
         "generated_sql_path": str(generated_sql_path),
+        "checker_candidate_sql_path": str(checker_candidate_sql_path),
         "selected_rules_path": str(selected_rules_path),
         "retrieval_trace_path": str(retrieval_trace_path),
         "token_cost_log_path": str(token_cost_log_path),
@@ -29074,8 +29099,12 @@ def cmd_formal_rbot_llm4rewrite_single_case_smoke_run(args: argparse.Namespace) 
         "failure_summary": failure_summary,
         "claim_boundary": "bounded_1_case_RBot_LLM4Rewrite_generation_smoke_not_leaderboard",
     }
+    if generation_status == "generation_success_with_output_sql":
+        smoke_payload["claim_boundary"] = "bounded_1_case_RBot_LLM4Rewrite_candidate_generation_smoke_not_leaderboard"
+    elif generation_status == "method_executed_output_sql_missing":
+        smoke_payload["claim_boundary"] = "bounded_1_case_RBot_LLM4Rewrite_smoke_attempt_output_sql_missing_not_leaderboard"
     smoke_result_path.write_text(json.dumps(smoke_payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-    return print_and_exit(smoke_payload, 0 if generation_status == "generation_success" else 1)
+    return print_and_exit(smoke_payload, 0 if generation_status in {"generation_success_with_output_sql", "method_executed_output_sql_missing"} else 1)
 
 
 def cmd_formal_expanded_perf_direct_llm_preflight(args: argparse.Namespace) -> int:
@@ -39166,6 +39195,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     formal_rbot_llm4rewrite_single_case_smoke_run_parser.add_argument("--case", required=True)
     formal_rbot_llm4rewrite_single_case_smoke_run_parser.add_argument("--dry-run", action="store_true", default=False)
+    formal_rbot_llm4rewrite_single_case_smoke_run_parser.add_argument("--fresh-run-name", action="store_true", default=False)
     formal_rbot_llm4rewrite_single_case_smoke_run_parser.set_defaults(
         func=cmd_formal_rbot_llm4rewrite_single_case_smoke_run
     )
