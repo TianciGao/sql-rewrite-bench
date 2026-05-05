@@ -29,12 +29,12 @@ Current result:
 
 - `runnable_now=yes`: `0 / 7`
 - `runnable_now=no`: `7 / 7`
-- best next bounded candidate: `VeriEQL` support on `CONS_0007` only
+- best next bounded candidate among not-yet-advanced lines: none
 
 Interpretation:
 
 - none of the remaining prior baselines can move immediately to a runnable bounded subset with the current repo state
-- `VeriEQL` is the only line with a substantive repo-local codebase already present
+- `VeriEQL` is the only line that has now moved beyond pure feasibility and into bounded support-canary evidence
 - `LearnedRewrite`, `GenRewrite`, `R-Bot`, and `LLM-R2` have plausible first subsets on the clean 4-case PERF slice, but they still lack the core execution substrate
 - `SQLSolver` and `VeriEQL` belong in a verifier/support table, not a same-engine speedup table
 - `SlabCity` remains blocked unless a local runner or reproducible service/runtime contract appears
@@ -67,7 +67,7 @@ They do not belong on the PostgreSQL speedup path.
 | `LLM-R2` | `preflight_only` | no | `missing_retrieval_control_stack` | `PERF_0006`, `PERF_0008`, `PERF_0033`, `PERF_0054` | generation, PG execution, checker consistency, speedup, token usage | backlog only | keep in backlog until demonstration selection and rule-application paths are explicit and reproducible |
 | `SlabCity` | `blocked` | no | `no_local_runner_or_service_contract` | `PERF_0006`, `PERF_0008`, `PERF_0033`, `PERF_0054` in principle only | generation, PG execution, checker consistency, speedup | backlog only | keep blocked unless a local runner or reproducible service contract is added first |
 | `SQLSolver` | `not_integrated` | no | `solver_wrapper_and_dependency_missing` | `CONS_0007` | verifier support verdict, unknown rate, timeout rate | verifier/support table | keep as support-only backlog unless a repo-local SQLSolver checkout and wrapper are added |
-| `VeriEQL` | `not_integrated` | no | `wrapper_and_subset_policy_missing` | `CONS_0007` | verifier support verdict, unknown rate, timeout rate | verifier/support table | if any remaining prior-method line is advanced next, start with a bounded VeriEQL support wrapper on `CONS_0007` only |
+| `VeriEQL` | `bounded_support_canary_evidence` | no | `positive_proof_not_closed_under_constraint_bridge` | bounded support canary `CONS_0035` | support verdicts, refutation evidence, timeout rate under bridge | verifier/support table | keep as bounded support evidence only; do not promote to rewrite/speedup baseline |
 
 ## Detailed Findings
 
@@ -115,14 +115,16 @@ They do not belong on the PostgreSQL speedup path.
   - `requirements.txt`
   - `__main__.py`
   - benchmark and verifier modules
-- That makes `VeriEQL` the strongest next feasibility target.
-- But it is still not runnable as a benchmark support baseline here because the repo lacks:
-  - a wrapper from case-local SQL into verifier input pairs
-  - dependency materialization
-  - subset and timeout policy
-  - schema / constraint bridge for case-package execution context
-- `CONS_0007` is the best first bounded candidate.
-- Result: not runnable now, but the most realistic next line to advance.
+- That made `VeriEQL` the strongest feasibility target, and it has since advanced beyond that stage.
+- Current bounded evidence now exists on `CONS_0035`:
+  - empty constraint: `source_positive=non_equivalent`, `source_negative=non_equivalent`
+  - report-local uniqueness bridge on `(EMPNO, DEPTNO)`: constrained `source_positive=timeout`, constrained `source_negative=non_equivalent`
+  - `prove_count=0`
+- Interpretation:
+  - negative-pair refutation is real support evidence
+  - positive side is constraint-sensitive
+  - positive proof is still not closed under the bounded bridge experiment
+- Result: no longer pure feasibility-only, but still not runnable-now as a general verifier baseline and still not promotable beyond bounded support-canary evidence.
 
 ## Recommended Classification
 
@@ -131,16 +133,17 @@ They do not belong on the PostgreSQL speedup path.
 - `R-Bot`: backlog only for now; appendix or main baseline only after retrieval/rule-selection infrastructure is explicit
 - `LLM-R2`: backlog only for now; appendix or main baseline only after demonstration/rule-selection infrastructure is explicit
 - `SQLSolver`: verifier/support table only
-- `VeriEQL`: verifier/support table only
+- `VeriEQL`: verifier/support table only, now with bounded support-canary evidence on `CONS_0035`
 - `SlabCity`: backlog only until a local runner/service contract exists
 
 ## Recommended Next Action
 
-If one remaining prior-method line is advanced next, the best bounded path is:
+If one remaining prior-method line is advanced next, it should not restart VeriEQL feasibility from scratch. VeriEQL already has bounded support-canary evidence.
 
-1. `VeriEQL` support wrapper on `CONS_0007` only
-2. Freeze a minimal subset/timeout policy
-3. Map case-local `source.sql` and `schema/ddl_pg.sql` into verifier inputs
-4. Treat the output as support-table evidence only, not a speedup baseline
+The remaining backlog emphasis should stay on the still-unadvanced lines:
+
+1. keep `VeriEQL` as bounded support evidence with caveat
+2. leave `SQLSolver` as support-only backlog
+3. leave `LearnedRewrite`, `GenRewrite`, `R-Bot`, `LLM-R2`, and `SlabCity` unchanged until real substrate appears
 
 Everything else should remain backlog/readiness-only until core missing substrate appears.

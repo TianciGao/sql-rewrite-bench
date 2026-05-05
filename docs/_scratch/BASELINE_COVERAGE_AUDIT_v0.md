@@ -21,6 +21,8 @@ The current baseline stack splits into five practical groups:
   - Direct LLM rewrite
 - bounded checker-backed and speedup-scored subsets:
   - Calcite HEP
+- bounded support-canary evidence:
+  - VeriEQL
 - partially implemented PORT routes:
   - SQLGlot Transpile
   - LLM Translate
@@ -32,15 +34,15 @@ The current baseline stack splits into five practical groups:
 - blocked / not-integrated support lines:
   - SlabCity
   - SQLSolver
-  - VeriEQL
 
 Current status counts:
 
 - `implemented`: `6`
 - `bounded_checker_backed_and_speedup_scored_subset`: `1`
+- `bounded_support_canary_evidence`: `1`
 - `partially_implemented`: `2`
 - `preflight_only`: `4`
-- `not_integrated`: `2`
+- `not_integrated`: `1`
 - `blocked`: `1`
 
 ## Coverage Table
@@ -62,7 +64,7 @@ Current status counts:
 | R-Bot | `preflight_only` | readiness subsets | readiness audit, retrieval-readiness scaffold | retrieval stack missing |
 | LLM-R2 | `preflight_only` | readiness subsets | readiness audit, retrieval-readiness scaffold | retrieval stack missing |
 | SQLSolver | `not_integrated` | support-first readiness scope | support-readiness audit | no runner / solver wrapper |
-| VeriEQL | `not_integrated` | support-first readiness scope | support-readiness audit | no runner / subset/timeout policy |
+| VeriEQL | `bounded_support_canary_evidence` | bounded support case `CONS_0035` | bounded support-canary verdicts, report-local constraint-bridge follow-up | support-table only; empty `source_positive=non_equivalent`, constrained `source_positive=timeout`, `source_negative=non_equivalent` under both policies; `prove_count=0`; not a speedup or rewrite baseline |
 
 ## Main audit conclusions
 
@@ -81,7 +83,13 @@ Current status counts:
   - bounded speedup execution `4 / 4`
   - `GM_Speedup=0.9588741913559858`, `W/T/L=0/3/1`, `RegressionRate@20%=0.0`
 - SQLGlot Transpile and LLM Translate are both real bounded PORT baselines, but only on PostgreSQL-side evidence.
-- LearnedRewrite, GenRewrite, R-Bot, LLM-R2, SQLSolver, and VeriEQL remain backlog or support lines rather than active paper-denominator baselines.
+- VeriEQL has also moved beyond pure not-integrated status at the evidence level:
+  - bounded support-canary case `CONS_0035`
+  - empty-constraint policy: `source_positive=non_equivalent`, `source_negative=non_equivalent`
+  - report-local uniqueness bridge on `(EMPNO, DEPTNO)`: constrained `source_positive=timeout`, constrained `source_negative=non_equivalent`
+  - `prove_count=0`
+  - negative-pair refutation evidence exists, but positive proof is not closed
+- LearnedRewrite, GenRewrite, R-Bot, LLM-R2, and SQLSolver remain backlog or support lines rather than active paper-denominator baselines.
 
 ## Recommended next actions by family
 
@@ -97,6 +105,11 @@ Current status counts:
 - Calcite HEP:
   - keep the denominator narrow and separate from expanded common-core
   - describe it as a bounded PostgreSQL-only 4-case checker-backed and speedup-scored subset, not a final baseline
+- VeriEQL:
+  - keep it in a support/verifier table only
+  - keep the denominator to `CONS_0035` only
+  - state explicitly that the constrained positive side timed out and is not proof-closed
+  - do not convert it into a speedup or rewrite-baseline claim
 - non-integrated families:
   - leave them in readiness/support backlog unless a runnable adapter path appears quickly
 
