@@ -14858,6 +14858,49 @@ def formal_port_case_ids() -> list[str]:
     return ["PORT_0004", "PORT_0012", "PORT_0022"]
 
 
+def port_cross_engine_feasibility_case_ids() -> list[str]:
+    return ["PORT_0004", "PORT_0012", "PORT_0022", "PORT_0013", "PORT_0024", "PORT_0025"]
+
+
+def port_cross_engine_policy_doc_candidates(case_id: str) -> list[Path]:
+    mapping = {
+        "PORT_0004": [
+            ROOT / "cases" / "PORT" / "PORT_0004" / "validation" / "checker.yaml",
+        ],
+        "PORT_0012": [
+            ROOT / "docs" / "_scratch" / "FORMAL_PORT_RESULTS_CLOSEOUT_v0.md",
+            ROOT / "docs" / "_scratch" / "FORMAL_PORT_CURRENT_RESULTS_SNAPSHOT_v0.md",
+            ROOT / "docs" / "_scratch" / "FORMAL_PORT_PG_TRANSLATION_CONSISTENCY_SUMMARY_v0.md",
+        ],
+        "PORT_0022": [
+            ROOT / "docs" / "_scratch" / "FORMAL_PORT_PG_CONSISTENCY_DIAGNOSTIC_SUMMARY_v0.md",
+            ROOT / "docs" / "_scratch" / "FORMAL_PORT_RESULTS_CLOSEOUT_v0.md",
+        ],
+        "PORT_0013": [
+            ROOT / "docs" / "_scratch" / "BATCH2C_PORT_REFERENCE_CHECKER_POLICY_v0.md",
+        ],
+        "PORT_0024": [
+            ROOT / "docs" / "_scratch" / "BATCH2C_PORT_REFERENCE_CHECKER_POLICY_v0.md",
+        ],
+        "PORT_0025": [
+            ROOT / "docs" / "_scratch" / "BATCH2C_PORT_REFERENCE_CHECKER_POLICY_v0.md",
+        ],
+    }
+    return mapping.get(case_id, [])
+
+
+def port_cross_engine_known_blockers(case_id: str) -> dict[str, list[str]]:
+    mapping = {
+        "PORT_0004": {"mysql": [], "spark": []},
+        "PORT_0012": {"mysql": ["datetime_formatting", "dialect_functions"], "spark": ["datetime_formatting", "dialect_functions"]},
+        "PORT_0022": {"mysql": [], "spark": []},
+        "PORT_0013": {"mysql": ["boolean_aggregation"], "spark": ["boolean_aggregation"]},
+        "PORT_0024": {"mysql": [], "spark": []},
+        "PORT_0025": {"mysql": [], "spark": []},
+    }
+    return mapping.get(case_id, {"mysql": [], "spark": []})
+
+
 def formal_port_route_matrix_record_maps() -> tuple[dict[str, dict[str, Any]], dict[str, dict[str, Any]]]:
     route_matrix = load_json_if_present(FORMAL_PORT_REPORT_DIR / "port_pg_route_matrix_v0.json") or {}
     sqlglot_map: dict[str, dict[str, Any]] = {}
@@ -15208,6 +15251,188 @@ def cmd_formal_port_pg_translation_consistency_preflight(args: argparse.Namespac
     }
     write_formal_port_report(output_name, payload)
     return print_and_exit(payload, 0 if payload["ok"] else 1)
+
+
+def cmd_formal_port_cross_engine_feasibility_preflight(args: argparse.Namespace) -> int:
+    output_name = normalize_formal_expansion_output_name(args.output)
+    execute_refused_name = "port_cross_engine_feasibility_preflight_execute_refused_v0.json"
+    if args.execute:
+        payload = {
+            "command": "formal-port-cross-engine-feasibility-preflight",
+            "ok": False,
+            "ran_at_utc": utc_now(),
+            "output_path": f"reports/formal_expansion/{execute_refused_name}",
+            "records": [],
+            "issues": [
+                {
+                    "type": "invalid_execute_flag",
+                    "message": "formal-port-cross-engine-feasibility-preflight is read-only and does not support --execute",
+                }
+            ],
+            "guardrails": {
+                "mysql_execution": "disabled",
+                "spark_execution": "disabled",
+                "postgres_execution": "disabled",
+                "model_api_call": "disabled",
+                "sqlglot_generation": "disabled",
+                "checker_execution": "disabled",
+                "case_artifact_write": "disabled",
+                "registry_writeback": "disabled",
+            },
+            "claim_boundary": "preflight_only_not_cross_engine_closure",
+        }
+        write_formal_expansion_report(execute_refused_name, payload)
+        return print_and_exit(payload, 1)
+
+    records: list[dict[str, Any]] = []
+    mysql_ready_count = 0
+    spark_ready_count = 0
+    both_engine_ready_count = 0
+    blocked_count = 0
+    recommended_subset: list[str] = []
+
+    for case_id in port_cross_engine_feasibility_case_ids():
+        case_root = PORT_CASE_ROOT / case_id
+        source_sql_path = case_root / "source.sql"
+        positive_sql_path = case_root / "rewrite_pos_01.sql"
+        ddl_pg_path = case_root / "schema" / "ddl_pg.sql"
+        ddl_mysql_path = case_root / "schema" / "ddl_mysql.sql"
+        ddl_spark_path = case_root / "schema" / "ddl_spark.sql"
+        pg_witness_path = case_root / "validation" / "pg_witness_data.sql"
+        mysql_witness_path = case_root / "validation" / "mysql_witness_data.sql"
+        spark_witness_path = case_root / "validation" / "spark_witness_data.sql"
+        load_mysql_path = case_root / "validation" / "load_witness_mysql.sql"
+        load_spark_path = case_root / "validation" / "load_witness_spark.sql"
+        pg_result_check_path = case_root / "runs" / "pg" / "result_check.json"
+        root_result_check_path = case_root / "runs" / "result_check.json"
+        mysql_result_check_path = case_root / "runs" / "mysql" / "result_check.json"
+        spark_result_check_path = case_root / "runs" / "spark" / "result_check.json"
+        checker_yaml_path = case_root / "validation" / "checker.yaml"
+
+        source_sql_exists = source_sql_path.is_file()
+        positive_sql_exists = positive_sql_path.is_file()
+        ddl_pg_exists = ddl_pg_path.is_file()
+        ddl_mysql_exists = ddl_mysql_path.is_file()
+        ddl_spark_exists = ddl_spark_path.is_file()
+        pg_witness_exists = pg_witness_path.is_file()
+        mysql_witness_exists = mysql_witness_path.is_file()
+        spark_witness_exists = spark_witness_path.is_file()
+        mysql_alt_loader_exists = load_mysql_path.is_file()
+        spark_alt_loader_exists = load_spark_path.is_file()
+        pg_result_check_exists = pg_result_check_path.is_file() or root_result_check_path.is_file()
+        mysql_result_check_exists = mysql_result_check_path.is_file()
+        spark_result_check_exists = spark_result_check_path.is_file()
+        checker_yaml_exists = checker_yaml_path.is_file()
+
+        policy_docs = [path for path in port_cross_engine_policy_doc_candidates(case_id) if path.is_file()]
+        reference_normalization_policy_exists = checker_yaml_exists or bool(policy_docs)
+        known_blockers = port_cross_engine_known_blockers(case_id)
+
+        mysql_blockers: list[str] = []
+        spark_blockers: list[str] = []
+
+        if not source_sql_exists:
+            mysql_blockers.append("missing_source_sql")
+            spark_blockers.append("missing_source_sql")
+        if not positive_sql_exists:
+            mysql_blockers.append("missing_rewrite_pos_01_sql")
+            spark_blockers.append("missing_rewrite_pos_01_sql")
+        if not ddl_pg_exists:
+            mysql_blockers.append("missing_pg_schema")
+            spark_blockers.append("missing_pg_schema")
+        if not ddl_mysql_exists:
+            mysql_blockers.append("missing_schema")
+        if not ddl_spark_exists:
+            spark_blockers.append("missing_schema")
+        if not pg_witness_exists:
+            mysql_blockers.append("missing_witness_data")
+            spark_blockers.append("missing_witness_data")
+        if not mysql_witness_exists and not mysql_alt_loader_exists:
+            mysql_blockers.append("missing_witness_data")
+        if not spark_witness_exists and not spark_alt_loader_exists:
+            spark_blockers.append("missing_witness_data")
+        if not reference_normalization_policy_exists:
+            mysql_blockers.append("missing_checker_policy")
+            spark_blockers.append("missing_checker_policy")
+
+        mysql_blockers.extend(blocker for blocker in known_blockers.get("mysql", []) if blocker not in mysql_blockers)
+        spark_blockers.extend(blocker for blocker in known_blockers.get("spark", []) if blocker not in spark_blockers)
+
+        mysql_ready = not mysql_blockers
+        spark_ready = not spark_blockers
+
+        if mysql_ready:
+            mysql_ready_count += 1
+        if spark_ready:
+            spark_ready_count += 1
+        if mysql_ready and spark_ready:
+            both_engine_ready_count += 1
+            recommended_subset.append(case_id)
+        else:
+            blocked_count += 1
+
+        if mysql_ready and spark_ready:
+            recommended_next_action = "candidate for bounded MySQL+Spark execution subset"
+        elif mysql_ready:
+            recommended_next_action = "consider MySQL-only bounded follow-up after Spark blockers are resolved"
+        elif spark_ready:
+            recommended_next_action = "consider Spark-only bounded follow-up after MySQL blockers are resolved"
+        else:
+            recommended_next_action = "keep as preflight-only until blocker set is reduced"
+
+        records.append(
+            {
+                "case_id": case_id,
+                "source_sql_exists": source_sql_exists,
+                "rewrite_pos_01_sql_exists": positive_sql_exists,
+                "ddl_pg_exists": ddl_pg_exists,
+                "ddl_mysql_exists": ddl_mysql_exists,
+                "ddl_spark_exists": ddl_spark_exists,
+                "pg_witness_data_exists": pg_witness_exists,
+                "mysql_witness_data_exists": mysql_witness_exists,
+                "spark_witness_data_exists": spark_witness_exists,
+                "mysql_alt_loader_exists": mysql_alt_loader_exists,
+                "spark_alt_loader_exists": spark_alt_loader_exists,
+                "pg_result_check_exists": pg_result_check_exists,
+                "mysql_result_check_exists_if_present": mysql_result_check_exists,
+                "spark_result_check_exists_if_present": spark_result_check_exists,
+                "checker_yaml_exists": checker_yaml_exists,
+                "policy_docs": [relative_to_root(path) for path in policy_docs],
+                "reference_normalization_policy_exists": reference_normalization_policy_exists,
+                "mysql_ready": mysql_ready,
+                "mysql_blockers": mysql_blockers,
+                "spark_ready": spark_ready,
+                "spark_blockers": spark_blockers,
+                "recommended_next_action": recommended_next_action,
+                "claim_boundary": "preflight_only_not_cross_engine_closure",
+            }
+        )
+
+    payload = {
+        "command": "formal-port-cross-engine-feasibility-preflight",
+        "ok": True,
+        "ran_at_utc": utc_now(),
+        "case_count": len(records),
+        "mysql_ready_count": mysql_ready_count,
+        "spark_ready_count": spark_ready_count,
+        "both_engine_ready_count": both_engine_ready_count,
+        "blocked_count": blocked_count,
+        "recommended_bounded_execution_subset": recommended_subset,
+        "records": records,
+        "guardrails": {
+            "mysql_execution": "disabled",
+            "spark_execution": "disabled",
+            "postgres_execution": "disabled",
+            "model_api_call": "disabled",
+            "sqlglot_generation": "disabled",
+            "checker_execution": "disabled",
+            "case_artifact_write": "disabled",
+            "registry_writeback": "disabled",
+        },
+        "claim_boundary": "preflight_only_not_cross_engine_closure",
+    }
+    write_formal_expansion_report(output_name, payload)
+    return print_and_exit(payload, 0)
 
 
 def cmd_formal_port_pg_translation_consistency_run(args: argparse.Namespace) -> int:
@@ -36794,6 +37019,18 @@ def build_parser() -> argparse.ArgumentParser:
     )
     formal_port_pg_consistency_diagnostic_parser.add_argument("--execute", action="store_true", default=False)
     formal_port_pg_consistency_diagnostic_parser.set_defaults(func=cmd_formal_port_pg_consistency_diagnostic)
+
+    formal_port_cross_engine_feasibility_preflight_parser = subparsers.add_parser(
+        "formal-port-cross-engine-feasibility-preflight"
+    )
+    formal_port_cross_engine_feasibility_preflight_parser.add_argument(
+        "--output",
+        default="reports/formal_expansion/port_cross_engine_feasibility_preflight_v0.json",
+    )
+    formal_port_cross_engine_feasibility_preflight_parser.add_argument("--execute", action="store_true", default=False)
+    formal_port_cross_engine_feasibility_preflight_parser.set_defaults(
+        func=cmd_formal_port_cross_engine_feasibility_preflight
+    )
 
     formal_port_port0012_pg_reference_normalization_check_parser = subparsers.add_parser(
         "formal-port-port0012-pg-reference-normalization-check"
