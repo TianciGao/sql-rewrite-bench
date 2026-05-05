@@ -11,38 +11,46 @@ It is not SQLGlot execution.
 It is not leaderboard evidence.
 It is not an R-Bot result.
 
-## 2. Case Mapped
+## 2. Cases Mapped
 
-- case_id: `PERF_0006`
-- pool: `performance`
+- `PERF_0006`
+- `PERF_0008`
+- `PERF_0033`
+
+All three cases were mapped against the same upstream substrate:
+
 - target substrate: `R-Bot via LLM4Rewrite`
 - upstream repo: `https://github.com/curtis-sun/LLM4Rewrite`
 
-## 3. Temporary Bundle Created
+## 3. Temporary Bundles Created
 
-Temporary bundle root:
+Temporary bundle roots:
 
 - `/tmp/rewritebench_rbot_llm4rewrite_adapter_preflight/PERF_0006`
+- `/tmp/rewritebench_rbot_llm4rewrite_adapter_preflight/PERF_0008`
+- `/tmp/rewritebench_rbot_llm4rewrite_adapter_preflight/PERF_0033`
 
 Bundle purpose:
 
-- map one RewriteBench case package into a plausible single-case LLM4Rewrite-compatible input shape
+- map each RewriteBench case package into a plausible single-case LLM4Rewrite-compatible input shape
 - document the expected later runtime command
 - document later output capture requirements
 - avoid any method, model, or database execution
 
 ## 4. Files Written Under /tmp
 
-- `/tmp/rewritebench_rbot_llm4rewrite_adapter_preflight/PERF_0006/source.sql`
-- `/tmp/rewritebench_rbot_llm4rewrite_adapter_preflight/PERF_0006/create_tables.sql`
-- `/tmp/rewritebench_rbot_llm4rewrite_adapter_preflight/PERF_0006/rewritebench_case_metadata.json`
-- `/tmp/rewritebench_rbot_llm4rewrite_adapter_preflight/PERF_0006/llm4rewrite_config_stub.py`
-- `/tmp/rewritebench_rbot_llm4rewrite_adapter_preflight/PERF_0006/expected_command.txt`
-- `/tmp/rewritebench_rbot_llm4rewrite_adapter_preflight/PERF_0006/output_capture_contract.md`
+Each case bundle contains:
+
+- `source.sql`
+- `create_tables.sql`
+- `rewritebench_case_metadata.json`
+- `llm4rewrite_config_stub.py`
+- `expected_command.txt`
+- `output_capture_contract.md`
 
 ## 5. Upstream Contract Observed
 
-Observed upstream contract remained consistent with the earlier audit:
+Observed upstream contract remained consistent across all three mappings:
 
 - stock runner shape is benchmark-loop oriented, not single-case oriented
 - source SQL and schema are dataset-file driven upstream
@@ -53,6 +61,8 @@ Observed upstream contract remained consistent with the earlier audit:
 
 ## 6. Mapping Result
 
+### PERF_0006
+
 - `source_sql_found`: `yes`
 - `pg_schema_found`: `yes`
 - `temp_bundle_created`: `yes`
@@ -61,7 +71,27 @@ Observed upstream contract remained consistent with the earlier audit:
 - `output_capture_contract_documented`: `yes`
 - `can_attempt_future_1_case_smoke`: `conditional`
 
-Blockers before smoke:
+### PERF_0008
+
+- `source_sql_found`: `yes`
+- `pg_schema_found`: `yes`
+- `temp_bundle_created`: `yes`
+- `config_stub_created`: `yes`
+- `expected_command_documented`: `yes`
+- `output_capture_contract_documented`: `yes`
+- `can_attempt_future_1_case_smoke`: `conditional`
+
+### PERF_0033
+
+- `source_sql_found`: `yes`
+- `pg_schema_found`: `yes`
+- `temp_bundle_created`: `yes`
+- `config_stub_created`: `yes`
+- `expected_command_documented`: `yes`
+- `output_capture_contract_documented`: `yes`
+- `can_attempt_future_1_case_smoke`: `conditional`
+
+Shared blockers before smoke:
 
 - `postgres_runtime_not_prepared`
 - `rag_index_not_built_or_pinned`
@@ -70,7 +100,7 @@ Blockers before smoke:
 
 ## 7. Missing Before Execution
 
-The preflight removed the input-bundle uncertainty for `PERF_0006`, but the following still remain before any one-case smoke:
+The preflight removed the input-bundle uncertainty for `PERF_0006`, `PERF_0008`, and `PERF_0033`, but the following still remain before any one-case smoke:
 
 - prepare a PostgreSQL runtime for the one-case denominator
 - decide whether OpenAI/API execution is allowed for this baseline
@@ -80,18 +110,22 @@ The preflight removed the input-bundle uncertainty for `PERF_0006`, but the foll
 
 ## 8. Whether Bounded Smoke Is Ready
 
-Current answer: `conditional`
+Current answer for all three cases: `conditional`
 
 Reason:
 
-- the case package maps cleanly into a temporary input-bundle shape
+- the case packages map cleanly into a temporary input-bundle shape
 - the upstream runner and output path are understood well enough to continue
 - but runtime, retrieval/index, and policy dependencies are still unresolved
 
-Required conclusion:
+Required conclusions:
 
-- `PERF_0006` was only mapped into a temporary input-bundle shape
+- this is no-execution adapter preflight only
 - no R-Bot result exists yet
+- no model call occurred
+- no DB execution occurred
+- no SQLGlot run occurred
+- `PERF_0006`, `PERF_0008`, and `PERF_0033` were only mapped into temporary input-bundle shapes
 - R-Bot status may be upgraded only to `adapter_preflight_created_not_executed`
 - do not claim runnable result
 - do not claim leaderboard coverage
@@ -100,11 +134,8 @@ Required conclusion:
 
 Recommended next step:
 
-- implement a no-execution adapter scaffold/preflight command for additional first-subset cases only if the same temporary-bundle mapping remains clean
-
-Practical note:
-
-- for actual execution readiness, runtime/data dependencies still need to be acquired first
+- keep the existing no-execution adapter preflight command as the reusable mapping scaffold
+- do not attempt bounded smoke until runtime/data dependencies are explicitly resolved
 
 ## 10. Non-Modification Note
 
