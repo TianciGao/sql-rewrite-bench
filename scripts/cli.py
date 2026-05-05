@@ -229,6 +229,7 @@ LEARNEDREWRITE_LLM4REWRITE_SINGLE_CASE_RUNNER_ROOT = Path("/tmp/rewritebench_lea
 LEARNEDREWRITE_LLM4REWRITE_JVM_JAR_PREFLIGHT_JSON = Path("/tmp/rewritebench_learnedrewrite_llm4rewrite_jvm_jar_preflight.json")
 LLMR2_AUDIT_ROOT = Path("/tmp/rewritebench_llmr2_audit") / "LLM-R2"
 LLMR2_ADAPTER_PREFLIGHT_ROOT = Path("/tmp/rewritebench_llmr2_adapter_preflight")
+LLMR2_SINGLE_CASE_RUNNER_ROOT = Path("/tmp/rewritebench_llmr2_single_case_runner")
 CALCITE_HEP_REAL_ROUTE_CANARY_CASES = ["PERF_0006", "PERF_0008", "PERF_0033", "PERF_0054"]
 PORT_TRANSLATE_SOURCE_DIALECT_FALLBACKS = {
     "PORT_0004": "mysql",
@@ -28381,6 +28382,163 @@ def cmd_formal_llmr2_adapter_preflight(args: argparse.Namespace) -> int:
     return print_and_exit(payload, 0 if ok else 1)
 
 
+def cmd_formal_llmr2_single_case_run(args: argparse.Namespace) -> int:
+    case_id = str(args.case).strip().upper()
+    dry_run_only = bool(args.dry_run)
+    if case_id != "PERF_0006":
+        payload = {
+            "command": "formal-llmr2-single-case-run",
+            "ok": False,
+            "ran_at_utc": utc_now(),
+            "case_id": case_id,
+            "dry_run_only": dry_run_only,
+            "blockers": ["unsupported_case_id"],
+            "claim_boundary": "llmr2_single_case_runner_dry_run_only_not_execution",
+        }
+        return print_and_exit(payload, 1)
+
+    adapter_bundle_dir = LLMR2_ADAPTER_PREFLIGHT_ROOT / case_id
+    runner_dir = LLMR2_SINGLE_CASE_RUNNER_ROOT / case_id
+    runner_dir.mkdir(parents=True, exist_ok=True)
+
+    query_csv_path = adapter_bundle_dir / "perf_0006_queries.csv"
+    schema_stub_path = adapter_bundle_dir / "perf_0006_schema_stub.json"
+    metadata_path = adapter_bundle_dir / "llmr2_case_metadata.json"
+
+    repo_path = LLMR2_AUDIT_ROOT
+    main_script_path = repo_path / "src" / "LLM_R2.py"
+    rewriter_script_path = repo_path / "src" / "rewriter.py"
+    java_rule_applier_path = repo_path / "src" / "rewriter_java.jar"
+    demo_pool_dir = repo_path / "data" / "data_llmr2" / "pools"
+    rule_library_dir = repo_path / "src" / "rules_for_selected"
+    checkpoint_path = repo_path / "src" / "simcse_models" / "tpch" / "pytorch_model.bin"
+
+    future_execute_command_path = runner_dir / "future_execute_command_NOT_RUN.txt"
+    artifact_paths_path = runner_dir / "artifact_paths.json"
+    dry_run_summary_path = runner_dir / "dry_run_summary.json"
+    do_not_run_yet_path = runner_dir / "DO_NOT_RUN_YET.txt"
+
+    result_csv_path = runner_dir / "gpt_rewritebench_perf_0006_one_promo_plan_updated.csv"
+    generated_sql_path = runner_dir / "generated_sql_v1.sql"
+    activated_rules_path = runner_dir / "activated_rules_v1.json"
+    prompt_trace_path = runner_dir / "prompt_trace_v1.md"
+    demo_trace_path = runner_dir / "demo_trace_v1.json"
+    method_stdout_path = runner_dir / "method_stdout_v1.log"
+    method_stderr_path = runner_dir / "method_stderr_v1.log"
+    checker_candidate_sql_path = runner_dir / "checker_candidate_sql_v1.sql"
+
+    adapter_bundle_found = adapter_bundle_dir.is_dir()
+    query_csv_found = query_csv_path.is_file() and bool(query_csv_path.read_text(encoding="utf-8").strip())
+    schema_stub_found = schema_stub_path.is_file() and bool(schema_stub_path.read_text(encoding="utf-8").strip())
+    llmr2_repo_found = repo_path.is_dir()
+    main_script_found = main_script_path.is_file()
+    rewriter_script_found = rewriter_script_path.is_file()
+    java_rule_applier_found = java_rule_applier_path.is_file()
+    demo_pool_found = demo_pool_dir.is_dir() and any(demo_pool_dir.glob("*.csv"))
+    rule_library_found = rule_library_dir.is_dir() and any(rule_library_dir.glob("*.txt"))
+    checkpoint_found = checkpoint_path.is_file()
+    openai_api_key_visible = bool(os.environ.get("OPENAI_API_KEY"))
+
+    future_execute_command_text = (
+        "NOT RUN\n\n"
+        "Future bounded single-case command candidate:\n"
+        "cd /tmp/rewritebench_llmr2_audit/LLM-R2/src\n"
+        "PYTHONPATH=. OPENAI_API_KEY=${OPENAI_API_KEY} python3 LLM_R2.py\n\n"
+        "Bounded wrapper assumptions:\n"
+        f"- query CSV input staged at: {query_csv_path}\n"
+        f"- schema stub staged at: {schema_stub_path}\n"
+        f"- output result CSV captured to: {result_csv_path}\n"
+        f"- generated SQL extracted to: {generated_sql_path}\n"
+        f"- activated rules captured to: {activated_rules_path}\n"
+        f"- prompt trace captured to: {prompt_trace_path}\n"
+        f"- demo trace captured to: {demo_trace_path}\n"
+        "- this future execution path would call OpenAI/API through src/LLM_R2.py\n"
+        "- this future execution path would invoke the Java rule applier through src/rewriter.py and src/rewriter_java.jar\n"
+    )
+    future_execute_command_path.write_text(future_execute_command_text, encoding="utf-8")
+
+    artifact_paths_payload = {
+        "result_csv_path": str(result_csv_path),
+        "generated_sql_path": str(generated_sql_path),
+        "activated_rules_path": str(activated_rules_path),
+        "prompt_trace_path": str(prompt_trace_path),
+        "demo_trace_path": str(demo_trace_path),
+        "method_stdout_path": str(method_stdout_path),
+        "method_stderr_path": str(method_stderr_path),
+        "checker_candidate_sql_path": str(checker_candidate_sql_path),
+        "claim_boundary": "llmr2_single_case_runner_dry_run_only_not_execution",
+    }
+    artifact_paths_path.write_text(
+        json.dumps(artifact_paths_payload, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+
+    do_not_run_yet_path.write_text(
+        "DO NOT RUN YET\n"
+        "- dry-run scaffold only\n"
+        "- no LLM-R2 execution occurred\n"
+        "- no OpenAI/API call occurred\n"
+        "- no Java rule applier ran\n"
+        "- no DB, checker, or speedup execution occurred\n",
+        encoding="utf-8",
+    )
+
+    blockers: list[str] = []
+    if not adapter_bundle_found:
+        blockers.append("missing_adapter_bundle")
+    if not query_csv_found:
+        blockers.append("missing_query_csv")
+    if not schema_stub_found:
+        blockers.append("missing_schema_stub")
+    if not llmr2_repo_found:
+        blockers.append("missing_llmr2_repo")
+    if not main_script_found:
+        blockers.append("missing_main_script")
+    if not rewriter_script_found:
+        blockers.append("missing_rewriter_script")
+    if not java_rule_applier_found:
+        blockers.append("missing_java_rule_applier")
+    if not demo_pool_found:
+        blockers.append("missing_demo_pool")
+    if not rule_library_found:
+        blockers.append("missing_rule_library")
+    if not checkpoint_found:
+        blockers.append("missing_checkpoint")
+    if not openai_api_key_visible:
+        blockers.append("openai_api_key_not_visible")
+    if not metadata_path.is_file():
+        blockers.append("missing_adapter_metadata")
+    if not future_execute_command_path.is_file():
+        blockers.append("future_command_not_written")
+    if not artifact_paths_path.is_file():
+        blockers.append("artifact_paths_not_written")
+
+    can_execute_smoke_next = not blockers
+
+    payload = {
+        "case_id": case_id,
+        "dry_run_only": True,
+        "adapter_bundle_found": adapter_bundle_found,
+        "query_csv_found": query_csv_found,
+        "schema_stub_found": schema_stub_found,
+        "llmr2_repo_found": llmr2_repo_found,
+        "main_script_found": main_script_found,
+        "rewriter_script_found": rewriter_script_found,
+        "java_rule_applier_found": java_rule_applier_found,
+        "demo_pool_found": demo_pool_found,
+        "rule_library_found": rule_library_found,
+        "checkpoint_found": checkpoint_found,
+        "openai_api_key_visible": openai_api_key_visible,
+        "future_command_written": future_execute_command_path.is_file(),
+        "artifact_paths_written": artifact_paths_path.is_file(),
+        "can_execute_smoke_next": can_execute_smoke_next,
+        "blockers": blockers,
+        "claim_boundary": "llmr2_single_case_runner_dry_run_only_not_execution",
+    }
+    dry_run_summary_path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    return print_and_exit(payload, 0 if can_execute_smoke_next else 1)
+
+
 def cmd_formal_learnedrewrite_llm4rewrite_adapter_preflight(args: argparse.Namespace) -> int:
     case_id = str(args.case).strip().upper()
     supported_case_ids = {
@@ -40818,6 +40976,15 @@ def build_parser() -> argparse.ArgumentParser:
     formal_llmr2_adapter_preflight_parser.add_argument("--case", required=True)
     formal_llmr2_adapter_preflight_parser.set_defaults(
         func=cmd_formal_llmr2_adapter_preflight
+    )
+
+    formal_llmr2_single_case_run_parser = subparsers.add_parser(
+        "formal-llmr2-single-case-run"
+    )
+    formal_llmr2_single_case_run_parser.add_argument("--case", required=True)
+    formal_llmr2_single_case_run_parser.add_argument("--dry-run", action="store_true", default=False)
+    formal_llmr2_single_case_run_parser.set_defaults(
+        func=cmd_formal_llmr2_single_case_run
     )
 
     formal_learnedrewrite_llm4rewrite_adapter_preflight_parser = subparsers.add_parser(
