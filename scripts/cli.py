@@ -31974,6 +31974,19 @@ def cmd_formal_prior_method_pg_speedup_run(args: argparse.Namespace) -> int:
             },
             "json_path": Path("/tmp/rewritebench_prior_method_speedup_llmr2_batch_b_v1.json"),
             "batch": "B",
+        },
+        "learnedrewrite_llm4rewrite": {
+            "label": "LearnedRewrite / embedded LLM4Rewrite",
+            "claim_boundary": "bounded_pg_only_learnedrewrite_speedup_slice_not_leaderboard",
+            "runner_root": LEARNEDREWRITE_LLM4REWRITE_SINGLE_CASE_RUNNER_ROOT,
+            "speedup_root": PRIOR_METHOD_SPEEDUP_ROOT / "learnedrewrite_llm4rewrite",
+            "eligible_cases": [
+                "PERF_0033",
+                "PERF_0054",
+            ],
+            "candidate_filename": "generated_sql_v1.sql",
+            "json_path": Path("/tmp/rewritebench_prior_method_speedup_learnedrewrite_batch_c_v1.json"),
+            "batch": "C",
         }
     }
 
