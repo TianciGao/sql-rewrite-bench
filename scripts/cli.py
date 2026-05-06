@@ -18134,6 +18134,266 @@ def cmd_formal_port_missing_artifacts_readiness(args: argparse.Namespace) -> int
     return print_and_exit(result_payload, 0)
 
 
+def cmd_formal_port_0004_closure_artifact_bundle(args: argparse.Namespace) -> int:
+    case_id = "PORT_0004"
+    case_root = PORT_CASE_ROOT / case_id
+    validation_dir = case_root / "validation"
+    mysql_loader_path = validation_dir / "load_witness_mysql.sql"
+    spark_loader_path = validation_dir / "load_witness_spark.sql"
+    mysql_witness_path = validation_dir / "mysql_witness_data.sql"
+    spark_witness_path = validation_dir / "spark_witness_data.sql"
+
+    bundle_root = Path("/tmp/rewritebench_port_closure_artifacts") / case_id
+    mysql_bundle_dir = bundle_root / "mysql"
+    spark_bundle_dir = bundle_root / "spark"
+    closure_artifact_paths_path = bundle_root / "closure_artifact_paths.json"
+    do_not_run_yet_path = bundle_root / "DO_NOT_RUN_YET.txt"
+    json_path = Path("/tmp/rewritebench_port_0004_closure_artifact_bundle_v1.json")
+    report_path = ROOT / "docs" / "_scratch" / "PORT_0004_CLOSURE_ARTIFACT_BUNDLE_v1.md"
+
+    mysql_bundle_dir.mkdir(parents=True, exist_ok=True)
+    spark_bundle_dir.mkdir(parents=True, exist_ok=True)
+
+    def _standardize_witness(loader_path: Path, target_path: Path, engine: str) -> tuple[str, str]:
+        if target_path.is_file():
+            return "already_exists", relative_to_root(loader_path) if loader_path.is_file() else ""
+        if not loader_path.is_file():
+            return "missing", ""
+        header = (
+            f"-- STANDARDIZED closure-packet witness artifact for {case_id} ({engine})\n"
+            f"-- Derived deterministically from {relative_to_root(loader_path)}\n"
+            "-- NOT EXECUTED in this task\n\n"
+        )
+        target_path.write_text(header + loader_path.read_text(encoding="utf-8"), encoding="utf-8")
+        return "created", relative_to_root(loader_path)
+
+    mysql_witness_status, mysql_witness_derived_from = _standardize_witness(mysql_loader_path, mysql_witness_path, "mysql")
+    spark_witness_status, spark_witness_derived_from = _standardize_witness(spark_loader_path, spark_witness_path, "spark")
+
+    mysql_future_command_path = mysql_bundle_dir / "future_command_NOT_RUN.txt"
+    spark_future_command_path = spark_bundle_dir / "future_command_NOT_RUN.txt"
+
+    mysql_future_command_text = (
+        "NOT RUN\n\n"
+        f"Case: {case_id}\n"
+        "Purpose: future bounded MySQL closure execution only after explicit approval\n\n"
+        f"cd {ROOT}\n"
+        f"bash {relative_to_root(validation_dir / 'run_mysql_validation.sh')}\n\n"
+        "Expected result artifacts:\n"
+        f"- {relative_to_root(case_root / 'runs' / 'mysql' / 'source.tsv')}\n"
+        f"- {relative_to_root(case_root / 'runs' / 'mysql' / 'rewrite_pos_01.tsv')}\n"
+        f"- {relative_to_root(case_root / 'runs' / 'mysql' / 'result_check.json')}\n"
+    )
+    spark_future_command_text = (
+        "NOT RUN\n\n"
+        f"Case: {case_id}\n"
+        "Purpose: future bounded Spark closure execution only after explicit approval\n\n"
+        f"cd {ROOT}\n"
+        f"bash {relative_to_root(validation_dir / 'run_spark_validation.sh')}\n\n"
+        "Expected result artifacts:\n"
+        f"- {relative_to_root(case_root / 'runs' / 'spark' / 'source.tsv')}\n"
+        f"- {relative_to_root(case_root / 'runs' / 'spark' / 'rewrite_pos_02_spark.tsv')}\n"
+        f"- {relative_to_root(case_root / 'runs' / 'spark' / 'result_check.json')}\n"
+    )
+    mysql_future_command_path.write_text(mysql_future_command_text, encoding="utf-8")
+    spark_future_command_path.write_text(spark_future_command_text, encoding="utf-8")
+
+    do_not_run_yet_path.write_text(
+        "DO NOT RUN YET\n\n"
+        f"This bundle only standardizes closure artifacts for {case_id}.\n"
+        "No database execution, checker execution, speedup run, or SpeedupTransferRate computation occurred.\n"
+        "Result-check JSON files were not fabricated.\n",
+        encoding="utf-8",
+    )
+
+    route_candidate_paths = {
+        "sqlglot_transpile": {
+            "candidate_sql_path": "",
+            "candidate_sql_source": "reports/baseline_smoke/sqlglot_transpile_preflight_v0.json.records[PORT_0004].transpiled_sql_preview",
+            "materialized_result_path": "reports/formal_port/result_materialization/sqlglot_transpile/port_0004.tsv",
+            "checker_output_path": "reports/formal_port/result_checks/sqlglot_transpile/port_0004.json",
+            "missing_route_candidate_path": True,
+        },
+        "llm_direct_translate": {
+            "candidate_sql_path": "",
+            "candidate_sql_source": "reports/baseline_smoke/llm_direct_translate_call_port_0004_v0.json.records[0].extracted_sql_text",
+            "materialized_result_path": "reports/formal_port/result_materialization/llm_direct_translate/port_0004.tsv",
+            "checker_output_path": "reports/formal_port/result_checks/llm_direct_translate/port_0004.json",
+            "missing_route_candidate_path": True,
+        },
+    }
+
+    existing_artifacts = {
+        "source_sql": relative_to_root(case_root / "source.sql") if (case_root / "source.sql").is_file() else "",
+        "ddl_mysql": relative_to_root(case_root / "schema" / "ddl_mysql.sql") if (case_root / "schema" / "ddl_mysql.sql").is_file() else "",
+        "ddl_pg": relative_to_root(case_root / "schema" / "ddl_pg.sql") if (case_root / "schema" / "ddl_pg.sql").is_file() else "",
+        "ddl_spark": relative_to_root(case_root / "schema" / "ddl_spark.sql") if (case_root / "schema" / "ddl_spark.sql").is_file() else "",
+        "validation_readme": relative_to_root(validation_dir / "README.md") if (validation_dir / "README.md").is_file() else "",
+        "checker_yaml": relative_to_root(validation_dir / "checker.yaml") if (validation_dir / "checker.yaml").is_file() else "",
+        "load_witness_mysql": relative_to_root(mysql_loader_path) if mysql_loader_path.is_file() else "",
+        "load_witness_spark": relative_to_root(spark_loader_path) if spark_loader_path.is_file() else "",
+        "pg_llm_result_check": "reports/formal_port/result_checks/llm_direct_translate/port_0004.json" if (FORMAL_PORT_REPORT_DIR / "result_checks" / "llm_direct_translate" / "port_0004.json").is_file() else "",
+        "pg_sqlglot_result_check": "reports/formal_port/result_checks/sqlglot_transpile/port_0004.json" if (FORMAL_PORT_REPORT_DIR / "result_checks" / "sqlglot_transpile" / "port_0004.json").is_file() else "",
+    }
+
+    created_or_verified_artifacts = [
+        {
+            "artifact_path": relative_to_root(mysql_witness_path),
+            "status": mysql_witness_status,
+            "derived_from": mysql_witness_derived_from,
+            "notes": "standardized deterministic copy of existing MySQL loader draft",
+        },
+        {
+            "artifact_path": relative_to_root(spark_witness_path),
+            "status": spark_witness_status,
+            "derived_from": spark_witness_derived_from,
+            "notes": "standardized deterministic copy of existing Spark loader draft",
+        },
+        {
+            "artifact_path": str(mysql_future_command_path),
+            "status": "created" if mysql_future_command_path.is_file() else "missing",
+            "derived_from": relative_to_root(validation_dir / "run_mysql_validation.sh"),
+            "notes": "future command manifest, explicitly NOT RUN",
+        },
+        {
+            "artifact_path": str(spark_future_command_path),
+            "status": "created" if spark_future_command_path.is_file() else "missing",
+            "derived_from": relative_to_root(validation_dir / "run_spark_validation.sh"),
+            "notes": "future command manifest, explicitly NOT RUN",
+        },
+        {
+            "artifact_path": str(closure_artifact_paths_path),
+            "status": "created",
+            "derived_from": "bundle metadata generated in this task",
+            "notes": "artifact index only, no execution results",
+        },
+        {
+            "artifact_path": str(do_not_run_yet_path),
+            "status": "created" if do_not_run_yet_path.is_file() else "missing",
+            "derived_from": "bundle metadata generated in this task",
+            "notes": "hard stop marker for future execution",
+        },
+    ]
+
+    remaining_gaps = [
+        "route candidate SQL file path is not discoverable from existing SQLGlot/LLM reports",
+        "actual MySQL execution not run",
+        "actual Spark execution not run",
+        "case-local runs/mysql/result_check.json absent by design because no execution occurred",
+        "case-local runs/spark/result_check.json absent by design because no execution occurred",
+        "SpeedupTransferRate not ready",
+    ]
+
+    closure_artifact_paths_payload = {
+        "case_id": case_id,
+        "bundle_root": str(bundle_root),
+        "mysql_witness_data_path": relative_to_root(mysql_witness_path),
+        "spark_witness_data_path": relative_to_root(spark_witness_path),
+        "mysql_future_command_not_run": str(mysql_future_command_path),
+        "spark_future_command_not_run": str(spark_future_command_path),
+        "do_not_run_yet_path": str(do_not_run_yet_path),
+        "route_candidate_paths": route_candidate_paths,
+        "claim_boundary": "port_0004_closure_artifact_bundle_only_not_execution",
+    }
+    closure_artifact_paths_path.write_text(json.dumps(closure_artifact_paths_payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+    future_commands = {
+        "mysql": {
+            "command_path": str(mysql_future_command_path),
+            "intended_command_shape": f"bash {relative_to_root(validation_dir / 'run_mysql_validation.sh')}",
+            "not_run": True,
+            "expected_result_artifact_paths": [
+                relative_to_root(case_root / "runs" / "mysql" / "source.tsv"),
+                relative_to_root(case_root / "runs" / "mysql" / "rewrite_pos_01.tsv"),
+                relative_to_root(case_root / "runs" / "mysql" / "result_check.json"),
+            ],
+        },
+        "spark": {
+            "command_path": str(spark_future_command_path),
+            "intended_command_shape": f"bash {relative_to_root(validation_dir / 'run_spark_validation.sh')}",
+            "not_run": True,
+            "expected_result_artifact_paths": [
+                relative_to_root(case_root / "runs" / "spark" / "source.tsv"),
+                relative_to_root(case_root / "runs" / "spark" / "rewrite_pos_02_spark.tsv"),
+                relative_to_root(case_root / "runs" / "spark" / "result_check.json"),
+            ],
+        },
+    }
+
+    payload = {
+        "case_id": case_id,
+        "existing_artifacts": existing_artifacts,
+        "created_or_verified_artifacts": created_or_verified_artifacts,
+        "route_candidate_paths": route_candidate_paths,
+        "future_commands": future_commands,
+        "remaining_gaps": remaining_gaps,
+        "recommended_next_step": "run PORT_0004 MySQL/Spark closure execution",
+        "claim_boundary": "port_0004_closure_artifact_bundle_only_not_execution",
+    }
+    json_path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+    lines: list[str] = []
+    lines.append("# PORT_0004_CLOSURE_ARTIFACT_BUNDLE_v1\n\n")
+    lines.append("## 0. Purpose And Boundary\n")
+    lines.append("- PORT_0004 closure artifact bundle only\n")
+    lines.append("- no DB execution\n")
+    lines.append("- no checker\n")
+    lines.append("- no speedup\n")
+    lines.append("- no SpeedupTransferRate\n")
+    lines.append("- no fake results\n\n")
+    lines.append("## 1. Prior Readiness Recap\n")
+    lines.append("- `PORT_0004` was artifact-contract blocked\n")
+    lines.append("- PG-side route evidence exists\n")
+    lines.append("- MySQL/Spark standardized witness artifacts were missing\n")
+    lines.append("- `PORT_0022`, `PORT_0025`, and `PORT_0024` are out of scope\n\n")
+    lines.append("## 2. Existing PORT_0004 Artifacts\n")
+    for key, value in existing_artifacts.items():
+        if value:
+            lines.append(f"- `{key}`: `{value}`\n")
+    lines.append("\n")
+    lines.append("## 3. Created / Verified Standardized Artifacts\n")
+    lines.append("| artifact_path | status | derived_from | notes |\n")
+    lines.append("| --- | --- | --- | --- |\n")
+    for row in created_or_verified_artifacts:
+        lines.append(f"| {row['artifact_path']} | {row['status']} | {row['derived_from']} | {row['notes']} |\n")
+    lines.append("\n")
+    lines.append("## 4. Future Closure Commands\n")
+    lines.append(f"- MySQL command path: `{future_commands['mysql']['command_path']}`\n")
+    lines.append(f"- MySQL intended command: `{future_commands['mysql']['intended_command_shape']}`\n")
+    lines.append("- MySQL status: `NOT RUN`\n")
+    lines.append(f"- MySQL expected result artifacts: `{future_commands['mysql']['expected_result_artifact_paths']}`\n")
+    lines.append(f"- Spark command path: `{future_commands['spark']['command_path']}`\n")
+    lines.append(f"- Spark intended command: `{future_commands['spark']['intended_command_shape']}`\n")
+    lines.append("- Spark status: `NOT RUN`\n")
+    lines.append(f"- Spark expected result artifacts: `{future_commands['spark']['expected_result_artifact_paths']}`\n\n")
+    lines.append("## 5. Remaining Gaps\n")
+    for gap in remaining_gaps:
+        lines.append(f"- {gap}\n")
+    lines.append("\n")
+    lines.append("## 6. Recommended Next Step\n")
+    lines.append("- `run PORT_0004 MySQL/Spark closure execution`\n\n")
+    lines.append("## 7. Non-Modification Note\n")
+    lines.append("- no DB execution\n")
+    lines.append("- no checker/speedup\n")
+    lines.append("- no model/API\n")
+    lines.append("- no SpeedupTransferRate\n")
+    lines.append("- no registry/review/rules/EXECUTION_STATUS changes\n")
+    lines.append("- no fake result artifacts\n")
+    lines.append("- taxonomy notes untouched\n")
+    report_path.write_text("".join(lines), encoding="utf-8")
+
+    result_payload = {
+        "command": "formal-port-0004-closure-artifact-bundle",
+        "ok": True,
+        "ran_at_utc": utc_now(),
+        "json_path": str(json_path),
+        "report_path": relative_to_root(report_path),
+        "recommended_next_step": "run PORT_0004 MySQL/Spark closure execution",
+        "claim_boundary": "port_0004_closure_artifact_bundle_only_not_execution",
+    }
+    return print_and_exit(result_payload, 0)
+
+
 def cmd_formal_port_cross_engine_bounded_execution(args: argparse.Namespace) -> int:
     output_name = normalize_formal_expansion_output_name(args.output)
     valid_case_ids = port_cross_engine_bounded_execution_case_ids()
@@ -46417,6 +46677,13 @@ def build_parser() -> argparse.ArgumentParser:
     )
     formal_port_missing_artifacts_readiness_parser.set_defaults(
         func=cmd_formal_port_missing_artifacts_readiness
+    )
+
+    formal_port_0004_closure_artifact_bundle_parser = subparsers.add_parser(
+        "formal-port-0004-closure-artifact-bundle"
+    )
+    formal_port_0004_closure_artifact_bundle_parser.set_defaults(
+        func=cmd_formal_port_0004_closure_artifact_bundle
     )
 
     formal_port_cross_engine_bounded_execution_parser = subparsers.add_parser(
