@@ -236,10 +236,14 @@ SQLSOLVER_AUDIT_ROOT = Path("/tmp/rewritebench_sqlsolver_audit") / "candidate"
 SQLSOLVER_ADAPTER_PREFLIGHT_ROOT = Path("/tmp/rewritebench_sqlsolver_adapter_preflight")
 SQLSOLVER_RUNNER_DRY_RUN_ROOT = Path("/tmp/rewritebench_sqlsolver_runner_dry_run")
 SQLSOLVER_SUPPORT_SMOKE_ROOT = Path("/tmp/rewritebench_sqlsolver_support_smoke")
+PRIOR_METHOD_SPEEDUP_ROOT = Path("/tmp/rewritebench_prior_method_speedup")
 LLMR2_SUPPORTED_CASE_IDS = {
     "PERF_0006", "PERF_0008", "PERF_0013", "PERF_0017", "PERF_0019",
     "PERF_0024", "PERF_0033", "PERF_0052", "PERF_0054", "PERF_0063",
 }
+RBOT_LLM4REWRITE_SPEEDUP_ELIGIBLE_CASES = [
+    "PERF_0008", "PERF_0013", "PERF_0017", "PERF_0024", "PERF_0052", "PERF_0054", "PERF_0063",
+]
 CALCITE_HEP_REAL_ROUTE_CANARY_CASES = ["PERF_0006", "PERF_0008", "PERF_0033", "PERF_0054"]
 PORT_TRANSLATE_SOURCE_DIALECT_FALLBACKS = {
     "PORT_0004": "mysql",
@@ -31920,6 +31924,352 @@ def cmd_formal_learnedrewrite_llm4rewrite_single_case_run(args: argparse.Namespa
     return print_and_exit(smoke_payload, 0 if generation_status in {"generation_success_with_output_sql", "method_executed_output_sql_missing"} else 1)
 
 
+def cmd_formal_prior_method_pg_speedup_run(args: argparse.Namespace) -> int:
+    method = str(getattr(args, "method", "") or "").strip().lower()
+    selected_case_ids = [str(case_id).strip().upper() for case_id in (getattr(args, "cases", []) or []) if str(case_id).strip()]
+    repeats = int(getattr(args, "repeats", 5) or 5)
+    timeout_seconds = int(getattr(args, "timeout_seconds", 60) or 60)
+    warmup_count = 1
+    win_threshold = 1.05
+    loss_threshold = 0.95
+    regression_threshold = 1.20
+
+    method_specs: dict[str, dict[str, Any]] = {
+        "rbot_llm4rewrite": {
+            "label": "R-Bot / LLM4Rewrite",
+            "claim_boundary": "bounded_pg_only_rbot_speedup_slice_not_leaderboard",
+            "runner_root": RBOT_LLM4REWRITE_SINGLE_CASE_RUNNER_ROOT,
+            "speedup_root": PRIOR_METHOD_SPEEDUP_ROOT / "rbot_llm4rewrite",
+            "eligible_cases": list(RBOT_LLM4REWRITE_SPEEDUP_ELIGIBLE_CASES),
+            "candidate_filename": "generated_sql_v3.sql",
+            "json_path": Path("/tmp/rewritebench_prior_method_speedup_rbot_batch_a_v1.json"),
+        }
+    }
+
+    if method not in method_specs:
+        payload = {
+            "command": "formal-prior-method-pg-speedup-run",
+            "ok": False,
+            "ran_at_utc": utc_now(),
+            "method": method,
+            "issues": [{"type": "unsupported_method", "method": method}],
+            "speedup_status": "not_run",
+            "claim_boundary": "prior_method_pg_speedup_run_invalid_selection",
+        }
+        return print_and_exit(payload, 1)
+
+    spec = method_specs[method]
+    valid_case_ids = set(spec["eligible_cases"])
+    invalid_case_ids = [case_id for case_id in selected_case_ids if case_id not in valid_case_ids]
+    selected_case_ids = [case_id for case_id in selected_case_ids if case_id in valid_case_ids]
+    if not selected_case_ids:
+        selected_case_ids = list(spec["eligible_cases"])
+
+    env_visibility = pg_env_visibility()
+    required_env_visible = all(env_visibility[name] for name in ["PGHOST", "PGPORT", "PGDATABASE", "PGUSER"])
+    pg_password_present = env_visibility["PGPASSWORD"]
+    psycopg_available = True
+    psycopg = None
+    issues: list[dict[str, Any]] = []
+    issues.extend({"type": "unsupported_case_id", "case_id": case_id} for case_id in invalid_case_ids)
+    if not required_env_visible:
+        issues.append({"type": "missing_pg_env", "message": "required env: PGHOST, PGPORT, PGDATABASE, PGUSER"})
+    try:
+        psycopg = importlib.import_module("psycopg")
+    except Exception as exc:
+        psycopg_available = False
+        issues.append({"type": "psycopg_import_error", "message": str(exc)})
+
+    spec["speedup_root"].mkdir(parents=True, exist_ok=True)
+
+    def _strip_sql_comments(text: str) -> str:
+        return "\n".join(line for line in text.splitlines() if not re.match(r"^\s*--", line))
+
+    def _read_statements(path: Path) -> list[str]:
+        text = _strip_sql_comments(path.read_text(encoding="utf-8"))
+        return [stmt.strip() for stmt in text.split(";") if stmt.strip()]
+
+    def _read_query(path: Path) -> str:
+        return _strip_sql_comments(path.read_text(encoding="utf-8")).strip().rstrip(";")
+
+    def _runtime_stats(values: list[float]) -> tuple[float | None, float | None]:
+        if not values:
+            return None, None
+        return float(statistics.median(values)), float(sum(values) / len(values))
+
+    def _geometric_mean(values: list[float]) -> float | None:
+        positive_values = [value for value in values if isinstance(value, (int, float)) and value > 0]
+        if not positive_values:
+            return None
+        return float(math.exp(sum(math.log(value) for value in positive_values) / len(positive_values)))
+
+    def _execute_query(cur: Any, sql_text: str) -> tuple[int | None, float]:
+        start_ns = time.perf_counter_ns()
+        cur.execute(sql_text)
+        elapsed_ms = (time.perf_counter_ns() - start_ns) / 1_000_000
+        if cur.description is not None:
+            rows = cur.fetchall()
+            row_count = len(rows)
+        else:
+            row_count = cur.rowcount if cur.rowcount >= 0 else None
+        return row_count, float(elapsed_ms)
+
+    per_case_results: list[dict[str, Any]] = []
+    valid_speedup_values: list[float] = []
+    timeout_count = 0
+    measurement_failure_count = 0
+
+    for case_id in selected_case_ids:
+        case_dir = spec["speedup_root"] / case_id
+        case_dir.mkdir(parents=True, exist_ok=True)
+        per_case_json_path = case_dir / "result_v1.json"
+        source_runtimes_path = case_dir / "source_runtimes_ms_v1.json"
+        candidate_runtimes_path = case_dir / "candidate_runtimes_ms_v1.json"
+
+        inferred = case_root_for_case_id(case_id)
+        pool = inferred[0] if inferred else ""
+        case_root = inferred[1] if inferred else ROOT / "__missing__"
+        source_sql_path = case_root / "source.sql"
+        ddl_path = case_root / "schema" / "ddl_pg.sql"
+        witness_data_path = case_root / "validation" / "pg_witness_data.sql"
+        candidate_sql_path = spec["runner_root"] / case_id / spec["candidate_filename"]
+
+        source_execution_status = "not_attempted"
+        candidate_execution_status = "not_attempted"
+        source_runtimes_ms: list[float] = []
+        candidate_runtimes_ms: list[float] = []
+        source_median_ms: float | None = None
+        candidate_median_ms: float | None = None
+        speedup: float | None = None
+        win_tie_loss = "unknown"
+        regression_at_20: bool | None = None
+        failure_category = ""
+        failure_summary = ""
+        source_row_count: int | None = None
+        candidate_row_count: int | None = None
+        isolated_schema = f"prior_speedup_{method}_{case_id.lower()}_{int(time.time() * 1000)}"
+        schema_created = False
+
+        missing_inputs = []
+        if inferred is None or pool != "performance":
+            missing_inputs.append("case_id_not_resolved_to_perf_case")
+        if not source_sql_path.is_file():
+            missing_inputs.append("missing_source_sql")
+        if not ddl_path.is_file():
+            missing_inputs.append("missing_pg_ddl")
+        if not witness_data_path.is_file():
+            missing_inputs.append("missing_pg_witness_data")
+        if not candidate_sql_path.is_file():
+            missing_inputs.append("missing_candidate_sql")
+
+        source_sql = _read_query(source_sql_path) if source_sql_path.is_file() else ""
+        candidate_sql = _read_query(candidate_sql_path) if candidate_sql_path.is_file() else ""
+        if candidate_sql_path.is_file() and not candidate_sql.strip():
+            missing_inputs.append("empty_candidate_sql")
+
+        ddl_statements = _read_statements(ddl_path) if ddl_path.is_file() else []
+        data_statements = _read_statements(witness_data_path) if witness_data_path.is_file() else []
+
+        if issues:
+            failure_category = "environment_or_selection_blocked"
+            failure_summary = "; ".join(sorted({str(issue.get('type', 'issue')) for issue in issues}))
+        elif missing_inputs:
+            failure_category = "missing_required_artifact"
+            failure_summary = "; ".join(missing_inputs)
+        else:
+            try:
+                with psycopg.connect(
+                    host=os.environ["PGHOST"],
+                    port=os.environ["PGPORT"],
+                    dbname=os.environ["PGDATABASE"],
+                    user=os.environ["PGUSER"],
+                    password=os.environ.get("PGPASSWORD"),
+                    autocommit=False,
+                ) as conn:
+                    with conn.cursor() as cur:
+                        cur.execute("SELECT set_config('statement_timeout', %s, false)", (str(timeout_seconds * 1000),))
+                        cur.execute(
+                            psycopg.sql.SQL("CREATE SCHEMA {}").format(
+                                psycopg.sql.Identifier(isolated_schema)
+                            )
+                        )
+                        schema_created = True
+                        cur.execute(
+                            psycopg.sql.SQL("SET search_path TO {}, public").format(
+                                psycopg.sql.Identifier(isolated_schema)
+                            )
+                        )
+                        for stmt in ddl_statements:
+                            cur.execute(stmt)
+                        for stmt in data_statements:
+                            cur.execute(stmt)
+                        conn.commit()
+
+                        for _ in range(warmup_count):
+                            cur.execute(
+                                psycopg.sql.SQL("SET search_path TO {}, public").format(
+                                    psycopg.sql.Identifier(isolated_schema)
+                                )
+                            )
+                            _execute_query(cur, source_sql)
+                            conn.rollback()
+                            cur.execute(
+                                psycopg.sql.SQL("SET search_path TO {}, public").format(
+                                    psycopg.sql.Identifier(isolated_schema)
+                                )
+                            )
+                            _execute_query(cur, candidate_sql)
+                            conn.rollback()
+
+                        for repeat_index in range(repeats):
+                            order = ["source", "candidate"] if repeat_index % 2 == 0 else ["candidate", "source"]
+                            for role in order:
+                                cur.execute(
+                                    psycopg.sql.SQL("SET search_path TO {}, public").format(
+                                        psycopg.sql.Identifier(isolated_schema)
+                                    )
+                                )
+                                sql_text = source_sql if role == "source" else candidate_sql
+                                row_count, runtime_ms = _execute_query(cur, sql_text)
+                                conn.rollback()
+                                if role == "source":
+                                    source_execution_status = "success"
+                                    source_runtimes_ms.append(runtime_ms)
+                                    if source_row_count is None:
+                                        source_row_count = row_count
+                                else:
+                                    candidate_execution_status = "success"
+                                    candidate_runtimes_ms.append(runtime_ms)
+                                    if candidate_row_count is None:
+                                        candidate_row_count = row_count
+            except Exception as exc:
+                exc_name = type(exc).__name__
+                exc_text = str(exc)
+                if source_execution_status == "not_attempted":
+                    source_execution_status = "failed"
+                else:
+                    candidate_execution_status = "failed"
+                failure_category = exc_name
+                failure_summary = exc_text
+                if "timeout" in exc_text.lower() or "QueryCanceled" in exc_name:
+                    timeout_count += 1
+            finally:
+                if schema_created:
+                    try:
+                        with psycopg.connect(
+                            host=os.environ["PGHOST"],
+                            port=os.environ["PGPORT"],
+                            dbname=os.environ["PGDATABASE"],
+                            user=os.environ["PGUSER"],
+                            password=os.environ.get("PGPASSWORD"),
+                            autocommit=True,
+                        ) as cleanup_conn:
+                            with cleanup_conn.cursor() as cleanup_cur:
+                                cleanup_cur.execute(
+                                    psycopg.sql.SQL("DROP SCHEMA IF EXISTS {} CASCADE").format(
+                                        psycopg.sql.Identifier(isolated_schema)
+                                    )
+                                )
+                    except Exception:
+                        pass
+
+        source_median_ms, source_mean_ms = _runtime_stats(source_runtimes_ms)
+        candidate_median_ms, candidate_mean_ms = _runtime_stats(candidate_runtimes_ms)
+        if (
+            isinstance(source_median_ms, (int, float))
+            and isinstance(candidate_median_ms, (int, float))
+            and source_median_ms > 0
+            and candidate_median_ms > 0
+        ):
+            speedup = float(source_median_ms / candidate_median_ms)
+            valid_speedup_values.append(speedup)
+            if speedup >= win_threshold:
+                win_tie_loss = "win"
+            elif speedup <= loss_threshold:
+                win_tie_loss = "loss"
+            else:
+                win_tie_loss = "tie"
+            regression_at_20 = bool(candidate_median_ms >= regression_threshold * source_median_ms)
+            if not failure_category:
+                failure_category = "none"
+        else:
+            measurement_failure_count += 1
+            if not failure_category:
+                failure_category = "runtime_measurement_unavailable"
+                failure_summary = "paired median runtime not available"
+
+        source_runtimes_path.write_text(json.dumps(source_runtimes_ms, indent=2) + "\n", encoding="utf-8")
+        candidate_runtimes_path.write_text(json.dumps(candidate_runtimes_ms, indent=2) + "\n", encoding="utf-8")
+
+        record = {
+            "case_id": case_id,
+            "source_sql_path": str(source_sql_path),
+            "candidate_sql_path": str(candidate_sql_path),
+            "ddl_path": str(ddl_path),
+            "witness_data_path": str(witness_data_path),
+            "source_execution_status": source_execution_status,
+            "candidate_execution_status": candidate_execution_status,
+            "source_runtimes_ms": source_runtimes_ms,
+            "candidate_runtimes_ms": candidate_runtimes_ms,
+            "source_median_ms": source_median_ms,
+            "candidate_median_ms": candidate_median_ms,
+            "speedup": speedup,
+            "win_tie_loss": win_tie_loss,
+            "regression_at_20": regression_at_20,
+            "failure_category": failure_category,
+            "failure_summary": failure_summary,
+            "artifact_paths": {
+                "per_case_result_json": str(per_case_json_path),
+                "source_runtimes_json": str(source_runtimes_path),
+                "candidate_runtimes_json": str(candidate_runtimes_path),
+            },
+        }
+        per_case_json_path.write_text(json.dumps(record, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+        per_case_results.append(record)
+
+    valid_measured_count = sum(1 for record in per_case_results if isinstance(record.get("speedup"), (int, float)))
+    win_count = sum(1 for record in per_case_results if record.get("win_tie_loss") == "win")
+    tie_count = sum(1 for record in per_case_results if record.get("win_tie_loss") == "tie")
+    loss_count = sum(1 for record in per_case_results if record.get("win_tie_loss") == "loss")
+    regression_count = sum(1 for record in per_case_results if record.get("regression_at_20") is True)
+    gm_speedup = _geometric_mean(valid_speedup_values)
+    speedup_status = "measured" if valid_measured_count == len(selected_case_ids) and not issues else "partial_with_failures"
+
+    payload = {
+        "command": "formal-prior-method-pg-speedup-run",
+        "ran_at_utc": utc_now(),
+        "method": method,
+        "batch": "A",
+        "engine": "postgresql",
+        "cases": selected_case_ids,
+        "per_case_results": per_case_results,
+        "method_metrics": {
+            "denominator": len(selected_case_ids),
+            "valid_measured_count": valid_measured_count,
+            "gm_speedup": gm_speedup,
+            "win_count": win_count,
+            "tie_count": tie_count,
+            "loss_count": loss_count,
+            "regression_count@20": regression_count,
+            "measurement_failure_count": measurement_failure_count,
+            "timeout_count": timeout_count,
+            "speedup_status": speedup_status,
+        },
+        "repeats": repeats,
+        "warmup_count": warmup_count,
+        "timeout_seconds": timeout_seconds,
+        "speedup_status": speedup_status,
+        "pg_env_visible": required_env_visible,
+        "pg_password_present": pg_password_present,
+        "psycopg_available": psycopg_available,
+        "issues": issues,
+        "claim_boundary": spec["claim_boundary"],
+    }
+    spec["json_path"].write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    ok = not issues and valid_measured_count == len(selected_case_ids)
+    return print_and_exit(payload, 0 if ok else 1)
+
+
 def cmd_formal_learnedrewrite_llm4rewrite_jvm_jar_preflight(args: argparse.Namespace) -> int:
     case_id = str(args.case).strip().upper()
     if case_id != "PERF_0006":
@@ -43904,6 +44254,17 @@ def build_parser() -> argparse.ArgumentParser:
     formal_sqlsolver_support_smoke_parser.add_argument("--use-built-jar", action="store_true", default=False)
     formal_sqlsolver_support_smoke_parser.set_defaults(
         func=cmd_formal_sqlsolver_support_smoke
+    )
+
+    formal_prior_method_pg_speedup_run_parser = subparsers.add_parser(
+        "formal-prior-method-pg-speedup-run"
+    )
+    formal_prior_method_pg_speedup_run_parser.add_argument("--method", required=True)
+    formal_prior_method_pg_speedup_run_parser.add_argument("--cases", nargs="+", required=True)
+    formal_prior_method_pg_speedup_run_parser.add_argument("--repeats", type=int, default=5)
+    formal_prior_method_pg_speedup_run_parser.add_argument("--timeout-seconds", type=int, default=60)
+    formal_prior_method_pg_speedup_run_parser.set_defaults(
+        func=cmd_formal_prior_method_pg_speedup_run
     )
 
     formal_llmr2_single_case_run_parser = subparsers.add_parser(
