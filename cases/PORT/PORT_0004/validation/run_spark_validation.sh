@@ -5,6 +5,8 @@ CASE_ID="PORT_0004"
 CASE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 REPO_ROOT="$(cd "${CASE_DIR}/../../.." && pwd)"
 RUN_DIR="${CASE_DIR}/runs/spark"
+MYSQL_RUN_DIR="${CASE_DIR}/runs/mysql"
+PG_RUN_DIR="${CASE_DIR}/runs/pg"
 PYTHON_BIN="${PYTHON_BIN:-python}"
 
 # DRAFT-ONLY validation scaffold. Do not treat this as executed evidence.
@@ -18,6 +20,7 @@ CASE_DIR="${CASE_DIR}" RUN_DIR="${RUN_DIR}" CASE_ID="${CASE_ID}" "${PYTHON_BIN}"
 import os
 import pathlib
 import re
+import shutil
 from pyspark.sql import SparkSession
 
 
@@ -43,16 +46,26 @@ def write_rows(path: pathlib.Path, rows) -> None:
 case_dir = pathlib.Path(os.environ["CASE_DIR"])
 run_dir = pathlib.Path(os.environ["RUN_DIR"])
 case_id = os.environ["CASE_ID"]
+warehouse_dir = run_dir / "warehouse"
+database_name = f"{case_id.lower()}_validation"
 
 spark = (
     SparkSession.builder.master("local[*]")
     .appName(f"{case_id}_draft_validation")
     .config("spark.ui.enabled", "false")
+    .config("spark.sql.warehouse.dir", str(warehouse_dir))
     .getOrCreate()
 )
 spark.sparkContext.setLogLevel("ERROR")
 
 try:
+    if warehouse_dir.exists():
+        shutil.rmtree(warehouse_dir)
+
+    spark.sql(f"DROP DATABASE IF EXISTS {database_name} CASCADE")
+    spark.sql(f"CREATE DATABASE {database_name}")
+    spark.sql(f"USE {database_name}")
+
     for stmt in read_statements(case_dir / "schema/ddl_spark.sql"):
         spark.sql(stmt)
     for stmt in read_statements(case_dir / "validation/load_witness_spark.sql"):
@@ -66,3 +79,13 @@ try:
 finally:
     spark.stop()
 PY
+
+if [[ -f "${MYSQL_RUN_DIR}/source.tsv" && -f "${PG_RUN_DIR}/rewrite_pos_01.tsv" && -f "${PG_RUN_DIR}/rewrite_neg_01.tsv" ]]; then
+  "${PYTHON_BIN}" "${CASE_DIR}/validation/check_results.py" \
+    "${MYSQL_RUN_DIR}/source.tsv" \
+    "${PG_RUN_DIR}/rewrite_pos_01.tsv" \
+    "${PG_RUN_DIR}/rewrite_neg_01.tsv" \
+    "${RUN_DIR}/rewrite_pos_02_spark.tsv" \
+    "${RUN_DIR}/rewrite_neg_02_spark.tsv" \
+    "${RUN_DIR}/result_check.json"
+fi
