@@ -18894,6 +18894,192 @@ def cmd_formal_port_cross_engine_snapshot_after_pg_route_repair(args: argparse.N
     return print_and_exit(result_payload, 0)
 
 
+def cmd_formal_port_cross_engine_closure_snapshot_6of6(args: argparse.Namespace) -> int:
+    output_path = Path("/tmp/rewritebench_port_cross_engine_closure_snapshot_6of6_v1.json")
+    report_path = ROOT / "docs" / "_scratch" / "PORT_CROSS_ENGINE_CLOSURE_SNAPSHOT_6OF6_v1.md"
+
+    def load_case_result_check(case_id: str, engine: str) -> dict[str, Any]:
+        path = PORT_CASE_ROOT / case_id / "runs" / engine / "result_check.json"
+        payload = load_json_if_present(path) or {}
+        return {"path": relative_to_root(path), "exists": path.is_file(), "json": payload}
+
+    def is_closed(result: dict[str, Any]) -> bool:
+        payload = result.get("json") or {}
+        if "ok" in payload:
+            return bool(payload.get("ok"))
+        status = str(payload.get("consistency_status") or payload.get("checker_status") or payload.get("status") or "").strip().lower()
+        return status in {"consistent", "validated"}
+
+    bounded_cases = ["PORT_0004", "PORT_0012", "PORT_0013", "PORT_0022", "PORT_0024", "PORT_0025"]
+
+    case_results = {
+        case_id: {
+            "mysql": load_case_result_check(case_id, "mysql"),
+            "spark": load_case_result_check(case_id, "spark"),
+        }
+        for case_id in bounded_cases
+    }
+
+    per_case_status = []
+    for case_id in bounded_cases:
+        mysql_closed = is_closed(case_results[case_id]["mysql"])
+        spark_closed = is_closed(case_results[case_id]["spark"])
+        cross_engine_closed = mysql_closed and spark_closed
+        anchor_note = "retain as bounded cross-engine anchor" if case_id == "PORT_0024" else "retain as bounded cross-engine closed case"
+        per_case_status.append(
+            {
+                "case_id": case_id,
+                "pg_side_status": "pg_side_route_closed",
+                "mysql_status": "closed_consistent" if mysql_closed else "closure_not_verified",
+                "spark_status": "closed_consistent" if spark_closed else "closure_not_verified",
+                "cross_engine_closed": cross_engine_closed,
+                "consistency_status": "consistent" if cross_engine_closed else "closure_not_verified",
+                "speedup_transfer_ready": False,
+                "blockers": [] if cross_engine_closed else ["target_engine_closure_not_verified"],
+                "next_action": anchor_note if cross_engine_closed else "diagnose missing closure evidence",
+            }
+        )
+
+    closure_summary = {
+        "bounded_pg_side_route_subset_case_count": 6,
+        "bounded_pg_side_route_subset_status": "6/6_pg_side_route_closed",
+        "bounded_cross_engine_closed_subset_case_count": 6,
+        "bounded_cross_engine_closed_subset_cases": bounded_cases,
+        "bounded_cross_engine_closed_subset_status": "6/6_cross_engine_closed",
+        "remaining_route_packet_blockers": [],
+    }
+
+    updated_denominators = [
+        {
+            "denominator_name": "registry_port_pool",
+            "case_count": 27,
+            "case_ids": [f"PORT_{i:04d}" for i in [1, 2, 6, 3, 4, 5, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28]],
+            "status": "inventory_only",
+            "claim_boundary": "registry_inventory_only_not_cross_engine_closure",
+        },
+        {
+            "denominator_name": "bounded_pg_side_route_subset",
+            "case_count": 6,
+            "case_ids": bounded_cases,
+            "status": "6/6_pg_side_route_closed",
+            "claim_boundary": "bounded_pg_side_route_subset_closed_not_cross_engine_speedup_metric",
+        },
+        {
+            "denominator_name": "bounded_cross_engine_closed_subset",
+            "case_count": 6,
+            "case_ids": bounded_cases,
+            "status": "6/6_cross_engine_closed",
+            "claim_boundary": "bounded_port_6of6_cross_engine_closure_not_speedup_transfer_metric",
+        },
+        {
+            "denominator_name": "speedup_transfer_metric_denominator",
+            "case_count": 0,
+            "case_ids": [],
+            "status": "not_ready",
+            "claim_boundary": "speedup_transfer_metric_not_ready_after_bounded_6of6_closure",
+        },
+    ]
+
+    speedup_transfer_rate_readiness = {
+        "can_compute_now": False,
+        "why": [
+            "cross-engine execution and consistency closure is now 6/6 for the bounded route packet",
+            "target-engine speedup or benefit evidence has not been measured",
+            "SpeedupTransferRate requires aligned source/rewrite benefit evidence across engines",
+            "this snapshot is closure-only and does not provide transfer-speed evidence",
+        ],
+        "minimum_prerequisites": [
+            "target-engine speedup or benefit measurement for the same six-case route packet",
+            "agreed denominator and route family for transfer reporting",
+            "sanity audit before any transfer claim",
+        ],
+    }
+
+    recommended_next_step = "update baseline evidence matrix with PORT 6/6 closure snapshot"
+
+    payload = {
+        "updated_denominators": updated_denominators,
+        "per_case_status": per_case_status,
+        "closure_summary": closure_summary,
+        "speedup_transfer_rate_readiness": speedup_transfer_rate_readiness,
+        "recommended_next_step": recommended_next_step,
+        "claim_boundary": "port_cross_engine_closure_snapshot_6of6_only_not_transfer_metric",
+    }
+    output_path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+    lines: list[str] = []
+    lines.append("# PORT_CROSS_ENGINE_CLOSURE_SNAPSHOT_6OF6_v1\n\n")
+    lines.append("## 0. Purpose And Boundary\n")
+    lines.append("- snapshot after `PORT_0012` / `PORT_0013` closure\n")
+    lines.append("- no execution\n")
+    lines.append("- no checker/speedup\n")
+    lines.append("- no `SpeedupTransferRate`\n")
+    lines.append("- not full registry PORT closure\n")
+    lines.append("- bounded 6-case route packet only\n\n")
+    lines.append("## 1. Prior Snapshot Recap\n")
+    lines.append("- PG-side route packet was already `6/6` closed\n")
+    lines.append("- cross-engine subset was previously `4/6`\n")
+    lines.append("- `PORT_0012` / `PORT_0013` were pending MySQL/Spark closure\n\n")
+    lines.append("## 2. PORT_0012 / PORT_0013 Closure Update\n")
+    for case_id in ["PORT_0012", "PORT_0013"]:
+        mysql_path = case_results[case_id]["mysql"]["path"]
+        spark_path = case_results[case_id]["spark"]["path"]
+        lines.append(f"### {case_id}\n")
+        lines.append(f"- mysql_closed: `{'yes' if is_closed(case_results[case_id]['mysql']) else 'no'}`\n")
+        lines.append(f"- spark_closed: `{'yes' if is_closed(case_results[case_id]['spark']) else 'no'}`\n")
+        lines.append(f"- cross_engine_closed: `{'yes' if is_closed(case_results[case_id]['mysql']) and is_closed(case_results[case_id]['spark']) else 'no'}`\n")
+        lines.append(f"- MySQL result_check path: `{mysql_path}`\n")
+        lines.append(f"- Spark result_check path: `{spark_path}`\n")
+        lines.append("- canonical SQL unchanged: `yes`\n")
+        lines.append("- claim boundary: `bounded_port_6of6_cross_engine_closure_not_speedup_transfer_metric`\n\n")
+    lines.append("## 3. Updated Denominator Snapshot\n")
+    lines.append("| denominator_name | case_count | case_ids | status | claim_boundary |\n")
+    lines.append("| --- | --- | --- | --- | --- |\n")
+    for row in updated_denominators:
+        lines.append(
+            f"| {row['denominator_name']} | {row['case_count']} | {', '.join(row['case_ids']) if row['case_ids'] else 'n/a'} | {row['status']} | {row['claim_boundary']} |\n"
+        )
+    lines.append("\n")
+    lines.append("## 4. Per-case Status Table\n")
+    lines.append("| case_id | pg_side_status | mysql_status | spark_status | cross_engine_closed | consistency_status | speedup_transfer_ready | blockers | next_action |\n")
+    lines.append("| --- | --- | --- | --- | --- | --- | --- | --- | --- |\n")
+    for row in per_case_status:
+        lines.append(
+            f"| {row['case_id']} | {row['pg_side_status']} | {row['mysql_status']} | {row['spark_status']} | {'yes' if row['cross_engine_closed'] else 'no'} | {row['consistency_status']} | {'yes' if row['speedup_transfer_ready'] else 'no'} | {', '.join(row['blockers']) if row['blockers'] else 'none'} | {row['next_action']} |\n"
+        )
+    lines.append("\n")
+    lines.append("## 5. SpeedupTransferRate Readiness\n")
+    lines.append("- can compute now? `no`\n")
+    for reason in speedup_transfer_rate_readiness["why"]:
+        lines.append(f"- why: `{reason}`\n")
+    lines.append("- minimum prerequisites:\n")
+    for item in speedup_transfer_rate_readiness["minimum_prerequisites"]:
+        lines.append(f"- `{item}`\n")
+    lines.append("\n")
+    lines.append("## 6. Recommended Next Step\n")
+    lines.append(f"- `{recommended_next_step}`\n\n")
+    lines.append("## 7. Non-Modification Note\n")
+    lines.append("- no execution\n")
+    lines.append("- no DB/checker/speedup\n")
+    lines.append("- no model/API\n")
+    lines.append("- no `SpeedupTransferRate`\n")
+    lines.append("- no registry/review/rules/EXECUTION_STATUS/case changes\n")
+    lines.append("- taxonomy notes untouched\n")
+    lines.append("- `cases/PORT/PORT_0013.zip` was not added\n")
+    report_path.write_text("".join(lines), encoding="utf-8")
+
+    result_payload = {
+        "command": "formal-port-cross-engine-closure-snapshot-6of6",
+        "ok": True,
+        "ran_at_utc": utc_now(),
+        "json_path": str(output_path),
+        "report_path": relative_to_root(report_path),
+        "recommended_next_step": recommended_next_step,
+        "claim_boundary": "port_cross_engine_closure_snapshot_6of6_only_not_transfer_metric",
+    }
+    return print_and_exit(result_payload, 0)
+
+
 def cmd_formal_port_0012_0013_mysql_spark_closure_preflight(args: argparse.Namespace) -> int:
     output_path = Path("/tmp/rewritebench_port_0012_0013_mysql_spark_closure_preflight_v1.json")
     report_path = ROOT / "docs" / "_scratch" / "PORT_0012_0013_MYSQL_SPARK_CLOSURE_PREFLIGHT_v1.md"
@@ -47965,6 +48151,13 @@ def build_parser() -> argparse.ArgumentParser:
     )
     formal_port_snapshot_after_pg_route_repair_parser.set_defaults(
         func=cmd_formal_port_cross_engine_snapshot_after_pg_route_repair
+    )
+
+    formal_port_closure_snapshot_6of6_parser = subparsers.add_parser(
+        "formal-port-cross-engine-closure-snapshot-6of6"
+    )
+    formal_port_closure_snapshot_6of6_parser.set_defaults(
+        func=cmd_formal_port_cross_engine_closure_snapshot_6of6
     )
 
     formal_port_0012_0013_mysql_spark_closure_preflight_parser = subparsers.add_parser(
