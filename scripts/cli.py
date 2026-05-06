@@ -19285,6 +19285,169 @@ def cmd_formal_port_0012_0013_mysql_spark_closure_preflight(args: argparse.Names
     return print_and_exit(result_payload, 0)
 
 
+def cmd_port_target_benefit_plan(_: argparse.Namespace) -> int:
+    output_path = Path("/tmp/rewritebench_port_target_engine_benefit_measurement_plan_v1.json")
+    bounded_cases = ["PORT_0004", "PORT_0012", "PORT_0013", "PORT_0022", "PORT_0024", "PORT_0025"]
+    route_families = [
+        ("SQLGlot Transpile", "sqlglot_transpile"),
+        ("LLM Translate", "llm_translate"),
+    ]
+    target_engines = ["mysql", "spark"]
+
+    def _rel(path: Path) -> str:
+        try:
+            return relative_to_root(path)
+        except Exception:
+            return str(path)
+
+    def _source_sql_candidates(case_id: str, engine: str) -> tuple[list[str], str | None]:
+        case_root = PORT_CASE_ROOT / case_id
+        candidates: list[Path] = []
+        canonical_source = case_root / "source.sql"
+        if canonical_source.is_file():
+            candidates.append(canonical_source)
+
+        engine_normalized_source = case_root / "runs" / engine / f"source.{engine}_normalized.sql"
+        if engine_normalized_source.is_file():
+            candidates.append(engine_normalized_source)
+
+        return [_rel(path) for path in candidates], (_rel(candidates[0]) if candidates else None)
+
+    def _candidate_sql_candidates(case_id: str, engine: str) -> list[str]:
+        case_root = PORT_CASE_ROOT / case_id
+        candidates: list[Path] = []
+        if engine == "mysql":
+            for path in [
+                case_root / "runs" / "mysql" / "rewrite_pos_01.mysql_normalized.sql",
+                case_root / "rewrite_pos_01.sql",
+            ]:
+                if path.is_file() and path not in candidates:
+                    candidates.append(path)
+        else:
+            for path in [
+                case_root / "rewrite_pos_02_spark.sql",
+                case_root / "rewrite_pos_01.sql",
+            ]:
+                if path.is_file() and path not in candidates:
+                    candidates.append(path)
+        return [_rel(path) for path in candidates]
+
+    def _route_consistency_candidates(case_id: str, engine: str, route_family_slug: str) -> tuple[list[str], str | None]:
+        case_root = PORT_CASE_ROOT / case_id
+        candidates: list[Path] = []
+        engine_result_check = case_root / "runs" / engine / "result_check.json"
+        if engine_result_check.is_file():
+            candidates.append(engine_result_check)
+
+        route_dir = "sqlglot_transpile" if route_family_slug == "sqlglot_transpile" else "llm_direct_translate"
+        route_case = case_id.lower()
+        for path in [
+            FORMAL_PORT_REPORT_DIR / "result_checks" / route_dir / f"{route_case}.json",
+            FORMAL_EXPANSION_REPORT_DIR / "port_batch2c" / "result_checks" / route_dir / f"{route_case}.json",
+        ]:
+            if path.is_file():
+                candidates.append(path)
+
+        selected = _rel(engine_result_check) if engine_result_check.is_file() else (_rel(candidates[0]) if candidates else None)
+        return [_rel(path) for path in candidates], selected
+
+    cells: list[dict[str, Any]] = []
+    global_blockers: list[str] = []
+
+    for case_id in bounded_cases:
+        for route_family, route_family_slug in route_families:
+            for target_engine in target_engines:
+                source_candidates, source_selected = _source_sql_candidates(case_id, target_engine)
+                candidate_candidates = _candidate_sql_candidates(case_id, target_engine)
+                consistency_candidates, consistency_selected = _route_consistency_candidates(
+                    case_id, target_engine, route_family_slug
+                )
+
+                source_exists = bool(source_selected and (ROOT / source_selected).is_file())
+                consistency_exists = bool(consistency_selected and (ROOT / consistency_selected).is_file())
+
+                # Conservative by construction: no route-family-specific target-engine
+                # candidate SQL artifact is currently materialized in the bounded PORT packet.
+                candidate_selected = None
+                candidate_exists = False
+
+                blockers: list[str] = []
+                if not source_selected:
+                    blockers.append("source_sql_artifact_unresolved")
+                if not candidate_selected:
+                    blockers.append("route_family_specific_candidate_sql_unresolved")
+                if not consistency_exists:
+                    blockers.append("consistency_evidence_missing")
+                blockers.append("target_engine_timing_harness_missing")
+                blockers.append("target_engine_timing_arrays_missing")
+
+                future_dir = f"/tmp/rewritebench_port_target_engine_benefit/{route_family_slug}/{target_engine}/{case_id}"
+                cells.append(
+                    {
+                        "case_id": case_id,
+                        "route_family": route_family,
+                        "route_family_slug": route_family_slug,
+                        "target_engine": target_engine,
+                        "source_sql_artifact_candidates": source_candidates,
+                        "candidate_sql_artifact_candidates": candidate_candidates,
+                        "source_sql_artifact_selected": source_selected,
+                        "candidate_sql_artifact_selected": candidate_selected,
+                        "consistency_evidence_candidates": consistency_candidates,
+                        "consistency_evidence_selected": consistency_selected,
+                        "source_artifact_exists": source_exists,
+                        "candidate_artifact_exists": candidate_exists,
+                        "consistency_evidence_exists": consistency_exists,
+                        "ready_for_future_timing": False,
+                        "blocker": "; ".join(blockers),
+                        "future_raw_timing_output_path": f"{future_dir}/timings.json",
+                        "future_summary_output_path": f"{future_dir}/summary.json",
+                    }
+                )
+
+    for message in [
+        "no reusable target-engine paired timing harness was identified for mysql",
+        "no reusable target-engine paired timing harness was identified for spark",
+        "no route-family-specific target-engine candidate SQL artifacts were identified for SQLGlot Transpile",
+        "no route-family-specific target-engine candidate SQL artifacts were identified for LLM Translate",
+        "no machine-readable target-engine timing arrays or repeated runtime summaries were found for the bounded PORT packet",
+    ]:
+        if message not in global_blockers:
+            global_blockers.append(message)
+
+    ready_count = sum(1 for cell in cells if cell["ready_for_future_timing"])
+    blocked_count = len(cells) - ready_count
+    payload = {
+        "status": "dry_run_plan_only",
+        "speedup_transfer_rate_computed": False,
+        "speedup_measurement_performed": False,
+        "db_execution_performed": False,
+        "checker_execution_performed": False,
+        "sqlglot_execution_performed": False,
+        "model_execution_performed": False,
+        "bounded_packet_cases": bounded_cases,
+        "route_families": [name for name, _ in route_families],
+        "target_engines": target_engines,
+        "measurement_unit": "case_id x route_family x target_engine",
+        "cell_count": len(cells),
+        "cells": cells,
+        "global_blockers": global_blockers,
+        "recommended_next_action": "prepare a narrow route-family artifact binding and target-engine timing harness implementation prompt",
+    }
+    output_path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+    result_payload = {
+        "command": "port-target-benefit-plan",
+        "ok": True,
+        "output_path": str(output_path),
+        "cell_count": len(cells),
+        "ready_for_future_timing_count": ready_count,
+        "blocked_count": blocked_count,
+        "recommended_next_action": payload["recommended_next_action"],
+        "claim_boundary": "dry_run_plan_only_not_measurement_not_speedup_transfer_metric",
+    }
+    return print_and_exit(result_payload, 0)
+
+
 def cmd_formal_port_0004_closure_artifact_bundle(args: argparse.Namespace) -> int:
     case_id = "PORT_0004"
     case_root = PORT_CASE_ROOT / case_id
@@ -47667,6 +47830,9 @@ def build_parser() -> argparse.ArgumentParser:
 
     artifact_parser = subparsers.add_parser("artifact-preflight")
     artifact_parser.set_defaults(func=cmd_artifact_preflight)
+
+    port_target_benefit_plan_parser = subparsers.add_parser("port-target-benefit-plan")
+    port_target_benefit_plan_parser.set_defaults(func=cmd_port_target_benefit_plan)
 
     registry_parser = subparsers.add_parser("registry-check")
     registry_parser.set_defaults(func=cmd_registry_check)
