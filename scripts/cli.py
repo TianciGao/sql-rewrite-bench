@@ -644,6 +644,10 @@ def calcite_hep_perf0063_normalized_input_sql_path() -> Path:
     return CALCITE_HEP_TEMP_ROOT / "real-route" / "perf_0063_normalized_input.sql"
 
 
+def calcite_hep_perf0063_substring_surface_input_sql_path() -> Path:
+    return CALCITE_HEP_TEMP_ROOT / "real-route" / "perf_0063_substring_surface_input.sql"
+
+
 def calcite_hep_pg_preflight_source_tsv_path(case_id: str) -> Path:
     return FORMAL_EXPANSION_REPORT_DIR / "result_materialization" / "calcite_hep" / "source" / (
         f"{normalize_case_id_for_filename(case_id)}.tsv"
@@ -728,6 +732,14 @@ def calcite_hep_wrapper_run_command(
 def calcite_hep_perf0063_apply_signature_normalization(sql_text: str) -> tuple[str, bool]:
     original = "substr(ca_zip, 1, 5)"
     normalized = "substr(ca_zip, CAST(1 AS INTEGER), CAST(5 AS INTEGER))"
+    if original not in sql_text:
+        return sql_text, False
+    return sql_text.replace(original, normalized, 1), True
+
+
+def calcite_hep_perf0063_apply_substring_surface_normalization(sql_text: str) -> tuple[str, bool]:
+    original = "substr(ca_zip, 1, 5)"
+    normalized = "substring(ca_zip FROM 1 FOR 5)"
     if original not in sql_text:
         return sql_text, False
     return sql_text.replace(original, normalized, 1), True
@@ -9530,6 +9542,286 @@ def cmd_formal_calcite_hep_perf_0063_signature_fix_checker(args: argparse.Namesp
         "- triggering expression: `substr(ca_zip, 1, 5)`\n"
         "- approved patch plan: narrow integer-literal normalization before Calcite handoff\n"
         "- narrow normalization was chosen because it preserves function surface and provenance while addressing the exact validator signature mismatch\n\n"
+        "## 2. Normalization Applied\n"
+        "- original expression: `substr(ca_zip, 1, 5)`\n"
+        f"- normalized expression: `{normalized_expression}`\n"
+        "- normalization scope: case-specific adapter-local normalization for `PERF_0063` only\n"
+        f"- normalized input artifact path: `{normalized_input_sql_path}`\n"
+        "- original case source file was not modified; normalization was applied only to the Calcite input artifact\n\n"
+        "## 3. Generation Result\n"
+        f"- `validation_succeeded` = `{validation_succeeded}`\n"
+        f"- `sql_to_rel_succeeded` = `{sql_to_rel_succeeded}`\n"
+        f"- `hep_planner_succeeded` = `{hep_planner_succeeded}`\n"
+        f"- `output_sql_extracted` = `{output_sql_extracted}`\n"
+        f"- `candidate_sql_path` = `{candidate_sql_path}`\n"
+        f"- `generation_status` = `{generation_status}`\n"
+        + (f"- generation failure: `{blocker_category}` / `{blocker_message}`\n\n" if generation_status != "generated" else "\n")
+        + "## 4. PostgreSQL Checker Result\n"
+        + (
+            f"- `source_execution_status` = `{source_execution_status}`\n"
+            f"- `candidate_execution_status` = `{candidate_execution_status}`\n"
+            f"- `checker_status` = `{checker_status}`\n"
+            f"- `consistency_status` = `{consistency_status}`\n"
+            f"- `failure_category` = `{failure_category}`\n"
+            f"- `failure_summary` = `{failure_summary}`\n"
+            f"- `artifact_paths` = `{json.dumps(payload['checker_result']['artifact_paths'], sort_keys=True)}`\n\n"
+            if generation_status == "generated"
+            else "- `checker_status` = `not_run_generation_failed`\n\n"
+        )
+        + "## 5. Updated Calcite HEP @10 Checker Coverage\n"
+        + "".join(f"- `{key}` = `{value}`\n" for key, value in updated_coverage.items())
+        + "\n## 6. Recommended Next Step\n"
+        f"- `{recommended_next_step}`\n\n"
+        "## 7. Non-Modification Note\n"
+        "Only `PERF_0063` was targeted. No speedup ran, no existing 9-case rerun occurred, no MySQL/Spark/model/API path was used, and no case/registry/review/rules/EXECUTION_STATUS changes were made. Taxonomy notes remained untouched.\n"
+    )
+    report_path.write_text(report_text, encoding="utf-8")
+    return print_and_exit(payload, 0 if generation_status == "generated" and perf_0063_checker_consistent else 1)
+
+
+def cmd_formal_calcite_hep_perf_0063_substring_surface_checker(args: argparse.Namespace) -> int:
+    case_id = "PERF_0063"
+    report_path = ROOT / "docs" / "_scratch" / "CALCITE_HEP_PERF_0063_SUBSTRING_SURFACE_CHECKER_v1.md"
+    json_path = Path("/tmp/rewritebench_calcite_hep_perf_0063_substring_surface_checker_v1.json")
+    generation_output = "reports/formal_expansion/calcite_hep_real_route_perf_0063_substring_surface_v1.json"
+    checker_output = "reports/formal_expansion/calcite_hep_pg_checker_perf_0063_substring_surface_v1.json"
+
+    source_sql_path = calcite_hep_wrapper_source_sql_path(case_id)
+    ddl_path = calcite_hep_wrapper_ddl_path(case_id)
+    if source_sql_path is None or ddl_path is None or not source_sql_path.is_file() or not ddl_path.is_file():
+        payload = {
+            "case_id": case_id,
+            "ok": False,
+            "ran_at_utc": utc_now(),
+            "issues": [{"type": "missing_perf_0063_artifacts"}],
+            "speedup_status": "not_run",
+            "claim_boundary": "calcite_hep_perf_0063_substring_surface_checker_only_not_speedup",
+        }
+        return print_and_exit(payload, 1)
+
+    original_source_sql = source_sql_path.read_text(encoding="utf-8")
+    normalized_source_sql, normalization_applied = calcite_hep_perf0063_apply_substring_surface_normalization(original_source_sql)
+    normalized_expression = "substring(ca_zip FROM 1 FOR 5)"
+    normalized_input_sql_path = calcite_hep_perf0063_substring_surface_input_sql_path()
+    normalized_input_sql_path.parent.mkdir(parents=True, exist_ok=True)
+    normalized_input_sql_path.write_text(normalized_source_sql, encoding="utf-8")
+
+    planned_gradle_command = ["./gradlew", ":core:classes"]
+    planned_compile_command = calcite_hep_wrapper_compile_command()
+    candidate_sql_path = calcite_hep_real_route_output_sql_path(case_id)
+    candidate_sql_path.parent.mkdir(parents=True, exist_ok=True)
+    if candidate_sql_path.exists():
+        candidate_sql_path.unlink()
+    calcite_hep_wrapper_classes_dir().mkdir(parents=True, exist_ok=True)
+
+    gradle_result = run_captured_subprocess(
+        planned_gradle_command,
+        cwd=CALCITE_CHECKOUT_ROOT,
+        env_overrides={"GRADLE_USER_HOME": str(CALCITE_HEP_GRADLE_USER_HOME)},
+    )
+    compile_result: dict[str, Any] = {
+        "argv": planned_compile_command,
+        "cwd": str(ROOT),
+        "returncode": None,
+        "stdout": "",
+        "stderr": "",
+        "ok": False,
+    }
+    if gradle_result["ok"]:
+        compile_result = run_captured_subprocess(planned_compile_command, cwd=ROOT)
+
+    wrapper_argv = calcite_hep_wrapper_run_command(
+        case_id,
+        normalized_input_sql_path,
+        ddl_path,
+        candidate_sql_path,
+        mode="real_route_canary",
+    )
+    wrapper_result: dict[str, Any] = {
+        "argv": wrapper_argv,
+        "cwd": str(ROOT),
+        "returncode": None,
+        "stdout": "",
+        "stderr": "",
+        "ok": False,
+    }
+    if gradle_result["ok"] and compile_result["ok"]:
+        wrapper_result = run_captured_subprocess(wrapper_argv, cwd=ROOT)
+
+    wrapper_stdout = parse_wrapper_stdout_kv(str(wrapper_result.get("stdout") or ""))
+    emitted_sql_exists = candidate_sql_path.is_file()
+    emitted_sql_text = candidate_sql_path.read_text(encoding="utf-8") if emitted_sql_exists else ""
+    emitted_sql_mode = str(wrapper_stdout.get("emission_mode", "") or "failed")
+    emitted_sql_is_calcite_generated = wrapper_stdout.get("emitted_sql_is_calcite_generated") == "true"
+    validation_succeeded = wrapper_stdout.get("validation_succeeded") == "true"
+    sql_to_rel_succeeded = wrapper_stdout.get("sql_to_rel_succeeded") == "true"
+    hep_planner_succeeded = wrapper_stdout.get("hep_planner_succeeded") == "true"
+    output_sql_extracted = emitted_sql_exists and bool(emitted_sql_text.strip())
+    generation_status = (
+        "generated"
+        if wrapper_result["ok"] and emitted_sql_mode == "calcite_rel_to_sql" and emitted_sql_is_calcite_generated and output_sql_extracted
+        else "generation_failed"
+    )
+
+    blocker_message = str(wrapper_stdout.get("blocker_message") or wrapper_result.get("stderr") or wrapper_result.get("stdout") or "").strip()
+    blocker_category = ""
+    if not gradle_result["ok"]:
+        blocker_category = "gradle_core_classes_failed"
+        blocker_message = str(gradle_result.get("stderr") or gradle_result.get("stdout") or "").strip()
+    elif not compile_result["ok"]:
+        blocker_category = "wrapper_compile_failed"
+        blocker_message = str(compile_result.get("stderr") or compile_result.get("stdout") or "").strip()
+    elif not wrapper_result["ok"]:
+        blocker_category = "wrapper_execute_failed"
+    elif emitted_sql_mode != "calcite_rel_to_sql":
+        blocker_category = "real_route_partial_only"
+    elif not output_sql_extracted:
+        blocker_category = "output_sql_missing"
+
+    generation_record = {
+        "case_id": case_id,
+        "source_sql_path": relative_to_root(source_sql_path),
+        "normalized_input_sql_path": str(normalized_input_sql_path),
+        "normalization_applied": normalization_applied,
+        "normalized_expression": normalized_expression,
+        "ddl_path": relative_to_root(ddl_path),
+        "output_sql_path": str(candidate_sql_path),
+        "candidate_sql_emitted": emitted_sql_exists,
+        "emit_succeeded": emitted_sql_exists,
+        "emitted_sql_mode": emitted_sql_mode,
+        "emitted_sql_is_calcite_generated": emitted_sql_is_calcite_generated,
+        "real_route_success": generation_status == "generated",
+        "validation_succeeded": validation_succeeded,
+        "sql_to_rel_succeeded": sql_to_rel_succeeded,
+        "hep_planner_succeeded": hep_planner_succeeded,
+        "rel_to_sql_succeeded": wrapper_stdout.get("rel_to_sql_succeeded") == "true",
+        "calcite_parse_succeeded": wrapper_stdout.get("calcite_parse_succeeded") == "true",
+        "schema_ddl_ingestion_succeeded": wrapper_stdout.get("schema_ddl_ingestion_succeeded") == "true",
+        "candidate_sql_character_count": len(emitted_sql_text) if emitted_sql_exists else 0,
+        "blocker_category": blocker_category,
+        "blocker_message": blocker_message,
+        "route_stage_reached": str(wrapper_stdout.get("route_stage_reached", "") or ""),
+        "blocker_stage": str(wrapper_stdout.get("blocker_stage", "") or ""),
+        "wrapper_stdout_kv": wrapper_stdout,
+    }
+    generation_payload = {
+        "command": "formal-calcite-hep-perf-0063-substring-surface-checker",
+        "ok": generation_status == "generated",
+        "ran_at_utc": utc_now(),
+        "output_path": generation_output,
+        "case_count": 1,
+        "selected_case_ids": [case_id],
+        "records": [generation_record],
+        "claim_boundary": "calcite_hep_perf_0063_substring_surface_checker_only_not_speedup",
+    }
+    write_formal_expansion_report(Path(generation_output).name, generation_payload)
+
+    checker_cmd: list[str] = []
+    checker_proc = None
+    checker_record: dict[str, Any] = {}
+    if generation_status == "generated":
+        checker_cmd = [
+            sys.executable,
+            "-m",
+            "scripts.cli",
+            "formal-calcite-hep-pg-checker-run",
+            "--output",
+            checker_output,
+            "--generation-report",
+            generation_output,
+            "--case-id",
+            case_id,
+            "--execute",
+        ]
+        checker_proc = subprocess.run(checker_cmd, cwd=str(ROOT), text=True, capture_output=True)
+        checker_report = load_json_if_present(ROOT / checker_output) or {}
+        checker_record = next(
+            (
+                record
+                for record in checker_report.get("records", [])
+                if str(record.get("case_id", "")).strip().upper() == case_id
+            ),
+            {},
+        )
+
+    source_execution_status = str(checker_record.get("source_execution_status", "") or ("not_run_generation_failed" if generation_status != "generated" else "not_run"))
+    candidate_execution_status = str(checker_record.get("candidate_execution_status", "") or ("not_run_generation_failed" if generation_status != "generated" else "not_run"))
+    checker_status = str(checker_record.get("checker_status", "") or ("not_run_generation_failed" if generation_status != "generated" else "not_run"))
+    consistency_status = checker_status if checker_status in {"consistent", "inconsistent"} else "not_run"
+    failure_category = str(
+        checker_record.get("failure_category", "") or (blocker_category if generation_status != "generated" else "none")
+    )
+    failure_summary = str(
+        checker_record.get("error_message", "") or (blocker_message if generation_status != "generated" else "")
+    )
+
+    perf_0063_checker_consistent = checker_status == "consistent"
+    updated_coverage = {
+        "previous_checker_consistent": 9,
+        "perf_0063_checker_result": checker_status,
+        "total_10case_checker_consistent_count": 10 if perf_0063_checker_consistent else 9,
+        "remaining_checker_blockers": [] if perf_0063_checker_consistent else [f"PERF_0063:{failure_category or checker_status}"],
+    }
+
+    recommended_next_step = (
+        "run Calcite HEP speedup for PERF_0063"
+        if perf_0063_checker_consistent
+        else "stop Calcite HEP @10 closure and retain 9/10 boundary"
+        if generation_status != "generated"
+        else "diagnose PERF_0063 checker/generation failure"
+    )
+
+    payload = {
+        "case_id": case_id,
+        "normalization_applied": normalization_applied,
+        "normalized_expression": normalized_expression,
+        "generation_result": {
+            "original_source_sql_path": relative_to_root(source_sql_path),
+            "normalized_input_sql_path": str(normalized_input_sql_path),
+            "generation_status": generation_status,
+            "validation_succeeded": validation_succeeded,
+            "sql_to_rel_succeeded": sql_to_rel_succeeded,
+            "hep_planner_succeeded": hep_planner_succeeded,
+            "output_sql_extracted": output_sql_extracted,
+            "candidate_sql_path": str(candidate_sql_path),
+            "failure_category": blocker_category if generation_status != "generated" else "none",
+            "failure_summary": blocker_message if generation_status != "generated" else "",
+        },
+        "checker_result": {
+            "source_execution_status": source_execution_status,
+            "candidate_execution_status": candidate_execution_status,
+            "checker_status": checker_status,
+            "consistency_status": consistency_status,
+            "failure_category": failure_category,
+            "failure_summary": failure_summary,
+            "artifact_paths": {
+                "generation_report_path": generation_output,
+                "checker_report_path": checker_output if checker_cmd else "",
+                "checker_output_path": str(checker_record.get("checker_output_path", "") or ""),
+                "candidate_result_path": str(checker_record.get("planned_candidate_result_path", "") or ""),
+                "source_result_path": str(checker_record.get("planned_source_result_path", "") or ""),
+                "candidate_sql_path": str(candidate_sql_path),
+            },
+        },
+        "updated_calcite_hep_10case_checker_coverage": updated_coverage,
+        "speedup_status": "not_run",
+        "recommended_next_step": recommended_next_step,
+        "claim_boundary": "calcite_hep_perf_0063_substring_surface_checker_only_not_speedup",
+        "generation_command": wrapper_argv,
+        "checker_command": checker_cmd,
+        "checker_returncode": checker_proc.returncode if checker_proc is not None else None,
+    }
+    json_path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+    report_text = (
+        "# CALCITE_HEP_PERF_0063_SUBSTRING_SURFACE_CHECKER_v1\n\n"
+        "## 0. Purpose And Boundary\n"
+        "This note records PERF_0063-only Calcite HEP substring-surface normalization plus generation/checker. It does not run speedup, does not rerun the existing 9 cases, does not edit case files, and is the final narrow attempt before retaining the 9/10 boundary if it fails.\n\n"
+        "## 1. Failed CAST Attempt Recap\n"
+        "- previous attempt normalized `substr(ca_zip, 1, 5)` to `substr(ca_zip, CAST(1 AS INTEGER), CAST(5 AS INTEGER))`\n"
+        "- the normalization was applied and reached parse-only emitted SQL\n"
+        "- Calcite still reported `substr(<CHARACTER>, <NUMERIC>, <NUMERIC>)`\n"
+        "- classification: `calcite_cast_still_typed_numeric`\n\n"
         "## 2. Normalization Applied\n"
         "- original expression: `substr(ca_zip, 1, 5)`\n"
         f"- normalized expression: `{normalized_expression}`\n"
@@ -45490,6 +45782,13 @@ def build_parser() -> argparse.ArgumentParser:
     )
     formal_calcite_hep_perf_0063_signature_fix_checker_parser.set_defaults(
         func=cmd_formal_calcite_hep_perf_0063_signature_fix_checker
+    )
+
+    formal_calcite_hep_perf_0063_substring_surface_checker_parser = subparsers.add_parser(
+        "formal-calcite-hep-perf-0063-substring-surface-checker"
+    )
+    formal_calcite_hep_perf_0063_substring_surface_checker_parser.set_defaults(
+        func=cmd_formal_calcite_hep_perf_0063_substring_surface_checker
     )
 
     formal_calcite_hep_speedup_preflight_parser = subparsers.add_parser("formal-calcite-hep-speedup-preflight")
