@@ -17860,6 +17860,280 @@ def cmd_formal_port_cross_engine_closure_preflight(args: argparse.Namespace) -> 
     return print_and_exit(result_payload, 0)
 
 
+def cmd_formal_port_missing_artifacts_readiness(args: argparse.Namespace) -> int:
+    output_path = Path("/tmp/rewritebench_port_missing_artifacts_readiness_v1.json")
+    report_path = ROOT / "docs" / "_scratch" / "PORT_MISSING_ARTIFACTS_READINESS_v1.md"
+
+    focus_cases = ["PORT_0004", "PORT_0022", "PORT_0024", "PORT_0025"]
+    feasibility_path = FORMAL_EXPANSION_REPORT_DIR / "port_cross_engine_feasibility_preflight_v0.json"
+    bounded_execution_path = FORMAL_EXPANSION_REPORT_DIR / "port_cross_engine_bounded_execution_v0.json"
+    snapshot_path = FORMAL_PORT_REPORT_DIR / "port_current_results_snapshot_v0.json"
+    route_matrix_path = FORMAL_PORT_REPORT_DIR / "port_pg_route_matrix_v0.json"
+
+    feasibility = load_json_if_present(feasibility_path) or {}
+    bounded_execution = load_json_if_present(bounded_execution_path) or {}
+    snapshot = load_json_if_present(snapshot_path) or {}
+    route_matrix = load_json_if_present(route_matrix_path) or {}
+
+    feasibility_records = {
+        str(record.get("case_id") or "").strip().upper(): record
+        for record in feasibility.get("records", [])
+        if record.get("case_id")
+    }
+    snapshot_records = {
+        str(record.get("case_id") or "").strip().upper(): record
+        for record in snapshot.get("records", [])
+        if record.get("case_id")
+    }
+    route_records: dict[str, list[dict[str, Any]]] = {}
+    for record in route_matrix.get("records", []):
+        case_id = str(record.get("case_id") or "").strip().upper()
+        if case_id:
+            route_records.setdefault(case_id, []).append(record)
+    bounded_records_by_case: dict[str, list[dict[str, Any]]] = {}
+    for record in bounded_execution.get("records", []):
+        case_id = str(record.get("case_id") or "").strip().upper()
+        if case_id:
+            bounded_records_by_case.setdefault(case_id, []).append(record)
+
+    required_artifact_contract = {
+        "postgresql_source_reference_route_artifacts": [
+            "reports/formal_port/result_materialization/reference/{case_id_lower}.tsv",
+            "reports/formal_port/result_checks/sqlglot_transpile/{case_id_lower}.json or reports/formal_port/result_checks/llm_direct_translate/{case_id_lower}.json",
+            "reports/formal_port/result_materialization/sqlglot_transpile/{case_id_lower}.tsv or reports/formal_port/result_materialization/llm_direct_translate/{case_id_lower}.tsv",
+        ],
+        "mysql_artifacts": [
+            "cases/PORT/{case_id}/schema/ddl_mysql.sql",
+            "cases/PORT/{case_id}/validation/mysql_witness_data.sql or standardized equivalent generated from existing loader",
+            "cases/PORT/{case_id}/runs/mysql/source.tsv",
+            "cases/PORT/{case_id}/runs/mysql/rewrite_pos_01.tsv",
+            "cases/PORT/{case_id}/runs/mysql/result_check.json",
+            "cases/PORT/{case_id}/runs/mysql/plans/source.json",
+        ],
+        "spark_artifacts": [
+            "cases/PORT/{case_id}/schema/ddl_spark.sql",
+            "cases/PORT/{case_id}/validation/spark_witness_data.sql or standardized equivalent generated from existing loader",
+            "cases/PORT/{case_id}/runs/spark/source.tsv",
+            "cases/PORT/{case_id}/runs/spark/rewrite_pos_01.tsv",
+            "cases/PORT/{case_id}/runs/spark/result_check.json",
+            "cases/PORT/{case_id}/runs/spark/plans/rewrite_pos_01.txt",
+        ],
+        "route_candidate_sql": [
+            "cases/PORT/{case_id}/rewrite_pos_01.sql",
+            "route-specific PG-side candidate capture if using SQLGlot or LLM route reports",
+        ],
+        "result_comparison_json": [
+            "cases/PORT/{case_id}/runs/mysql/result_check.json",
+            "cases/PORT/{case_id}/runs/spark/result_check.json",
+            "reports/formal_port/result_checks/<route>/{case_id_lower}.json",
+        ],
+        "closure_summary_json": [
+            "reports/formal_expansion/port_cross_engine_bounded_execution_v0.json or later bounded closure batch summary",
+        ],
+    }
+
+    per_case_inventory: list[dict[str, Any]] = []
+    for case_id in focus_cases:
+        case_root = PORT_CASE_ROOT / case_id
+        case_lower = case_id.lower()
+        feasibility_record = feasibility_records.get(case_id, {})
+        snapshot_record = snapshot_records.get(case_id, {})
+        bounded_case_records = bounded_records_by_case.get(case_id, [])
+
+        pg_artifacts = {
+            "source_sql": relative_to_root(case_root / "source.sql") if (case_root / "source.sql").is_file() else "",
+            "pg_schema": relative_to_root(case_root / "schema" / "ddl_pg.sql") if (case_root / "schema" / "ddl_pg.sql").is_file() else "",
+            "pg_witness": relative_to_root(case_root / "validation" / "pg_witness_data.sql") if (case_root / "validation" / "pg_witness_data.sql").is_file() else "",
+            "pg_result_check": relative_to_root(case_root / "runs" / "result_check.json") if (case_root / "runs" / "result_check.json").is_file() else "",
+            "pg_route_reference_result": f"reports/formal_port/result_materialization/reference/{case_lower}.tsv" if (FORMAL_PORT_REPORT_DIR / "result_materialization" / "reference" / f"{case_lower}.tsv").is_file() else "",
+        }
+        mysql_artifacts = {
+            "ddl_mysql": relative_to_root(case_root / "schema" / "ddl_mysql.sql") if (case_root / "schema" / "ddl_mysql.sql").is_file() else "",
+            "mysql_witness_data": relative_to_root(case_root / "validation" / "mysql_witness_data.sql") if (case_root / "validation" / "mysql_witness_data.sql").is_file() else "",
+            "mysql_loader": relative_to_root(case_root / "validation" / "load_witness_mysql.sql") if (case_root / "validation" / "load_witness_mysql.sql").is_file() else "",
+            "mysql_source_tsv": relative_to_root(case_root / "runs" / "mysql" / "source.tsv") if (case_root / "runs" / "mysql" / "source.tsv").is_file() else "",
+            "mysql_rewrite_tsv": relative_to_root(case_root / "runs" / "mysql" / "rewrite_pos_01.tsv") if (case_root / "runs" / "mysql" / "rewrite_pos_01.tsv").is_file() else "",
+            "mysql_result_check": relative_to_root(case_root / "runs" / "mysql" / "result_check.json") if (case_root / "runs" / "mysql" / "result_check.json").is_file() else "",
+            "mysql_plan": relative_to_root(case_root / "runs" / "mysql" / "plans" / "source.json") if (case_root / "runs" / "mysql" / "plans" / "source.json").is_file() else "",
+        }
+        spark_artifacts = {
+            "ddl_spark": relative_to_root(case_root / "schema" / "ddl_spark.sql") if (case_root / "schema" / "ddl_spark.sql").is_file() else "",
+            "spark_witness_data": relative_to_root(case_root / "validation" / "spark_witness_data.sql") if (case_root / "validation" / "spark_witness_data.sql").is_file() else "",
+            "spark_loader": relative_to_root(case_root / "validation" / "load_witness_spark.sql") if (case_root / "validation" / "load_witness_spark.sql").is_file() else "",
+            "spark_source_tsv": relative_to_root(case_root / "runs" / "spark" / "source.tsv") if (case_root / "runs" / "spark" / "source.tsv").is_file() else "",
+            "spark_rewrite_tsv": relative_to_root(case_root / "runs" / "spark" / "rewrite_pos_01.tsv") if (case_root / "runs" / "spark" / "rewrite_pos_01.tsv").is_file() else "",
+            "spark_result_check": relative_to_root(case_root / "runs" / "spark" / "result_check.json") if (case_root / "runs" / "spark" / "result_check.json").is_file() else "",
+            "spark_plan": relative_to_root(case_root / "runs" / "spark" / "plans" / "rewrite_pos_01.txt") if (case_root / "runs" / "spark" / "plans" / "rewrite_pos_01.txt").is_file() else "",
+        }
+
+        route_outputs = {
+            "rewrite_pos_01_sql": relative_to_root(case_root / "rewrite_pos_01.sql") if (case_root / "rewrite_pos_01.sql").is_file() else "",
+            "pg_route_reports": [record.get("route") for record in route_records.get(case_id, [])],
+            "snapshot_role": snapshot_record.get("denominator_role", ""),
+        }
+        result_check_artifacts = {
+            "formal_port_sqlglot_check": f"reports/formal_port/result_checks/sqlglot_transpile/{case_lower}.json" if (FORMAL_PORT_REPORT_DIR / "result_checks" / "sqlglot_transpile" / f"{case_lower}.json").is_file() else "",
+            "formal_port_llm_check": f"reports/formal_port/result_checks/llm_direct_translate/{case_lower}.json" if (FORMAL_PORT_REPORT_DIR / "result_checks" / "llm_direct_translate" / f"{case_lower}.json").is_file() else "",
+            "mysql_case_result_check": mysql_artifacts["mysql_result_check"],
+            "spark_case_result_check": spark_artifacts["spark_result_check"],
+        }
+
+        missing_artifacts: list[str] = []
+        execution_surface_failures: list[str] = []
+        readiness_status = "unknown_needs_manual_review"
+        next_action = "pause for human review"
+        role_in_next_closure = "bounded_port_followup_case"
+
+        if case_id == "PORT_0004":
+            role_in_next_closure = "artifact_first_closure_candidate"
+            if not mysql_artifacts["mysql_witness_data"]:
+                missing_artifacts.append("validation/mysql_witness_data.sql")
+            if not spark_artifacts["spark_witness_data"]:
+                missing_artifacts.append("validation/spark_witness_data.sql")
+            if not mysql_artifacts["mysql_result_check"]:
+                missing_artifacts.append("runs/mysql/result_check.json")
+            if not spark_artifacts["spark_result_check"]:
+                missing_artifacts.append("runs/spark/result_check.json")
+            readiness_status = "missing_mysql_witness_contract" if "validation/mysql_witness_data.sql" in missing_artifacts else "missing_spark_witness_contract"
+            if "validation/mysql_witness_data.sql" in missing_artifacts and "validation/spark_witness_data.sql" in missing_artifacts:
+                readiness_status = "missing_mysql_witness_contract"
+            next_action = "create standardized mysql/spark witness artifacts from existing loader drafts without changing case semantics"
+        elif case_id == "PORT_0024":
+            role_in_next_closure = "existing_cross_engine_anchor"
+            readiness_status = "already_cross_engine_closed_anchor"
+            next_action = "preserve as read-only anchor"
+        else:
+            role_in_next_closure = "execution_failure_followup_candidate"
+            readiness_status = "previous_target_engine_failure_needs_diagnosis"
+            for record in bounded_case_records:
+                failure_category = str(record.get("failure_category") or "").strip()
+                failure_detail = str(record.get("failure_detail") or "").strip()
+                engine = str(record.get("engine") or "").strip().lower()
+                if failure_category and failure_category != "none":
+                    execution_surface_failures.append(f"{engine}:{failure_category}")
+                if failure_detail:
+                    if "DATETIME" in failure_detail:
+                        execution_surface_failures.append(f"{engine}:DATETIME_surface")
+                    if "TIMESTAMP" in failure_detail:
+                        execution_surface_failures.append(f"{engine}:TIMESTAMP_surface")
+            next_action = "diagnose target-engine SQL surface before any rerun"
+
+        per_case_inventory.append(
+            {
+                "case_id": case_id,
+                "role_in_next_closure": role_in_next_closure,
+                "pg_artifacts": pg_artifacts,
+                "mysql_artifacts": mysql_artifacts,
+                "spark_artifacts": spark_artifacts,
+                "route_outputs": route_outputs,
+                "result_check_artifacts": result_check_artifacts,
+                "missing_artifacts": sorted(set([item for item in missing_artifacts if item])),
+                "execution_surface_failures": sorted(set([item for item in execution_surface_failures if item])),
+                "readiness_status": readiness_status,
+                "next_action": next_action,
+            }
+        )
+
+    proposed_next_batch = {
+        "cases": ["PORT_0004"],
+        "engines": ["MySQL", "Spark"],
+        "routes": ["SQLGlot Transpile", "LLM Translate"],
+        "batch_type": "artifact_creation_only",
+        "why_minimal": "PORT_0004 is the only focus case blocked by standardized closure-packet witness artifacts rather than already-demonstrated engine-surface failures",
+    }
+    recommended_next_step = "create PORT_0004 closure artifact bundle"
+
+    payload = {
+        "focus_cases": focus_cases,
+        "required_artifact_contract": required_artifact_contract,
+        "per_case_artifact_inventory": per_case_inventory,
+        "proposed_next_batch": proposed_next_batch,
+        "recommended_next_step": recommended_next_step,
+        "claim_boundary": "port_missing_artifacts_readiness_only_not_execution",
+    }
+    output_path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+    lines: list[str] = []
+    lines.append("# PORT_MISSING_ARTIFACTS_READINESS_v1\n\n")
+    lines.append("## 0. Purpose And Boundary\n")
+    lines.append("- no-execution artifact readiness audit\n")
+    lines.append("- no DB/checker/speedup\n")
+    lines.append("- no SpeedupTransferRate\n")
+    lines.append("- not cross-engine closure yet\n\n")
+    lines.append("## 1. Source Preflight Recap\n")
+    lines.append("- bounded PG-side subset: `PORT_0004, PORT_0012, PORT_0022, PORT_0013, PORT_0024, PORT_0025`\n")
+    lines.append("- clean PG-side subset: `PORT_0004, PORT_0022`\n")
+    lines.append("- existing cross-engine closed subset: `PORT_0024`\n")
+    lines.append("- SpeedupTransferRate is not ready because aligned cross-engine executable, consistency, and target-engine benefit evidence is still incomplete\n\n")
+    lines.append("## 2. Required Closure Artifact Contract\n")
+    for key, values in required_artifact_contract.items():
+        lines.append(f"- `{key}`:\n")
+        for value in values:
+            lines.append(f"  - `{value}`\n")
+    lines.append("\n")
+    lines.append("## 3. Per-case Artifact Inventory\n")
+    lines.append("| case_id | role_in_next_closure | pg_artifacts | mysql_artifacts | spark_artifacts | route_outputs | result_check_artifacts | missing_artifacts | execution_surface_failures | readiness_status | next_action |\n")
+    lines.append("| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n")
+    for row in per_case_inventory:
+        lines.append(
+            "| {case_id} | {role} | {pg} | {mysql} | {spark} | {route} | {checks} | {missing} | {failures} | {status} | {next_action} |\n".format(
+                case_id=row["case_id"],
+                role=row["role_in_next_closure"],
+                pg="present" if any(row["pg_artifacts"].values()) else "missing",
+                mysql="present" if any(row["mysql_artifacts"].values()) else "missing",
+                spark="present" if any(row["spark_artifacts"].values()) else "missing",
+                route=", ".join(row["route_outputs"].get("pg_route_reports", [])) or "case-local only",
+                checks="present" if any(row["result_check_artifacts"].values()) else "missing",
+                missing=", ".join(row["missing_artifacts"]) if row["missing_artifacts"] else "none",
+                failures=", ".join(row["execution_surface_failures"]) if row["execution_surface_failures"] else "none",
+                status=row["readiness_status"],
+                next_action=row["next_action"],
+            )
+        )
+    lines.append("\n")
+    lines.append("## 4. Case-specific Notes\n")
+    lines.append("### PORT_0004\n")
+    lines.append("- PG-side route artifacts exist in `reports/formal_port` and local PG draft outputs exist under `runs/pg/`.\n")
+    lines.append("- MySQL and Spark use loader-style witness drafts (`load_witness_mysql.sql`, `load_witness_spark.sql`) instead of the standardized `mysql_witness_data.sql` / `spark_witness_data.sql` contract used by the bounded closure packet.\n")
+    lines.append("- This is an artifact-contract gap, not yet an engine-surface failure.\n\n")
+    lines.append("### PORT_0022\n")
+    lines.append("- Artifact surface is already present for MySQL and Spark, including witness SQL, result checks, logs, and TSV outputs.\n")
+    lines.append("- Prior bounded execution failed on target-engine SQL surface: MySQL rewrite execution hit `TIMESTAMP` syntax trouble and Spark source execution failed on `DATETIME`.\n\n")
+    lines.append("### PORT_0024\n")
+    lines.append("- Remains the existing cross-engine closed anchor with successful MySQL and Spark execution plus consistent result checks.\n")
+    lines.append("- No artifact creation is needed; preserve as read-only anchor evidence.\n\n")
+    lines.append("### PORT_0025\n")
+    lines.append("- Artifact surface is already present for MySQL and Spark.\n")
+    lines.append("- Prior bounded execution failed on the same target-engine SQL surface pattern as `PORT_0022`: MySQL rewrite syntax around `TIMESTAMP`, Spark source failure on `DATETIME`.\n\n")
+    lines.append("## 5. Proposed Next Batch\n")
+    lines.append(f"- cases: `{proposed_next_batch['cases']}`\n")
+    lines.append(f"- engines: `{proposed_next_batch['engines']}`\n")
+    lines.append(f"- route(s): `{proposed_next_batch['routes']}`\n")
+    lines.append(f"- artifact creation or execution next: `{proposed_next_batch['batch_type']}`\n")
+    lines.append(f"- why minimal: `{proposed_next_batch['why_minimal']}`\n\n")
+    lines.append("## 6. Recommended Next Step\n")
+    lines.append(f"- `{recommended_next_step}`\n\n")
+    lines.append("## 7. Non-Modification Note\n")
+    lines.append("- no execution\n")
+    lines.append("- no DB/checker/speedup\n")
+    lines.append("- no model/API\n")
+    lines.append("- no SpeedupTransferRate\n")
+    lines.append("- no registry/review/rules/EXECUTION_STATUS changes\n")
+    lines.append("- taxonomy notes untouched\n")
+    report_path.write_text("".join(lines), encoding="utf-8")
+
+    result_payload = {
+        "command": "formal-port-missing-artifacts-readiness",
+        "ok": True,
+        "ran_at_utc": utc_now(),
+        "json_path": str(output_path),
+        "report_path": relative_to_root(report_path),
+        "recommended_next_step": recommended_next_step,
+        "claim_boundary": "port_missing_artifacts_readiness_only_not_execution",
+    }
+    return print_and_exit(result_payload, 0)
+
+
 def cmd_formal_port_cross_engine_bounded_execution(args: argparse.Namespace) -> int:
     output_name = normalize_formal_expansion_output_name(args.output)
     valid_case_ids = port_cross_engine_bounded_execution_case_ids()
@@ -46136,6 +46410,13 @@ def build_parser() -> argparse.ArgumentParser:
     )
     formal_port_cross_engine_closure_preflight_parser.set_defaults(
         func=cmd_formal_port_cross_engine_closure_preflight
+    )
+
+    formal_port_missing_artifacts_readiness_parser = subparsers.add_parser(
+        "formal-port-missing-artifacts-readiness"
+    )
+    formal_port_missing_artifacts_readiness_parser.set_defaults(
+        func=cmd_formal_port_missing_artifacts_readiness
     )
 
     formal_port_cross_engine_bounded_execution_parser = subparsers.add_parser(
