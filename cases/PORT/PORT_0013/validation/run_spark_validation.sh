@@ -7,6 +7,13 @@ REPO_ROOT="$(cd "${CASE_DIR}/../../.." && pwd)"
 RUN_DIR="${CASE_DIR}/runs/spark"
 PYTHON_BIN="${PYTHON_BIN:-python}"
 TMP_ROOT="${RUN_DIR}/_tmp_spark_validation"
+CHECKER="${CASE_DIR}/validation/check_results.py"
+MYSQL_SOURCE_TSV="${CASE_DIR}/runs/mysql/source.tsv"
+PG_POS_TSV="${CASE_DIR}/runs/pg/rewrite_pos_01.tsv"
+PG_NEG_TSV="${CASE_DIR}/runs/pg/rewrite_neg_01.tsv"
+SPARK_POS_TSV="${RUN_DIR}/rewrite_pos_01.tsv"
+SPARK_NEG_TSV="${RUN_DIR}/rewrite_neg_01.tsv"
+RESULT_CHECK_JSON="${RUN_DIR}/result_check.json"
 
 # DRAFT-ONLY validation scaffold. Do not treat this as executed evidence.
 # Spark runs target rewrites only for this portability case.
@@ -18,7 +25,7 @@ trap cleanup EXIT
 
 rm -rf "${TMP_ROOT}"
 mkdir -p "${RUN_DIR}" "${TMP_ROOT}"
-rm -f "${RUN_DIR}/source.tsv" "${RUN_DIR}/rewrite_pos_01.tsv" "${RUN_DIR}/rewrite_neg_01.tsv"
+rm -f "${RUN_DIR}/source.tsv" "${RUN_DIR}/rewrite_pos_01.tsv" "${RUN_DIR}/rewrite_neg_01.tsv" "${RESULT_CHECK_JSON}"
 
 CASE_DIR="${CASE_DIR}" RUN_DIR="${RUN_DIR}" CASE_ID="${CASE_ID}" TMP_ROOT="${TMP_ROOT}" "${PYTHON_BIN}" - <<'PY2'
 import os
@@ -81,3 +88,15 @@ try:
 finally:
     spark.stop()
 PY2
+
+if [[ -f "${MYSQL_SOURCE_TSV}" && -f "${PG_POS_TSV}" && -f "${PG_NEG_TSV}" && -f "${SPARK_POS_TSV}" && -f "${SPARK_NEG_TSV}" ]]; then
+  "${REPO_ROOT}/.venv/bin/python" "${CHECKER}" \
+    "${MYSQL_SOURCE_TSV}" \
+    "${PG_POS_TSV}" \
+    "${PG_NEG_TSV}" \
+    "${SPARK_POS_TSV}" \
+    "${SPARK_NEG_TSV}" \
+    "${RESULT_CHECK_JSON}"
+else
+  echo "Skipping engine-local result_check generation for ${CASE_ID} Spark: required cross-engine TSVs are not all present." >&2
+fi

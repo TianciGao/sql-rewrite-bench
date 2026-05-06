@@ -5,6 +5,13 @@ CASE_ID="PORT_0012"
 CASE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 REPO_ROOT="$(cd "${CASE_DIR}/../../.." && pwd)"
 RUN_DIR="${CASE_DIR}/runs/mysql"
+CHECKER="${CASE_DIR}/validation/check_results.py"
+PG_SOURCE_TSV="${CASE_DIR}/runs/pg/source.tsv"
+MYSQL_POS_TSV="${RUN_DIR}/rewrite_pos_01.tsv"
+MYSQL_NEG_TSV="${RUN_DIR}/rewrite_neg_01.tsv"
+SPARK_POS_TSV="${CASE_DIR}/runs/spark/rewrite_pos_01.tsv"
+SPARK_NEG_TSV="${CASE_DIR}/runs/spark/rewrite_neg_01.tsv"
+RESULT_CHECK_JSON="${RUN_DIR}/result_check.json"
 
 # DRAFT-ONLY validation scaffold. Do not treat this as executed evidence.
 # shellcheck disable=SC1091
@@ -38,7 +45,7 @@ emit_drop_table_sql() {
 }
 
 mkdir -p "${RUN_DIR}"
-rm -f "${RUN_DIR}/source.tsv" "${RUN_DIR}/rewrite_pos_01.tsv" "${RUN_DIR}/rewrite_neg_01.tsv"
+rm -f "${RUN_DIR}/source.tsv" "${RUN_DIR}/rewrite_pos_01.tsv" "${RUN_DIR}/rewrite_neg_01.tsv" "${RESULT_CHECK_JSON}"
 
 {
   printf 'use `%s`;\n' "${MYSQL_DATABASE}"
@@ -58,3 +65,15 @@ run_query() {
 
 run_query "${CASE_DIR}/rewrite_pos_01.sql" "${RUN_DIR}/rewrite_pos_01.tsv"
 run_query "${CASE_DIR}/rewrite_neg_01.sql" "${RUN_DIR}/rewrite_neg_01.tsv"
+
+if [[ -f "${PG_SOURCE_TSV}" && -f "${MYSQL_POS_TSV}" && -f "${MYSQL_NEG_TSV}" && -f "${SPARK_POS_TSV}" && -f "${SPARK_NEG_TSV}" ]]; then
+  "${REPO_ROOT}/.venv/bin/python" "${CHECKER}" \
+    "${PG_SOURCE_TSV}" \
+    "${MYSQL_POS_TSV}" \
+    "${MYSQL_NEG_TSV}" \
+    "${SPARK_POS_TSV}" \
+    "${SPARK_NEG_TSV}" \
+    "${RESULT_CHECK_JSON}"
+else
+  echo "Skipping engine-local result_check generation for ${CASE_ID} MySQL: required cross-engine TSVs are not all present." >&2
+fi
