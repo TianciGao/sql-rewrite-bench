@@ -31943,6 +31943,37 @@ def cmd_formal_prior_method_pg_speedup_run(args: argparse.Namespace) -> int:
             "eligible_cases": list(RBOT_LLM4REWRITE_SPEEDUP_ELIGIBLE_CASES),
             "candidate_filename": "generated_sql_v3.sql",
             "json_path": Path("/tmp/rewritebench_prior_method_speedup_rbot_batch_a_v1.json"),
+            "batch": "A",
+        },
+        "llmr2": {
+            "label": "LLM-R2",
+            "claim_boundary": "bounded_pg_only_llmr2_speedup_slice_not_leaderboard",
+            "runner_root": LLMR2_FAST_PATH_ROOT,
+            "speedup_root": PRIOR_METHOD_SPEEDUP_ROOT / "llmr2",
+            "eligible_cases": [
+                "PERF_0006",
+                "PERF_0008",
+                "PERF_0013",
+                "PERF_0017",
+                "PERF_0019",
+                "PERF_0024",
+                "PERF_0033",
+                "PERF_0052",
+                "PERF_0054",
+            ],
+            "candidate_path_map": {
+                "PERF_0006": "generated_sql_schema_native_clean_v1.sql",
+                "PERF_0008": "generated_sql_schema_native_clean_v1.sql",
+                "PERF_0013": "generated_sql_schema_native_clean_v1.sql",
+                "PERF_0017": "generated_sql_schema_native_clean_v1.sql",
+                "PERF_0019": "generated_sql_schema_native_clean_v2.sql",
+                "PERF_0024": "generated_sql_schema_native_clean_v2.sql",
+                "PERF_0033": "generated_sql_schema_native_clean_v1.sql",
+                "PERF_0052": "generated_sql_schema_native_clean_v2.sql",
+                "PERF_0054": "generated_sql_schema_native_clean_v1.sql",
+            },
+            "json_path": Path("/tmp/rewritebench_prior_method_speedup_llmr2_batch_b_v1.json"),
+            "batch": "B",
         }
     }
 
@@ -32032,7 +32063,8 @@ def cmd_formal_prior_method_pg_speedup_run(args: argparse.Namespace) -> int:
         source_sql_path = case_root / "source.sql"
         ddl_path = case_root / "schema" / "ddl_pg.sql"
         witness_data_path = case_root / "validation" / "pg_witness_data.sql"
-        candidate_sql_path = spec["runner_root"] / case_id / spec["candidate_filename"]
+        candidate_filename = spec.get("candidate_filename") or spec.get("candidate_path_map", {}).get(case_id, "")
+        candidate_sql_path = spec["runner_root"] / case_id / candidate_filename
 
         source_execution_status = "not_attempted"
         candidate_execution_status = "not_attempted"
@@ -32239,7 +32271,7 @@ def cmd_formal_prior_method_pg_speedup_run(args: argparse.Namespace) -> int:
         "command": "formal-prior-method-pg-speedup-run",
         "ran_at_utc": utc_now(),
         "method": method,
-        "batch": "A",
+        "batch": spec.get("batch", "A"),
         "engine": "postgresql",
         "cases": selected_case_ids,
         "per_case_results": per_case_results,
