@@ -245,6 +245,18 @@ RBOT_LLM4REWRITE_SPEEDUP_ELIGIBLE_CASES = [
     "PERF_0008", "PERF_0013", "PERF_0017", "PERF_0024", "PERF_0052", "PERF_0054", "PERF_0063",
 ]
 CALCITE_HEP_REAL_ROUTE_CANARY_CASES = ["PERF_0006", "PERF_0008", "PERF_0033", "PERF_0054"]
+CALCITE_HEP_SHARED_10CASE_CASES = [
+    "PERF_0006",
+    "PERF_0008",
+    "PERF_0013",
+    "PERF_0017",
+    "PERF_0019",
+    "PERF_0024",
+    "PERF_0033",
+    "PERF_0052",
+    "PERF_0054",
+    "PERF_0063",
+]
 PORT_TRANSLATE_SOURCE_DIALECT_FALLBACKS = {
     "PORT_0004": "mysql",
     "PORT_0012": "postgres",
@@ -594,6 +606,10 @@ def calcite_hep_speedup_preflight_case_ids() -> list[str]:
 
 def calcite_hep_speedup_run_case_ids() -> list[str]:
     return list(CALCITE_HEP_REAL_ROUTE_CANARY_CASES)
+
+
+def calcite_hep_10case_expansion_preflight_case_ids() -> list[str]:
+    return list(CALCITE_HEP_SHARED_10CASE_CASES)
 
 
 def calcite_hep_perf0006_numeric_mismatch_case_id() -> str:
@@ -7812,6 +7828,235 @@ def cmd_formal_calcite_hep_speedup_preflight(args: argparse.Namespace) -> int:
     }
     write_formal_expansion_report(output_name, payload)
     return print_and_exit(payload, 0 if payload["ok"] else 1)
+
+
+def cmd_formal_calcite_hep_10case_expansion_preflight(args: argparse.Namespace) -> int:
+    target_cases = calcite_hep_10case_expansion_preflight_case_ids()
+    report_path = ROOT / "docs" / "_scratch" / "CALCITE_HEP_10CASE_EXPANSION_PREFLIGHT_v1.md"
+    json_path = Path("/tmp/rewritebench_calcite_hep_10case_expansion_preflight_v1.json")
+
+    checker_run_path = FORMAL_EXPANSION_REPORT_DIR / "calcite_hep_pg_checker_run_v0.json"
+    speedup_run_path = FORMAL_EXPANSION_REPORT_DIR / "calcite_hep_speedup_run_v0.json"
+    real_route_report_path = FORMAL_EXPANSION_REPORT_DIR / "calcite_hep_real_route_canary_v0.json"
+    parse_readiness_path = ROOT / "reports" / "baseline_smoke" / "calcite_hep_parse_readiness_v0.json"
+
+    checker_run = load_json_if_present(checker_run_path) or {}
+    speedup_run = load_json_if_present(speedup_run_path) or {}
+    real_route_report = load_json_if_present(real_route_report_path) or {}
+    parse_readiness_report = load_json_if_present(parse_readiness_path) or {}
+
+    checker_record_map = {
+        str(record.get("case_id", "")).strip().upper(): record
+        for record in checker_run.get("records", [])
+        if record.get("case_id")
+    }
+    speedup_record_map = {
+        str(record.get("case_id", "")).strip().upper(): record
+        for record in speedup_run.get("records", [])
+        if record.get("case_id")
+    }
+    real_route_record_map = {
+        str(record.get("case_id", "")).strip().upper(): record
+        for record in real_route_report.get("records", [])
+        if record.get("case_id")
+    }
+    parse_readiness_map = {
+        str(record.get("case_id", "")).strip().upper(): record
+        for record in parse_readiness_report.get("records", [])
+        if record.get("case_id")
+    }
+
+    existing_subset_cases = [
+        case_id
+        for case_id in checker_run.get("selected_case_ids", [])
+        if case_id in target_cases
+    ]
+
+    per_case_readiness: list[dict[str, Any]] = []
+    already_covered_subset_cases: list[str] = []
+    missing_cases_ready_for_generation: list[str] = []
+    cases_needing_adapter_patch: list[str] = []
+    blocked_cases: list[str] = []
+
+    for case_id in target_cases:
+        inferred = case_root_for_case_id(case_id)
+        case_root = inferred[1] if inferred else None
+        source_sql_path = case_root / "source.sql" if case_root else ROOT / "__missing__"
+        pg_schema_path = case_root / "schema" / "ddl_pg.sql" if case_root else ROOT / "__missing__"
+        pg_witness_path = case_root / "validation" / "pg_witness_data.sql" if case_root else ROOT / "__missing__"
+        checker_yaml_path = case_root / "validation" / "checker.yaml" if case_root else ROOT / "__missing__"
+
+        source_sql_exists = source_sql_path.is_file()
+        pg_schema_exists = pg_schema_path.is_file()
+        pg_witness_exists = pg_witness_path.is_file()
+        checker_yaml_exists = checker_yaml_path.is_file()
+
+        checker_json_path = calcite_hep_pg_preflight_checker_json_path(case_id)
+        checker_record = checker_record_map.get(case_id, {})
+        speedup_record = speedup_record_map.get(case_id, {})
+        real_route_record = real_route_record_map.get(case_id, {})
+        parse_record = parse_readiness_map.get(case_id, {})
+
+        output_sql_path_str = str(
+            real_route_record.get("generated_sql_output_path")
+            or real_route_record.get("candidate_sql_output_path")
+            or real_route_record.get("output_sql_path")
+            or ""
+        ).strip()
+        output_sql_path = Path(output_sql_path_str) if output_sql_path_str else calcite_hep_real_route_output_sql_path(case_id)
+        existing_calcite_hep_candidate = output_sql_path.is_file()
+        existing_checker_evidence = checker_json_path.is_file() or bool(checker_record)
+        existing_speedup_evidence = bool(speedup_record)
+
+        input_contract_ready = source_sql_exists and pg_schema_exists and pg_witness_exists
+        output_capture_contract_ready = bool(str(output_sql_path))
+        checker_handoff_contract_ready = input_contract_ready and checker_yaml_exists
+        speedup_handoff_contract_ready = checker_handoff_contract_ready and bool(validation_schema_hint(case_id))
+
+        notes: list[str] = []
+        if case_id in existing_subset_cases:
+            notes.append("bounded subset checker/speedup evidence already exists")
+        if parse_record:
+            parse_risk = str(parse_record.get("likely_calcite_parse_risk", "") or "").strip()
+            recommended_status = str(parse_record.get("recommended_status", "") or "").strip()
+            if parse_risk:
+                notes.append(f"earlier parse-readiness risk={parse_risk}")
+            if recommended_status:
+                notes.append(f"earlier readiness recommendation={recommended_status}")
+        elif case_id == "PERF_0063":
+            notes.append("not included in earlier calcite pg-native-9 parse-readiness report")
+        else:
+            notes.append("no prior Calcite HEP case-specific readiness record found")
+        if not checker_yaml_exists:
+            notes.append("missing case-local checker.yaml")
+
+        if case_id in existing_subset_cases and existing_checker_evidence and existing_speedup_evidence:
+            readiness_status = "already_measured_subset_case"
+            risk = "low"
+            already_covered_subset_cases.append(case_id)
+        elif not (source_sql_exists and pg_schema_exists and pg_witness_exists):
+            readiness_status = "blocked_missing_case_artifact"
+            risk = "high"
+            blocked_cases.append(case_id)
+        elif not input_contract_ready:
+            readiness_status = "blocked_input_contract"
+            risk = "high"
+            blocked_cases.append(case_id)
+        elif not (output_capture_contract_ready and checker_handoff_contract_ready and speedup_handoff_contract_ready):
+            readiness_status = "blocked_output_contract"
+            risk = "high"
+            blocked_cases.append(case_id)
+        elif case_id == "PERF_0063":
+            readiness_status = "ready_after_minor_adapter_patch"
+            risk = "high"
+            cases_needing_adapter_patch.append(case_id)
+        else:
+            readiness_status = "ready_for_calcite_hep_generation"
+            parse_risk = str(parse_record.get("likely_calcite_parse_risk", "") or "").strip().lower()
+            risk = "low" if parse_risk == "low" else "medium"
+            missing_cases_ready_for_generation.append(case_id)
+
+        row = {
+            "case_id": case_id,
+            "source_sql_exists": source_sql_exists,
+            "pg_schema_exists": pg_schema_exists,
+            "pg_witness_exists": pg_witness_exists,
+            "existing_calcite_hep_candidate": existing_calcite_hep_candidate,
+            "existing_checker_evidence": existing_checker_evidence,
+            "existing_speedup_evidence": existing_speedup_evidence,
+            "input_contract_ready": input_contract_ready,
+            "output_capture_contract_ready": output_capture_contract_ready,
+            "checker_handoff_contract_ready": checker_handoff_contract_ready,
+            "speedup_handoff_contract_ready": speedup_handoff_contract_ready,
+            "readiness_status": readiness_status,
+            "risk": risk,
+            "notes": "; ".join(notes) if notes else "none",
+            "source_sql_path": relative_to_root(source_sql_path) if case_root else "",
+            "pg_schema_path": relative_to_root(pg_schema_path) if case_root else "",
+            "pg_witness_path": relative_to_root(pg_witness_path) if case_root else "",
+            "candidate_output_sql_path": str(output_sql_path),
+            "planned_checker_json_path": relative_to_root(checker_json_path),
+            "planned_candidate_tsv_path": relative_to_root(calcite_hep_pg_preflight_candidate_tsv_path(case_id)),
+            "planned_source_tsv_path": relative_to_root(calcite_hep_pg_preflight_source_tsv_path(case_id)),
+            "planned_speedup_output_path": "reports/formal_expansion/calcite_hep_speedup_run_v0.json",
+        }
+        per_case_readiness.append(row)
+
+    expansion_plan = {
+        "already_covered_subset_cases": already_covered_subset_cases,
+        "missing_cases_ready_for_generation": missing_cases_ready_for_generation,
+        "cases_needing_adapter_patch": cases_needing_adapter_patch,
+        "blocked_cases": blocked_cases,
+    }
+
+    recommended_next_step = (
+        "execute Calcite HEP missing-case generation/checker batch"
+        if not blocked_cases
+        else "fix Calcite HEP adapter blockers"
+    )
+
+    payload = {
+        "target_cases": target_cases,
+        "existing_subset_cases": existing_subset_cases,
+        "per_case_readiness": per_case_readiness,
+        "expansion_plan": expansion_plan,
+        "recommended_next_step": recommended_next_step,
+        "claim_boundary": "calcite_hep_10case_expansion_preflight_only_not_execution",
+    }
+    json_path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+    table_lines = [
+        "| case_id | source_sql_exists | pg_schema_exists | pg_witness_exists | existing_calcite_hep_candidate | existing_checker_evidence | existing_speedup_evidence | input_contract_ready | output_capture_contract_ready | checker_handoff_contract_ready | speedup_handoff_contract_ready | readiness_status | risk | notes |",
+        "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |",
+    ]
+    for row in per_case_readiness:
+        table_lines.append(
+            "| {case_id} | {source_sql_exists} | {pg_schema_exists} | {pg_witness_exists} | {existing_calcite_hep_candidate} | {existing_checker_evidence} | {existing_speedup_evidence} | {input_contract_ready} | {output_capture_contract_ready} | {checker_handoff_contract_ready} | {speedup_handoff_contract_ready} | {readiness_status} | {risk} | {notes} |".format(
+                **row
+            )
+        )
+
+    report_text = (
+        "# CALCITE_HEP_10CASE_EXPANSION_PREFLIGHT_v1\n\n"
+        "## 0. Purpose And Boundary\n"
+        "This is a no-execution Calcite HEP @10 expansion preflight. It does not run Calcite HEP, run any database, run checker, run speedup, or perform any registry writeback.\n\n"
+        "## 1. Existing Calcite HEP Evidence\n"
+        "Current Calcite HEP evidence is bounded subset evidence only.\n\n"
+        f"- existing checker denominator: `{checker_run.get('case_count', 0)}`\n"
+        f"- existing checker result: `{checker_run.get('checker_consistent_count', 0)}/{checker_run.get('case_count', 0)}` checker-consistent on the bounded subset\n"
+        f"- existing speedup denominator: `{speedup_run.get('case_count', 0)}`\n"
+        f"- existing speedup result: `GM_Speedup={speedup_run.get('gm_speedup', speedup_run.get('GM_Speedup', 'n/a'))}` when available from subset reports\n"
+        f"- claim boundary: `{checker_run.get('claim_boundary', 'calcite_hep_pg_checker_postgres_only_not_speedup_not_final_baseline')}` and bounded speedup subset only\n"
+        "- current evidence is subset-only because the runnable checker and speedup records are limited to the verified four-case set rather than the shared 10-case denominator\n\n"
+        "## 2. Target Denominator\n"
+        + "".join(f"- `{case_id}`\n" for case_id in target_cases)
+        + "\n## 3. Per-case Readiness Table\n"
+        + "\n".join(table_lines)
+        + "\n\n## 4. Expansion Plan\n"
+        "Already-covered subset cases:\n"
+        + "".join(f"- `{case_id}`\n" for case_id in already_covered_subset_cases)
+        + ("\nMissing cases ready for generation:\n" + "".join(f"- `{case_id}`\n" for case_id in missing_cases_ready_for_generation) if missing_cases_ready_for_generation else "\nMissing cases ready for generation:\n- none\n")
+        + ("\nCases needing adapter patch:\n" + "".join(f"- `{case_id}`\n" for case_id in cases_needing_adapter_patch) if cases_needing_adapter_patch else "\nCases needing adapter patch:\n- none\n")
+        + ("\nBlocked cases:\n" + "".join(f"- `{case_id}`\n" for case_id in blocked_cases) if blocked_cases else "\nBlocked cases:\n- none\n")
+        + "\n## 5. Metrics To Report Later\n"
+        "- `candidate_generation_rate@10`\n"
+        "- `executable_rate@10`\n"
+        "- `result_consistency_rate@10`\n"
+        "- `gm_speedup`\n"
+        "- `win/tie/loss`\n"
+        "- `regression_rate@20`\n"
+        "- `measurement_failure_count`\n"
+        "- `timeout_count`\n\n"
+        "No metrics are computed in this preflight.\n\n"
+        "## 6. Claim Boundary\n"
+        "- `bounded_calcite_hep_10case_expansion_preflight_only_not_execution`\n\n"
+        "## 7. Recommended Next Step\n"
+        f"- `{recommended_next_step}`\n\n"
+        "## 8. Non-Modification Note\n"
+        "Confirm no Calcite HEP run, no DB/checker/speedup, no model/API, no registry/review/rules/EXECUTION_STATUS/case changes, and taxonomy notes untouched.\n"
+    )
+    report_path.write_text(report_text, encoding="utf-8")
+    return print_and_exit(payload, 0)
 
 
 def cmd_formal_calcite_hep_speedup_run(args: argparse.Namespace) -> int:
@@ -44182,6 +44427,13 @@ def build_parser() -> argparse.ArgumentParser:
     )
     formal_calcite_hep_speedup_preflight_parser.add_argument("--execute", action="store_true", default=False)
     formal_calcite_hep_speedup_preflight_parser.set_defaults(func=cmd_formal_calcite_hep_speedup_preflight)
+
+    formal_calcite_hep_10case_expansion_preflight_parser = subparsers.add_parser(
+        "formal-calcite-hep-10case-expansion-preflight"
+    )
+    formal_calcite_hep_10case_expansion_preflight_parser.set_defaults(
+        func=cmd_formal_calcite_hep_10case_expansion_preflight
+    )
 
     formal_calcite_hep_speedup_run_parser = subparsers.add_parser("formal-calcite-hep-speedup-run")
     formal_calcite_hep_speedup_run_parser.add_argument("--case-id", action="append", default=[])
