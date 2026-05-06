@@ -17360,6 +17360,506 @@ def cmd_formal_port_cross_engine_feasibility_preflight(args: argparse.Namespace)
     return print_and_exit(payload, 0)
 
 
+def cmd_formal_port_cross_engine_closure_preflight(args: argparse.Namespace) -> int:
+    output_path = Path("/tmp/rewritebench_port_cross_engine_closure_preflight_v1.json")
+    report_path = ROOT / "docs" / "_scratch" / "PORT_CROSS_ENGINE_CLOSURE_PREFLIGHT_v1.md"
+
+    case_registry_path = ROOT / "inventory" / "case_registry.csv"
+    current_snapshot_path = FORMAL_PORT_REPORT_DIR / "port_current_results_snapshot_v0.json"
+    route_matrix_path = FORMAL_PORT_REPORT_DIR / "port_pg_route_matrix_v0.json"
+    feasibility_path = FORMAL_EXPANSION_REPORT_DIR / "port_cross_engine_feasibility_preflight_v0.json"
+    bounded_execution_path = FORMAL_EXPANSION_REPORT_DIR / "port_cross_engine_bounded_execution_v0.json"
+
+    registry_port_cases: list[str] = []
+    if case_registry_path.is_file():
+        with case_registry_path.open("r", encoding="utf-8", newline="") as handle:
+            reader = csv.DictReader(handle)
+            for row in reader:
+                case_id = str(row.get("case_id") or "").strip().upper()
+                if case_id.startswith("PORT_"):
+                    registry_port_cases.append(case_id)
+
+    snapshot = load_json_if_present(current_snapshot_path) or {}
+    route_matrix = load_json_if_present(route_matrix_path) or {}
+    feasibility = load_json_if_present(feasibility_path) or {}
+    bounded_execution = load_json_if_present(bounded_execution_path) or {}
+
+    bounded_pg_side_subset = port_cross_engine_feasibility_case_ids()
+    clean_pg_side_subset = list(FORMAL_PORT_CLEAN_CASES)
+    bounded_mysql_spark_subset = list((feasibility or {}).get("recommended_bounded_execution_subset") or port_cross_engine_bounded_execution_case_ids())
+
+    bounded_records = (bounded_execution or {}).get("records", [])
+    bounded_execution_case_map: dict[str, dict[str, Any]] = {}
+    for record in bounded_records:
+        case_id = str(record.get("case_id") or "").strip().upper()
+        engine = str(record.get("engine") or "").strip().lower()
+        if not case_id:
+            continue
+        case_bucket = bounded_execution_case_map.setdefault(
+            case_id,
+            {
+                "mysql_execution_status": "",
+                "spark_execution_status": "",
+                "mysql_consistency_status": "",
+                "spark_consistency_status": "",
+            },
+        )
+        source_execution_status = str(record.get("source_execution_status") or "").strip().lower()
+        rewrite_execution_status = str(record.get("rewrite_execution_status") or "").strip().lower()
+        execution_status = "success" if source_execution_status == "success" and rewrite_execution_status == "success" else "failed"
+        consistency_status = str(record.get("consistency_status") or "").strip().lower()
+        if engine == "mysql":
+            case_bucket["mysql_execution_status"] = execution_status
+            case_bucket["mysql_consistency_status"] = consistency_status
+        elif engine == "spark":
+            case_bucket["spark_execution_status"] = execution_status
+            case_bucket["spark_consistency_status"] = consistency_status
+
+    already_cross_engine_closed_cases = sorted(
+        [
+            case_id
+            for case_id, summary in bounded_execution_case_map.items()
+            if summary.get("mysql_execution_status") == "success"
+            and summary.get("spark_execution_status") == "success"
+            and summary.get("mysql_consistency_status") == "consistent"
+            and summary.get("spark_consistency_status") == "consistent"
+        ]
+    )
+
+    snapshot_records = {
+        str(record.get("case_id") or "").strip().upper(): record
+        for record in (snapshot or {}).get("records", [])
+        if record.get("case_id")
+    }
+    route_records: dict[str, dict[str, Any]] = {}
+    for record in (route_matrix or {}).get("records", []):
+        case_id = str(record.get("case_id") or "").strip().upper()
+        route = str(record.get("route") or "").strip()
+        if not case_id:
+            continue
+        route_records.setdefault(case_id, {})[route] = record
+    feasibility_records = {
+        str(record.get("case_id") or "").strip().upper(): record
+        for record in (feasibility or {}).get("records", [])
+        if record.get("case_id")
+    }
+    batch2c_pg_cases = {"PORT_0013", "PORT_0024", "PORT_0025"}
+    sqlglot_pg_success_cases = {"PORT_0004", "PORT_0022", "PORT_0024", "PORT_0025"}
+    sqlglot_pg_failure_cases = {"PORT_0012", "PORT_0013"}
+    llm_pg_success_cases = {"PORT_0004", "PORT_0012", "PORT_0022", "PORT_0013", "PORT_0024", "PORT_0025"}
+    pg_consistency_known = {
+        "PORT_0004": "pg_reference_exact_consistent_llm_only",
+        "PORT_0012": "pg_route_execution_present_reference_checker_holdout",
+        "PORT_0022": "pg_reference_inconsistent_llm",
+        "PORT_0013": "pg_side_route_only_existing",
+        "PORT_0024": "pg_side_route_only_existing",
+        "PORT_0025": "pg_side_route_only_existing",
+    }
+
+    denominators = [
+        {
+            "denominator_name": "registry_port_pool",
+            "case_count": len(registry_port_cases),
+            "case_ids": registry_port_cases,
+            "source_doc_or_report": relative_to_root(case_registry_path),
+            "intended_use": "full registry-visible PORT pool; not a closed formal transfer denominator",
+            "claim_boundary": "registry_inventory_only_not_cross_engine_closure",
+        },
+        {
+            "denominator_name": "bounded_pg_side_route_subset",
+            "case_count": len(bounded_pg_side_subset),
+            "case_ids": bounded_pg_side_subset,
+            "source_doc_or_report": relative_to_root(feasibility_path) if feasibility_path.is_file() else "docs/_scratch/PORT_CROSS_ENGINE_FEASIBILITY_PREFLIGHT_v0.md",
+            "intended_use": "smallest current formal PORT route packet spanning PG-side route evidence and closure preflight",
+            "claim_boundary": "bounded_pg_side_route_subset_not_cross_engine_closure",
+        },
+        {
+            "denominator_name": "clean_pg_side_route_subset",
+            "case_count": len(clean_pg_side_subset),
+            "case_ids": clean_pg_side_subset,
+            "source_doc_or_report": relative_to_root(current_snapshot_path) if current_snapshot_path.is_file() else "docs/_scratch/FORMAL_PORT_CURRENT_RESULTS_SNAPSHOT_v0.md",
+            "intended_use": "clean denominator for bounded PG-side route evidence only",
+            "claim_boundary": "pg_side_only_clean_subset_not_cross_engine_closure",
+        },
+        {
+            "denominator_name": "bounded_mysql_spark_execution_subset",
+            "case_count": len(bounded_mysql_spark_subset),
+            "case_ids": bounded_mysql_spark_subset,
+            "source_doc_or_report": relative_to_root(bounded_execution_path) if bounded_execution_path.is_file() else "docs/_scratch/PORT_CROSS_ENGINE_BOUNDED_EXECUTION_v0.md",
+            "intended_use": "smallest bounded MySQL+Spark closure packet attempted so far",
+            "claim_boundary": "bounded_mysql_spark_execution_not_full_port_closure",
+        },
+        {
+            "denominator_name": "already_cross_engine_closed_subset",
+            "case_count": len(already_cross_engine_closed_cases),
+            "case_ids": already_cross_engine_closed_cases,
+            "source_doc_or_report": relative_to_root(bounded_execution_path) if bounded_execution_path.is_file() else "docs/_scratch/PORT_CROSS_ENGINE_BOUNDED_EXECUTION_v0.md",
+            "intended_use": "cases with explicit both-engine executable and consistency evidence from existing bounded execution",
+            "claim_boundary": "existing_bounded_cross_engine_closed_subset_not_full_port_closure",
+        },
+    ]
+
+    per_case_readiness: list[dict[str, Any]] = []
+    for case_id in bounded_pg_side_subset:
+        case_root = PORT_CASE_ROOT / case_id
+        source_sql_exists = (case_root / "source.sql").is_file()
+        source_family = "PARROT"
+        feasibility_record = feasibility_records.get(case_id, {})
+        bounded_record = bounded_execution_case_map.get(case_id, {})
+
+        if case_id in {"PORT_0004", "PORT_0012", "PORT_0022"}:
+            route_type = "sqlglot_transpile + llm_translate"
+        else:
+            route_type = "sqlglot_transpile + llm_translate (batch2c pg-side subset)"
+
+        sqlglot_evidence = "none"
+        if case_id in sqlglot_pg_success_cases:
+            sqlglot_evidence = "pg_side_execution_present"
+        elif case_id in sqlglot_pg_failure_cases:
+            sqlglot_evidence = "pg_side_failure_present"
+
+        llm_evidence = "pg_side_execution_present" if case_id in llm_pg_success_cases else "none"
+
+        pg_evidence = "none"
+        if case_id in llm_pg_success_cases or case_id in sqlglot_pg_success_cases or case_id in sqlglot_pg_failure_cases:
+            pg_evidence = "pg_side_route_evidence_present"
+
+        mysql_evidence = "none"
+        spark_evidence = "none"
+        result_consistency_evidence = pg_consistency_known.get(case_id, "none")
+        blockers: list[str] = []
+        next_action = "carry forward as read-only evidence only"
+
+        mysql_ready = bool(feasibility_record.get("mysql_ready"))
+        spark_ready = bool(feasibility_record.get("spark_ready"))
+        mysql_blockers = [str(x) for x in feasibility_record.get("mysql_blockers", [])]
+        spark_blockers = [str(x) for x in feasibility_record.get("spark_blockers", [])]
+
+        if case_id in already_cross_engine_closed_cases:
+            mysql_evidence = "execution_success_existing"
+            spark_evidence = "execution_success_existing"
+            result_consistency_evidence = "cross_engine_consistent_existing"
+            readiness_status = "cross_engine_closed_existing"
+            next_action = "retain as bounded cross-engine anchor; do not overclaim beyond current packet"
+        elif case_id in bounded_mysql_spark_subset:
+            mysql_status = str(bounded_record.get("mysql_execution_status") or "").strip().lower()
+            spark_status = str(bounded_record.get("spark_execution_status") or "").strip().lower()
+            if mysql_status:
+                mysql_evidence = mysql_status
+            if spark_status:
+                spark_evidence = spark_status
+            if mysql_status == "success" and spark_status != "success":
+                readiness_status = "blocked_dialect_failure"
+                blockers = ["spark_source_execution_failure_cast_datetime_surface"]
+                next_action = "diagnose spark source/candidate dialect surface before any transfer metric work"
+            elif spark_status == "success" and mysql_status != "success":
+                readiness_status = "blocked_dialect_failure"
+                blockers = ["mysql_candidate_execution_failure_cast_timestamp_surface"]
+                next_action = "diagnose mysql candidate dialect surface before any transfer metric work"
+            elif mysql_ready and spark_ready:
+                readiness_status = "ready_for_mysql_spark_execution"
+                blockers = []
+                next_action = "bounded MySQL+Spark execution rerun only after explicit approval"
+            else:
+                readiness_status = "unknown_needs_audit"
+                blockers = sorted(set(mysql_blockers + spark_blockers))
+        elif case_id == "PORT_0004":
+            readiness_status = "pg_side_only_existing"
+            blockers = ["missing_standardized_mysql_spark_witness_contract_for_formal_closure_packet"]
+            next_action = "fix missing PORT artifacts"
+        elif case_id == "PORT_0012":
+            readiness_status = "blocked_dialect_failure"
+            blockers = ["datetime_formatting", "dialect_functions"]
+            next_action = "create route-specific dry-run for SQLGlot Transpile"
+        elif case_id == "PORT_0013":
+            readiness_status = "blocked_dialect_failure"
+            blockers = ["boolean_aggregation"]
+            next_action = "create route-specific dry-run for SQLGlot Transpile"
+        elif mysql_ready and spark_ready:
+            readiness_status = "ready_for_mysql_spark_execution"
+            blockers = []
+            next_action = "bounded MySQL+Spark execution after explicit approval"
+        elif mysql_ready:
+            readiness_status = "ready_for_mysql_only"
+            blockers = spark_blockers
+            next_action = "prepare Spark blocker resolution first"
+        elif spark_ready:
+            readiness_status = "ready_for_spark_only"
+            blockers = mysql_blockers
+            next_action = "prepare MySQL blocker resolution first"
+        else:
+            readiness_status = "unknown_needs_audit"
+            blockers = sorted(set(mysql_blockers + spark_blockers))
+
+        transfer_metric_ready = False
+        speedup_evidence = "none"
+        artifact_blockers = []
+        if not source_sql_exists:
+            artifact_blockers.append("missing_source_sql")
+        blockers = sorted(set(blockers + artifact_blockers))
+
+        per_case_readiness.append(
+            {
+                "case_id": case_id,
+                "source_family_or_dataset": source_family,
+                "route_type": route_type,
+                "source_sql_exists": source_sql_exists,
+                "pg_evidence": pg_evidence,
+                "mysql_evidence": mysql_evidence,
+                "spark_evidence": spark_evidence,
+                "sqlglot_transpile_evidence": sqlglot_evidence,
+                "llm_translate_evidence": llm_evidence,
+                "result_consistency_evidence": result_consistency_evidence,
+                "speedup_evidence": speedup_evidence,
+                "transfer_metric_ready": transfer_metric_ready,
+                "readiness_status": readiness_status,
+                "blockers": blockers,
+                "next_action": next_action,
+            }
+        )
+
+    route_summaries = {
+        "sqlglot_transpile": {
+            "denominator": bounded_pg_side_subset,
+            "current_evidence": {
+                "pg_side_success_cases": sorted(sqlglot_pg_success_cases),
+                "pg_side_failure_cases": sorted(sqlglot_pg_failure_cases),
+                "both_engine_closed_cases": [case_id for case_id in already_cross_engine_closed_cases if case_id == "PORT_0024"],
+            },
+            "engine_coverage": {
+                "postgresql": "bounded_pg_side_present",
+                "mysql": "bounded_partial_existing",
+                "spark": "bounded_partial_existing",
+            },
+            "blockers": [
+                "PORT_0012 datetime formatting / dialect function mismatch",
+                "PORT_0013 boolean aggregation mismatch",
+                "PORT_0004 missing standardized witness contract for formal closure packet",
+                "PORT_0022 and PORT_0025 still blocked in bounded cross-engine execution",
+            ],
+            "next_action": "create PORT route-specific dry-run for SQLGlot Transpile",
+        },
+        "llm_translate": {
+            "denominator": bounded_pg_side_subset,
+            "current_evidence": {
+                "pg_side_success_cases": sorted(llm_pg_success_cases),
+                "pg_reference_exact_consistent_cases": ["PORT_0004"],
+                "pg_reference_inconsistent_cases": ["PORT_0022"],
+                "both_engine_closed_cases": [case_id for case_id in already_cross_engine_closed_cases if case_id == "PORT_0024"],
+            },
+            "engine_coverage": {
+                "postgresql": "bounded_pg_side_present",
+                "mysql": "bounded_partial_existing",
+                "spark": "bounded_partial_existing",
+            },
+            "blockers": [
+                "no full MySQL/Spark closure on aligned denominator",
+                "PORT_0022 and PORT_0025 blocked by target-engine execution surfaces",
+                "PORT_0004 lacks standardized closure-packet witness contract",
+            ],
+            "next_action": "execute PORT MySQL/Spark closure for bounded PG-side subset",
+        },
+        "human_reference_controls": {
+            "denominator": ["PORT_0004", "PORT_0012", "PORT_0022", "PORT_0013", "PORT_0024", "PORT_0025"],
+            "current_evidence": {
+                "role": "reference / control only",
+                "supports": "route execution, consistency interpretation, and failure bucketing",
+            },
+            "engine_coverage": {
+                "postgresql": "present",
+                "mysql": "partial",
+                "spark": "partial",
+            },
+            "blockers": [
+                "not a rewrite-generation leaderboard line",
+                "cannot substitute for cross-engine route closure or transfer metrics",
+            ],
+            "next_action": "retain as support evidence only",
+        },
+    }
+
+    speedup_transfer_rate_readiness = {
+        "can_compute_now": False,
+        "why_not": [
+            "cross_engine executable evidence is incomplete on the bounded route denominator",
+            "cross_engine consistency evidence is incomplete beyond PORT_0024",
+            "target_engine speedup / benefit evidence is not closed on an aligned denominator",
+            "PG-side evidence alone does not establish transfer metrics",
+        ],
+        "minimum_prerequisites": [
+            "same-engine speedup evidence on the candidate route denominator",
+            "target-engine executable evidence for the same denominator",
+            "target-engine consistency evidence for the same denominator",
+            "target-engine speedup or benefit evidence for the same denominator",
+            "common denominator alignment across routes and engines",
+        ],
+    }
+
+    proposed_execution_plan = {
+        "cases": ["PORT_0004", "PORT_0022", "PORT_0024", "PORT_0025"],
+        "routes": ["SQLGlot Transpile", "LLM Translate"],
+        "target_engines": ["MySQL", "Spark"],
+        "expected_command_family": [
+            "python -m scripts.cli formal-port-cross-engine-bounded-execution",
+            "python -m scripts.cli formal-port-cross-engine-feasibility-preflight",
+        ],
+        "why_this_batch_is_minimal": "it starts from the already PG-side-proven and already-feasibility-audited bounded subset rather than expanding the formal denominator",
+        "risk": "medium: PORT_0022 and PORT_0025 already expose target-engine dialect failures; PORT_0004 still needs standardized closure-packet witness artifacts",
+    }
+
+    recommended_next_step = "fix missing PORT artifacts"
+
+    payload = {
+        "denominators": denominators,
+        "per_case_readiness": per_case_readiness,
+        "route_summaries": route_summaries,
+        "speedup_transfer_rate_readiness": speedup_transfer_rate_readiness,
+        "proposed_execution_plan": proposed_execution_plan,
+        "recommended_next_step": recommended_next_step,
+        "claim_boundary": "port_cross_engine_closure_preflight_only_not_execution",
+    }
+    output_path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+    def table_line(columns: list[str]) -> str:
+        return "| " + " | ".join(columns) + " |\n"
+
+    report_lines: list[str] = []
+    report_lines.append("# PORT_CROSS_ENGINE_CLOSURE_PREFLIGHT_v1\n\n")
+    report_lines.append("## 0. Purpose And Boundary\n")
+    report_lines.append("- read-only PORT cross-engine closure preflight\n")
+    report_lines.append("- no execution\n")
+    report_lines.append("- no checker/speedup\n")
+    report_lines.append("- no SpeedupTransferRate computation\n")
+    report_lines.append("- separates route readiness from actual transfer evidence\n\n")
+
+    report_lines.append("## 1. Current PORT Evidence Recap\n")
+    report_lines.append("- current formal route packet is bounded rather than full-pool closure\n")
+    report_lines.append("- SQLGlot Transpile has bounded PG-side evidence, mixed PG execution, and only partial MySQL/Spark closure\n")
+    report_lines.append("- LLM Translate has stronger PG-side execution coverage but still lacks aligned full MySQL/Spark closure\n")
+    report_lines.append("- bounded cross-engine execution exists for `PORT_0022`, `PORT_0024`, and `PORT_0025`, with only `PORT_0024` both-engine closed and consistent\n")
+    report_lines.append("- claim boundary remains bounded route evidence only, not full transfer closure and not SpeedupTransferRate\n\n")
+
+    report_lines.append("## 2. Denominator Discovery\n")
+    report_lines.append(table_line(["denominator_name", "case_count", "case_ids", "source_doc_or_report", "intended_use", "claim_boundary"]))
+    report_lines.append(table_line(["---", "---", "---", "---", "---", "---"]))
+    for row in denominators:
+        report_lines.append(
+            table_line(
+                [
+                    str(row["denominator_name"]),
+                    str(row["case_count"]),
+                    ", ".join(row["case_ids"]),
+                    str(row["source_doc_or_report"]),
+                    str(row["intended_use"]),
+                    str(row["claim_boundary"]),
+                ]
+            )
+        )
+    report_lines.append("\n")
+
+    report_lines.append("## 3. Per-case Cross-engine Readiness Table\n")
+    report_lines.append(
+        table_line(
+            [
+                "case_id",
+                "source_family_or_dataset",
+                "route_type",
+                "source_sql_exists",
+                "pg_evidence",
+                "mysql_evidence",
+                "spark_evidence",
+                "sqlglot_transpile_evidence",
+                "llm_translate_evidence",
+                "result_consistency_evidence",
+                "speedup_evidence",
+                "transfer_metric_ready",
+                "readiness_status",
+                "blockers",
+                "next_action",
+            ]
+        )
+    )
+    report_lines.append(
+        table_line(["---"] * 15)
+    )
+    for row in per_case_readiness:
+        report_lines.append(
+            table_line(
+                [
+                    row["case_id"],
+                    row["source_family_or_dataset"],
+                    row["route_type"],
+                    "yes" if row["source_sql_exists"] else "no",
+                    row["pg_evidence"],
+                    row["mysql_evidence"],
+                    row["spark_evidence"],
+                    row["sqlglot_transpile_evidence"],
+                    row["llm_translate_evidence"],
+                    row["result_consistency_evidence"],
+                    row["speedup_evidence"],
+                    "yes" if row["transfer_metric_ready"] else "no",
+                    row["readiness_status"],
+                    ", ".join(row["blockers"]) if row["blockers"] else "none",
+                    row["next_action"],
+                ]
+            )
+        )
+    report_lines.append("\n")
+
+    report_lines.append("## 4. Route-level Summary\n")
+    report_lines.append("### SQLGlot Transpile\n")
+    report_lines.append(f"- denominator: `{', '.join(route_summaries['sqlglot_transpile']['denominator'])}`\n")
+    report_lines.append(f"- current evidence: `{route_summaries['sqlglot_transpile']['current_evidence']}`\n")
+    report_lines.append(f"- engine coverage: `{route_summaries['sqlglot_transpile']['engine_coverage']}`\n")
+    report_lines.append(f"- blockers: `{route_summaries['sqlglot_transpile']['blockers']}`\n")
+    report_lines.append(f"- next action: `{route_summaries['sqlglot_transpile']['next_action']}`\n\n")
+    report_lines.append("### LLM Translate\n")
+    report_lines.append(f"- denominator: `{', '.join(route_summaries['llm_translate']['denominator'])}`\n")
+    report_lines.append(f"- current evidence: `{route_summaries['llm_translate']['current_evidence']}`\n")
+    report_lines.append(f"- engine coverage: `{route_summaries['llm_translate']['engine_coverage']}`\n")
+    report_lines.append(f"- blockers: `{route_summaries['llm_translate']['blockers']}`\n")
+    report_lines.append(f"- next action: `{route_summaries['llm_translate']['next_action']}`\n\n")
+    report_lines.append("### Human / Reference / Controls\n")
+    report_lines.append("- support route interpretation, reference comparison, and failure bucketing only\n")
+    report_lines.append("- not a rewrite-generation leaderboard line and not a substitute for cross-engine closure\n\n")
+
+    report_lines.append("## 5. SpeedupTransferRate Readiness\n")
+    report_lines.append(f"- can SpeedupTransferRate be computed now? `{'yes' if speedup_transfer_rate_readiness['can_compute_now'] else 'no'}`\n")
+    report_lines.append(f"- why not: `{speedup_transfer_rate_readiness['why_not']}`\n")
+    report_lines.append(f"- minimum prerequisites: `{speedup_transfer_rate_readiness['minimum_prerequisites']}`\n\n")
+
+    report_lines.append("## 6. Proposed Execution Plan\n")
+    report_lines.append(f"- cases: `{proposed_execution_plan['cases']}`\n")
+    report_lines.append(f"- route(s): `{proposed_execution_plan['routes']}`\n")
+    report_lines.append(f"- target engines: `{proposed_execution_plan['target_engines']}`\n")
+    report_lines.append(f"- expected command family: `{proposed_execution_plan['expected_command_family']}`\n")
+    report_lines.append(f"- why this batch is minimal: `{proposed_execution_plan['why_this_batch_is_minimal']}`\n")
+    report_lines.append(f"- risk: `{proposed_execution_plan['risk']}`\n\n")
+
+    report_lines.append("## 7. Recommended Next Step\n")
+    report_lines.append(f"- `{recommended_next_step}`\n\n")
+
+    report_lines.append("## 8. Non-Modification Note\n")
+    report_lines.append("- no execution\n")
+    report_lines.append("- no DB\n")
+    report_lines.append("- no checker/speedup\n")
+    report_lines.append("- no model/API\n")
+    report_lines.append("- no registry/review/rules/EXECUTION_STATUS/case changes\n")
+    report_lines.append("- taxonomy notes untouched\n")
+    report_path.write_text("".join(report_lines), encoding="utf-8")
+
+    result_payload = {
+        "command": "formal-port-cross-engine-closure-preflight",
+        "ok": True,
+        "ran_at_utc": utc_now(),
+        "json_path": str(output_path),
+        "report_path": relative_to_root(report_path),
+        "recommended_next_step": recommended_next_step,
+        "claim_boundary": "port_cross_engine_closure_preflight_only_not_execution",
+    }
+    return print_and_exit(result_payload, 0)
+
+
 def cmd_formal_port_cross_engine_bounded_execution(args: argparse.Namespace) -> int:
     output_name = normalize_formal_expansion_output_name(args.output)
     valid_case_ids = port_cross_engine_bounded_execution_case_ids()
@@ -45629,6 +46129,13 @@ def build_parser() -> argparse.ArgumentParser:
     formal_port_cross_engine_feasibility_preflight_parser.add_argument("--execute", action="store_true", default=False)
     formal_port_cross_engine_feasibility_preflight_parser.set_defaults(
         func=cmd_formal_port_cross_engine_feasibility_preflight
+    )
+
+    formal_port_cross_engine_closure_preflight_parser = subparsers.add_parser(
+        "formal-port-cross-engine-closure-preflight"
+    )
+    formal_port_cross_engine_closure_preflight_parser.set_defaults(
+        func=cmd_formal_port_cross_engine_closure_preflight
     )
 
     formal_port_cross_engine_bounded_execution_parser = subparsers.add_parser(
