@@ -19858,6 +19858,301 @@ def cmd_formal_port_pg_consistency_diagnostic(args: argparse.Namespace) -> int:
     return print_and_exit(payload, 0 if payload["ok"] else 1)
 
 
+def cmd_formal_port_0012_0013_sqlglot_pg_route_patch_and_check(args: argparse.Namespace) -> int:
+    output_path = Path("/tmp/rewritebench_port_0012_0013_sqlglot_pg_route_patch_and_check_v1.json")
+    report_path = ROOT / "docs" / "_scratch" / "PORT_0012_0013_SQLGLOT_PG_ROUTE_PATCH_AND_CHECK_v1.md"
+    temp_root = Path("/tmp/rewritebench_port_sqlglot_pg_route_patch")
+    temp_root.mkdir(parents=True, exist_ok=True)
+
+    issues: list[dict[str, Any]] = []
+    try:
+        psycopg = importlib.import_module("psycopg")
+    except ModuleNotFoundError as exc:
+        psycopg = None
+        issues.append({"type": "psycopg_unavailable", "message": str(exc)})
+
+    env_visibility = pg_env_visibility()
+    required_pg_env_visible = all(env_visibility[name] for name in ["PGHOST", "PGPORT", "PGDATABASE", "PGUSER"])
+    if not required_pg_env_visible:
+        issues.append({"type": "missing_pg_env", "message": "required env: PGHOST, PGPORT, PGDATABASE, PGUSER"})
+
+    def build_port_0012_candidate_sql() -> tuple[str, str, str]:
+        bad_sql, sql_source = resolve_formal_port_sqlglot_candidate_sql("PORT_0012")
+        normalized_sql = bad_sql
+        replacements = [
+            ("CASE WHEN 'sex' = 'F' THEN 1 ELSE 0 END", "CASE WHEN \"sex\" = 'F' THEN 1 ELSE 0 END"),
+            ("COUNT('id')", "COUNT(\"id\")"),
+            ("WHERE 'diagnosis' = 'RA'", "WHERE \"diagnosis\" = 'RA'"),
+            ("CAST('birthday' AS TIMESTAMPTZ)", "CAST(\"birthday\" AS TIMESTAMPTZ)"),
+        ]
+        for bad_surface, good_surface in replacements:
+            normalized_sql = normalized_sql.replace(bad_surface, good_surface)
+        transformation = (
+            "repaired quoted-identifier corruption in SQLGlot preview: "
+            "'sex'->\"sex\", COUNT('id')->COUNT(\"id\"), "
+            "'diagnosis'->\"diagnosis\", CAST('birthday' AS TIMESTAMPTZ)->CAST(\"birthday\" AS TIMESTAMPTZ)"
+        )
+        return normalized_sql.strip(), transformation, sql_source
+
+    def build_port_0013_candidate_sql() -> tuple[str, str, str]:
+        source_sql = (PORT_CASE_ROOT / "PORT_0013" / "source.sql").read_text(encoding="utf-8")
+        normalized_sql = (
+            source_sql.replace("`", '"')
+            .replace(
+                'CAST( SUM( "t2"."gender" = \'F\' ) AS DOUBLE )',
+                'CAST( SUM( CASE WHEN "t2"."gender" = \'F\' THEN 1 ELSE 0 END ) AS DOUBLE PRECISION )',
+            )
+        )
+        transformation = (
+            "replaced SUM(\"t2\".\"gender\" = 'F') with "
+            "SUM(CASE WHEN \"t2\".\"gender\" = 'F' THEN 1 ELSE 0 END) and normalized "
+            "DOUBLE to DOUBLE PRECISION on a temp SQL surface"
+        )
+        return normalized_sql.strip(), transformation, "temp_normalized_from_source_sql"
+
+    case_specs = {
+        "PORT_0012": {
+            "route": "SQLGLOT_TRANSPILE",
+            "validation_schema": "port_0012_validation",
+            "reference_sql_path": FORMAL_PORT_REPORT_DIR / "reference_sql_pg" / "port_0012.sql",
+            "reference_sql_source": "reports/formal_port/reference_sql_pg/port_0012.sql",
+            "reference_tsv_path": temp_root / "PORT_0012" / "reference.tsv",
+            "candidate_tsv_path": temp_root / "PORT_0012" / "candidate.tsv",
+            "temp_sql_path": temp_root / "PORT_0012" / "sqlglot_pg_route_patched.sql",
+            "checker_output_path": temp_root / "PORT_0012" / "checker_result.json",
+            "builder": build_port_0012_candidate_sql,
+            "risk": "medium_high",
+        },
+        "PORT_0013": {
+            "route": "SQLGLOT_TRANSPILE",
+            "validation_schema": "port_0013_validation",
+            "reference_sql_path": PORT_CASE_ROOT / "PORT_0013" / "rewrite_pos_01.sql",
+            "reference_sql_source": "cases/PORT/PORT_0013/rewrite_pos_01.sql",
+            "reference_tsv_path": temp_root / "PORT_0013" / "reference.tsv",
+            "candidate_tsv_path": temp_root / "PORT_0013" / "candidate.tsv",
+            "temp_sql_path": temp_root / "PORT_0013" / "sqlglot_pg_route_patched.sql",
+            "checker_output_path": temp_root / "PORT_0013" / "checker_result.json",
+            "builder": build_port_0013_candidate_sql,
+            "risk": "medium",
+        },
+    }
+
+    per_case_patch_summary: dict[str, Any] = {}
+    per_case_checker_results: dict[str, Any] = {}
+    updated_pg_route_status: dict[str, Any] = {}
+
+    for case_id, spec in case_specs.items():
+        temp_sql_path: Path = spec["temp_sql_path"]
+        reference_tsv_path: Path = spec["reference_tsv_path"]
+        candidate_tsv_path: Path = spec["candidate_tsv_path"]
+        checker_output_path: Path = spec["checker_output_path"]
+        reference_sql_path: Path = spec["reference_sql_path"]
+
+        candidate_sql, transformation, candidate_sql_source = spec["builder"]()
+        temp_sql_path.parent.mkdir(parents=True, exist_ok=True)
+        temp_sql_path.write_text(candidate_sql + "\n", encoding="utf-8")
+
+        per_case_patch_summary[case_id] = {
+            "temp_sql_path": str(temp_sql_path),
+            "bad_surface": (
+                "quoted identifiers corrupted into string literals around birthday/sex/id/diagnosis"
+                if case_id == "PORT_0012"
+                else "SUM(\"t2\".\"gender\" = 'F')"
+            ),
+            "normalized_surface": (
+                'CAST("birthday" AS TIMESTAMPTZ) with identifier-preserving WHERE/COUNT surfaces'
+                if case_id == "PORT_0012"
+                else 'SUM(CASE WHEN "t2"."gender" = \'F\' THEN 1 ELSE 0 END)'
+            ),
+            "exact_transformation": transformation,
+            "candidate_sql_source": candidate_sql_source,
+            "reference_sql_source": spec["reference_sql_source"],
+            "risk": spec["risk"],
+        }
+
+        source_execution_status = "not_attempted"
+        candidate_execution_status = "not_attempted"
+        checker_status = "not_checked"
+        consistency_status = "unknown"
+        failure_category = "none"
+        failure_summary = ""
+        row_count_reference = None
+        row_count_candidate = None
+        byte_equal = None
+        search_path_after_set = ""
+
+        if issues:
+            source_execution_status = "environment_blocked"
+            candidate_execution_status = "environment_blocked"
+            failure_category = issues[0]["type"]
+            failure_summary = issues[0]["message"]
+        else:
+            try:
+                reference_sql = reference_sql_path.read_text(encoding="utf-8")
+                with psycopg.connect(
+                    host=os.environ["PGHOST"],
+                    port=os.environ["PGPORT"],
+                    dbname=os.environ["PGDATABASE"],
+                    user=os.environ["PGUSER"],
+                    password=os.environ.get("PGPASSWORD"),
+                    options="-c statement_timeout=30000 -c default_transaction_read_only=on",
+                ) as conn:
+                    with conn.cursor() as cur:
+                        cur.execute("SELECT to_regnamespace(%s)", (spec["validation_schema"],))
+                        schema_name = cur.fetchone()[0]
+                        if not schema_name:
+                            raise RuntimeError(f"validation schema not found: {spec['validation_schema']}")
+                        cur.execute(
+                            psycopg.sql.SQL("SET search_path TO {}, public").format(
+                                psycopg.sql.Identifier(spec["validation_schema"])
+                            )
+                        )
+                        cur.execute("SHOW search_path")
+                        search_path_row = cur.fetchone()
+                        search_path_after_set = str(search_path_row[0]) if search_path_row else ""
+                        row_count_reference, _ = materialize_query_to_tsv(cur, reference_sql, reference_tsv_path)
+                        source_execution_status = "success"
+                        row_count_candidate, _ = materialize_query_to_tsv(cur, candidate_sql, candidate_tsv_path)
+                        candidate_execution_status = "success"
+                        conn.rollback()
+
+                byte_equal = reference_tsv_path.read_bytes() == candidate_tsv_path.read_bytes()
+                checker_status = "consistent" if byte_equal else "inconsistent"
+                consistency_status = checker_status
+            except Exception as exc:
+                if source_execution_status != "success":
+                    source_execution_status = "failed"
+                    candidate_execution_status = "not_run_reference_failed"
+                elif candidate_execution_status != "success":
+                    candidate_execution_status = "failed"
+                checker_status = "execution_failed"
+                consistency_status = "unknown"
+                failure_category = type(exc).__name__
+                failure_summary = str(exc)
+
+        checker_payload = {
+            "case_id": case_id,
+            "route": "SQLGLOT_TRANSPILE",
+            "temp_sql_path": str(temp_sql_path),
+            "reference_sql_source": spec["reference_sql_source"],
+            "candidate_sql_source": candidate_sql_source,
+            "source_execution_status": source_execution_status,
+            "candidate_execution_status": candidate_execution_status,
+            "checker_status": checker_status,
+            "consistency_status": consistency_status,
+            "failure_category": failure_category,
+            "failure_summary": failure_summary,
+            "row_count_reference": row_count_reference,
+            "row_count_candidate": row_count_candidate,
+            "byte_equal": byte_equal,
+            "search_path_after_set": search_path_after_set,
+            "artifact_paths": {
+                "reference_tsv_path": str(reference_tsv_path),
+                "candidate_tsv_path": str(candidate_tsv_path),
+                "temp_sql_path": str(temp_sql_path),
+                "checker_output_path": str(checker_output_path),
+            },
+            "claim_boundary": "port_0012_0013_sqlglot_pg_route_patch_and_check_only_not_transfer_metric",
+        }
+        checker_output_path.write_text(json.dumps(checker_payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+        per_case_checker_results[case_id] = checker_payload
+        updated_pg_route_status[case_id] = {
+            "sqlglot_pg_route_closed": checker_status == "consistent",
+            "route": "SQLGLOT_TRANSPILE",
+        }
+
+    bounded_pg_route_packet_status = {
+        "port_0012_sqlglot_pg_route_closed": bool(updated_pg_route_status["PORT_0012"]["sqlglot_pg_route_closed"]),
+        "port_0013_sqlglot_pg_route_closed": bool(updated_pg_route_status["PORT_0013"]["sqlglot_pg_route_closed"]),
+        "bounded_pg_side_route_packet_status": (
+            "port_0012_and_port_0013_closed"
+            if all(record["sqlglot_pg_route_closed"] for record in updated_pg_route_status.values())
+            else "remaining_pg_route_blockers"
+        ),
+    }
+
+    report_lines: list[str] = []
+    report_lines.append("# PORT_0012_0013_SQLGLOT_PG_ROUTE_PATCH_AND_CHECK_v1\n\n")
+    report_lines.append("## 0. Purpose And Boundary\n")
+    report_lines.append("- PORT_0012 / PORT_0013 only\n")
+    report_lines.append("- SQLGlot PG-route temp SQL patch + PG-side checker rerun\n")
+    report_lines.append("- no SQLGlot generation rerun\n")
+    report_lines.append("- no LLM rerun\n")
+    report_lines.append("- no MySQL/Spark\n")
+    report_lines.append("- no speedup\n")
+    report_lines.append("- no SpeedupTransferRate\n")
+    report_lines.append("- no canonical SQL edits\n\n")
+    report_lines.append("## 1. Prior Diagnostic Recap\n")
+    report_lines.append("- PORT_0012 SQLGlot quoted-identifier/datetime surface failure\n")
+    report_lines.append("- PORT_0013 SQLGlot boolean aggregation failure\n")
+    report_lines.append("- LLM route is not active blocker for either case\n\n")
+    report_lines.append("## 2. Patch Summary\n")
+    for case_id in ["PORT_0012", "PORT_0013"]:
+        patch = per_case_patch_summary[case_id]
+        report_lines.append(f"### {case_id}\n")
+        report_lines.append(f"- temp SQL path: `{patch['temp_sql_path']}`\n")
+        report_lines.append(f"- exact bad surface: `{patch['bad_surface']}`\n")
+        report_lines.append(f"- exact normalized surface: `{patch['normalized_surface']}`\n")
+        report_lines.append(f"- transformation: `{patch['exact_transformation']}`\n")
+        report_lines.append("- why canonical case SQL was not modified: temp-route normalization only\n")
+        report_lines.append(f"- risk: `{patch['risk']}`\n\n")
+    report_lines.append("## 3. PG-side Checker Rerun Results\n")
+    report_lines.append("| case_id | route | temp_sql_path | source_execution_status | candidate_execution_status | checker_status | consistency_status | failure_category | failure_summary | artifact_paths |\n")
+    report_lines.append("| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n")
+    for case_id in ["PORT_0012", "PORT_0013"]:
+        result = per_case_checker_results[case_id]
+        artifact_paths = ", ".join(f"{k}={v}" for k, v in result["artifact_paths"].items())
+        report_lines.append(
+            f"| {case_id} | {result['route']} | `{result['temp_sql_path']}` | `{result['source_execution_status']}` | "
+            f"`{result['candidate_execution_status']}` | `{result['checker_status']}` | `{result['consistency_status']}` | "
+            f"`{result['failure_category']}` | `{result['failure_summary']}` | `{artifact_paths}` |\n"
+        )
+    report_lines.append("\n")
+    report_lines.append("## 4. Updated Bounded PG-side Route Status\n")
+    report_lines.append(f"- PORT_0012 SQLGlot PG-route closed yes/no: `{'yes' if updated_pg_route_status['PORT_0012']['sqlglot_pg_route_closed'] else 'no'}`\n")
+    report_lines.append(f"- PORT_0013 SQLGlot PG-route closed yes/no: `{'yes' if updated_pg_route_status['PORT_0013']['sqlglot_pg_route_closed'] else 'no'}`\n")
+    report_lines.append(f"- bounded PG-side route packet status after this task: `{bounded_pg_route_packet_status['bounded_pg_side_route_packet_status']}`\n")
+    report_lines.append("- do not claim cross-engine closure yet\n\n")
+    report_lines.append("## 5. SpeedupTransferRate Status\n")
+    report_lines.append("- not_computed\n")
+    report_lines.append("- still not ready\n")
+    report_lines.append("- this task only addresses PG-side route blockers\n\n")
+    recommended_next_step = (
+        "update PORT cross-engine closure snapshot with PG-route repair status"
+        if all(record["sqlglot_pg_route_closed"] for record in updated_pg_route_status.values())
+        else "diagnose remaining PG-route failures"
+    )
+    report_lines.append("## 6. Recommended Next Step\n")
+    report_lines.append(f"- `{recommended_next_step}`\n\n")
+    report_lines.append("## 7. Non-Modification Note\n")
+    report_lines.append("- no SQLGlot generation rerun\n")
+    report_lines.append("- no LLM route rerun\n")
+    report_lines.append("- no MySQL/Spark\n")
+    report_lines.append("- no speedup\n")
+    report_lines.append("- no SpeedupTransferRate\n")
+    report_lines.append("- no registry/review/rules/EXECUTION_STATUS changes\n")
+    report_lines.append("- taxonomy notes untouched\n")
+    report_path.write_text("".join(report_lines), encoding="utf-8")
+
+    payload = {
+        "command": "formal-port-0012-0013-sqlglot-pg-route-patch-and-check",
+        "ok": all(result.get("checker_status") == "consistent" for result in per_case_checker_results.values()) and not issues,
+        "ran_at_utc": utc_now(),
+        "target_cases": ["PORT_0012", "PORT_0013"],
+        "per_case_patch_summary": per_case_patch_summary,
+        "per_case_checker_results": per_case_checker_results,
+        "updated_pg_route_status": bounded_pg_route_packet_status,
+        "speedup_transfer_rate_status": "not_computed",
+        "recommended_next_step": recommended_next_step,
+        "json_path": str(output_path),
+        "report_path": relative_to_root(report_path),
+        "issues": issues,
+        "claim_boundary": "port_0012_0013_sqlglot_pg_route_patch_and_check_only_not_transfer_metric",
+    }
+    output_path.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    return print_and_exit(payload, 0 if payload["ok"] else 1)
+
+
 def cmd_formal_port_port0012_pg_reference_normalization_check(args: argparse.Namespace) -> int:
     output_name = normalize_formal_port_output_name(args.output)
     case_id = "PORT_0012"
@@ -47169,6 +47464,13 @@ def build_parser() -> argparse.ArgumentParser:
     )
     formal_port_pg_consistency_diagnostic_parser.add_argument("--execute", action="store_true", default=False)
     formal_port_pg_consistency_diagnostic_parser.set_defaults(func=cmd_formal_port_pg_consistency_diagnostic)
+
+    formal_port_0012_0013_sqlglot_pg_route_patch_and_check_parser = subparsers.add_parser(
+        "formal-port-0012-0013-sqlglot-pg-route-patch-and-check"
+    )
+    formal_port_0012_0013_sqlglot_pg_route_patch_and_check_parser.set_defaults(
+        func=cmd_formal_port_0012_0013_sqlglot_pg_route_patch_and_check
+    )
 
     formal_port_cross_engine_feasibility_preflight_parser = subparsers.add_parser(
         "formal-port-cross-engine-feasibility-preflight"
