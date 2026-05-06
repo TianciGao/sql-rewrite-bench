@@ -18894,6 +18894,211 @@ def cmd_formal_port_cross_engine_snapshot_after_pg_route_repair(args: argparse.N
     return print_and_exit(result_payload, 0)
 
 
+def cmd_formal_port_0012_0013_mysql_spark_closure_preflight(args: argparse.Namespace) -> int:
+    output_path = Path("/tmp/rewritebench_port_0012_0013_mysql_spark_closure_preflight_v1.json")
+    report_path = ROOT / "docs" / "_scratch" / "PORT_0012_0013_MYSQL_SPARK_CLOSURE_PREFLIGHT_v1.md"
+    target_cases = ["PORT_0012", "PORT_0013"]
+
+    def _exists(path: Path) -> bool:
+        return path.is_file()
+
+    def _artifact_inventory(case_id: str) -> dict[str, Any]:
+        root = PORT_CASE_ROOT / case_id
+        return {
+            "source_sql": relative_to_root(root / "source.sql") if _exists(root / "source.sql") else "",
+            "rewrite_pos_01_sql": relative_to_root(root / "rewrite_pos_01.sql") if _exists(root / "rewrite_pos_01.sql") else "",
+            "rewrite_neg_01_sql": relative_to_root(root / "rewrite_neg_01.sql") if _exists(root / "rewrite_neg_01.sql") else "",
+            "rewrite_pos_02_spark_sql": relative_to_root(root / "rewrite_pos_02_spark.sql") if _exists(root / "rewrite_pos_02_spark.sql") else "",
+            "rewrite_neg_02_spark_sql": relative_to_root(root / "rewrite_neg_02_spark.sql") if _exists(root / "rewrite_neg_02_spark.sql") else "",
+            "mysql": {
+                "ddl": relative_to_root(root / "schema" / "ddl_mysql.sql") if _exists(root / "schema" / "ddl_mysql.sql") else "",
+                "witness": relative_to_root(root / "validation" / "mysql_witness_data.sql") if _exists(root / "validation" / "mysql_witness_data.sql") else "",
+                "script": relative_to_root(root / "validation" / "run_mysql_validation.sh") if _exists(root / "validation" / "run_mysql_validation.sh") else "",
+                "runs": sorted(relative_to_root(p) for p in (root / "runs" / "mysql").rglob("*") if p.is_file()) if (root / "runs" / "mysql").exists() else [],
+                "result_check_exists": _exists(root / "runs" / "mysql" / "result_check.json"),
+            },
+            "spark": {
+                "ddl": relative_to_root(root / "schema" / "ddl_spark.sql") if _exists(root / "schema" / "ddl_spark.sql") else "",
+                "witness": relative_to_root(root / "validation" / "spark_witness_data.sql") if _exists(root / "validation" / "spark_witness_data.sql") else "",
+                "script": relative_to_root(root / "validation" / "run_spark_validation.sh") if _exists(root / "validation" / "run_spark_validation.sh") else "",
+                "runs": sorted(relative_to_root(p) for p in (root / "runs" / "spark").rglob("*") if p.is_file()) if (root / "runs" / "spark").exists() else [],
+                "result_check_exists": _exists(root / "runs" / "spark" / "result_check.json"),
+            },
+            "root_result_check": relative_to_root(root / "runs" / "result_check.json") if _exists(root / "runs" / "result_check.json") else "",
+            "pg_route_repair_temp_sql": str(Path("/tmp/rewritebench_port_sqlglot_pg_route_patch") / case_id / "sqlglot_pg_route_patched.sql"),
+        }
+
+    artifact_inventory = {case_id: _artifact_inventory(case_id) for case_id in target_cases}
+
+    readiness_analysis = []
+    for case_id in target_cases:
+        inv = artifact_inventory[case_id]
+        mysql_artifacts_ready = bool(inv["mysql"]["ddl"] and inv["mysql"]["witness"] and inv["mysql"]["script"])
+        spark_artifacts_ready = bool(inv["spark"]["ddl"] and inv["spark"]["witness"] and inv["spark"]["script"])
+
+        if case_id == "PORT_0012":
+            likely_temp_sql_needed = "no_new_engine_surface_patch_obvious"
+            mysql_script_status = "rewrite_only_scaffold_no_result_check_generation"
+            spark_script_status = "rewrite_only_scaffold_no_result_check_generation"
+        else:
+            likely_temp_sql_needed = "no_new_engine_surface_patch_obvious"
+            mysql_script_status = "source_only_scaffold_no_result_check_generation"
+            spark_script_status = "spark_specific_rewrite_scaffold_no_result_check_generation"
+
+        stale_failure_artifacts = False
+        blockers: list[str] = []
+        if not mysql_artifacts_ready:
+            blockers.append("missing_mysql_artifacts")
+        if not spark_artifacts_ready:
+            blockers.append("missing_spark_artifacts")
+        if inv["mysql"]["result_check_exists"] or inv["spark"]["result_check_exists"]:
+            stale_failure_artifacts = True
+            blockers.append("stale_engine_local_result_check_present")
+        if not inv["root_result_check"]:
+            blockers.append("missing_root_result_check_reference")
+        if "no_result_check_generation" in mysql_script_status or "no_result_check_generation" in spark_script_status:
+            blockers.append("validation_scripts_do_not_emit_engine_local_result_check")
+
+        readiness_status = (
+            "ready_for_mysql_spark_execution"
+            if mysql_artifacts_ready and spark_artifacts_ready and not blockers
+            else "ready_after_engine_surface_temp_sql_patch"
+            if mysql_artifacts_ready and spark_artifacts_ready
+            else "missing_mysql_artifacts"
+            if not mysql_artifacts_ready
+            else "missing_spark_artifacts"
+            if not spark_artifacts_ready
+            else "blocked_unknown"
+        )
+
+        next_action = (
+            "patch validation scripts first, then execute"
+            if mysql_artifacts_ready and spark_artifacts_ready
+            else "repair missing artifacts before any execution"
+        )
+        readiness_analysis.append(
+            {
+                "case_id": case_id,
+                "mysql_artifacts_ready": mysql_artifacts_ready,
+                "spark_artifacts_ready": spark_artifacts_ready,
+                "mysql_script_status": mysql_script_status,
+                "spark_script_status": spark_script_status,
+                "likely_temp_sql_needed": likely_temp_sql_needed,
+                "stale_failure_artifacts": stale_failure_artifacts,
+                "readiness_status": readiness_status,
+                "blockers": blockers,
+                "next_action": next_action,
+            }
+        )
+
+    proposed_execution_boundary = {
+        "cases": target_cases,
+        "engines": ["mysql", "spark"],
+        "allowed_scripts": [
+            "cases/PORT/PORT_0012/validation/run_mysql_validation.sh",
+            "cases/PORT/PORT_0012/validation/run_spark_validation.sh",
+            "cases/PORT/PORT_0013/validation/run_mysql_validation.sh",
+            "cases/PORT/PORT_0013/validation/run_spark_validation.sh",
+        ],
+        "expected_artifacts": [
+            "cases/PORT/PORT_0012/runs/mysql/rewrite_pos_01.tsv",
+            "cases/PORT/PORT_0012/runs/mysql/rewrite_neg_01.tsv",
+            "cases/PORT/PORT_0012/runs/spark/rewrite_pos_01.tsv",
+            "cases/PORT/PORT_0012/runs/spark/rewrite_neg_01.tsv",
+            "cases/PORT/PORT_0013/runs/mysql/source.tsv",
+            "cases/PORT/PORT_0013/runs/spark/rewrite_pos_01.tsv",
+            "cases/PORT/PORT_0013/runs/spark/rewrite_neg_01.tsv",
+            "engine-local or root-level result_check artifacts after checker invocation",
+        ],
+        "no_speedup": True,
+        "no_speedup_transfer_rate": True,
+        "no_pg_rerun_unless_reference_reads_only": True,
+    }
+
+    recommended_next_step = "patch validation scripts first, then execute"
+
+    payload = {
+        "target_cases": target_cases,
+        "artifact_inventory": artifact_inventory,
+        "readiness_analysis": readiness_analysis,
+        "proposed_execution_boundary": proposed_execution_boundary,
+        "recommended_next_step": recommended_next_step,
+        "claim_boundary": "port_0012_0013_mysql_spark_closure_preflight_only_not_execution",
+    }
+    output_path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+    lines: list[str] = []
+    lines.append("# PORT_0012_0013_MYSQL_SPARK_CLOSURE_PREFLIGHT_v1\n\n")
+    lines.append("## 0. Purpose And Boundary\n")
+    lines.append("- read-only closure preflight\n")
+    lines.append("- PORT_0012 / PORT_0013 only\n")
+    lines.append("- no DB execution\n")
+    lines.append("- no checker/speedup\n")
+    lines.append("- no SpeedupTransferRate\n")
+    lines.append("- no artifact modification\n\n")
+    lines.append("## 1. Current Snapshot Recap\n")
+    lines.append("- PG-side route packet is now closed 6/6\n")
+    lines.append("- cross-engine closed subset remains 4/6\n")
+    lines.append("- PORT_0012 / PORT_0013 are pending MySQL/Spark closure\n")
+    lines.append("- SpeedupTransferRate is not computed\n\n")
+    lines.append("## 2. Artifact Inventory\n")
+    for case_id in target_cases:
+        inv = artifact_inventory[case_id]
+        lines.append(f"### {case_id}\n")
+        lines.append(f"- source SQL: `{inv['source_sql']}`\n")
+        lines.append(f"- rewrite SQL: `{inv['rewrite_pos_01_sql']}`\n")
+        lines.append(f"- MySQL DDL: `{inv['mysql']['ddl']}`\n")
+        lines.append(f"- MySQL witness: `{inv['mysql']['witness']}`\n")
+        lines.append(f"- MySQL script: `{inv['mysql']['script']}`\n")
+        lines.append(f"- Spark DDL: `{inv['spark']['ddl']}`\n")
+        lines.append(f"- Spark witness: `{inv['spark']['witness']}`\n")
+        lines.append(f"- Spark script: `{inv['spark']['script']}`\n")
+        lines.append(f"- existing runs/mysql artifacts: `{inv['mysql']['runs']}`\n")
+        lines.append(f"- existing runs/spark artifacts: `{inv['spark']['runs']}`\n")
+        lines.append(f"- root result_check state: `{inv['root_result_check'] or 'missing'}`\n")
+        lines.append(f"- PG-route repair artifact: `{inv['pg_route_repair_temp_sql']}`\n\n")
+    lines.append("## 3. Readiness Analysis\n")
+    lines.append("| case_id | mysql_artifacts_ready | spark_artifacts_ready | mysql_script_status | spark_script_status | likely_temp_sql_needed | stale_failure_artifacts | readiness_status | blockers | next_action |\n")
+    lines.append("| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n")
+    for row in readiness_analysis:
+        lines.append(
+            f"| {row['case_id']} | {'yes' if row['mysql_artifacts_ready'] else 'no'} | {'yes' if row['spark_artifacts_ready'] else 'no'} | "
+            f"{row['mysql_script_status']} | {row['spark_script_status']} | {row['likely_temp_sql_needed']} | "
+            f"{'yes' if row['stale_failure_artifacts'] else 'no'} | {row['readiness_status']} | "
+            f"{', '.join(row['blockers']) if row['blockers'] else 'none'} | {row['next_action']} |\n"
+        )
+    lines.append("\n")
+    lines.append("## 4. Execution Boundary If Approved\n")
+    lines.append(f"- cases: `{proposed_execution_boundary['cases']}`\n")
+    lines.append(f"- engines: `{proposed_execution_boundary['engines']}`\n")
+    lines.append(f"- allowed scripts: `{proposed_execution_boundary['allowed_scripts']}`\n")
+    lines.append(f"- expected artifacts: `{proposed_execution_boundary['expected_artifacts']}`\n")
+    lines.append("- no speedup\n")
+    lines.append("- no SpeedupTransferRate\n")
+    lines.append("- no PG rerun unless scripts require reference reads only\n\n")
+    lines.append("## 5. Recommended Next Step\n")
+    lines.append(f"- `{recommended_next_step}`\n\n")
+    lines.append("## 6. Non-Modification Note\n")
+    lines.append("- no execution\n")
+    lines.append("- no DB/checker/speedup\n")
+    lines.append("- no SpeedupTransferRate\n")
+    lines.append("- no model/API\n")
+    lines.append("- no registry/review/rules/EXECUTION_STATUS changes\n")
+    lines.append("- taxonomy notes untouched\n")
+    report_path.write_text("".join(lines), encoding="utf-8")
+
+    result_payload = {
+        "command": "formal-port-0012-0013-mysql-spark-closure-preflight",
+        "ok": True,
+        "ran_at_utc": utc_now(),
+        "json_path": str(output_path),
+        "report_path": relative_to_root(report_path),
+        "recommended_next_step": recommended_next_step,
+        "claim_boundary": "port_0012_0013_mysql_spark_closure_preflight_only_not_execution",
+    }
+    return print_and_exit(result_payload, 0)
+
+
 def cmd_formal_port_0004_closure_artifact_bundle(args: argparse.Namespace) -> int:
     case_id = "PORT_0004"
     case_root = PORT_CASE_ROOT / case_id
@@ -47760,6 +47965,13 @@ def build_parser() -> argparse.ArgumentParser:
     )
     formal_port_snapshot_after_pg_route_repair_parser.set_defaults(
         func=cmd_formal_port_cross_engine_snapshot_after_pg_route_repair
+    )
+
+    formal_port_0012_0013_mysql_spark_closure_preflight_parser = subparsers.add_parser(
+        "formal-port-0012-0013-mysql-spark-closure-preflight"
+    )
+    formal_port_0012_0013_mysql_spark_closure_preflight_parser.set_defaults(
+        func=cmd_formal_port_0012_0013_mysql_spark_closure_preflight
     )
 
     formal_port_0004_closure_artifact_bundle_parser = subparsers.add_parser(
