@@ -7106,7 +7106,7 @@ def cmd_formal_calcite_hep_real_route_canary(args: argparse.Namespace) -> int:
     if not selected_case_ids:
         selected_case_ids = calcite_hep_real_route_canary_case_ids()
 
-    valid_case_ids = set(calcite_hep_real_route_canary_case_ids())
+    valid_case_ids = set(CALCITE_HEP_SHARED_10CASE_CASES)
     issues: list[dict[str, Any]] = []
     for case_id in selected_case_ids:
         if case_id not in valid_case_ids:
@@ -8541,7 +8541,7 @@ def cmd_formal_calcite_hep_pg_checker_run(args: argparse.Namespace) -> int:
     if not selected_case_ids:
         selected_case_ids = calcite_hep_pg_checker_run_case_ids()
 
-    valid_case_ids = set(calcite_hep_pg_checker_run_case_ids())
+    valid_case_ids = set(CALCITE_HEP_SHARED_10CASE_CASES)
     invalid_case_ids = [case_id for case_id in selected_case_ids if case_id not in valid_case_ids]
     if invalid_case_ids:
         payload = {
@@ -8869,6 +8869,244 @@ def cmd_formal_calcite_hep_pg_checker_run(args: argparse.Namespace) -> int:
     }
     write_formal_expansion_report(output_name, payload)
     return print_and_exit(payload, 0 if payload["ok"] else 1)
+
+
+def cmd_formal_calcite_hep_missing_checker_batch(args: argparse.Namespace) -> int:
+    target_cases = [str(case_id).strip().upper() for case_id in (args.cases or []) if str(case_id).strip()]
+    if not target_cases:
+        target_cases = ["PERF_0013", "PERF_0017", "PERF_0019", "PERF_0024", "PERF_0052", "PERF_0063"]
+
+    valid_case_ids = set(CALCITE_HEP_SHARED_10CASE_CASES)
+    invalid_case_ids = [case_id for case_id in target_cases if case_id not in valid_case_ids]
+    if invalid_case_ids:
+        payload = {
+            "command": "formal-calcite-hep-missing-checker-batch",
+            "ok": False,
+            "ran_at_utc": utc_now(),
+            "issues": [{"type": "unsupported_case_id", "case_id": case_id} for case_id in invalid_case_ids],
+            "claim_boundary": "bounded_calcite_hep_missing_checker_batch_not_speedup_not_final_baseline",
+        }
+        return print_and_exit(payload, 1)
+
+    existing_subset_cases = ["PERF_0006", "PERF_0008", "PERF_0033", "PERF_0054"]
+    report_path = ROOT / "docs" / "_scratch" / "CALCITE_HEP_10CASE_MISSING_CHECKER_BATCH_v1.md"
+    json_path = Path("/tmp/rewritebench_calcite_hep_10case_missing_checker_batch_v1.json")
+    generation_output = "reports/formal_expansion/calcite_hep_real_route_missing_batch_v1.json"
+    checker_output = "reports/formal_expansion/calcite_hep_pg_checker_missing_batch_v1.json"
+
+    subprocess_args_prefix = [sys.executable, "-m", "scripts.cli"]
+    generation_cmd = subprocess_args_prefix + [
+        "formal-calcite-hep-real-route-canary",
+        "--output",
+        generation_output,
+    ]
+    for case_id in target_cases:
+        generation_cmd.extend(["--case-id", case_id])
+    generation_cmd.append("--execute")
+
+    generation_proc = subprocess.run(
+        generation_cmd,
+        cwd=str(ROOT),
+        text=True,
+        capture_output=True,
+    )
+    generation_report = load_json_if_present(ROOT / generation_output) or {}
+    generation_record_map = {
+        str(record.get("case_id", "")).strip().upper(): record
+        for record in generation_report.get("records", [])
+        if record.get("case_id")
+    }
+
+    checker_ready_cases: list[str] = []
+    for case_id in target_cases:
+        record = generation_record_map.get(case_id, {})
+        if (
+            record.get("real_route_success") is True
+            and str(record.get("emitted_sql_mode", "") or "").strip() == "calcite_rel_to_sql"
+            and record.get("emitted_sql_is_calcite_generated") is True
+        ):
+            checker_ready_cases.append(case_id)
+
+    checker_proc = None
+    checker_report = {}
+    checker_record_map: dict[str, dict[str, Any]] = {}
+    if checker_ready_cases:
+        checker_cmd = subprocess_args_prefix + [
+            "formal-calcite-hep-pg-checker-run",
+            "--output",
+            checker_output,
+        ]
+        for case_id in checker_ready_cases:
+            checker_cmd.extend(["--case-id", case_id])
+        checker_cmd.append("--execute")
+        checker_proc = subprocess.run(
+            checker_cmd,
+            cwd=str(ROOT),
+            text=True,
+            capture_output=True,
+        )
+        checker_report = load_json_if_present(ROOT / checker_output) or {}
+        checker_record_map = {
+            str(record.get("case_id", "")).strip().upper(): record
+            for record in checker_report.get("records", [])
+            if record.get("case_id")
+        }
+    else:
+        checker_cmd = []
+
+    per_case_results: list[dict[str, Any]] = []
+    generation_success_count = 0
+    generation_failure_count = 0
+    checker_run_count = 0
+    checker_consistent_count = 0
+    checker_failed_count = 0
+    candidate_execution_failed_count = 0
+    new_consistent_count = 0
+    total_generation_failures = 0
+    total_checker_failures = 0
+    remaining_blockers: list[str] = []
+
+    for case_id in target_cases:
+        generation_record = generation_record_map.get(case_id, {})
+        checker_record = checker_record_map.get(case_id, {})
+
+        generation_status = "generated" if generation_record.get("real_route_success") is True else "generation_failed"
+        output_sql_extracted = bool(generation_record.get("candidate_sql_emitted") or generation_record.get("emit_succeeded"))
+        candidate_sql_path = str(generation_record.get("output_sql_path", "") or "")
+
+        if generation_status == "generated":
+            generation_success_count += 1
+        else:
+            generation_failure_count += 1
+            total_generation_failures += 1
+
+        if checker_record:
+            checker_run_count += 1
+            source_execution_status = str(checker_record.get("source_execution_status", "") or "")
+            candidate_execution_status = str(checker_record.get("candidate_execution_status", "") or "")
+            checker_status = str(checker_record.get("checker_status", "") or "")
+            consistency_status = checker_status if checker_status in {"consistent", "inconsistent"} else "not_consistent"
+            failure_category = str(checker_record.get("failure_category", "none") or "none")
+            failure_summary = str(checker_record.get("error_message", "") or "")
+            if checker_status == "consistent":
+                checker_consistent_count += 1
+                new_consistent_count += 1
+            else:
+                checker_failed_count += 1
+                total_checker_failures += 1
+            if candidate_execution_status != "success":
+                candidate_execution_failed_count += 1
+            if checker_status != "consistent":
+                remaining_blockers.append(f"{case_id}:{checker_status or 'checker_failed'}")
+        else:
+            source_execution_status = "not_run_generation_failed"
+            candidate_execution_status = "not_run_generation_failed"
+            checker_status = "not_run_generation_failed"
+            consistency_status = "not_run"
+            failure_category = str(generation_record.get("blocker_category", "") or "generation_failed")
+            failure_summary = str(generation_record.get("blocker_message", "") or generation_proc.stderr.strip() or "")
+            remaining_blockers.append(f"{case_id}:{failure_category}")
+
+        artifact_paths = {
+            "generation_report_path": generation_output,
+            "candidate_sql_path": candidate_sql_path,
+            "checker_report_path": checker_output if checker_record else "",
+            "checker_output_path": str(checker_record.get("checker_output_path", "") or ""),
+            "candidate_result_path": str(checker_record.get("planned_candidate_result_path", "") or checker_record.get("candidate_result_path", "") or ""),
+            "source_result_path": str(checker_record.get("planned_source_result_path", "") or checker_record.get("source_result_path", "") or ""),
+        }
+        per_case_results.append(
+            {
+                "case_id": case_id,
+                "generation_status": generation_status,
+                "output_sql_extracted": output_sql_extracted,
+                "candidate_sql_path": candidate_sql_path,
+                "source_execution_status": source_execution_status,
+                "candidate_execution_status": candidate_execution_status,
+                "checker_status": checker_status,
+                "consistency_status": consistency_status,
+                "failure_category": failure_category,
+                "failure_summary": failure_summary,
+                "artifact_paths": artifact_paths,
+            }
+        )
+
+    batch_metrics = {
+        "target_denominator": len(target_cases),
+        "generation_success_count": generation_success_count,
+        "generation_failure_count": generation_failure_count,
+        "checker_run_count": checker_run_count,
+        "checker_consistent_count": checker_consistent_count,
+        "checker_failed_count": checker_failed_count,
+        "candidate_execution_failed_count": candidate_execution_failed_count,
+        "speedup_status": "not_run",
+    }
+    updated_10case_checker_coverage = {
+        "existing_consistent_count": 4,
+        "new_consistent_count": new_consistent_count,
+        "total_10case_checker_consistent_count": 4 + new_consistent_count,
+        "total_10case_generation_failures": total_generation_failures,
+        "total_10case_checker_failures": total_checker_failures,
+        "remaining_blockers": remaining_blockers,
+    }
+
+    recommended_next_step = (
+        "run Calcite HEP speedup for newly checker-consistent missing cases"
+        if checker_consistent_count >= 5
+        else "diagnose Calcite HEP generation/checker failures"
+    )
+
+    payload = {
+        "target_cases": target_cases,
+        "existing_subset_cases": existing_subset_cases,
+        "per_case_results": per_case_results,
+        "batch_metrics": batch_metrics,
+        "updated_10case_checker_coverage": updated_10case_checker_coverage,
+        "speedup_status": "not_run",
+        "recommended_next_step": recommended_next_step,
+        "claim_boundary": "bounded_calcite_hep_missing_checker_batch_not_speedup_not_final_baseline",
+        "generation_command": generation_cmd,
+        "generation_returncode": generation_proc.returncode,
+        "checker_command": checker_cmd,
+        "checker_returncode": checker_proc.returncode if checker_proc is not None else None,
+    }
+    json_path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+    table_lines = [
+        "| case_id | generation_status | output_sql_extracted | candidate_sql_path | source_execution_status | candidate_execution_status | checker_status | consistency_status | failure_category | failure_summary | artifact_paths |",
+        "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |",
+    ]
+    for row in per_case_results:
+        table_lines.append(
+            f"| {row['case_id']} | {row['generation_status']} | {row['output_sql_extracted']} | {row['candidate_sql_path']} | {row['source_execution_status']} | {row['candidate_execution_status']} | {row['checker_status']} | {row['consistency_status']} | {row['failure_category']} | {row['failure_summary']} | {json.dumps(row['artifact_paths'], sort_keys=True)} |"
+        )
+
+    report_text = (
+        "# CALCITE_HEP_10CASE_MISSING_CHECKER_BATCH_v1\n\n"
+        "## 0. Purpose And Boundary\n"
+        "This note records a bounded Calcite HEP missing-case generation/checker batch for six target cases only. It uses PostgreSQL checker handoff only, does not run speedup, is not a final baseline, and does not write back to registries.\n\n"
+        "## 1. Existing Subset Recap\n"
+        "- existing 4 covered cases: `PERF_0006`, `PERF_0008`, `PERF_0033`, `PERF_0054`\n"
+        "- checker result: `4/4` consistent\n"
+        "- speedup subset GM: `0.9588741913559858`\n"
+        "- claim boundary: bounded PG-only subset, not final baseline\n\n"
+        "## 2. Target Missing Cases\n"
+        + "".join(f"- `{case_id}`\n" for case_id in target_cases)
+        + "\n## 3. Per-case Result Table\n"
+        + "\n".join(table_lines)
+        + "\n\n## 4. Batch Metrics\n"
+        + "".join(f"- `{key}` = `{value}`\n" for key, value in batch_metrics.items())
+        + "\n## 5. Updated @10 Checker Coverage\n"
+        + "".join(f"- `{key}` = `{value}`\n" for key, value in updated_10case_checker_coverage.items())
+        + "\n## 6. Interpretation\n"
+        "This is Calcite HEP checker expansion evidence only. It is not speedup, not a final baseline, and not cross-engine transfer evidence.\n\n"
+        "## 7. Recommended Next Step\n"
+        f"- `{recommended_next_step}`\n\n"
+        "## 8. Non-Modification Note\n"
+        "Only the six missing cases were targeted. No speedup, MySQL, Spark, model/API, registry, review, rules, EXECUTION_STATUS, or case-file changes were made. Taxonomy note files remained untouched.\n"
+    )
+    report_path.write_text(report_text, encoding="utf-8")
+    return print_and_exit(payload, 0 if generation_failure_count == 0 and checker_failed_count == 0 else 1)
 
 
 def cmd_formal_calcite_hep_perf0006_numeric_mismatch_diagnostic(args: argparse.Namespace) -> int:
@@ -44419,6 +44657,12 @@ def build_parser() -> argparse.ArgumentParser:
     )
     formal_calcite_hep_pg_checker_run_parser.add_argument("--execute", action="store_true", default=False)
     formal_calcite_hep_pg_checker_run_parser.set_defaults(func=cmd_formal_calcite_hep_pg_checker_run)
+
+    formal_calcite_hep_missing_checker_batch_parser = subparsers.add_parser(
+        "formal-calcite-hep-missing-checker-batch"
+    )
+    formal_calcite_hep_missing_checker_batch_parser.add_argument("--cases", nargs="*", default=[])
+    formal_calcite_hep_missing_checker_batch_parser.set_defaults(func=cmd_formal_calcite_hep_missing_checker_batch)
 
     formal_calcite_hep_speedup_preflight_parser = subparsers.add_parser("formal-calcite-hep-speedup-preflight")
     formal_calcite_hep_speedup_preflight_parser.add_argument(
