@@ -235,6 +235,7 @@ LLMR2_10CASE_PREFLIGHT_ROOT = Path("/tmp/rewritebench_llmr2_10case_preflight")
 SQLSOLVER_AUDIT_ROOT = Path("/tmp/rewritebench_sqlsolver_audit") / "candidate"
 SQLSOLVER_ADAPTER_PREFLIGHT_ROOT = Path("/tmp/rewritebench_sqlsolver_adapter_preflight")
 SQLSOLVER_RUNNER_DRY_RUN_ROOT = Path("/tmp/rewritebench_sqlsolver_runner_dry_run")
+SQLSOLVER_SUPPORT_SMOKE_ROOT = Path("/tmp/rewritebench_sqlsolver_support_smoke")
 LLMR2_SUPPORTED_CASE_IDS = {
     "PERF_0006", "PERF_0008", "PERF_0013", "PERF_0017", "PERF_0019",
     "PERF_0024", "PERF_0033", "PERF_0052", "PERF_0054", "PERF_0063",
@@ -29004,6 +29005,298 @@ def cmd_formal_sqlsolver_runner_dry_run(args: argparse.Namespace) -> int:
     return print_and_exit(payload, 0)
 
 
+def cmd_formal_sqlsolver_support_smoke(args: argparse.Namespace) -> int:
+    case_ids = [str(case_id).strip().upper() for case_id in (args.cases or []) if str(case_id).strip()]
+    if not case_ids:
+        payload = {
+            "command": "formal-sqlsolver-support-smoke",
+            "ok": False,
+            "ran_at_utc": utc_now(),
+            "failure_category": "missing_cases",
+            "failure_summary": "at least one case id is required",
+            "claim_boundary": "bounded_sqlsolver_support_smoke_not_rewrite_not_leaderboard",
+        }
+        return print_and_exit(payload, 1)
+
+    repo_path = SQLSOLVER_AUDIT_ROOT
+    built_jar_candidates = [
+        repo_path / "build" / "libs" / "sqlsolver-v1.1.0.jar",
+        repo_path / "build" / "libs" / "SQLSolver-v1.1.0.jar",
+        repo_path / "build" / "libs" / "sqlsolver.jar",
+        repo_path / "build" / "libs" / "SQLSolver.jar",
+    ]
+    built_jar_path = next((path for path in built_jar_candidates if path.is_file()), None)
+    use_built_jar = bool(getattr(args, "use_built_jar", False))
+    if use_built_jar and built_jar_path is None:
+        payload = {
+            "command": "formal-sqlsolver-support-smoke",
+            "ok": False,
+            "ran_at_utc": utc_now(),
+            "failure_category": "built_jar_requested_but_missing",
+            "failure_summary": "built SQLSolver jar was requested but no jar was found",
+            "claim_boundary": "bounded_sqlsolver_support_smoke_not_rewrite_not_leaderboard",
+        }
+        return print_and_exit(payload, 1)
+
+    entry_class_found = False
+    required_classes_found = False
+    if built_jar_path is not None:
+        try:
+            jar_listing = subprocess.run(
+                ["jar", "tf", str(built_jar_path)],
+                check=True,
+                capture_output=True,
+                text=True,
+                encoding="utf-8",
+            ).stdout
+            entry_class_found = "sqlsolver/api/Entry.class" in jar_listing
+            required_classes_found = all(
+                class_name in jar_listing
+                for class_name in [
+                    "sqlsolver/api/Entry.class",
+                    "sqlsolver/api/entry/Verification.class",
+                    "sqlsolver/superopt/logic/VerificationResult.class",
+                ]
+            )
+        except subprocess.CalledProcessError:
+            entry_class_found = False
+            required_classes_found = False
+
+    z3_lib_dir = repo_path / "lib"
+    z3_artifacts_found = {
+        "libz3.so": (z3_lib_dir / "libz3.so").is_file(),
+        "libz3java.so": (z3_lib_dir / "libz3java.so").is_file(),
+        "z3_jar": (z3_lib_dir / "z3-4.13.0.jar").is_file(),
+    }
+    properties_path = repo_path / "sqlsolver.properties"
+    properties_text = properties_path.read_text(encoding="utf-8") if properties_path.is_file() else ""
+    z3_timeout_ms = None
+    timeout_match = re.search(r"(?m)^\s*sqlsolver\.z3\.timeout\s*=\s*(\d+)\s*$", properties_text)
+    if timeout_match:
+        z3_timeout_ms = int(timeout_match.group(1))
+
+    timeout_policy = {
+        "wall_timeout_seconds_per_query_pair": 60,
+        "sqlsolver_z3_timeout_ms": z3_timeout_ms,
+    }
+    verdict_mapping = {
+        "EQ": "proved_equivalent",
+        "NEQ": "refuted_equivalence",
+        "TIMEOUT": "timeout",
+        "UNKNOWN": "unknown_or_unsupported",
+    }
+
+    def classify_wrapper_failure(text: str) -> str:
+        lowered = text.lower()
+        if "parse" in lowered or "parser" in lowered or "syntax" in lowered:
+            return "parser_or_translation_failure"
+        if "exception" in lowered or "error" in lowered:
+            return "internal_error"
+        return "launch_failure"
+
+    per_pair_results: list[dict[str, Any]] = []
+    aggregate_support_metrics = {
+        "denominator_pairs": 0,
+        "prove_count": 0,
+        "refute_count": 0,
+        "unknown_count": 0,
+        "timeout_count": 0,
+        "unsupported_count": 0,
+        "parser_or_translation_failure_count": 0,
+        "internal_error_count": 0,
+        "launch_failure_count": 0,
+        "expected_supported_count": 0,
+        "unexpected_verdict_count": 0,
+        "verifier_support_rate": "0/0",
+    }
+
+    jar_classpath = str(built_jar_path) if built_jar_path else "<missing_jar>"
+    env = os.environ.copy()
+    env["LD_LIBRARY_PATH"] = str(z3_lib_dir)
+
+    for case_id in case_ids:
+        bundle_dir = SQLSOLVER_ADAPTER_PREFLIGHT_ROOT / case_id
+        support_dir = SQLSOLVER_SUPPORT_SMOKE_ROOT / case_id
+        support_dir.mkdir(parents=True, exist_ok=True)
+        expected_verdicts = load_json_if_present(bundle_dir / "expected_verdicts.json") or {}
+
+        pair_specs = [
+            {
+                "pair_type": "positive",
+                "sql1": bundle_dir / "sql1_positive.sql",
+                "sql2": bundle_dir / "sql2_positive.sql",
+                "expected_support_intent": str(((expected_verdicts.get("positive_pair") or {}).get("expected_support_intent") or "")).strip(),
+            },
+            {
+                "pair_type": "negative",
+                "sql1": bundle_dir / "sql1_negative.sql",
+                "sql2": bundle_dir / "sql2_negative.sql",
+                "expected_support_intent": str(((expected_verdicts.get("negative_pair") or {}).get("expected_support_intent") or "")).strip(),
+            },
+        ]
+
+        for pair in pair_specs:
+            pair_type = str(pair["pair_type"])
+            sql1_path = Path(pair["sql1"])
+            sql2_path = Path(pair["sql2"])
+            schema_path = bundle_dir / "schema.sql"
+            expected_support_intent = str(pair["expected_support_intent"])
+            pair_dir = support_dir / pair_type
+            pair_dir.mkdir(parents=True, exist_ok=True)
+            stdout_path = pair_dir / "stdout.log"
+            stderr_path = pair_dir / "stderr.log"
+            raw_output_path = pair_dir / "raw_verdict.txt"
+
+            command = [
+                "java",
+                f"-Djava.library.path={z3_lib_dir}",
+                "-cp",
+                jar_classpath,
+                "sqlsolver.api.Entry",
+                f"-sql1={sql1_path}",
+                f"-sql2={sql2_path}",
+                f"-schema={schema_path}",
+                f"-output={raw_output_path}",
+                "-print",
+            ]
+            aggregate_support_metrics["denominator_pairs"] += 1
+            raw_verdict = ""
+            mapped_verdict = ""
+            support_result = ""
+            exit_code = None
+            failure_category = ""
+            failure_summary = ""
+            timed_out = False
+
+            if (
+                not built_jar_path
+                or not entry_class_found
+                or not required_classes_found
+                or not all(z3_artifacts_found.values())
+                or not sql1_path.is_file()
+                or not sql2_path.is_file()
+                or not schema_path.is_file()
+            ):
+                exit_code = -1
+                failure_category = "launch_failure"
+                failure_summary = "runtime preconditions missing for SQLSolver support smoke"
+                support_result = "launch_failure"
+            else:
+                try:
+                    with stdout_path.open("w", encoding="utf-8") as stdout_fh, stderr_path.open("w", encoding="utf-8") as stderr_fh:
+                        proc = subprocess.run(
+                            command,
+                            cwd=repo_path,
+                            env=env,
+                            stdout=stdout_fh,
+                            stderr=stderr_fh,
+                            text=True,
+                            check=False,
+                            timeout=60,
+                        )
+                    exit_code = proc.returncode
+                except subprocess.TimeoutExpired:
+                    timed_out = True
+                    exit_code = 124
+                    support_result = "timeout"
+                    failure_category = "timeout"
+                    failure_summary = "SQLSolver wrapper wall timeout exceeded 60 seconds"
+
+                if not timed_out and raw_output_path.is_file():
+                    raw_lines = [line.strip() for line in raw_output_path.read_text(encoding="utf-8", errors="ignore").splitlines() if line.strip()]
+                    if raw_lines:
+                        raw_verdict = raw_lines[-1]
+
+                if not timed_out and exit_code == 0:
+                    mapped_verdict = verdict_mapping.get(raw_verdict, "")
+                    if mapped_verdict == "proved_equivalent":
+                        aggregate_support_metrics["prove_count"] += 1
+                    elif mapped_verdict == "refuted_equivalence":
+                        aggregate_support_metrics["refute_count"] += 1
+                    elif mapped_verdict == "timeout":
+                        aggregate_support_metrics["timeout_count"] += 1
+                    elif mapped_verdict == "unknown_or_unsupported":
+                        aggregate_support_metrics["unknown_count"] += 1
+                        aggregate_support_metrics["unsupported_count"] += 1
+
+                    if mapped_verdict == "proved_equivalent" and expected_support_intent == "prove_equivalent":
+                        support_result = "expected_supported"
+                        aggregate_support_metrics["expected_supported_count"] += 1
+                    elif mapped_verdict == "refuted_equivalence" and expected_support_intent == "refute_equivalence":
+                        support_result = "expected_supported"
+                        aggregate_support_metrics["expected_supported_count"] += 1
+                    elif mapped_verdict == "timeout":
+                        support_result = "timeout"
+                    elif mapped_verdict == "unknown_or_unsupported":
+                        support_result = "unknown_or_unsupported"
+                    else:
+                        support_result = "unexpected_verdict"
+                        aggregate_support_metrics["unexpected_verdict_count"] += 1
+                elif not timed_out:
+                    stderr_text = stderr_path.read_text(encoding="utf-8", errors="ignore") if stderr_path.is_file() else ""
+                    stdout_text = stdout_path.read_text(encoding="utf-8", errors="ignore") if stdout_path.is_file() else ""
+                    combined = "\n".join(filter(None, [stdout_text, stderr_text]))
+                    support_result = classify_wrapper_failure(combined)
+                    failure_category = support_result
+                    failure_summary = combined.strip().splitlines()[-1] if combined.strip() else "SQLSolver subprocess failed without captured output"
+                    if support_result == "parser_or_translation_failure":
+                        aggregate_support_metrics["parser_or_translation_failure_count"] += 1
+                    elif support_result == "internal_error":
+                        aggregate_support_metrics["internal_error_count"] += 1
+                    else:
+                        aggregate_support_metrics["launch_failure_count"] += 1
+
+            if timed_out:
+                aggregate_support_metrics["timeout_count"] += 1
+
+            artifact_paths = {
+                "stdout": str(stdout_path),
+                "stderr": str(stderr_path),
+                "raw_output": str(raw_output_path),
+                "sql1": str(sql1_path),
+                "sql2": str(sql2_path),
+                "schema": str(schema_path),
+            }
+            per_pair_results.append(
+                {
+                    "case_id": case_id,
+                    "pair_type": pair_type,
+                    "expected_support_intent": expected_support_intent,
+                    "command": command,
+                    "sqlsolver_raw_verdict": raw_verdict,
+                    "mapped_verdict": mapped_verdict,
+                    "support_result": support_result,
+                    "exit_code": exit_code,
+                    "timeout": timed_out,
+                    "failure_category": failure_category,
+                    "failure_summary": failure_summary,
+                    "artifact_paths": artifact_paths,
+                }
+            )
+
+    denominator_pairs = int(aggregate_support_metrics["denominator_pairs"])
+    expected_supported_count = int(aggregate_support_metrics["expected_supported_count"])
+    aggregate_support_metrics["verifier_support_rate"] = f"{expected_supported_count}/{denominator_pairs}"
+
+    output_path = Path("/tmp/rewritebench_sqlsolver_support_smoke_cons_0007_0035_v1.json")
+    payload = {
+        "command": "formal-sqlsolver-support-smoke",
+        "ok": True,
+        "ran_at_utc": utc_now(),
+        "cases": case_ids,
+        "jar_path": jar_classpath,
+        "z3_artifacts_path": str(z3_lib_dir),
+        "timeout_policy": timeout_policy,
+        "verdict_mapping": verdict_mapping,
+        "per_pair_results": per_pair_results,
+        "aggregate_support_metrics": aggregate_support_metrics,
+        "speedup_status": "not_run",
+        "claim_boundary": "bounded_sqlsolver_support_smoke_not_rewrite_not_leaderboard",
+    }
+    output_path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    return print_and_exit(payload, 0)
+
+
 def cmd_formal_llmr2_single_case_run(args: argparse.Namespace) -> int:
     case_id = str(args.case).strip().upper()
     dry_run_only = bool(args.dry_run)
@@ -43602,6 +43895,15 @@ def build_parser() -> argparse.ArgumentParser:
     formal_sqlsolver_runner_dry_run_parser.add_argument("--use-built-jar", action="store_true", default=False)
     formal_sqlsolver_runner_dry_run_parser.set_defaults(
         func=cmd_formal_sqlsolver_runner_dry_run
+    )
+
+    formal_sqlsolver_support_smoke_parser = subparsers.add_parser(
+        "formal-sqlsolver-support-smoke"
+    )
+    formal_sqlsolver_support_smoke_parser.add_argument("--cases", nargs="+", required=True)
+    formal_sqlsolver_support_smoke_parser.add_argument("--use-built-jar", action="store_true", default=False)
+    formal_sqlsolver_support_smoke_parser.set_defaults(
+        func=cmd_formal_sqlsolver_support_smoke
     )
 
     formal_llmr2_single_case_run_parser = subparsers.add_parser(
