@@ -10206,6 +10206,263 @@ def cmd_formal_calcite_hep_missing_speedup_run(args: argparse.Namespace) -> int:
     return print_and_exit(payload, 0 if measurement_failure_count == 0 else 1)
 
 
+def cmd_formal_calcite_hep_perf_0063_speedup_run(args: argparse.Namespace) -> int:
+    case_id = "PERF_0063"
+    candidate_override = str(getattr(args, "candidate", "") or "").strip()
+    candidate_sql_path = Path(candidate_override) if candidate_override else calcite_hep_real_route_output_sql_path(case_id)
+    checker_report_path = ROOT / "reports" / "formal_expansion" / "calcite_hep_pg_checker_perf_0063_substring_surface_v1.json"
+
+    inferred = case_root_for_case_id(case_id)
+    case_root = inferred[1] if inferred is not None else None
+    source_sql_path = case_root / "source.sql" if case_root else None
+    ddl_path = case_root / "schema" / "ddl_pg.sql" if case_root else None
+    witness_data_path = case_root / "validation" / "pg_witness_data.sql" if case_root else None
+    validation_schema = validation_schema_hint(case_id)
+    checker_report = load_json_if_present(checker_report_path) or {}
+    checker_record_map = {
+        str(record.get("case_id", "")).strip().upper(): record
+        for record in checker_report.get("records", [])
+        if record.get("case_id")
+    }
+    checker_record = checker_record_map.get(case_id, {})
+
+    env_visibility = pg_env_visibility()
+    required_env_visible = all(env_visibility[name] for name in ["PGHOST", "PGPORT", "PGDATABASE", "PGUSER"])
+    issues: list[dict[str, Any]] = []
+    if not required_env_visible:
+        issues.append({"type": "missing_pg_env", "message": "required env: PGHOST, PGPORT, PGDATABASE, PGUSER"})
+
+    psycopg = None
+    try:
+        psycopg = importlib.import_module("psycopg")
+    except Exception as exc:
+        issues.append({"type": "psycopg_import_error", "message": str(exc)})
+
+    repeat_count = int(getattr(args, "repeats", 5) or 5)
+    timeout_seconds = int(getattr(args, "timeout_seconds", 60) or 60)
+    warmup_count = 1
+    statement_timeout_ms = timeout_seconds * 1000
+    tie_threshold = 0.05
+    regression_threshold = 1.2
+
+    def runtime_stats(values: list[float]) -> tuple[float | None, float | None, float | None]:
+        if not values:
+            return None, None, None
+        return float(statistics.median(values)), min(values), float(sum(values) / len(values))
+
+    def execute_sql(cur: Any, sql_text: str) -> tuple[int | None, float]:
+        start_ns = time.perf_counter_ns()
+        cur.execute(sql_text)
+        elapsed_ns = time.perf_counter_ns() - start_ns
+        runtime_ms = elapsed_ns / 1_000_000
+        if cur.description is not None:
+            rows = cur.fetchall()
+            row_count = len(rows)
+        else:
+            row_count = cur.rowcount if cur.rowcount >= 0 else None
+        return row_count, runtime_ms
+
+    source_sql = source_sql_path.read_text(encoding="utf-8") if source_sql_path and source_sql_path.is_file() else ""
+    candidate_sql = candidate_sql_path.read_text(encoding="utf-8").strip() if candidate_sql_path.is_file() else ""
+    source_runtimes_ms: list[float] = []
+    candidate_runtimes_ms: list[float] = []
+    source_execution_status = "not_attempted"
+    candidate_execution_status = "not_attempted"
+    failure_category = "none"
+    failure_summary = ""
+
+    blockers: list[str] = []
+    if source_sql_path is None or not source_sql_path.is_file():
+        blockers.append("missing_source_sql")
+    if ddl_path is None or not ddl_path.is_file():
+        blockers.append("missing_pg_ddl")
+    if witness_data_path is None or not witness_data_path.is_file():
+        blockers.append("missing_pg_witness_data")
+    if not validation_schema:
+        blockers.append("missing_validation_schema")
+    if not candidate_sql:
+        blockers.append("missing_candidate_sql")
+    if checker_record.get("checker_status") != "consistent":
+        blockers.append("checker_not_consistent")
+    if issues:
+        blockers.append("environment_not_ready")
+    blockers = list(dict.fromkeys(blockers))
+
+    if not blockers:
+        try:
+            with psycopg.connect(
+                host=os.environ["PGHOST"],
+                port=os.environ["PGPORT"],
+                dbname=os.environ["PGDATABASE"],
+                user=os.environ["PGUSER"],
+                password=os.environ.get("PGPASSWORD"),
+                options=(f"-c statement_timeout={statement_timeout_ms} " "-c default_transaction_read_only=on"),
+                autocommit=False,
+            ) as conn:
+                with conn.cursor() as cur:
+                    cur.execute("SELECT to_regnamespace(%s)", (validation_schema,))
+                    schema_row = cur.fetchone()
+                    schema_name = schema_row[0] if schema_row else None
+                    if not schema_name:
+                        source_execution_status = "failed"
+                        failure_category = "missing_validation_schema"
+                        failure_summary = f"validation schema not found: {validation_schema}"
+                    else:
+                        cur.execute(
+                            psycopg.sql.SQL("SET search_path TO {}, public").format(
+                                psycopg.sql.Identifier(validation_schema)
+                            )
+                        )
+                        execute_sql(cur, source_sql)
+                        conn.rollback()
+                        source_execution_status = "success"
+
+                        cur.execute(
+                            psycopg.sql.SQL("SET search_path TO {}, public").format(
+                                psycopg.sql.Identifier(validation_schema)
+                            )
+                        )
+                        execute_sql(cur, candidate_sql)
+                        conn.rollback()
+                        candidate_execution_status = "success"
+
+                        for repeat_index in range(repeat_count):
+                            order = ["source", "candidate"] if repeat_index % 2 == 0 else ["candidate", "source"]
+                            for role in order:
+                                cur.execute(
+                                    psycopg.sql.SQL("SET search_path TO {}, public").format(
+                                        psycopg.sql.Identifier(validation_schema)
+                                    )
+                                )
+                                sql_text = source_sql if role == "source" else candidate_sql
+                                _, runtime_ms = execute_sql(cur, sql_text)
+                                conn.rollback()
+                                if role == "source":
+                                    source_runtimes_ms.append(runtime_ms)
+                                else:
+                                    candidate_runtimes_ms.append(runtime_ms)
+        except Exception as exc:
+            failure_category = exc.__class__.__name__
+            failure_summary = str(exc)
+            if source_execution_status != "success":
+                source_execution_status = "failed"
+            elif candidate_execution_status != "success":
+                candidate_execution_status = "failed"
+    else:
+        failure_category = "preflight_blocked"
+        failure_summary = "; ".join(blockers)
+
+    source_median_ms, _, _ = runtime_stats(source_runtimes_ms)
+    candidate_median_ms, _, _ = runtime_stats(candidate_runtimes_ms)
+    speedup = None
+    win_tie_loss = "unknown"
+    regression_at_20 = None
+    if (
+        isinstance(source_median_ms, (int, float))
+        and isinstance(candidate_median_ms, (int, float))
+        and source_median_ms > 0
+        and candidate_median_ms > 0
+    ):
+        speedup = float(source_median_ms / candidate_median_ms)
+        if speedup >= 1.0 + tie_threshold:
+            win_tie_loss = "win"
+        elif speedup <= 1.0 - tie_threshold:
+            win_tie_loss = "loss"
+        else:
+            win_tie_loss = "tie"
+        regression_at_20 = bool(candidate_median_ms >= regression_threshold * source_median_ms)
+
+    success = source_execution_status == "success" and candidate_execution_status == "success"
+    updated_coverage = {
+        "previous_measured_speedup_count": 9,
+        "perf_0063_measured_speedup_count": 1 if success else 0,
+        "total_measured_calcite_hep_speedup_count": 10 if success else 9,
+        "remaining_blockers": [] if success else ["PERF_0063:speedup_measurement_failed"],
+        "@10_checker+speedup_closed": bool(success),
+    }
+
+    artifact_paths = {
+        "checker_report_path": relative_to_root(checker_report_path),
+        "candidate_sql_path": str(candidate_sql_path),
+        "checker_output_path": str(checker_record.get("checker_output_path", "") or ""),
+        "candidate_result_path": str(
+            checker_record.get("candidate_result_path", "")
+            or checker_record.get("planned_candidate_result_path", "")
+            or ""
+        ),
+        "source_result_path": str(
+            checker_record.get("source_result_path", "")
+            or checker_record.get("planned_source_result_path", "")
+            or ""
+        ),
+    }
+
+    payload = {
+        "baseline": "calcite_hep",
+        "case_id": case_id,
+        "engine": "postgresql",
+        "source_sql_path": str(source_sql_path) if source_sql_path else "",
+        "candidate_sql_path": str(candidate_sql_path),
+        "ddl_path": str(ddl_path) if ddl_path else "",
+        "witness_data_path": str(witness_data_path) if witness_data_path else "",
+        "source_execution_status": source_execution_status,
+        "candidate_execution_status": candidate_execution_status,
+        "source_runtimes_ms": source_runtimes_ms,
+        "candidate_runtimes_ms": candidate_runtimes_ms,
+        "source_median_ms": source_median_ms,
+        "candidate_median_ms": candidate_median_ms,
+        "speedup": speedup,
+        "win_tie_loss": win_tie_loss,
+        "regression_at_20": regression_at_20,
+        "failure_category": failure_category,
+        "failure_summary": failure_summary,
+        "artifact_paths": artifact_paths,
+        "updated_calcite_hep_speedup_coverage": updated_coverage,
+        "repeats": repeat_count,
+        "timeout_seconds": timeout_seconds,
+        "speedup_status": "measured" if success else "measurement_failed",
+        "claim_boundary": "bounded_calcite_hep_perf_0063_speedup_not_final_leaderboard",
+    }
+
+    json_path = Path("/tmp/rewritebench_calcite_hep_perf_0063_speedup_v1.json")
+    json_path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+    report_text = (
+        "# CALCITE_HEP_PERF_0063_SPEEDUP_v1\n\n"
+        "## 0. Purpose And Boundary\n"
+        "This is a PG-only Calcite HEP speedup run for PERF_0063 only. It does not rerun generation, does not rerun the existing 9 cases, does not run MySQL or Spark, does not compute cross-engine transfer, and is not a final leaderboard.\n\n"
+        "## 1. Eligibility Source\n"
+        "- substring-surface normalization succeeded\n"
+        "- `PERF_0063` is checker consistent\n"
+        f"- candidate SQL path: `{candidate_sql_path}`\n"
+        "- speedup is now allowed because generation and PostgreSQL checker both succeeded for PERF_0063\n\n"
+        "## 2. Runtime Policy\n"
+        "- engine: `postgresql`\n"
+        f"- repeats: `{repeat_count}`\n"
+        f"- warmup policy: `{warmup_count}` optional warmup per query, not included in metrics\n"
+        f"- timeout policy: `{timeout_seconds}s` wall timeout via PostgreSQL statement timeout `{statement_timeout_ms}ms`\n"
+        "- isolation/cleanup policy: `SET search_path` to validation schema and `public`, with rollback after each execution\n"
+        "- speedup formula: `source_median_ms / candidate_median_ms`\n"
+        "- win/tie/loss thresholds: `win >= 1.05`, `loss <= 0.95`, else `tie`\n"
+        "- regression@20 definition: `candidate_median_ms >= 1.20 * source_median_ms`\n\n"
+        "## 3. PERF_0063 Speedup Result\n"
+        "| case_id | source_median_ms | candidate_median_ms | speedup | win_tie_loss | regression_at_20 | source_execution_status | candidate_execution_status | failure_category | artifact_paths |\n"
+        "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n"
+        f"| {case_id} | {source_median_ms} | {candidate_median_ms} | {speedup} | {win_tie_loss} | {regression_at_20} | {source_execution_status} | {candidate_execution_status} | {failure_category} | {json.dumps(artifact_paths, sort_keys=True)} |\n\n"
+        "## 4. Updated Calcite HEP Coverage\n"
+        + "".join(f"- `{key}` = `{value}`\n" for key, value in updated_coverage.items())
+        + "\n## 5. Interpretation\n"
+        "This is bounded PG-only Calcite HEP speedup evidence. It remains witness-scale if runtimes are sub-ms or near-sub-ms, is not cross-engine transfer, and is not a final leaderboard.\n\n"
+        "## 6. Recommended Next Step\n"
+        + ("- `run Calcite HEP PERF_0063 speedup sanity audit`\n" if success else "- `diagnose PERF_0063 speedup measurement failure`\n")
+        + "\n## 7. Non-Modification Note\n"
+        "No generation rerun, no existing 9-case rerun, no MySQL/Spark, no model/API, and no registry/review/rules/EXECUTION_STATUS/case changes occurred. Taxonomy notes remained untouched.\n"
+    )
+    report_path = ROOT / "docs" / "_scratch" / "CALCITE_HEP_PERF_0063_SPEEDUP_v1.md"
+    report_path.write_text(report_text, encoding="utf-8")
+    return print_and_exit(payload, 0 if success else 1)
+
+
 def cmd_formal_calcite_hep_perf0006_numeric_mismatch_diagnostic(args: argparse.Namespace) -> int:
     output_name = normalize_formal_expansion_output_name(args.output)
     case_id = calcite_hep_perf0006_numeric_mismatch_case_id()
@@ -45831,6 +46088,19 @@ def build_parser() -> argparse.ArgumentParser:
     formal_calcite_hep_missing_speedup_run_parser.add_argument("--timeout-seconds", type=int, default=60)
     formal_calcite_hep_missing_speedup_run_parser.set_defaults(
         func=cmd_formal_calcite_hep_missing_speedup_run
+    )
+
+    formal_calcite_hep_perf_0063_speedup_run_parser = subparsers.add_parser(
+        "formal-calcite-hep-perf-0063-speedup-run"
+    )
+    formal_calcite_hep_perf_0063_speedup_run_parser.add_argument(
+        "--candidate",
+        default="/tmp/calcite-hep-wrapper/real-route/perf_0063.sql",
+    )
+    formal_calcite_hep_perf_0063_speedup_run_parser.add_argument("--repeats", type=int, default=5)
+    formal_calcite_hep_perf_0063_speedup_run_parser.add_argument("--timeout-seconds", type=int, default=60)
+    formal_calcite_hep_perf_0063_speedup_run_parser.set_defaults(
+        func=cmd_formal_calcite_hep_perf_0063_speedup_run
     )
 
     formal_calcite_hep_perf0006_numeric_mismatch_diagnostic_parser = subparsers.add_parser(
