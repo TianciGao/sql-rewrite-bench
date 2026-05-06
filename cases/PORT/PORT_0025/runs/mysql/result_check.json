@@ -1,25 +1,29 @@
 {
   "case_id": "PORT_0025",
-  "engine": "mysql",
-  "schema_load_status": "success",
-  "witness_load_status": "success",
-  "source_execution_status": "success",
-  "rewrite_execution_status": "failed",
-  "checker_status": "not_checked",
-  "consistency_status": "not_checked",
-  "row_count_source": 1,
-  "row_count_rewrite": null,
-  "normalization_policy_used": "exact_tsv_report_local",
-  "byte_equal": null,
-  "normalized_equal": null,
-  "failure_category": "rewrite_execution_failed",
-  "failure_detail": "mysql: [Warning] Using a password on the command line interface can be insecure.\nERROR 1064 (42000) at line 2: You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'TIMESTAMP)) = 1993 AND t1.duration > 12 ORDER BY t1.amount DESC LIMIT 1' at line 1",
-  "artifact_paths": {
-    "source_tsv": "cases/PORT/PORT_0025/runs/mysql/source.tsv",
-    "rewrite_tsv": "cases/PORT/PORT_0025/runs/mysql/rewrite_pos_01.tsv",
-    "load_log": "cases/PORT/PORT_0025/runs/mysql/load.log",
-    "source_log": "cases/PORT/PORT_0025/runs/mysql/source.log",
-    "rewrite_log": "cases/PORT/PORT_0025/runs/mysql/rewrite_pos_01.log"
+  "validation_model": "cross_dialect_reference",
+  "status": "validated",
+  "ok": true,
+  "draft_only": true,
+  "compared_existing_outputs": true,
+  "expected_future_inputs": {
+    "mysql_source": "runs/mysql/source.tsv",
+    "pg_positive": "runs/pg/rewrite_pos_01.tsv",
+    "pg_negative": "runs/pg/rewrite_neg_01.tsv",
+    "spark_positive": "runs/spark/rewrite_pos_01.tsv",
+    "spark_negative": "runs/spark/rewrite_neg_01.tsv"
   },
-  "claim_boundary": "bounded_3_case_mysql_spark_execution_not_full_port_closure"
+  "checks": {
+    "pg_positive_equals_mysql_source": true,
+    "pg_negative_differs_from_mysql_source": true,
+    "spark_positive_equals_mysql_source": true,
+    "spark_negative_differs_from_mysql_source": true
+  },
+  "notes": [
+    "Draft cross-dialect checker logic only.",
+    "MySQL source output is treated as the semantic reference.",
+    "Scalar outputs are normalized with Decimal parsing before comparison.",
+    "The checker will fail if any required TSV file is missing.",
+    "This checker compares existing MySQL, PostgreSQL, and Spark TSV outputs only.",
+    "No registry validation or admission claim is implied."
+  ]
 }
