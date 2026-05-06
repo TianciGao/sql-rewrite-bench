@@ -28749,6 +28749,30 @@ def cmd_formal_sqlsolver_runner_dry_run(args: argparse.Namespace) -> int:
         repo_path / "build" / "libs" / "SQLSolver.jar",
     ]
     built_jar_path = next((path for path in built_jar_candidates if path.is_file()), None)
+    use_built_jar = bool(getattr(args, "use_built_jar", False))
+    entry_class_found = False
+    required_classes_found = False
+    if built_jar_path is not None:
+        try:
+            jar_listing = subprocess.run(
+                ["jar", "tf", str(built_jar_path)],
+                check=True,
+                capture_output=True,
+                text=True,
+                encoding="utf-8",
+            ).stdout
+            entry_class_found = "sqlsolver/api/Entry.class" in jar_listing
+            required_classes_found = all(
+                class_name in jar_listing
+                for class_name in [
+                    "sqlsolver/api/Entry.class",
+                    "sqlsolver/api/entry/Verification.class",
+                    "sqlsolver/superopt/logic/VerificationResult.class",
+                ]
+            )
+        except subprocess.CalledProcessError:
+            entry_class_found = False
+            required_classes_found = False
 
     properties_text = properties_path.read_text(encoding="utf-8") if properties_path.is_file() else ""
     z3_timeout_ms = None
@@ -28806,7 +28830,11 @@ def cmd_formal_sqlsolver_runner_dry_run(args: argparse.Namespace) -> int:
         expected_verdicts_exists = expected_verdicts_path.is_file()
         metadata_exists = metadata_path.is_file()
 
-        jar_classpath = str(built_jar_path) if built_jar_path else "<built-or-distribution-jar-and-libs>"
+        jar_classpath = (
+            str(built_jar_path)
+            if use_built_jar and built_jar_path and entry_class_found
+            else (str(built_jar_path) if built_jar_path else "<built-or-distribution-jar-and-libs>")
+        )
         positive_command = (
             "NOT RUN\n\n"
             "Future SQLSolver positive-pair command:\n"
@@ -28883,7 +28911,11 @@ def cmd_formal_sqlsolver_runner_dry_run(args: argparse.Namespace) -> int:
             blockers.append("expected_verdicts_missing")
         if not metadata_exists:
             blockers.append("metadata_missing")
-        if built_jar_path is None:
+        if use_built_jar and built_jar_path is None:
+            blockers.append("built_jar_requested_but_missing")
+        elif use_built_jar and not entry_class_found:
+            blockers.append("built_jar_missing_entry_class")
+        elif built_jar_path is None:
             blockers.append("build_artifact_missing_but_source_build_contract_visible")
 
         can_execute_support_smoke_next = not blockers
@@ -28901,11 +28933,18 @@ def cmd_formal_sqlsolver_runner_dry_run(args: argparse.Namespace) -> int:
             "negative_pair_expected": negative_pair_expected,
             "schema_found": schema_exists,
             "expected_verdicts_found": expected_verdicts_exists,
+            "built_jar_path": str(built_jar_path) if built_jar_path else "",
+            "built_jar_exists": built_jar_path is not None,
+            "entry_class_found": entry_class_found,
             "can_execute_support_smoke_next": can_execute_support_smoke_next,
             "blockers": blockers,
             "timeout_policy": timeout_policy,
             "verdict_mapping": verdict_mapping,
-            "claim_boundary": "sqlsolver_runner_dry_run_only_not_execution",
+            "claim_boundary": (
+                "sqlsolver_runner_dry_run_with_jar_only_not_execution"
+                if use_built_jar
+                else "sqlsolver_runner_dry_run_only_not_execution"
+            ),
         }
         dry_run_summary_path.write_text(
             json.dumps(dry_run_summary, indent=2, sort_keys=True) + "\n",
@@ -28915,7 +28954,11 @@ def cmd_formal_sqlsolver_runner_dry_run(args: argparse.Namespace) -> int:
         do_not_run_yet_path.write_text(
             "DO NOT RUN YET\n\n"
             "This directory is a no-execution dry-run scaffold only.\n"
-            "Blocked until a built SQLSolver jar is available or an approved build step is performed.\n",
+            + (
+                "Built jar is present, but no verification execution is approved in this dry-run.\n"
+                if use_built_jar and built_jar_path and entry_class_found
+                else "Blocked until a built SQLSolver jar is available or an approved build step is performed.\n"
+            ),
             encoding="utf-8",
         )
 
@@ -28923,7 +28966,11 @@ def cmd_formal_sqlsolver_runner_dry_run(args: argparse.Namespace) -> int:
 
     global_blockers = sorted(set(global_blockers))
     can_execute_support_smoke_next = not global_blockers
-    output_path = Path("/tmp/rewritebench_sqlsolver_runner_dry_run_cons_0007_0035_v1.json")
+    output_path = (
+        Path("/tmp/rewritebench_sqlsolver_runner_dry_run_with_jar_cons_0007_0035_v1.json")
+        if use_built_jar
+        else Path("/tmp/rewritebench_sqlsolver_runner_dry_run_cons_0007_0035_v1.json")
+    )
     payload = {
         "command": "formal-sqlsolver-runner-dry-run",
         "ok": True,
@@ -28937,14 +28984,21 @@ def cmd_formal_sqlsolver_runner_dry_run(args: argparse.Namespace) -> int:
             "libz3java.so": z3_java_lib_path.is_file(),
             "z3_jar": z3_jar_path.is_file(),
         },
+        "built_jar_exists": built_jar_path is not None,
         "built_jar_found": built_jar_path is not None,
         "built_jar_path": str(built_jar_path) if built_jar_path else "",
+        "entry_class_found": entry_class_found,
+        "required_classes_found": required_classes_found,
         "timeout_policy": timeout_policy,
         "verdict_mapping": verdict_mapping,
         "per_case_dry_run": per_case_dry_run,
         "can_execute_support_smoke_next": can_execute_support_smoke_next,
         "blockers": global_blockers,
-        "claim_boundary": "sqlsolver_runner_dry_run_only_not_execution",
+        "claim_boundary": (
+            "sqlsolver_runner_dry_run_with_jar_only_not_execution"
+            if use_built_jar
+            else "sqlsolver_runner_dry_run_only_not_execution"
+        ),
     }
     output_path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     return print_and_exit(payload, 0)
@@ -43545,6 +43599,7 @@ def build_parser() -> argparse.ArgumentParser:
         "formal-sqlsolver-runner-dry-run"
     )
     formal_sqlsolver_runner_dry_run_parser.add_argument("--cases", nargs="+", required=True)
+    formal_sqlsolver_runner_dry_run_parser.add_argument("--use-built-jar", action="store_true", default=False)
     formal_sqlsolver_runner_dry_run_parser.set_defaults(
         func=cmd_formal_sqlsolver_runner_dry_run
     )
