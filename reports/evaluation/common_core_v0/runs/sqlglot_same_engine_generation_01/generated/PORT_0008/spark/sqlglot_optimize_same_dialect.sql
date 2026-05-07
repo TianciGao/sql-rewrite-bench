@@ -1,0 +1,13 @@
+SELECT
+  't2'.'admemail1' AS `admemail1`,
+  't2'.'admemail2' AS `admemail2`
+FROM `frpm` AS `t1`
+JOIN `schools` AS `t2`
+  ON 't1'.'cdscode' = 't2'.'cdscode'
+WHERE
+  't2'.'city' = 'San Bernardino'
+  AND 't2'.'county' = 'San Bernardino'
+  AND EXTRACT(YEAR FROM CAST('t2'.'opendate' AS TIMESTAMP)) <= 2010
+  AND EXTRACT(YEAR FROM CAST('t2'.'opendate' AS TIMESTAMP)) >= 2009
+  AND CAST('t2'.'doc' AS INT) = 54
+  AND CAST('t2'.'soc' AS INT) = 62
