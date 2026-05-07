@@ -1,0 +1,21 @@
+{
+  "run_id": "common_core_v0_controls_preflight_plan",
+  "denominator_id": "common_core_v0_40",
+  "method_id": "controls",
+  "method_role": "controls",
+  "attempted_cases": 40,
+  "is_leaderboard_method": false,
+  "planned_outputs": {
+    "artifact_map": "reports/evaluation/common_core_v0/controls_preflight/common_core_v0_controls_artifact_map.csv",
+    "run_manifest": "reports/evaluation/common_core_v0/controls_preflight/common_core_v0_controls_run_plan.json",
+    "preflight_note": "reports/evaluation/common_core_v0/controls_preflight/common_core_v0_controls_preflight.md",
+    "future_run_event_long": "reports/evaluation/common_core_v0/run_event_long.csv",
+    "future_controls_summary": "reports/evaluation/common_core_v0/controls_summary.csv"
+  },
+  "validator_command": "python scripts/common_core_v0_validation.py --manifest reports/evaluation/common_core_v0/controls_preflight/common_core_v0_controls_run_plan.json --run-event-long reports/evaluation/common_core_v0/run_event_long.csv --controls-summary reports/evaluation/common_core_v0/controls_summary.csv --json",
+  "notes": [
+    "Dry-run planning only. No databases or benchmark methods have been executed.",
+    "Controls @40 should retain full denominator accounting even when failures occur.",
+    "PORT translation outputs remain outside same-engine leaderboard reporting."
+  ]
+}
