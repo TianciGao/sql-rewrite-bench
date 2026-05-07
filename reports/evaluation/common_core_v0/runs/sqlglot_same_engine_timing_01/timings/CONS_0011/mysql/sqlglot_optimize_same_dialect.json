@@ -1,0 +1,22 @@
+{
+  "case_id": "CONS_0011",
+  "engine": "mysql",
+  "route_id": "sqlglot_optimize_same_dialect",
+  "warmup_count": 1,
+  "repeat_count": 3,
+  "source_runtime_ms": [
+    153.0365119688213,
+    166.9328809948638,
+    153.78762397449464
+  ],
+  "generated_runtime_ms": [
+    153.74669304583222,
+    154.20697606168687,
+    149.52046901453286
+  ],
+  "median_source_ms": 153.78762397449464,
+  "median_generated_ms": 153.74669304583222,
+  "speedup_ratio": 1.0002662231482937,
+  "status": "success",
+  "notes": ""
+}

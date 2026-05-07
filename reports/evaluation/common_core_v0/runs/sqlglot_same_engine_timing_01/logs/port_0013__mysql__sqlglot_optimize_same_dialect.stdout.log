@@ -1,0 +1,16 @@
+CAST( SUM( `t2`.`gender` = 'F' ) AS DOUBLE ) * 100 / COUNT( `t2`.`client_id` )
+66.66666666666667
+_col_0
+66.66666666666667
+CAST( SUM( `t2`.`gender` = 'F' ) AS DOUBLE ) * 100 / COUNT( `t2`.`client_id` )
+66.66666666666667
+_col_0
+66.66666666666667
+CAST( SUM( `t2`.`gender` = 'F' ) AS DOUBLE ) * 100 / COUNT( `t2`.`client_id` )
+66.66666666666667
+_col_0
+66.66666666666667
+CAST( SUM( `t2`.`gender` = 'F' ) AS DOUBLE ) * 100 / COUNT( `t2`.`client_id` )
+66.66666666666667
+_col_0
+66.66666666666667

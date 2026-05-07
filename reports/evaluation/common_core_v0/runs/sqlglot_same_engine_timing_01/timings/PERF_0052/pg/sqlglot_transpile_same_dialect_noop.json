@@ -1,0 +1,22 @@
+{
+  "case_id": "PERF_0052",
+  "engine": "pg",
+  "route_id": "sqlglot_transpile_same_dialect_noop",
+  "warmup_count": 1,
+  "repeat_count": 3,
+  "source_runtime_ms": [
+    403.1798660289496,
+    363.25809999834746,
+    304.44829794578254
+  ],
+  "generated_runtime_ms": [
+    415.57054896838963,
+    360.1194090442732,
+    409.53756705857813
+  ],
+  "median_source_ms": 363.25809999834746,
+  "median_generated_ms": 409.53756705857813,
+  "speedup_ratio": 0.8869957952999924,
+  "status": "success",
+  "notes": ""
+}

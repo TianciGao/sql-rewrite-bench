@@ -1,0 +1,22 @@
+{
+  "case_id": "CONS_0010",
+  "engine": "pg",
+  "route_id": "sqlglot_optimize_same_dialect",
+  "warmup_count": 1,
+  "repeat_count": 3,
+  "source_runtime_ms": [
+    295.95928511116654,
+    311.5644600475207,
+    398.0688879964873
+  ],
+  "generated_runtime_ms": [
+    296.6987920226529,
+    401.5391899738461,
+    298.20395400747657
+  ],
+  "median_source_ms": 311.5644600475207,
+  "median_generated_ms": 298.20395400747657,
+  "speedup_ratio": 1.0448032491202621,
+  "status": "success",
+  "notes": ""
+}

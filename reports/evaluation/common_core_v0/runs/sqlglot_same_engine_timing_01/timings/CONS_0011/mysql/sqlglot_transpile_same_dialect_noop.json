@@ -1,0 +1,22 @@
+{
+  "case_id": "CONS_0011",
+  "engine": "mysql",
+  "route_id": "sqlglot_transpile_same_dialect_noop",
+  "warmup_count": 1,
+  "repeat_count": 3,
+  "source_runtime_ms": [
+    154.82699999120086,
+    159.28068303037435,
+    153.40225107502192
+  ],
+  "generated_runtime_ms": [
+    166.71300795860589,
+    160.4483430273831,
+    155.9962419560179
+  ],
+  "median_source_ms": 154.82699999120086,
+  "median_generated_ms": 160.4483430273831,
+  "speedup_ratio": 0.9649647797533013,
+  "status": "success",
+  "notes": ""
+}
