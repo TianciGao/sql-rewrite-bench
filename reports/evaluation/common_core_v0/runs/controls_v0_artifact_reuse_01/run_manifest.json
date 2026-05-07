@@ -1,0 +1,20 @@
+{
+  "run_id": "controls_v0_artifact_reuse_01",
+  "method_id": "controls",
+  "method_role": "controls",
+  "is_leaderboard_method": false,
+  "git_commit": "0c7d0409b19ee4a3a134c252db4f5b0f789fe86f",
+  "denominator_id": "common_core_v0_40",
+  "attempted_cases": 40,
+  "artifact_mode": "artifact_reuse",
+  "artifact_paths": {
+    "run_event_long": "reports/evaluation/common_core_v0/runs/controls_v0_artifact_reuse_01/run_event_long.csv",
+    "controls_summary": "reports/evaluation/common_core_v0/runs/controls_v0_artifact_reuse_01/controls_summary.csv",
+    "validation_report": "reports/evaluation/common_core_v0/runs/controls_v0_artifact_reuse_01/validation_report.json"
+  },
+  "notes": [
+    "Artifact-reuse controls run only; no fresh database execution was performed.",
+    "All 40 denominator cases remain represented across control variants.",
+    "PORT_0003, PORT_0004, and PORT_0005 preserve the missing dedicated human-positive command caveat in notes rather than inventing commands."
+  ]
+}
