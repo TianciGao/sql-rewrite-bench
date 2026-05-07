@@ -1,0 +1,24 @@
+{
+  "run_id": "controls_v0_manual_spark_backfill_perf4_01",
+  "method_id": "controls",
+  "git_commit": "16da74b1b02ebe8b43aa572d0e6b9c50a843085d",
+  "denominator_id": "common_core_v0_40",
+  "attempted_cases": 4,
+  "is_leaderboard_method": false,
+  "method_role": "controls",
+  "run_scope": "spark_perf4_backfill_manual_controls",
+  "artifact_mode": "manual_case_validation_materialized",
+  "engine_scope": [
+    "spark"
+  ],
+  "case_scope": [
+    "PERF_0006",
+    "PERF_0007",
+    "PERF_0008",
+    "PERF_0013"
+  ],
+  "artifact_paths": {
+    "run_event_long": "reports/evaluation/common_core_v0/runs/controls_v0_manual_spark_backfill_perf4_01/run_event_long.csv",
+    "controls_summary": "reports/evaluation/common_core_v0/runs/controls_v0_manual_spark_backfill_perf4_01/controls_summary.csv"
+  }
+}
