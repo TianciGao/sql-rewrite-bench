@@ -1,0 +1,31 @@
+run_id,method_id,control_group,pool_scope,engine_scope,denominator_cases,control_events,control_valid_cases,control_failure_cases,control_expected_behavior,control_observed_behavior,notes
+controls_v0_fresh_source_positive_01,controls,native_source,all,pg,40,40,0,40,must_match,failed=40,Derived from run_event_long; denominator-aware; non-success rows retained
+controls_v0_fresh_source_positive_01,controls,native_source,all,mysql,40,40,0,40,must_match,failed=40,Derived from run_event_long; denominator-aware; non-success rows retained
+controls_v0_fresh_source_positive_01,controls,native_source,all,spark,40,40,0,40,must_match,"failed=36, manual_review_required=4",Derived from run_event_long; denominator-aware; non-success rows retained
+controls_v0_fresh_source_positive_01,controls,native_source,performance,pg,16,16,0,16,must_match,failed=16,Derived from run_event_long; denominator-aware; non-success rows retained
+controls_v0_fresh_source_positive_01,controls,native_source,performance,mysql,16,16,0,16,must_match,failed=16,Derived from run_event_long; denominator-aware; non-success rows retained
+controls_v0_fresh_source_positive_01,controls,native_source,performance,spark,16,16,0,16,must_match,"failed=12, manual_review_required=4",Derived from run_event_long; denominator-aware; non-success rows retained
+controls_v0_fresh_source_positive_01,controls,native_source,consistency,pg,9,9,0,9,must_match,failed=9,Derived from run_event_long; denominator-aware; non-success rows retained
+controls_v0_fresh_source_positive_01,controls,native_source,consistency,mysql,9,9,0,9,must_match,failed=9,Derived from run_event_long; denominator-aware; non-success rows retained
+controls_v0_fresh_source_positive_01,controls,native_source,consistency,spark,9,9,0,9,must_match,failed=9,Derived from run_event_long; denominator-aware; non-success rows retained
+controls_v0_fresh_source_positive_01,controls,native_source,portability,pg,9,9,0,9,must_match,failed=9,Derived from run_event_long; denominator-aware; non-success rows retained
+controls_v0_fresh_source_positive_01,controls,native_source,portability,mysql,9,9,0,9,must_match,failed=9,Derived from run_event_long; denominator-aware; non-success rows retained
+controls_v0_fresh_source_positive_01,controls,native_source,portability,spark,9,9,0,9,must_match,failed=9,Derived from run_event_long; denominator-aware; non-success rows retained
+controls_v0_fresh_source_positive_01,controls,native_source,longtail,pg,6,6,0,6,must_match,failed=6,Derived from run_event_long; denominator-aware; non-success rows retained
+controls_v0_fresh_source_positive_01,controls,native_source,longtail,mysql,6,6,0,6,must_match,failed=6,Derived from run_event_long; denominator-aware; non-success rows retained
+controls_v0_fresh_source_positive_01,controls,native_source,longtail,spark,6,6,0,6,must_match,failed=6,Derived from run_event_long; denominator-aware; non-success rows retained
+controls_v0_fresh_source_positive_01,controls,human_positive,all,pg,40,40,0,40,must_match,"failed=37, skipped=3",Derived from run_event_long; denominator-aware; non-success rows retained
+controls_v0_fresh_source_positive_01,controls,human_positive,all,mysql,40,40,0,40,must_match,"failed=37, skipped=3",Derived from run_event_long; denominator-aware; non-success rows retained
+controls_v0_fresh_source_positive_01,controls,human_positive,all,spark,40,40,0,40,must_match,"failed=33, manual_review_required=4, skipped=3",Derived from run_event_long; denominator-aware; non-success rows retained
+controls_v0_fresh_source_positive_01,controls,human_positive,performance,pg,16,16,0,16,must_match,failed=16,Derived from run_event_long; denominator-aware; non-success rows retained
+controls_v0_fresh_source_positive_01,controls,human_positive,performance,mysql,16,16,0,16,must_match,failed=16,Derived from run_event_long; denominator-aware; non-success rows retained
+controls_v0_fresh_source_positive_01,controls,human_positive,performance,spark,16,16,0,16,must_match,"failed=12, manual_review_required=4",Derived from run_event_long; denominator-aware; non-success rows retained
+controls_v0_fresh_source_positive_01,controls,human_positive,consistency,pg,9,9,0,9,must_match,failed=9,Derived from run_event_long; denominator-aware; non-success rows retained
+controls_v0_fresh_source_positive_01,controls,human_positive,consistency,mysql,9,9,0,9,must_match,failed=9,Derived from run_event_long; denominator-aware; non-success rows retained
+controls_v0_fresh_source_positive_01,controls,human_positive,consistency,spark,9,9,0,9,must_match,failed=9,Derived from run_event_long; denominator-aware; non-success rows retained
+controls_v0_fresh_source_positive_01,controls,human_positive,portability,pg,9,9,0,9,must_match,"failed=6, skipped=3",Derived from run_event_long; denominator-aware; non-success rows retained
+controls_v0_fresh_source_positive_01,controls,human_positive,portability,mysql,9,9,0,9,must_match,"failed=6, skipped=3",Derived from run_event_long; denominator-aware; non-success rows retained
+controls_v0_fresh_source_positive_01,controls,human_positive,portability,spark,9,9,0,9,must_match,"failed=6, skipped=3",Derived from run_event_long; denominator-aware; non-success rows retained
+controls_v0_fresh_source_positive_01,controls,human_positive,longtail,pg,6,6,0,6,must_match,failed=6,Derived from run_event_long; denominator-aware; non-success rows retained
+controls_v0_fresh_source_positive_01,controls,human_positive,longtail,mysql,6,6,0,6,must_match,failed=6,Derived from run_event_long; denominator-aware; non-success rows retained
+controls_v0_fresh_source_positive_01,controls,human_positive,longtail,spark,6,6,0,6,must_match,failed=6,Derived from run_event_long; denominator-aware; non-success rows retained
