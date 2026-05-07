@@ -1,5 +1,5 @@
 **SQLGlot Execution Triage V2**
-This `v2` triage supersedes the earlier canary triage that was dominated by MySQL runner/auth/setup failures. The canary is now runner-clean for this non-PORT three-case slice: the previous MySQL access/setup failure class is resolved, and the remaining failures are all method-level SQL execution failures on one case.
+This `v2` triage supersedes the earlier canary triage that was dominated by MySQL runner/auth/setup failures. The canary is now runner-clean for this non-PORT three-case slice: the previous MySQL auth, database-setup, and table-state isolation failure classes are resolved, and the remaining failures are all method-level SQL execution failures on one case.
 
 Totals:
 - total method rows: `18`
@@ -21,8 +21,8 @@ Failure counts by case:
 - `LONGTAIL_0011`: `0`
 
 **Resolved Runner Issues**
-- The previous MySQL runner/auth/setup failures are resolved.
-- MySQL is no longer failing at connection/auth or database bootstrap.
+- The previous MySQL auth/setup/database/table-state runner failures are resolved.
+- MySQL is no longer failing at connection/auth, database bootstrap, or leaked shared-table state between rows.
 - Successful MySQL rows now exist for `PERF_0006` optimize/transpile, `CONS_0007` transpile, and `LONGTAIL_0011` optimize/transpile.
 
 **Remaining Failures**
