@@ -151,6 +151,7 @@ PY
         "$stderr_log" \
         python - "$REPO_ROOT" "$case_id" "$engine" "$route_id" "$source_sql" "$generated_sql" "$schema_path" "$witness_path" "$workspace_dir" <<'PY'
 from pathlib import Path
+import os
 import re
 import shutil
 import subprocess
@@ -192,6 +193,7 @@ PY
         "$stderr_log" \
         python - "$REPO_ROOT" "$case_id" "$engine" "$route_id" "$source_sql" "$generated_sql" "$schema_path" "$witness_path" "$workspace_dir" <<'PY'
 from pathlib import Path
+import os
 import re
 import shutil
 import subprocess
@@ -215,13 +217,46 @@ shutil.copyfile(witness_path, witness_sql)
 shutil.copyfile(source_sql, source_copy)
 shutil.copyfile(generated_sql, generated_copy)
 
-db_name = f"ccv0_sqlglot_{case_id.lower()}_{route_id.lower()}"
-db_name = re.sub(r"[^a-z0-9_]", "_", db_name)[:55]
+mysql_args = ["mysql"]
+if os.environ.get("MYSQL_HOST"):
+    mysql_args.extend(["--host", os.environ["MYSQL_HOST"]])
+if os.environ.get("MYSQL_PORT"):
+    mysql_args.extend(["--port", os.environ["MYSQL_PORT"]])
+if os.environ.get("MYSQL_USER"):
+    mysql_args.extend(["--user", os.environ["MYSQL_USER"]])
+if os.environ.get("MYSQL_PASSWORD"):
+    mysql_args.append(f"--password={os.environ['MYSQL_PASSWORD']}")
+mysql_database = os.environ.get("MYSQL_DATABASE", "bench")
 
-subprocess.run(["mysql", "-e", f"DROP DATABASE IF EXISTS `{db_name}`; CREATE DATABASE `{db_name}`;"], check=True)
-for path in [schema_sql, witness_sql, source_copy, generated_copy]:
-    subprocess.run(["mysql", db_name, "-e", f"source {path};"], check=True)
-subprocess.run(["mysql", "-e", f"DROP DATABASE IF EXISTS `{db_name}`;"], check=True)
+def extract_table_names(ddl_text: str) -> list[str]:
+    pattern = re.compile(
+        r"CREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?(?:`([^`]+)`|([A-Za-z_][A-Za-z0-9_]*))",
+        re.IGNORECASE,
+    )
+    table_names = []
+    for match in pattern.finditer(ddl_text):
+        table_name = match.group(1) or match.group(2)
+        if table_name and table_name not in table_names:
+            table_names.append(table_name)
+    return table_names
+
+def mysql_exec(sql: str) -> None:
+    subprocess.run(mysql_args + [mysql_database, "-e", sql], check=True)
+
+table_names = extract_table_names(schema_sql.read_text(encoding="utf-8"))
+drop_sql = ""
+if table_names:
+    joined = ", ".join(f"`{name}`" for name in table_names)
+    drop_sql = f"DROP TABLE IF EXISTS {joined};"
+
+try:
+    if drop_sql:
+        mysql_exec(drop_sql)
+    for path in [schema_sql, witness_sql, source_copy, generated_copy]:
+        subprocess.run(mysql_args + [mysql_database, "-e", f"source {path};"], check=True)
+finally:
+    if drop_sql:
+        mysql_exec(drop_sql)
 PY
       ;;
     spark_inline_pyspark)

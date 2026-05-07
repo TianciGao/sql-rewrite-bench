@@ -48,7 +48,7 @@
       "key": "perf_0006__mysql__sqlglot_optimize_same_dialect",
       "row_status": "executed",
       "command": "python - <<'PY' <mysql runner>",
-      "exit_code": 1,
+      "exit_code": 0,
       "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_execution_canary_01/logs/perf_0006__mysql__sqlglot_optimize_same_dialect.stdout.log",
       "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_execution_canary_01/logs/perf_0006__mysql__sqlglot_optimize_same_dialect.stderr.log",
       "notes": ""
@@ -57,7 +57,7 @@
       "key": "perf_0006__mysql__sqlglot_transpile_same_dialect_noop",
       "row_status": "executed",
       "command": "python - <<'PY' <mysql runner>",
-      "exit_code": 1,
+      "exit_code": 0,
       "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_execution_canary_01/logs/perf_0006__mysql__sqlglot_transpile_same_dialect_noop.stdout.log",
       "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_execution_canary_01/logs/perf_0006__mysql__sqlglot_transpile_same_dialect_noop.stderr.log",
       "notes": ""
@@ -111,7 +111,7 @@
       "key": "cons_0007__mysql__sqlglot_transpile_same_dialect_noop",
       "row_status": "executed",
       "command": "python - <<'PY' <mysql runner>",
-      "exit_code": 1,
+      "exit_code": 0,
       "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_execution_canary_01/logs/cons_0007__mysql__sqlglot_transpile_same_dialect_noop.stdout.log",
       "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_execution_canary_01/logs/cons_0007__mysql__sqlglot_transpile_same_dialect_noop.stderr.log",
       "notes": ""
@@ -156,7 +156,7 @@
       "key": "longtail_0011__mysql__sqlglot_optimize_same_dialect",
       "row_status": "executed",
       "command": "python - <<'PY' <mysql runner>",
-      "exit_code": 1,
+      "exit_code": 0,
       "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_execution_canary_01/logs/longtail_0011__mysql__sqlglot_optimize_same_dialect.stdout.log",
       "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_execution_canary_01/logs/longtail_0011__mysql__sqlglot_optimize_same_dialect.stderr.log",
       "notes": ""
@@ -165,7 +165,7 @@
       "key": "longtail_0011__mysql__sqlglot_transpile_same_dialect_noop",
       "row_status": "executed",
       "command": "python - <<'PY' <mysql runner>",
-      "exit_code": 1,
+      "exit_code": 0,
       "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_execution_canary_01/logs/longtail_0011__mysql__sqlglot_transpile_same_dialect_noop.stdout.log",
       "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_execution_canary_01/logs/longtail_0011__mysql__sqlglot_transpile_same_dialect_noop.stderr.log",
       "notes": ""
