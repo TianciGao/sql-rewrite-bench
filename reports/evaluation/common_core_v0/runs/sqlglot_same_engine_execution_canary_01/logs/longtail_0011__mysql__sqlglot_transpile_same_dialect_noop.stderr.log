@@ -1,0 +1,6 @@
+ERROR 1045 (28000): Access denied for user 'tianci_gao'@'localhost' (using password: NO)
+Traceback (most recent call last):
+  File "<stdin>", line 28, in <module>
+  File "/usr/lib/python3.12/subprocess.py", line 571, in run
+    raise CalledProcessError(retcode, process.args,
+subprocess.CalledProcessError: Command '['mysql', '-e', 'DROP DATABASE IF EXISTS `ccv0_sqlglot_longtail_0011_sqlglot_transpile_same_diale`; CREATE DATABASE `ccv0_sqlglot_longtail_0011_sqlglot_transpile_same_diale`;']' returned non-zero exit status 1.
