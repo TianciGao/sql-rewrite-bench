@@ -1,0 +1,18 @@
+{
+  "run_id": "controls_v0_manual_spark_canary_04cases_01",
+  "method_id": "controls",
+  "git_commit": "917c466faeb191f90ba98f644af5a096a3e9d68b",
+  "denominator_id": "common_core_v0_40",
+  "attempted_cases": 4,
+  "is_leaderboard_method": false,
+  "method_role": "controls",
+  "method_version": "manual_spark_canary_04cases_01_materialized",
+  "canary_scope": "4_case_spark_manual_canary",
+  "artifact_mode": "manual_case_validation_materialization",
+  "route_scope": "native_source_human_positive_hard_negative_derived_from_result_check",
+  "artifact_paths": {
+    "run_event_long": "reports/evaluation/common_core_v0/runs/controls_v0_manual_spark_canary_04cases_01/run_event_long.csv",
+    "controls_summary": "reports/evaluation/common_core_v0/runs/controls_v0_manual_spark_canary_04cases_01/controls_summary.csv"
+  },
+  "source_run_results": "reports/evaluation/common_core_v0/runs/controls_v0_manual_spark_canary_04cases_01/run_results.json"
+}
