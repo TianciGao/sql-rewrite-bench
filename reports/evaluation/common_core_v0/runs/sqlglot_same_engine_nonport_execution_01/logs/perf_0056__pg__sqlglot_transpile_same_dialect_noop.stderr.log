@@ -1,0 +1,7 @@
+注意:  模式 "ccv0_sqlglot_perf_0056_sqlglot_transpile_same_dialect_n" 不存在
+注意:  串联删除5个其它对象
+DETAIL:  递归删除 表 ccv0_sqlglot_perf_0056_sqlglot_transpile_same_dialect_n.customer_address
+递归删除 表 ccv0_sqlglot_perf_0056_sqlglot_transpile_same_dialect_n.customer
+递归删除 表 ccv0_sqlglot_perf_0056_sqlglot_transpile_same_dialect_n.store_sales
+递归删除 表 ccv0_sqlglot_perf_0056_sqlglot_transpile_same_dialect_n.date_dim
+递归删除 表 ccv0_sqlglot_perf_0056_sqlglot_transpile_same_dialect_n.item

@@ -1,0 +1,10 @@
+注意:  模式 "ccv0_sqlglot_cons_0009_sqlglot_optimize_same_dialect" 不存在
+psql:/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/workspaces/CONS_0009/pg/sqlglot_optimize_same_dialect/generated.sql:22: 错误:  字段 t1.t0a 不存在
+LINE 6:     "t1"."t0a" = "t1"."t1a"
+            ^
+HINT:  也许您想要引用列"t1.t1a"。
+Traceback (most recent call last):
+  File "<stdin>", line 31, in <module>
+  File "/usr/lib/python3.12/subprocess.py", line 571, in run
+    raise CalledProcessError(retcode, process.args,
+subprocess.CalledProcessError: Command '['psql', '-v', 'ON_ERROR_STOP=1', '-c', 'SET search_path TO ccv0_sqlglot_cons_0009_sqlglot_optimize_same_dialect;', '-f', '/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/workspaces/CONS_0009/pg/sqlglot_optimize_same_dialect/generated.sql']' returned non-zero exit status 3.

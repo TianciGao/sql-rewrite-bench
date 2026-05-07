@@ -1,0 +1,6 @@
+注意:  模式 "ccv0_sqlglot_perf_0035_sqlglot_optimize_same_dialect" 不存在
+注意:  串联删除4个其它对象
+DETAIL:  递归删除 表 ccv0_sqlglot_perf_0035_sqlglot_optimize_same_dialect.item
+递归删除 表 ccv0_sqlglot_perf_0035_sqlglot_optimize_same_dialect.catalog_sales
+递归删除 表 ccv0_sqlglot_perf_0035_sqlglot_optimize_same_dialect.date_dim
+递归删除 表 ccv0_sqlglot_perf_0035_sqlglot_optimize_same_dialect.call_center

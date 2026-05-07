@@ -1,0 +1,19 @@
+DROP SCHEMA
+CREATE SCHEMA
+SET
+CREATE TABLE
+SET
+INSERT 0 3
+SET
+  name   | c 
+---------+---
+ Charlie | 2
+(1 row)
+
+SET
+  name   | c 
+---------+---
+ Charlie | 2
+(1 row)
+
+DROP SCHEMA
