@@ -1,0 +1,67 @@
+SYSTEM / OPERATOR INSTRUCTION
+Produce exactly one semantics-preserving SQL rewrite of the input query in the same target dialect.
+
+REQUIREMENTS
+- Output SQL only.
+- Do not use markdown fences.
+- Do not add explanations.
+- Do not add comments unless comments already exist in the input SQL.
+- Do not output DDL.
+- Do not output INSERT, UPDATE, DELETE, MERGE, COPY, or any data-changing statement.
+- Preserve result semantics exactly.
+- Keep the rewrite in the same target engine / dialect.
+- Avoid engine-specific functions unless they are compatible with the target engine.
+- If the original query is already near-minimal, you may return an equivalent no-op rewrite, but still output SQL only.
+
+TARGET ENGINE
+spark
+
+SCHEMA
+-- PERF_0006 minimal Spark SQL schema.
+-- Covers only tables and columns referenced by source.sql and rewrite candidates.
+-- No data rows, load path, execution success, or validation result is implied.
+
+create table lineitem
+(
+    l_returnflag STRING,
+    l_linestatus STRING,
+    l_quantity DECIMAL(15,2),
+    l_extendedprice DECIMAL(15,2),
+    l_discount DECIMAL(15,2),
+    l_tax DECIMAL(15,2),
+    l_shipdate DATE
+);
+
+SOURCE SQL
+-- PERF_0006 source layer
+-- Source registry row: SRC_001 (TPC-H)
+-- Raw source file: datasets/raw/tpch/TPC-H V3.0.1/dbgen/queries/1.sql
+-- Seed: TPC-H Query 1, Pricing Summary Report Query
+-- Freeze method: manual freeze because local qgen executable was not present.
+-- Reference substitution file: datasets/raw/tpch/TPC-H V3.0.1/ref_data/1/subparam_1
+-- Substitution: :1 = 96 days.
+-- Frozen cutoff: DATE '1998-08-27' = DATE '1998-12-01' - 96 days.
+-- No execution, equivalence, rewrite, or validation claim is made by this file.
+
+-- TPC-H/TPC-R Pricing Summary Report Query (Q1)
+select
+	l_returnflag,
+	l_linestatus,
+	sum(l_quantity) as sum_qty,
+	sum(l_extendedprice) as sum_base_price,
+	sum(l_extendedprice * (1 - l_discount)) as sum_disc_price,
+	sum(l_extendedprice * (1 - l_discount) * (1 + l_tax)) as sum_charge,
+	avg(l_quantity) as avg_qty,
+	avg(l_extendedprice) as avg_price,
+	avg(l_discount) as avg_disc,
+	count(*) as count_order
+from
+	lineitem
+where
+	l_shipdate <= date '1998-08-27'
+group by
+	l_returnflag,
+	l_linestatus
+order by
+	l_returnflag,
+	l_linestatus;

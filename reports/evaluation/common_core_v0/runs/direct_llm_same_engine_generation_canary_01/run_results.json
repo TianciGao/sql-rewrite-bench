@@ -1,0 +1,243 @@
+{
+  "run_id": "direct_llm_same_engine_generation_canary_01",
+  "run_scope": "direct_llm_same_engine_generation_canary",
+  "run_timestamp": "2026-05-07T21:10:53+00:00",
+  "denominator_id": "common_core_v0_40",
+  "method_id": "direct_llm",
+  "route_id": "direct_llm_same_engine_rewrite",
+  "model_settings": {
+    "provider": "api.gptsapi.net",
+    "base_url": "https://api.gptsapi.net/v1",
+    "model": "gpt-4o-mini",
+    "temperature": 0,
+    "top_p": 1,
+    "max_tokens": 2048,
+    "seed_if_available": null
+  },
+  "summary": {
+    "planned_rows": 9,
+    "generation_success": 9,
+    "format_violation": 0,
+    "generation_failed": 0,
+    "generated_output_paths": [
+      "reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_canary_01/generated/PERF_0006/pg/direct_llm_same_engine_rewrite.sql",
+      "reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_canary_01/generated/PERF_0006/mysql/direct_llm_same_engine_rewrite.sql",
+      "reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_canary_01/generated/PERF_0006/spark/direct_llm_same_engine_rewrite.sql",
+      "reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_canary_01/generated/CONS_0010/pg/direct_llm_same_engine_rewrite.sql",
+      "reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_canary_01/generated/CONS_0010/mysql/direct_llm_same_engine_rewrite.sql",
+      "reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_canary_01/generated/CONS_0010/spark/direct_llm_same_engine_rewrite.sql",
+      "reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_canary_01/generated/LONGTAIL_0011/pg/direct_llm_same_engine_rewrite.sql",
+      "reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_canary_01/generated/LONGTAIL_0011/mysql/direct_llm_same_engine_rewrite.sql",
+      "reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_canary_01/generated/LONGTAIL_0011/spark/direct_llm_same_engine_rewrite.sql"
+    ]
+  },
+  "rows": [
+    {
+      "case_id": "PERF_0006",
+      "pool": "performance",
+      "engine": "pg",
+      "route_id": "direct_llm_same_engine_rewrite",
+      "denominator_id": "common_core_v0_40",
+      "method_id": "direct_llm",
+      "source_sql_path": "cases/PERF/PERF_0006/source.sql",
+      "schema_path": "cases/PERF/PERF_0006/schema/ddl_pg.sql",
+      "prompt_path": "reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_canary_01/prompts/PERF_0006/pg/prompt.txt",
+      "raw_response_path": "reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_canary_01/raw_responses/PERF_0006/pg/response.txt",
+      "generated_sql_path": "reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_canary_01/generated/PERF_0006/pg/direct_llm_same_engine_rewrite.sql",
+      "status": "success",
+      "status_reasons": [],
+      "generated_sql_written": true,
+      "response_non_empty": true,
+      "api_error": "",
+      "token_usage": {
+        "prompt_tokens": 564,
+        "completion_tokens": 142,
+        "total_tokens": 706
+      }
+    },
+    {
+      "case_id": "PERF_0006",
+      "pool": "performance",
+      "engine": "mysql",
+      "route_id": "direct_llm_same_engine_rewrite",
+      "denominator_id": "common_core_v0_40",
+      "method_id": "direct_llm",
+      "source_sql_path": "cases/PERF/PERF_0006/source.sql",
+      "schema_path": "cases/PERF/PERF_0006/schema/ddl_mysql.sql",
+      "prompt_path": "reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_canary_01/prompts/PERF_0006/mysql/prompt.txt",
+      "raw_response_path": "reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_canary_01/raw_responses/PERF_0006/mysql/response.txt",
+      "generated_sql_path": "reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_canary_01/generated/PERF_0006/mysql/direct_llm_same_engine_rewrite.sql",
+      "status": "success",
+      "status_reasons": [],
+      "generated_sql_written": true,
+      "response_non_empty": true,
+      "api_error": "",
+      "token_usage": {
+        "prompt_tokens": 564,
+        "completion_tokens": 142,
+        "total_tokens": 706
+      }
+    },
+    {
+      "case_id": "PERF_0006",
+      "pool": "performance",
+      "engine": "spark",
+      "route_id": "direct_llm_same_engine_rewrite",
+      "denominator_id": "common_core_v0_40",
+      "method_id": "direct_llm",
+      "source_sql_path": "cases/PERF/PERF_0006/source.sql",
+      "schema_path": "cases/PERF/PERF_0006/schema/ddl_spark.sql",
+      "prompt_path": "reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_canary_01/prompts/PERF_0006/spark/prompt.txt",
+      "raw_response_path": "reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_canary_01/raw_responses/PERF_0006/spark/response.txt",
+      "generated_sql_path": "reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_canary_01/generated/PERF_0006/spark/direct_llm_same_engine_rewrite.sql",
+      "status": "success",
+      "status_reasons": [],
+      "generated_sql_written": true,
+      "response_non_empty": true,
+      "api_error": "",
+      "token_usage": {
+        "prompt_tokens": 589,
+        "completion_tokens": 142,
+        "total_tokens": 731
+      }
+    },
+    {
+      "case_id": "CONS_0010",
+      "pool": "consistency",
+      "engine": "pg",
+      "route_id": "direct_llm_same_engine_rewrite",
+      "denominator_id": "common_core_v0_40",
+      "method_id": "direct_llm",
+      "source_sql_path": "cases/CONS/CONS_0010/source.sql",
+      "schema_path": "cases/CONS/CONS_0010/schema/ddl_pg.sql",
+      "prompt_path": "reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_canary_01/prompts/CONS_0010/pg/prompt.txt",
+      "raw_response_path": "reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_canary_01/raw_responses/CONS_0010/pg/response.txt",
+      "generated_sql_path": "reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_canary_01/generated/CONS_0010/pg/direct_llm_same_engine_rewrite.sql",
+      "status": "success",
+      "status_reasons": [],
+      "generated_sql_written": true,
+      "response_non_empty": true,
+      "api_error": "",
+      "token_usage": {
+        "prompt_tokens": 308,
+        "completion_tokens": 62,
+        "total_tokens": 370
+      }
+    },
+    {
+      "case_id": "CONS_0010",
+      "pool": "consistency",
+      "engine": "mysql",
+      "route_id": "direct_llm_same_engine_rewrite",
+      "denominator_id": "common_core_v0_40",
+      "method_id": "direct_llm",
+      "source_sql_path": "cases/CONS/CONS_0010/source.sql",
+      "schema_path": "cases/CONS/CONS_0010/schema/ddl_mysql.sql",
+      "prompt_path": "reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_canary_01/prompts/CONS_0010/mysql/prompt.txt",
+      "raw_response_path": "reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_canary_01/raw_responses/CONS_0010/mysql/response.txt",
+      "generated_sql_path": "reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_canary_01/generated/CONS_0010/mysql/direct_llm_same_engine_rewrite.sql",
+      "status": "success",
+      "status_reasons": [],
+      "generated_sql_written": true,
+      "response_non_empty": true,
+      "api_error": "",
+      "token_usage": {
+        "prompt_tokens": 308,
+        "completion_tokens": 68,
+        "total_tokens": 376
+      }
+    },
+    {
+      "case_id": "CONS_0010",
+      "pool": "consistency",
+      "engine": "spark",
+      "route_id": "direct_llm_same_engine_rewrite",
+      "denominator_id": "common_core_v0_40",
+      "method_id": "direct_llm",
+      "source_sql_path": "cases/CONS/CONS_0010/source.sql",
+      "schema_path": "cases/CONS/CONS_0010/schema/ddl_spark.sql",
+      "prompt_path": "reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_canary_01/prompts/CONS_0010/spark/prompt.txt",
+      "raw_response_path": "reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_canary_01/raw_responses/CONS_0010/spark/response.txt",
+      "generated_sql_path": "reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_canary_01/generated/CONS_0010/spark/direct_llm_same_engine_rewrite.sql",
+      "status": "success",
+      "status_reasons": [],
+      "generated_sql_written": true,
+      "response_non_empty": true,
+      "api_error": "",
+      "token_usage": {
+        "prompt_tokens": 306,
+        "completion_tokens": 68,
+        "total_tokens": 374
+      }
+    },
+    {
+      "case_id": "LONGTAIL_0011",
+      "pool": "longtail",
+      "engine": "pg",
+      "route_id": "direct_llm_same_engine_rewrite",
+      "denominator_id": "common_core_v0_40",
+      "method_id": "direct_llm",
+      "source_sql_path": "cases/LONGTAIL/LONGTAIL_0011/source.sql",
+      "schema_path": "cases/LONGTAIL/LONGTAIL_0011/schema/ddl_pg.sql",
+      "prompt_path": "reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_canary_01/prompts/LONGTAIL_0011/pg/prompt.txt",
+      "raw_response_path": "reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_canary_01/raw_responses/LONGTAIL_0011/pg/response.txt",
+      "generated_sql_path": "reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_canary_01/generated/LONGTAIL_0011/pg/direct_llm_same_engine_rewrite.sql",
+      "status": "success",
+      "status_reasons": [],
+      "generated_sql_written": true,
+      "response_non_empty": true,
+      "api_error": "",
+      "token_usage": {
+        "prompt_tokens": 453,
+        "completion_tokens": 236,
+        "total_tokens": 689
+      }
+    },
+    {
+      "case_id": "LONGTAIL_0011",
+      "pool": "longtail",
+      "engine": "mysql",
+      "route_id": "direct_llm_same_engine_rewrite",
+      "denominator_id": "common_core_v0_40",
+      "method_id": "direct_llm",
+      "source_sql_path": "cases/LONGTAIL/LONGTAIL_0011/source.sql",
+      "schema_path": "cases/LONGTAIL/LONGTAIL_0011/schema/ddl_mysql.sql",
+      "prompt_path": "reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_canary_01/prompts/LONGTAIL_0011/mysql/prompt.txt",
+      "raw_response_path": "reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_canary_01/raw_responses/LONGTAIL_0011/mysql/response.txt",
+      "generated_sql_path": "reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_canary_01/generated/LONGTAIL_0011/mysql/direct_llm_same_engine_rewrite.sql",
+      "status": "success",
+      "status_reasons": [],
+      "generated_sql_written": true,
+      "response_non_empty": true,
+      "api_error": "",
+      "token_usage": {
+        "prompt_tokens": 453,
+        "completion_tokens": 236,
+        "total_tokens": 689
+      }
+    },
+    {
+      "case_id": "LONGTAIL_0011",
+      "pool": "longtail",
+      "engine": "spark",
+      "route_id": "direct_llm_same_engine_rewrite",
+      "denominator_id": "common_core_v0_40",
+      "method_id": "direct_llm",
+      "source_sql_path": "cases/LONGTAIL/LONGTAIL_0011/source.sql",
+      "schema_path": "cases/LONGTAIL/LONGTAIL_0011/schema/ddl_spark.sql",
+      "prompt_path": "reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_canary_01/prompts/LONGTAIL_0011/spark/prompt.txt",
+      "raw_response_path": "reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_canary_01/raw_responses/LONGTAIL_0011/spark/response.txt",
+      "generated_sql_path": "reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_canary_01/generated/LONGTAIL_0011/spark/direct_llm_same_engine_rewrite.sql",
+      "status": "success",
+      "status_reasons": [],
+      "generated_sql_written": true,
+      "response_non_empty": true,
+      "api_error": "",
+      "token_usage": {
+        "prompt_tokens": 453,
+        "completion_tokens": 236,
+        "total_tokens": 689
+      }
+    }
+  ]
+}
