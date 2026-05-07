@@ -1,0 +1,22 @@
+column_name,data_type,required,example_or_allowed_values,description
+run_id,string,yes,<fill_me>,Run identifier linking back to the manifest and raw events.
+method_id,string,yes,<fill_me>,Method identifier used across summaries.
+case_id,string,yes,PERF_0006,Case identifier from the frozen denominator.
+pool,string,yes,performance|consistency|portability|longtail,Primary pool for the case.
+source_family,string,yes,TPC-H|TPC-DS|JOB/IMDB|Calcite|VeriEQL|PARROT|SQLStorm|Stack Queries,Source family for coverage summaries.
+included_in_denominator,boolean,yes,true,Must remain true even when the case fails.
+case_eval_status,string,yes,valid_success|valid_no_gain|invalid_result|execution_failure|unsupported|timeout|partial,Top-level case status after aggregating raw events.
+best_positive_rewrite_id,string,no,rewrite_pos_01,Best valid positive rewrite selected under the evaluation policy.
+best_negative_rewrite_id,string,no,rewrite_neg_01,Negative rewrite selected for controls or verifier analysis.
+valid_positive_count,integer,yes,0,Number of valid positive rewrites observed for the case.
+failed_positive_count,integer,yes,0,Number of positive rewrites that failed or were invalid.
+has_valid_baseline,boolean,yes,false,Whether a usable baseline execution existed.
+has_valid_plan_artifacts,boolean,yes,false,Whether plan observability artifacts exist for the selected case result.
+has_valid_result_check,boolean,yes,false,Whether result checking completed successfully for the selected case result.
+is_speedup_eligible_case,boolean,yes,false,Whether the case may enter GM_Speedup aggregation.
+best_speedup_ratio,number,no,1.18,Best valid speedup ratio for this case under the report policy.
+translation_success,boolean,no,false,Whether the case succeeded in a PORT translation setting when applicable.
+verifier_supported,boolean,yes,false,Whether the evaluation method provided verifier-support coverage for this case.
+failure_bucket_primary,string,no,wrong_result|execution_error|timeout|plan_missing|unsupported,Primary failure bucket when the case is not a valid success.
+caveat,string,no,<fill_me>,Carry-forward caveat from denominator or evaluation-time annotation.
+notes_link,string,no,benchmark_spec/reviews/COMMON_CORE_V0_HUMAN_GATE_DECISIONS_DRAFT.md,Pointer to review history or denominator note.

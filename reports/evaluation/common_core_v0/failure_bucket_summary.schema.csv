@@ -1,0 +1,10 @@
+column_name,data_type,required,example_or_allowed_values,description
+run_id,string,yes,<fill_me>,Run identifier.
+method_id,string,yes,<fill_me>,Method identifier.
+pool_scope,string,yes,all|performance|consistency|portability|longtail,Pool slice for the failure summary row.
+failure_bucket,string,yes,parse_error|execution_error|wrong_result|timeout|unsupported|plan_missing|method_error|normalization_gap,Normalized failure bucket.
+denominator_cases,integer,yes,40,Coverage-aware denominator for the slice.
+failed_cases,integer,yes,0,Number of denominator cases assigned to this primary failure bucket.
+failed_events,integer,yes,0,Number of raw events assigned to this bucket.
+failure_rate_over_denominator,number,yes,0.0,Failure share computed over the denominator rather than after dropping cases.
+notes,string,no,<fill_me>,Short note on classification policy or ambiguity.

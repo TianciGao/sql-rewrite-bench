@@ -1,0 +1,15 @@
+column_name,data_type,required,example_or_allowed_values,description
+run_id,string,yes,<fill_me>,Run identifier.
+method_id,string,yes,<fill_me>,Method identifier.
+case_id,string,yes,PORT_0003,PORT denominator case identifier.
+source_family,string,yes,PARROT,Source family for the PORT case.
+engine_source,string,yes,postgresql|mysql|spark,Source dialect or engine side for translation.
+engine_target,string,yes,postgresql|mysql|spark,Target dialect or engine side for translation.
+translation_status,string,yes,success|failure|skipped|unsupported,Outcome of the translation attempt.
+execution_status,string,no,success|failure|skipped|timeout,Execution result after translation on the target engine.
+result_match_status,string,no,match|mismatch|not_checked,Result comparison outcome after translation.
+normalization_caveat,boolean,yes,false,Whether this row belongs to a normalization-caveat PORT case.
+speedup_transfer_claim_eligible,boolean,yes,false,Whether any downstream speedup-transfer discussion is even eligible for this row.
+failure_bucket,string,no,parse_error|execution_error|wrong_result|normalization_gap|unsupported|timeout,Failure category when translation or execution fails.
+notes_link,string,no,benchmark_spec/reviews/COMMON_CORE_V0_HUMAN_GATE_DECISIONS_DRAFT.md,Pointer to denominator caveat source.
+notes,string,no,<fill_me>,Short comment; PORT translation tables stay separate from leaderboards.
