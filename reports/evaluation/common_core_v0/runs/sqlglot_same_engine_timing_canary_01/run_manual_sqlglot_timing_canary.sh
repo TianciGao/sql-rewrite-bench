@@ -130,41 +130,44 @@ run_and_capture_meta \
   "not_applicable_env_check" \
   python -m scripts.cli env-check
 
-python - "$REPO_ROOT" "$MATRIX_CSV" <<'PY' | while IFS=$'\t' read -r case_id pool engine route_id timing_eligible speedup_eligible exclusion_reason source_sql generated_sql schema_path witness_path runner_kind control_source_artifact expected_timing_output_path row_status caveat; do
-import csv
+while IFS= read -r row_json; do
+  eval "$(
+    python - "$row_json" <<'PY'
+import json
+import shlex
 import sys
-from pathlib import Path
 
-root = Path(sys.argv[1])
-matrix_path = Path(sys.argv[2])
-
-with matrix_path.open(newline="", encoding="utf-8") as handle:
-    reader = csv.DictReader(handle)
-    for row in reader:
-        print("\t".join([
-            row["case_id"],
-            row["pool"],
-            row["engine"],
-            row["route_id"],
-            row["timing_eligible"],
-            row["speedup_eligible"],
-            row["exclusion_reason"],
-            row["source_sql_path"],
-            row["generated_sql_path"],
-            row["schema_path"],
-            row["witness_data_path"],
-            row["runner_kind"],
-            row["control_source_artifact"],
-            row["expected_timing_output_path"],
-            row["row_status"],
-            row["caveat"],
-        ]))
+row = json.loads(sys.argv[1])
+fields = [
+    "case_id",
+    "pool",
+    "engine",
+    "route_id",
+    "timing_eligible",
+    "speedup_eligible",
+    "exclusion_reason",
+    "source_sql_path",
+    "generated_sql_path",
+    "schema_path",
+    "witness_data_path",
+    "runner_kind",
+    "control_source_artifact",
+    "expected_timing_output_path",
+    "row_status",
+    "caveat",
+]
+for field in fields:
+    print(f"{field}={shlex.quote(str(row.get(field, '')))}")
 PY
+  )"
   key="${case_id,,}__${engine}__${route_id}"
   stdout_log="${LOG_DIR}/${key}.stdout.log"
   stderr_log="${LOG_DIR}/${key}.stderr.log"
   timing_json_path="${REPO_ROOT}/${expected_timing_output_path}"
   workspace_dir="${WORKSPACE_DIR}/${case_id}/${engine}/${route_id}"
+  source_sql="${source_sql_path}"
+  generated_sql="${generated_sql_path}"
+  witness_path="${witness_data_path}"
 
   if [[ "$timing_eligible" != "yes" ]]; then
     record_non_execution "$key" "$row_status" "Timing-ineligible row preserved explicitly in canary scope. ${caveat}" "${exclusion_reason}"
@@ -174,7 +177,7 @@ PY
   mkdir -p "$workspace_dir" "$(dirname "$timing_json_path")"
 
   case "$runner_kind" in
-    postgres_inline_cli)
+    pg_inline_psql|postgres_inline_cli)
       run_and_capture_meta \
         "$key" \
         "executed" \
@@ -320,7 +323,10 @@ if os.environ.get("MYSQL_PASSWORD"):
 mysql_database = os.environ.get("MYSQL_DATABASE", "bench")
 
 def extract_table_names(ddl_text: str) -> list[str]:
-    pattern = re.compile(r"CREATE\\s+TABLE\\s+(?:IF\\s+NOT\\s+EXISTS\\s+)?(?:`([^`]+)`|([A-Za-z_][A-Za-z0-9_]*))", re.IGNORECASE)
+    pattern = re.compile(
+        r"^\s*CREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?(?:`([^`]+)`|([A-Za-z_][A-Za-z0-9_]*))",
+        re.IGNORECASE | re.MULTILINE,
+    )
     out = []
     for match in pattern.finditer(ddl_text):
         name = match.group(1) or match.group(2)
@@ -329,23 +335,29 @@ def extract_table_names(ddl_text: str) -> list[str]:
     return out
 
 table_names = extract_table_names(schema_sql.read_text(encoding="utf-8"))
-drop_sql = ""
-if table_names:
-    drop_sql = "DROP TABLE IF EXISTS " + ", ".join(f"`{name}`" for name in table_names) + ";"
+if not table_names:
+    raise RuntimeError(f"No MySQL table names detected in DDL: {schema_sql}")
 
 def mysql_exec(sql: str) -> None:
     subprocess.run(mysql_args + [mysql_database, "-e", sql], check=True)
 
+def cleanup_tables(check: bool) -> None:
+    if not table_names:
+        return
+    quoted = ", ".join(f"`{name.replace('`', '``')}`" for name in table_names)
+    subprocess.run(
+        mysql_args + [mysql_database, "-e", f"DROP TABLE IF EXISTS {quoted};"],
+        check=check,
+    )
+
 def run_query(query_path: Path) -> float:
     start = time.perf_counter()
     try:
-        if drop_sql:
-            mysql_exec(drop_sql)
+        cleanup_tables(check=True)
         for path in [schema_sql, witness_sql, query_path]:
             subprocess.run(mysql_args + [mysql_database, "-e", f"source {path};"], check=True)
     finally:
-        if drop_sql:
-            subprocess.run(mysql_args + [mysql_database, "-e", drop_sql], check=False)
+        cleanup_tables(check=False)
     return (time.perf_counter() - start) * 1000.0
 
 payload = {
@@ -486,7 +498,27 @@ PY
       record_non_execution "$key" "script_error" "Unknown runner kind: ${runner_kind}" "script_error_unknown_runner"
       ;;
   esac
-done
+done < <(
+  python - "$MATRIX_CSV" <<'PY'
+import csv
+import json
+import sys
+from pathlib import Path
+
+matrix_path = Path(sys.argv[1])
+runner_by_engine = {
+    "pg": "pg_inline_psql",
+    "mysql": "mysql_inline_cli",
+    "spark": "spark_inline_pyspark",
+}
+
+with matrix_path.open(newline="", encoding="utf-8") as handle:
+    reader = csv.DictReader(handle)
+    for row in reader:
+        row["runner_kind"] = runner_by_engine.get(row["engine"], row.get("runner_kind", ""))
+        print(json.dumps(row, ensure_ascii=True))
+PY
+)
 
 python - "$RECORDS_JSONL" "$RUN_RESULTS_JSON" <<'PY'
 import json
