@@ -28,7 +28,6 @@ The proposal covers all `40` candidate cases and suggests only conservative valu
 - `under_common_core_v0_review`
 - `human_gate_approved_candidate`
 - `not_yet_admitted`
-- `needs_registry_alignment_before_freeze`
 
 Interpretation:
 
@@ -83,12 +82,13 @@ The following cases are special because their current live registry still says `
 
 For these, the proposal uses:
 
-- `proposed_benchmark_line = needs_registry_alignment_before_freeze`
+- `proposed_benchmark_line = common_core_v0_candidate_review_packet`
 - `proposed_dataset_line = common_core_v0_candidate`
 - `proposed_promotion_status = human_gate_approved_candidate`
 - `proposed_admission_status = not_yet_admitted`
+- `proposed_next_gap = SQLStorm review-ready candidate; registry not_assessed; registry alignment required before final freeze`
 
-This keeps the proposal conservative while making the unresolved alignment explicit.
+This keeps the benchmark line field-consistent while preserving the unresolved registry-alignment caveat in `proposed_next_gap`.
 
 ## No-live-facts-changed Statement
 
