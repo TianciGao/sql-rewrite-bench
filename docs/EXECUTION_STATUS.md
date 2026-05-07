@@ -393,6 +393,19 @@
 - 无约束 LLM case 扩张
 - 过早开始大规模 baseline 排行实验
 
+### 9.1 Common-core v0.3 candidate review packet status
+
+`inventory/case_registry.csv` 已完成一轮 Common-core v0.3 candidate review packet 回写，当前共有 `40` 个 case 处于该 review packet：`PERF=16`、`CONS=9`、`PORT=9`、`LONGTAIL=6`。这 `40` 个 case 当前仍全部为 `not_yet_admitted`。
+
+该状态**不是** final common-core admission，也**不是** final benchmark freeze；leaderboard rerun 仍必须等待 final freeze 或后续明确的 evaluation branch。
+
+当前剩余关键 gate：
+
+1. candidate slate 的最终 human approval
+2. PORT stress-case caveat framing 的最终收口
+3. LONGTAIL SQLStorm registry/status caveat 已对齐为 review packet，但仍未 admitted
+4. 后续 unified-denominator leaderboard rerun
+
 ---
 
 ## 10. 当前 blockers / risks
