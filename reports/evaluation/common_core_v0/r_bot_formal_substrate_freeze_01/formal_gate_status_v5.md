@@ -2,81 +2,99 @@
 
 ## Scope
 
-This document updates the formal gate status after the similarity-threshold audit package.
+This document updates the formal gate status after the similarity-threshold
+audit and retrieval-config v4 update.
 
 It incorporates:
 
+- [r_bot_parameter_freeze_v2.json](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/r_bot_formal_protocol/r_bot_parameter_freeze_v2.json)
+- [r_bot_paper_parameter_extraction_v1.md](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/r_bot_formal_protocol/r_bot_paper_parameter_extraction_v1.md)
+- [formal_retrieval_config_extracted_v1.json](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/r_bot_formal_substrate_freeze_01/formal_retrieval_config_extracted_v1.json)
+- [formal_retrieval_config_v3.json](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/r_bot_formal_substrate_freeze_01/formal_retrieval_config_v3.json)
+- [formal_retrieval_config_v4.json](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/r_bot_formal_substrate_freeze_01/formal_retrieval_config_v4.json)
 - [formal_similarity_threshold_audit.md](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/r_bot_formal_substrate_freeze_01/formal_similarity_threshold_audit.md)
 - [formal_similarity_threshold_audit.json](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/r_bot_formal_substrate_freeze_01/formal_similarity_threshold_audit.json)
-- [formal_retrieval_config_v4.json](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/r_bot_formal_substrate_freeze_01/formal_retrieval_config_v4.json)
+- [formal_gate_status_v4.md](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/r_bot_formal_substrate_freeze_01/formal_gate_status_v4.md)
 
 It remains a gate-status document only.
 It does not authorize generation.
 
 ## Direct Answers
 
-- similarity threshold closed as explicit none or remains blocked: `closed as explicit_none_observed`
-- updated retrieval config status: `similarity_threshold_closed_other_substrate_items_still_blocked`
+- similarity-threshold gate: `closed_as_explicit_none_observed`
+- updated retrieval config status: `similarity_threshold_closed_other_retrieval_and_artifact_gates_still_blocked`
 - formal `R-Bot @120` generation may start: `no`
 - `current_benchmark_gate_ready`: `false`
 
 ## What Closed In v5
 
-Closed by the similarity-threshold audit:
+Closed by this package:
 
-1. the retrieval path now has an explicit formal interpretation for `similarity_threshold`
-2. `similarity_threshold` is no longer treated as unresolved
-3. the correct formal reading is:
+1. the remaining retrieval-config ambiguity around similarity threshold is now resolved
+2. the visible retrieval implementation supports:
+   - `top_k = 10`
+   - reranking mode `rrf`
+   - `rrf_k = 60`
+   - no active retrieval-time similarity threshold filter observed
+3. the benchmark-common retrieval statement may now freeze:
    - `similarity_threshold.value = null`
    - `similarity_threshold.status = explicit_none_observed`
 
-Why this closure is valid:
+## Evidence Basis
 
-- visible retrieval code explicitly uses `similarity_top_k`
-- visible retrieval code explicitly uses reciprocal-rank reranking
-- visible retrieval code does not show a retrieval-time threshold parameter
-- visible retrieval code does not show a score-cutoff filter
-- the only visible `threshold` hit is in non-retrieval statistical comparison code
+Visible retrieval code shows:
 
-## Retrieval Status After v5
+- `similarity_top_k` is passed into retrievers:
+  - [`rag_retrieve.py:66`](</tmp/rewritebench_prior_method_audit/LLM4Rewrite/my_rewriter/rag_retrieve.py:66>)
+  - [`rag_retrieve.py:68`](</tmp/rewritebench_prior_method_audit/LLM4Rewrite/my_rewriter/rag_retrieve.py:68>)
+  - [`rag_retrieve.py:89`](</tmp/rewritebench_prior_method_audit/LLM4Rewrite/my_rewriter/rag_retrieve.py:89>)
+  - [`rag_retrieve.py:119`](</tmp/rewritebench_prior_method_audit/LLM4Rewrite/my_rewriter/rag_retrieve.py:119>)
+- reciprocal-rank fusion is the active reranking mode:
+  - [`rag_retrieve.py:68`](</tmp/rewritebench_prior_method_audit/LLM4Rewrite/my_rewriter/rag_retrieve.py:68>)
+  - [`my_query_fusion_retriver.py:29`](</tmp/rewritebench_prior_method_audit/LLM4Rewrite/rag/my_query_fusion_retriver.py:29>)
+- reciprocal-rank `k=60` is visible:
+  - [`my_query_fusion_retriver.py:136`](</tmp/rewritebench_prior_method_audit/LLM4Rewrite/rag/my_query_fusion_retriver.py:136>)
+  - [`my_query_fusion_retriver.py:144`](</tmp/rewritebench_prior_method_audit/LLM4Rewrite/rag/my_query_fusion_retriver.py:144>)
+- the active retrieval path returns reranked results sliced to top-k, with no
+  visible threshold filter:
+  - [`my_query_fusion_retriver.py:329`](</tmp/rewritebench_prior_method_audit/LLM4Rewrite/rag/my_query_fusion_retriver.py:329>)
+  - [`my_query_fusion_retriver.py:363`](</tmp/rewritebench_prior_method_audit/LLM4Rewrite/rag/my_query_fusion_retriver.py:363>)
 
-Resolved at the retrieval-config layer:
+## What Did Not Count As Retrieval Threshold Evidence
 
-- `top_k = 10`
-- `reranking_mode = rrf`
-- `rrf_k = 60`
-- `similarity_threshold = explicit_none_observed`
-- embedding model candidate `= text-embedding-3-small`
-- rule-vector width `= 100`
-- total dimension `= 3172`
+Not counted as retrieval-threshold evidence:
 
-Still unresolved at the retrieval/substrate layer:
+1. score normalization in non-default fusion modes
+2. statistical comparison threshold in `my_rewriter/db_utils.py`
+3. benchmark speedup/tie/regression thresholds in `scripts/cli.py`
 
-- retained rebuild-time embedding provider/base_url identity
-- formal rebuilt index identifier
-- corpus manifest completeness
-- retained external archive provenance
+These are real thresholds in other contexts, but not a retrieval-time
+similarity cutoff for `R-Bot`.
 
-## Remaining Blockers
+## What Remains Open
 
-1. exact retained rebuild-time embedding provider/base_url identity is still not fully attested
-2. formal rebuilt `chroma_db` index package and retained formal index identifier do not yet exist
-3. corpus manifest is still not complete enough for deterministic retained rebuild
-4. retained external provenance handle for `stackoverflow-rewrite-embed.zip` is still missing
-5. dependency lock is still candidate-only rather than a complete retained final lock
-6. retained runtime package snapshot and environment metadata path do not yet exist
-7. contamination attestation is still blocked because all `40` rows remain blocked
-8. exact generated-output contamination hits remain present on `11` rows and must be resolved or formally excluded in the retained corpus/output line
-9. manifest-side contamination coverage is incomplete because current included manifest entries are not all text-readable hashable items
-10. generated-output contamination coverage is incomplete because the visible `calcite` generated family is missing
-11. machine-readable near-duplicate exclusion checking is not implemented
-12. the future retained run package has not yet been validated as satisfying the full artifact contract
+The similarity-threshold gate is now closed, but the overall formal gate is not.
+
+Still open:
+
+1. exact retained rebuild-time embedding provider/base_url identity
+2. formal rebuilt `chroma_db` index package and retained formal index identifier
+3. contamination and corpus-retention gates
+4. retained runtime package snapshot and environment metadata path
+5. dependency lock finalization
+6. retained artifact-contract closure
 
 ## Gate Outcome
 
-The similarity-threshold gate is now closed.
+This package closes only the threshold-or-none ambiguity.
 
-The overall formal gate remains closed.
+It does not close:
+
+- contamination
+- corpus provenance
+- rebuilt formal index
+- retained runtime/dependency closure
+- retained artifact contract
 
 Therefore:
 
@@ -85,8 +103,9 @@ Therefore:
 
 ## Bottom Line
 
-This package resolves the threshold ambiguity cleanly:
+The visible evidence is sufficient to freeze the similarity-threshold question
+as:
 
-- `similarity_threshold_policy = explicit_none_observed`
+- `explicit_none_observed`
 
-That closes one retrieval-config blocker, but formal `@120` generation remains blocked by contamination, corpus, index, runtime, and artifact-contract gates.
+The overall formal gate remains closed for other retained-evidence reasons.

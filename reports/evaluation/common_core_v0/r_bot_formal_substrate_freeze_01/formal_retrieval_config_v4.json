@@ -3,7 +3,7 @@
   "denominator_id": "common_core_v0_40_same_engine_120",
   "method_id": "r_bot",
   "route_id": "r_bot_same_engine_rewrite",
-  "status": "similarity_threshold_closed_other_substrate_items_still_blocked",
+  "status": "similarity_threshold_closed_other_retrieval_and_artifact_gates_still_blocked",
   "current_benchmark_gate_ready": false,
   "formal_generation_may_start": false,
   "retrieval_backend": "chroma_backed_retrieval",
@@ -23,8 +23,7 @@
     },
     "similarity_threshold": {
       "value": null,
-      "status": "explicit_none_observed",
-      "basis": "visible retrieval code audit found no retrieval-time threshold parameter or score-cutoff filter"
+      "status": "not_stated_in_supplied_paper_facts"
     },
     "embedding_model": {
       "value": "text-embedding-3-small",
@@ -48,7 +47,7 @@
     "similarity_threshold": {
       "value": null,
       "status": "explicit_none_observed",
-      "reason": "visible retrieval implementation shows top_k truncation and reciprocal-rank reranking but no retrieval-time threshold or score-cutoff filtering"
+      "reason": "visible retrieval code shows top-k truncation plus reciprocal-rank reranking, but no active retrieval-time score threshold or similarity cutoff filter"
     },
     "embedding_model_provider": {
       "provider_family": "openai_compatible",
@@ -93,11 +92,11 @@
     "exclude_near_duplicate_normalized_sql_when_detected": true
   },
   "blockers_closed_by_v4": [
-    "retrieval_top_k is frozen at 10 at the documentation freeze layer",
-    "reranking mode is frozen as rrf at the documentation freeze layer",
-    "rrf_k is frozen as 60 at the documentation freeze layer",
-    "embedding model candidate text-embedding-3-small is paper-supported and repo-extraction-consistent",
-    "similarity threshold is closed as explicit_none_observed from visible code audit"
+    "retrieval_top_k is now frozen at 10 at the documentation freeze layer",
+    "reranking mode is now frozen as rrf at the documentation freeze layer",
+    "rrf_k is now frozen as 60 at the documentation freeze layer",
+    "embedding model candidate text-embedding-3-small is now paper-supported and repo-extraction-consistent",
+    "similarity threshold is now closed as explicit_none_observed from visible retrieval code audit"
   ],
   "remaining_retrieval_blockers": [
     "embedding provider/model/base_url still needs retained rebuild-time attestation",
@@ -106,5 +105,9 @@
     "contamination guard remains blocked",
     "artifact contract remains unsatisfied"
   ],
-  "gate_rule": "formal generation may not start until contamination, corpus, index, artifact, and remaining retrieval-identity blockers are all retained and closed"
+  "gate_rule": "formal generation may not start until contamination, corpus, index, artifact, and remaining retrieval-identity blockers are all retained and closed",
+  "audit_refs": [
+    "reports/evaluation/common_core_v0/r_bot_formal_substrate_freeze_01/formal_similarity_threshold_audit.md",
+    "reports/evaluation/common_core_v0/r_bot_formal_substrate_freeze_01/formal_similarity_threshold_audit.json"
+  ]
 }

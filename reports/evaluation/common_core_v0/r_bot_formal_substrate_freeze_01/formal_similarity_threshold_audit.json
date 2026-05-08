@@ -1,72 +1,84 @@
 {
   "audit_id": "formal_similarity_threshold_audit_v1",
-  "denominator_id": "common_core_v0_40_same_engine_120",
+  "scope": "r_bot_formal_substrate_freeze_01",
   "method_id": "r_bot",
   "route_id": "r_bot_same_engine_rewrite",
-  "inputs": [
-    "reports/evaluation/common_core_v0/r_bot_formal_protocol/r_bot_parameter_freeze_v2.json",
-    "reports/evaluation/common_core_v0/r_bot_formal_protocol/r_bot_paper_parameter_extraction_v1.md",
-    "reports/evaluation/common_core_v0/r_bot_formal_substrate_freeze_01/formal_retrieval_config_v3.json",
-    "reports/evaluation/common_core_v0/r_bot_formal_substrate_freeze_01/formal_retrieval_config_extracted_v1.json",
-    "reports/evaluation/common_core_v0/r_bot_formal_substrate_freeze_01/formal_gate_status_v4.md",
-    "scripts/cli.py",
-    "/tmp/rewritebench_prior_method_audit/LLM4Rewrite/my_rewriter/rag_retrieve.py",
-    "/tmp/rewritebench_prior_method_audit/LLM4Rewrite/rag/my_query_fusion_retriver.py",
-    "/tmp/rewritebench_prior_method_audit/LLM4Rewrite/my_rewriter/config.py",
-    "/tmp/rewritebench_prior_method_audit/LLM4Rewrite/my_rewriter/db_utils.py"
+  "denominator_id": "common_core_v0_40_same_engine_120",
+  "similarity_threshold_policy": "explicit_none_observed",
+  "threshold_closed": true,
+  "formal_generation_may_start": false,
+  "paper_facts_status": {
+    "similarity_threshold": {
+      "value": null,
+      "status": "not_stated_in_supplied_paper_facts"
+    }
+  },
+  "visible_code_findings": {
+    "top_k": {
+      "value": 10,
+      "status": "explicitly_visible",
+      "evidence": [
+        "/tmp/rewritebench_prior_method_audit/LLM4Rewrite/my_rewriter/test.py:15",
+        "/tmp/rewritebench_prior_method_audit/LLM4Rewrite/my_rewriter/test.py:25",
+        "/tmp/rewritebench_prior_method_audit/LLM4Rewrite/my_rewriter/rag_retrieve.py:66",
+        "/tmp/rewritebench_prior_method_audit/LLM4Rewrite/my_rewriter/rag_retrieve.py:68",
+        "/tmp/rewritebench_prior_method_audit/LLM4Rewrite/my_rewriter/rag_retrieve.py:89",
+        "/tmp/rewritebench_prior_method_audit/LLM4Rewrite/my_rewriter/rag_retrieve.py:119"
+      ]
+    },
+    "reranking_mode": {
+      "value": "rrf",
+      "status": "explicitly_visible",
+      "evidence": [
+        "/tmp/rewritebench_prior_method_audit/LLM4Rewrite/my_rewriter/rag_retrieve.py:68",
+        "/tmp/rewritebench_prior_method_audit/LLM4Rewrite/my_rewriter/rag_retrieve.py:121",
+        "/tmp/rewritebench_prior_method_audit/LLM4Rewrite/rag/my_query_fusion_retriver.py:29"
+      ]
+    },
+    "rrf_k": {
+      "value": 60,
+      "status": "explicitly_visible",
+      "evidence": [
+        "/tmp/rewritebench_prior_method_audit/LLM4Rewrite/rag/my_query_fusion_retriver.py:136",
+        "/tmp/rewritebench_prior_method_audit/LLM4Rewrite/rag/my_query_fusion_retriver.py:144"
+      ]
+    },
+    "similarity_threshold": {
+      "value": null,
+      "status": "explicit_none_observed",
+      "evidence_for_no_threshold_filter": [
+        "/tmp/rewritebench_prior_method_audit/LLM4Rewrite/my_rewriter/rag_retrieve.py:66",
+        "/tmp/rewritebench_prior_method_audit/LLM4Rewrite/my_rewriter/rag_retrieve.py:68",
+        "/tmp/rewritebench_prior_method_audit/LLM4Rewrite/rag/my_query_fusion_retriver.py:329",
+        "/tmp/rewritebench_prior_method_audit/LLM4Rewrite/rag/my_query_fusion_retriver.py:363"
+      ],
+      "negative_search_terms": [
+        "similarity_threshold",
+        "score_threshold",
+        "similarity_cutoff",
+        "min_similarity"
+      ]
+    }
+  },
+  "non_retrieval_thresholds_seen": [
+    {
+      "path": "/tmp/rewritebench_prior_method_audit/LLM4Rewrite/my_rewriter/db_utils.py:26",
+      "interpretation": "statistical comparison threshold, not retrieval filtering"
+    },
+    {
+      "path": "scripts/cli.py",
+      "interpretation": "benchmark/result thresholds such as tie_threshold and regression_threshold, not R-Bot retrieval threshold"
+    }
   ],
-  "search_terms": [
-    "similarity_threshold",
-    "threshold",
-    "score_threshold",
-    "similarity_cutoff",
-    "top_k",
-    "rrf",
-    "rerank",
-    "filter"
+  "reasoning": [
+    "Visible retrieval code passes similarity_top_k into retrievers and returns top-k slices after reranking.",
+    "Visible retrieval code explicitly uses reciprocal-rank fusion with k=60.",
+    "No visible retrieval-time score cutoff or similarity threshold parameter was observed in the active retrieval path."
   ],
-  "observations": {
-    "retrieval_top_k_observed": true,
-    "retrieval_top_k_evidence": [
-      "stackoverflow_index.as_retriever(similarity_top_k=RETRIEVER_TOP_K)",
-      "MyQueryFusionRetriever(... similarity_top_k=RETRIEVER_TOP_K ...)",
-      "return ...[: self.similarity_top_k]"
-    ],
-    "reranking_observed": true,
-    "reranking_mode": "reciprocal_rerank",
-    "rrf_k_observed": true,
-    "rrf_k_value": 60,
-    "retrieval_threshold_observed": false,
-    "retrieval_threshold_evidence_against": [
-      "no similarity_threshold parameter found in visible retrieval code",
-      "no score-cutoff filter found in visible retrieval code",
-      "no threshold-related formal R-Bot CLI control found in scripts/cli.py"
-    ],
-    "non_retrieval_threshold_hits": [
-      {
-        "path": "/tmp/rewritebench_prior_method_audit/LLM4Rewrite/my_rewriter/db_utils.py",
-        "symbol": "threshold",
-        "value": 0.1,
-        "classification": "statistical_compare_helper_not_retrieval_threshold"
-      }
-    ]
-  },
-  "decision": {
-    "similarity_threshold_policy": "explicit_none_observed",
-    "similarity_threshold_value": null,
-    "similarity_threshold_status": "closed_from_visible_code_audit",
-    "reason": "visible retrieval path shows explicit top_k and reciprocal-rank reranking, but no retrieval-time score threshold or threshold-based filtering"
-  },
-  "gate_impact": {
-    "similarity_threshold_gate_closed": true,
-    "retrieval_config_still_blocked_on_other_items": true,
-    "formal_generation_may_start": false
-  },
-  "remaining_non_threshold_blockers": [
+  "remaining_blockers_after_threshold_closure": [
     "exact retained rebuild-time embedding provider/base_url identity remains unresolved",
-    "formal rebuilt index identifier remains missing",
-    "full corpus manifest and retained external provenance remain incomplete",
-    "contamination guard remains blocked",
-    "artifact contract remains unsatisfied"
+    "formal rebuilt index identifier/package remains unresolved",
+    "contamination and corpus-retention gates remain unresolved",
+    "retained runtime/dependency/artifact-contract gates remain unresolved"
   ]
 }
