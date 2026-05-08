@@ -1,0 +1,113 @@
+{
+  "status_id": "formal_gate_status_v7",
+  "scope": "r_bot_formal_substrate_freeze_01",
+  "denominator_id": "common_core_v0_40_same_engine_120",
+  "method_id": "r_bot",
+  "route_id": "r_bot_same_engine_rewrite",
+  "basis": {
+    "prior_gate_status": "formal_gate_status_v6",
+    "artifacts": [
+      "reports/evaluation/common_core_v0/r_bot_formal_substrate_freeze_01/formal_gate_status_v6.md",
+      "reports/evaluation/common_core_v0/r_bot_formal_substrate_freeze_01/formal_near_duplicate_check_v1.csv",
+      "reports/evaluation/common_core_v0/r_bot_formal_substrate_freeze_01/formal_near_duplicate_check_summary.md",
+      "reports/evaluation/common_core_v0/r_bot_formal_substrate_freeze_01/formal_generated_output_exclusion_v1.csv",
+      "reports/evaluation/common_core_v0/r_bot_formal_substrate_freeze_01/formal_generated_output_exclusion_summary.md",
+      "reports/evaluation/common_core_v0/r_bot_formal_substrate_freeze_01/formal_generated_output_hashes_v1.json",
+      "reports/evaluation/common_core_v0/r_bot_formal_substrate_freeze_01/formal_corpus_text_manifest_v1.csv",
+      "reports/evaluation/common_core_v0/r_bot_formal_substrate_freeze_01/formal_corpus_text_manifest_summary.md",
+      "reports/evaluation/common_core_v0/r_bot_formal_substrate_freeze_01/formal_generated_output_source_path_audit.md",
+      "reports/evaluation/common_core_v0/r_bot_formal_protocol/r_bot_parameter_freeze_v2.json"
+    ]
+  },
+  "direct_answers": {
+    "near_duplicate_check_status": "blocked",
+    "generated_output_exclusion_status": "blocked",
+    "near_duplicate_visible_text_readable_included_corpus_items": 31,
+    "near_duplicate_manifest_blockers": 1,
+    "generated_output_visible_text_readable_included_corpus_items": 31,
+    "generated_output_family_blockers": 0,
+    "stale_calcite_path_blocker_resolved": true,
+    "remaining_contamination_blocker": "stackoverflow-rewrite-embed.zip / binary_or_unavailable_text_corpus",
+    "current_benchmark_gate_ready": false,
+    "formal_generation_may_start": false
+  },
+  "what_changed_in_v7": {
+    "closed_items": [
+      "near-duplicate checker now sees 31 visible text-readable included corpus items",
+      "near-duplicate manifest blockers reduced from 4 to 1",
+      "generated-output checker now sees 31 visible text-readable included corpus items",
+      "generated-output family blockers reduced from 1 to 0",
+      "stale Calcite generated-output source-path blocker resolved"
+    ],
+    "remaining_open_items": [
+      "near-duplicate rows remain blocked because stackoverflow-rewrite-embed.zip is binary_or_unavailable_text_corpus",
+      "generated-output exclusion rows remain blocked because stackoverflow-rewrite-embed.zip is binary_or_unavailable_text_corpus",
+      "contamination attestation remains incomplete for all 40 denominator cases"
+    ]
+  },
+  "near_duplicate_check": {
+    "status": "blocked",
+    "rows_covered": 40,
+    "rows_passed": 0,
+    "rows_failed": 0,
+    "rows_blocked": 40,
+    "visible_text_readable_included_manifest_items": 31,
+    "manifest_blockers": 1,
+    "attestation_status_counts": {
+      "blocked_corpus_text_unavailable": 40
+    },
+    "shared_blocker_reason": "binary_or_unavailable_text_corpus:/tmp/rewritebench_prior_method_audit/LLM4Rewrite/rag/stackoverflow-rewrite-embed.zip"
+  },
+  "generated_output_exclusion": {
+    "status": "blocked",
+    "rows_covered": 357,
+    "rows_passed": 0,
+    "rows_failed": 0,
+    "rows_blocked": 357,
+    "visible_text_readable_included_manifest_items": 31,
+    "manifest_blockers": 1,
+    "generated_output_family_blockers": 0,
+    "attestation_status_counts": {
+      "blocked_corpus_text_unavailable": 357
+    },
+    "family_counts": {
+      "sqlglot": 203,
+      "direct_llm": 120,
+      "calcite": 33,
+      "r_bot_pg1_recovery": 1
+    },
+    "shared_blocker_reason": "binary_or_unavailable_text_corpus:/tmp/rewritebench_prior_method_audit/LLM4Rewrite/rag/stackoverflow-rewrite-embed.zip"
+  },
+  "calcite_status": {
+    "stale_path_blocker_resolved": true,
+    "old_stale_path": "reports/evaluation/common_core_v0/runs/calcite_same_engine_generation_01/generated",
+    "current_visible_retained_path": "reports/evaluation/common_core_v0/runs/calcite_hep_pg40_generation_01/generated",
+    "current_filename_pattern": "calcite_hep_pg_rewrite.sql",
+    "generated_output_family_blockers": 0
+  },
+  "remaining_primary_blocker": {
+    "name": "stackoverflow_rewrite_embed_zip",
+    "blocker_reason": "binary_or_unavailable_text_corpus",
+    "path": "/tmp/rewritebench_prior_method_audit/LLM4Rewrite/rag/stackoverflow-rewrite-embed.zip",
+    "why_it_still_blocks": [
+      "included for the formal retrieval corpus line",
+      "binary-only to the current contamination-check package",
+      "tmp-only",
+      "retained external provenance still missing"
+    ]
+  },
+  "remaining_gate_blockers": [
+    "included retrieval archive stackoverflow-rewrite-embed.zip remains binary_or_unavailable_text_corpus",
+    "retained external archive provenance for stackoverflow-rewrite-embed.zip remains incomplete",
+    "exact retained rebuild-time embedding provider/model/base_url identity still requires final attestation",
+    "the formal rebuilt retained index identifier/package does not yet exist",
+    "dependency lock remains candidate-only rather than a retained final lock",
+    "retained runtime package snapshot and environment metadata path do not yet exist",
+    "the future retained run package has not yet been validated against the full artifact contract"
+  ],
+  "gate_outcome": {
+    "current_benchmark_gate_ready": false,
+    "formal_generation_may_start": false,
+    "overall_status": "closed"
+  }
+}
