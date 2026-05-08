@@ -1,0 +1,1640 @@
+{
+  "generated_output_blockers": [
+    "generated_source_missing:calcite:/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/calcite_same_engine_generation_01/generated"
+  ],
+  "generated_output_rows": [
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/CONS_0005/mysql/sqlglot_optimize_same_dialect.sql",
+      "normalized_hash": "8cb3201510ac84d2f208b0977f1ff22bfaeb9984d46c563d5f08975164a1ffb7"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/CONS_0005/mysql/sqlglot_transpile_same_dialect_noop.sql",
+      "normalized_hash": "4ddbea6f930bb97f9a2aeb2a2e15bf9eb804695af8b08c9b3135bf27e1fc1121"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/CONS_0005/pg/sqlglot_optimize_same_dialect.sql",
+      "normalized_hash": "b04541f84b4df29b79aab702032d496d1be508820fc17d89e6bd159826a08c05"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/CONS_0005/pg/sqlglot_transpile_same_dialect_noop.sql",
+      "normalized_hash": "4ddbea6f930bb97f9a2aeb2a2e15bf9eb804695af8b08c9b3135bf27e1fc1121"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/CONS_0005/spark/sqlglot_optimize_same_dialect.sql",
+      "normalized_hash": "8cb3201510ac84d2f208b0977f1ff22bfaeb9984d46c563d5f08975164a1ffb7"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/CONS_0005/spark/sqlglot_transpile_same_dialect_noop.sql",
+      "normalized_hash": "4ddbea6f930bb97f9a2aeb2a2e15bf9eb804695af8b08c9b3135bf27e1fc1121"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/CONS_0007/mysql/sqlglot_optimize_same_dialect.sql",
+      "normalized_hash": "d4af766523fcbf8101a5e3a011818e8b03da270e30afea059cf87f7a7ec25246"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/CONS_0007/mysql/sqlglot_transpile_same_dialect_noop.sql",
+      "normalized_hash": "aa7656ae8dc4d8a3d126e3af9cf3c70f5327d260e036463795463ea9be2d69b3"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/CONS_0007/pg/sqlglot_optimize_same_dialect.sql",
+      "normalized_hash": "50155bc632f098be94e80fad5b704e21ef149747f2501ee323427f3bebc8fd2a"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/CONS_0007/pg/sqlglot_transpile_same_dialect_noop.sql",
+      "normalized_hash": "aa7656ae8dc4d8a3d126e3af9cf3c70f5327d260e036463795463ea9be2d69b3"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/CONS_0007/spark/sqlglot_optimize_same_dialect.sql",
+      "normalized_hash": "d4af766523fcbf8101a5e3a011818e8b03da270e30afea059cf87f7a7ec25246"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/CONS_0007/spark/sqlglot_transpile_same_dialect_noop.sql",
+      "normalized_hash": "aa7656ae8dc4d8a3d126e3af9cf3c70f5327d260e036463795463ea9be2d69b3"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/CONS_0009/mysql/sqlglot_optimize_same_dialect.sql",
+      "normalized_hash": "7440672284d1f9dca46dc6bd011fc07bb897f1d538a160fd47e9809803607735"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/CONS_0009/mysql/sqlglot_transpile_same_dialect_noop.sql",
+      "normalized_hash": "1f6a025adf7bbf16ca449bc1b2f3565a06286f6e117c3e3821a70fe58c617a0f"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/CONS_0009/pg/sqlglot_optimize_same_dialect.sql",
+      "normalized_hash": "897033393e16d38a44c92bc4aa4137d4dac7211341787897b8cbbdc9abdd380c"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/CONS_0009/pg/sqlglot_transpile_same_dialect_noop.sql",
+      "normalized_hash": "1f6a025adf7bbf16ca449bc1b2f3565a06286f6e117c3e3821a70fe58c617a0f"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/CONS_0009/spark/sqlglot_optimize_same_dialect.sql",
+      "normalized_hash": "7440672284d1f9dca46dc6bd011fc07bb897f1d538a160fd47e9809803607735"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/CONS_0009/spark/sqlglot_transpile_same_dialect_noop.sql",
+      "normalized_hash": "1f6a025adf7bbf16ca449bc1b2f3565a06286f6e117c3e3821a70fe58c617a0f"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/CONS_0010/mysql/sqlglot_optimize_same_dialect.sql",
+      "normalized_hash": "ddac34acc9f41c7df3e136cc62443f8bfaf241f8b31f8094899728d2ef735d6f"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/CONS_0010/mysql/sqlglot_transpile_same_dialect_noop.sql",
+      "normalized_hash": "2ba4cb96a53b118cf703bd3d3f7f2078696871365e3d89695eb9b389890f83d9"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/CONS_0010/pg/sqlglot_optimize_same_dialect.sql",
+      "normalized_hash": "3dae4e2b57f39d266acdfdfafd6baacc06848220f7d843f4636e5d99e1c7525d"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/CONS_0010/pg/sqlglot_transpile_same_dialect_noop.sql",
+      "normalized_hash": "2ba4cb96a53b118cf703bd3d3f7f2078696871365e3d89695eb9b389890f83d9"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/CONS_0010/spark/sqlglot_optimize_same_dialect.sql",
+      "normalized_hash": "ddac34acc9f41c7df3e136cc62443f8bfaf241f8b31f8094899728d2ef735d6f"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/CONS_0010/spark/sqlglot_transpile_same_dialect_noop.sql",
+      "normalized_hash": "2ba4cb96a53b118cf703bd3d3f7f2078696871365e3d89695eb9b389890f83d9"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/CONS_0011/mysql/sqlglot_optimize_same_dialect.sql",
+      "normalized_hash": "67c4e8725275f600c7ca9ce897754d8b5d8be5961322f6494b371f1cf7a2bb65"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/CONS_0011/mysql/sqlglot_transpile_same_dialect_noop.sql",
+      "normalized_hash": "1c2a59340bef3747359f560f958316223af155fbacdc4876ffea01d06c474c19"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/CONS_0011/pg/sqlglot_optimize_same_dialect.sql",
+      "normalized_hash": "6fbc9fcc249fdf97df3809d1c4264e566be62849a26b54008b9649c559be6e6c"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/CONS_0011/pg/sqlglot_transpile_same_dialect_noop.sql",
+      "normalized_hash": "1c2a59340bef3747359f560f958316223af155fbacdc4876ffea01d06c474c19"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/CONS_0011/spark/sqlglot_optimize_same_dialect.sql",
+      "normalized_hash": "67c4e8725275f600c7ca9ce897754d8b5d8be5961322f6494b371f1cf7a2bb65"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/CONS_0011/spark/sqlglot_transpile_same_dialect_noop.sql",
+      "normalized_hash": "1c2a59340bef3747359f560f958316223af155fbacdc4876ffea01d06c474c19"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/CONS_0012/mysql/sqlglot_optimize_same_dialect.sql",
+      "normalized_hash": "46edc3e7face6c0a41b7d824d48e4f6042c38a34765f12e145a0f9a4e452d002"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/CONS_0012/mysql/sqlglot_transpile_same_dialect_noop.sql",
+      "normalized_hash": "37a0d706cb6a058d84f1ceb8f223d5f90d1505161f4eb7a7939284dddd3f950d"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/CONS_0012/pg/sqlglot_optimize_same_dialect.sql",
+      "normalized_hash": "fb8710372fec71d0bc6e5d1ddb5cd7a62dc347bbc8ef773e6c5763226f5589f5"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/CONS_0012/pg/sqlglot_transpile_same_dialect_noop.sql",
+      "normalized_hash": "37a0d706cb6a058d84f1ceb8f223d5f90d1505161f4eb7a7939284dddd3f950d"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/CONS_0012/spark/sqlglot_optimize_same_dialect.sql",
+      "normalized_hash": "46edc3e7face6c0a41b7d824d48e4f6042c38a34765f12e145a0f9a4e452d002"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/CONS_0012/spark/sqlglot_transpile_same_dialect_noop.sql",
+      "normalized_hash": "37a0d706cb6a058d84f1ceb8f223d5f90d1505161f4eb7a7939284dddd3f950d"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/CONS_0024/mysql/sqlglot_transpile_same_dialect_noop.sql",
+      "normalized_hash": "a0c19e3b2d1f1f237eab17e8b2a2c3aac5dc5aaf355ab8177c0a883ca0ba0ad5"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/CONS_0024/pg/sqlglot_transpile_same_dialect_noop.sql",
+      "normalized_hash": "a0c19e3b2d1f1f237eab17e8b2a2c3aac5dc5aaf355ab8177c0a883ca0ba0ad5"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/CONS_0024/spark/sqlglot_transpile_same_dialect_noop.sql",
+      "normalized_hash": "a0c19e3b2d1f1f237eab17e8b2a2c3aac5dc5aaf355ab8177c0a883ca0ba0ad5"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/CONS_0036/mysql/sqlglot_optimize_same_dialect.sql",
+      "normalized_hash": "446551fc0152840f2f4693f885f5979a54350405fb6a8eef556ce22071a23449"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/CONS_0036/mysql/sqlglot_transpile_same_dialect_noop.sql",
+      "normalized_hash": "fd7373d11ca522e22c9924aa16d180c38bb71e19201a13899929c5a51ef3134c"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/CONS_0036/pg/sqlglot_optimize_same_dialect.sql",
+      "normalized_hash": "b7a8241b9938f2fd6ba5cc13414a4da07fbec5de730962c9a610bad859370ee5"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/CONS_0036/pg/sqlglot_transpile_same_dialect_noop.sql",
+      "normalized_hash": "fd7373d11ca522e22c9924aa16d180c38bb71e19201a13899929c5a51ef3134c"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/CONS_0036/spark/sqlglot_optimize_same_dialect.sql",
+      "normalized_hash": "446551fc0152840f2f4693f885f5979a54350405fb6a8eef556ce22071a23449"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/CONS_0036/spark/sqlglot_transpile_same_dialect_noop.sql",
+      "normalized_hash": "fd7373d11ca522e22c9924aa16d180c38bb71e19201a13899929c5a51ef3134c"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/CONS_0037/mysql/sqlglot_optimize_same_dialect.sql",
+      "normalized_hash": "bef10917aa8ab5fa791151449059ab6e89bb94b942a1cc5f6e2c366651d8fee3"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/CONS_0037/mysql/sqlglot_transpile_same_dialect_noop.sql",
+      "normalized_hash": "100f70f9a6a521390fdef24156a0c6029050f91a8fb1b140c8f3cf2bb5bccd78"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/CONS_0037/pg/sqlglot_optimize_same_dialect.sql",
+      "normalized_hash": "c6d01ae66aa5b05ff876c4f1ba7af08331185dac843ab8c22c2217194dc4a770"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/CONS_0037/pg/sqlglot_transpile_same_dialect_noop.sql",
+      "normalized_hash": "100f70f9a6a521390fdef24156a0c6029050f91a8fb1b140c8f3cf2bb5bccd78"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/CONS_0037/spark/sqlglot_optimize_same_dialect.sql",
+      "normalized_hash": "bef10917aa8ab5fa791151449059ab6e89bb94b942a1cc5f6e2c366651d8fee3"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/CONS_0037/spark/sqlglot_transpile_same_dialect_noop.sql",
+      "normalized_hash": "100f70f9a6a521390fdef24156a0c6029050f91a8fb1b140c8f3cf2bb5bccd78"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/LONGTAIL_0011/mysql/sqlglot_optimize_same_dialect.sql",
+      "normalized_hash": "b112c298e8c1c4d10ae560e89b89e2d92cf5b9dd77d843523a600c606799a54a"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/LONGTAIL_0011/mysql/sqlglot_transpile_same_dialect_noop.sql",
+      "normalized_hash": "f3ab2cdb031e760927dfa7199773bd94ba018a40d7b1848bf4df4449aed2607c"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/LONGTAIL_0011/pg/sqlglot_optimize_same_dialect.sql",
+      "normalized_hash": "8318e377caf36fc772c0823d87a1a6abb60e2be831855fd93173e93c14d8a319"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/LONGTAIL_0011/pg/sqlglot_transpile_same_dialect_noop.sql",
+      "normalized_hash": "f3ab2cdb031e760927dfa7199773bd94ba018a40d7b1848bf4df4449aed2607c"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/LONGTAIL_0011/spark/sqlglot_optimize_same_dialect.sql",
+      "normalized_hash": "b112c298e8c1c4d10ae560e89b89e2d92cf5b9dd77d843523a600c606799a54a"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/LONGTAIL_0011/spark/sqlglot_transpile_same_dialect_noop.sql",
+      "normalized_hash": "f3ab2cdb031e760927dfa7199773bd94ba018a40d7b1848bf4df4449aed2607c"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/LONGTAIL_0012/mysql/sqlglot_optimize_same_dialect.sql",
+      "normalized_hash": "baaa44c99bbc711b6a9ef6b23fba345eb328088afc76fd07121bd6be7cc0f8b9"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/LONGTAIL_0012/mysql/sqlglot_transpile_same_dialect_noop.sql",
+      "normalized_hash": "d54a2914e9bb4fa88a5818497993a926e4a9359bd282ba615572f17845a3136f"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/LONGTAIL_0012/pg/sqlglot_optimize_same_dialect.sql",
+      "normalized_hash": "33f163856f5af168a656f62fd1ae9d265b633f1c4c7d5d0dcdea8311877a2773"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/LONGTAIL_0012/pg/sqlglot_transpile_same_dialect_noop.sql",
+      "normalized_hash": "d54a2914e9bb4fa88a5818497993a926e4a9359bd282ba615572f17845a3136f"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/LONGTAIL_0012/spark/sqlglot_optimize_same_dialect.sql",
+      "normalized_hash": "baaa44c99bbc711b6a9ef6b23fba345eb328088afc76fd07121bd6be7cc0f8b9"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/LONGTAIL_0012/spark/sqlglot_transpile_same_dialect_noop.sql",
+      "normalized_hash": "d54a2914e9bb4fa88a5818497993a926e4a9359bd282ba615572f17845a3136f"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/LONGTAIL_0013/mysql/sqlglot_optimize_same_dialect.sql",
+      "normalized_hash": "9de8dab52e3056ae7c33483cd2ec24fcb1b281b675a478bfef9bd69b545a4d6d"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/LONGTAIL_0013/mysql/sqlglot_transpile_same_dialect_noop.sql",
+      "normalized_hash": "0a24cd2fe447b15c113f1a77b3ce3eba2e95705a9b53625e653a12f91203ff1e"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/LONGTAIL_0013/pg/sqlglot_optimize_same_dialect.sql",
+      "normalized_hash": "12907de38b74d7ee9da91882b72925ad57fcf4e08c7efa3eae92b9cbca7713e9"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/LONGTAIL_0013/pg/sqlglot_transpile_same_dialect_noop.sql",
+      "normalized_hash": "0a24cd2fe447b15c113f1a77b3ce3eba2e95705a9b53625e653a12f91203ff1e"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/LONGTAIL_0013/spark/sqlglot_optimize_same_dialect.sql",
+      "normalized_hash": "9de8dab52e3056ae7c33483cd2ec24fcb1b281b675a478bfef9bd69b545a4d6d"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/LONGTAIL_0013/spark/sqlglot_transpile_same_dialect_noop.sql",
+      "normalized_hash": "0a24cd2fe447b15c113f1a77b3ce3eba2e95705a9b53625e653a12f91203ff1e"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/LONGTAIL_0022/mysql/sqlglot_optimize_same_dialect.sql",
+      "normalized_hash": "b4f92dbafd84087e4cf0c9416b5a10c7dbf2f2d41bfa16f23cd8882dfad1f74c"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/LONGTAIL_0022/mysql/sqlglot_transpile_same_dialect_noop.sql",
+      "normalized_hash": "02627c37aaa2b6aba3db7938d93194d0092b1356d7e53cc8df96ca43c0f5515c"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/LONGTAIL_0022/pg/sqlglot_optimize_same_dialect.sql",
+      "normalized_hash": "c759c32cf7f74e4c3ccbedec86e3fe7f5bdd94a1558cc3fcdaa1e50c895165e0"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/LONGTAIL_0022/pg/sqlglot_transpile_same_dialect_noop.sql",
+      "normalized_hash": "02627c37aaa2b6aba3db7938d93194d0092b1356d7e53cc8df96ca43c0f5515c"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/LONGTAIL_0022/spark/sqlglot_optimize_same_dialect.sql",
+      "normalized_hash": "b4f92dbafd84087e4cf0c9416b5a10c7dbf2f2d41bfa16f23cd8882dfad1f74c"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/LONGTAIL_0022/spark/sqlglot_transpile_same_dialect_noop.sql",
+      "normalized_hash": "02627c37aaa2b6aba3db7938d93194d0092b1356d7e53cc8df96ca43c0f5515c"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/LONGTAIL_0023/mysql/sqlglot_optimize_same_dialect.sql",
+      "normalized_hash": "404562535d2126f4c5ccb92d369c3713f62c92a8046a037130b0c54c86890292"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/LONGTAIL_0023/mysql/sqlglot_transpile_same_dialect_noop.sql",
+      "normalized_hash": "6f6eec8c73df8a006388a8f97a313aa7de423eed059024908be38648e92c346f"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/LONGTAIL_0023/pg/sqlglot_optimize_same_dialect.sql",
+      "normalized_hash": "d82574786e7aff951812cc93df5fd3452aa8c9c8b06ceb8bae062bdf48da5924"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/LONGTAIL_0023/pg/sqlglot_transpile_same_dialect_noop.sql",
+      "normalized_hash": "6f6eec8c73df8a006388a8f97a313aa7de423eed059024908be38648e92c346f"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/LONGTAIL_0023/spark/sqlglot_optimize_same_dialect.sql",
+      "normalized_hash": "404562535d2126f4c5ccb92d369c3713f62c92a8046a037130b0c54c86890292"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/LONGTAIL_0023/spark/sqlglot_transpile_same_dialect_noop.sql",
+      "normalized_hash": "6f6eec8c73df8a006388a8f97a313aa7de423eed059024908be38648e92c346f"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/LONGTAIL_0024/mysql/sqlglot_optimize_same_dialect.sql",
+      "normalized_hash": "436feff3af73e89579690c0c88d02383a156aa749276e0ba05cca7c1d7d0071c"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/LONGTAIL_0024/mysql/sqlglot_transpile_same_dialect_noop.sql",
+      "normalized_hash": "4ef4d6dda5fa352d4041b6e0c5ef8b30aafa4977867ea02fbdd1566dc944f0d1"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/LONGTAIL_0024/pg/sqlglot_optimize_same_dialect.sql",
+      "normalized_hash": "4a599d65cbaa499f0b26cceb68eb11b5c59bb445183e7acd61ad7008f575d58a"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/LONGTAIL_0024/pg/sqlglot_transpile_same_dialect_noop.sql",
+      "normalized_hash": "4ef4d6dda5fa352d4041b6e0c5ef8b30aafa4977867ea02fbdd1566dc944f0d1"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/LONGTAIL_0024/spark/sqlglot_optimize_same_dialect.sql",
+      "normalized_hash": "436feff3af73e89579690c0c88d02383a156aa749276e0ba05cca7c1d7d0071c"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/LONGTAIL_0024/spark/sqlglot_transpile_same_dialect_noop.sql",
+      "normalized_hash": "4ef4d6dda5fa352d4041b6e0c5ef8b30aafa4977867ea02fbdd1566dc944f0d1"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/PERF_0006/mysql/sqlglot_optimize_same_dialect.sql",
+      "normalized_hash": "9fbcd41c83bd82a95ca2bc42c68c8e5dbf426123a21c3ae66aed6883d52f50b7"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/PERF_0006/mysql/sqlglot_transpile_same_dialect_noop.sql",
+      "normalized_hash": "015293c350cb271499c999630700bf6ae31d070b7fac708d863f0aef57cf25d7"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/PERF_0006/pg/sqlglot_optimize_same_dialect.sql",
+      "normalized_hash": "a743f375d10baaa7d5bd0de6e897fb7200a4e6d3c8eb721f1c617a43d1eaf2cb"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/PERF_0006/pg/sqlglot_transpile_same_dialect_noop.sql",
+      "normalized_hash": "015293c350cb271499c999630700bf6ae31d070b7fac708d863f0aef57cf25d7"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/PERF_0006/spark/sqlglot_optimize_same_dialect.sql",
+      "normalized_hash": "9fbcd41c83bd82a95ca2bc42c68c8e5dbf426123a21c3ae66aed6883d52f50b7"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/PERF_0006/spark/sqlglot_transpile_same_dialect_noop.sql",
+      "normalized_hash": "015293c350cb271499c999630700bf6ae31d070b7fac708d863f0aef57cf25d7"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/PERF_0007/mysql/sqlglot_optimize_same_dialect.sql",
+      "normalized_hash": "1b435f0274fa02da90c87ef346aa7e1df39fc388373319c7334b0ce69d001be0"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/PERF_0007/mysql/sqlglot_transpile_same_dialect_noop.sql",
+      "normalized_hash": "977eb4d0818875dccb3f4971843c17e995554a07f5429978c65c0f33267f792e"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/PERF_0007/pg/sqlglot_optimize_same_dialect.sql",
+      "normalized_hash": "e3eff8a9ac3599d60f13fe6d059342ce29a028d3baf87d3b10d695f186b5eca5"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/PERF_0007/pg/sqlglot_transpile_same_dialect_noop.sql",
+      "normalized_hash": "ce22a95c9bce011ff96358bf0261cbeaf0156978a7323ab64385c53674ce88b1"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/PERF_0007/spark/sqlglot_optimize_same_dialect.sql",
+      "normalized_hash": "1b435f0274fa02da90c87ef346aa7e1df39fc388373319c7334b0ce69d001be0"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/PERF_0007/spark/sqlglot_transpile_same_dialect_noop.sql",
+      "normalized_hash": "977eb4d0818875dccb3f4971843c17e995554a07f5429978c65c0f33267f792e"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/PERF_0008/mysql/sqlglot_transpile_same_dialect_noop.sql",
+      "normalized_hash": "5b65c7b3206176a2c31ad746c21a03e0aae62b17696c39159dcf28979fa39bbf"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/PERF_0008/pg/sqlglot_transpile_same_dialect_noop.sql",
+      "normalized_hash": "5b65c7b3206176a2c31ad746c21a03e0aae62b17696c39159dcf28979fa39bbf"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/PERF_0008/spark/sqlglot_transpile_same_dialect_noop.sql",
+      "normalized_hash": "6ec31f09fe9e7d6792a1a14ffbcdd2f9797f19dcf4882bde490b126711407324"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/PERF_0013/mysql/sqlglot_transpile_same_dialect_noop.sql",
+      "normalized_hash": "5cc225f59ba4b27838af234e614384ab4f1c842ac3c31b4ffaf564ffb22c8370"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/PERF_0013/pg/sqlglot_transpile_same_dialect_noop.sql",
+      "normalized_hash": "e3cc6595de6608352feabf306b2198213c802bf02c66ecaaaa6f036e701161ba"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/PERF_0013/spark/sqlglot_transpile_same_dialect_noop.sql",
+      "normalized_hash": "0a2d1e815cd22a1ab22014b64d1d187a63f667b43c07e323a2e7c78facf3deef"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/PERF_0017/mysql/sqlglot_transpile_same_dialect_noop.sql",
+      "normalized_hash": "978e221c0f203618ed7f0859d83286edfbc3c0ffb6f053478a9ef84edb79667c"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/PERF_0017/pg/sqlglot_transpile_same_dialect_noop.sql",
+      "normalized_hash": "7a5dffe0cd4f6c2a202e038af42d70c9583ae0c93f6fa6588e95ca97a0f53d88"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/PERF_0017/spark/sqlglot_transpile_same_dialect_noop.sql",
+      "normalized_hash": "cc6249b47d735abbc276462c39aafb24550e89f501835e4e3637ae699ce7f2b1"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/PERF_0019/mysql/sqlglot_transpile_same_dialect_noop.sql",
+      "normalized_hash": "8063be1c3a5147b501cf6c924ac7e8a55809913879bc4398bf1cc39febb05876"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/PERF_0019/pg/sqlglot_transpile_same_dialect_noop.sql",
+      "normalized_hash": "8063be1c3a5147b501cf6c924ac7e8a55809913879bc4398bf1cc39febb05876"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/PERF_0019/spark/sqlglot_transpile_same_dialect_noop.sql",
+      "normalized_hash": "8063be1c3a5147b501cf6c924ac7e8a55809913879bc4398bf1cc39febb05876"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/PERF_0024/mysql/sqlglot_transpile_same_dialect_noop.sql",
+      "normalized_hash": "373ae0e47564ff77897b20a5be92888c4f883a3bd51da78e0bfd540e23e7ce27"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/PERF_0024/pg/sqlglot_transpile_same_dialect_noop.sql",
+      "normalized_hash": "34b78da01eb3f5a7f96a119814002b1c3b6f8aa207fca1edee8c220abe411538"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/PERF_0024/spark/sqlglot_transpile_same_dialect_noop.sql",
+      "normalized_hash": "f978549b89ce2e3655eb237b1a5d0b6ec0e091262f199032494bef39549930c5"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/PERF_0033/mysql/sqlglot_optimize_same_dialect.sql",
+      "normalized_hash": "b1059499e1ff54f8a51e87af24b8aced7de38dffbf0265285e2ea04f6066bf76"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/PERF_0033/mysql/sqlglot_transpile_same_dialect_noop.sql",
+      "normalized_hash": "4de64a172ebcb7b78a3661b09d5912207c36808cd59f599e9aeb2060f5b83a2c"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/PERF_0033/pg/sqlglot_optimize_same_dialect.sql",
+      "normalized_hash": "9e2d56944bca0de2db804d8314c8dbb3de8e035a6e2f2e90d590d39df4b53367"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/PERF_0033/pg/sqlglot_transpile_same_dialect_noop.sql",
+      "normalized_hash": "4de64a172ebcb7b78a3661b09d5912207c36808cd59f599e9aeb2060f5b83a2c"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/PERF_0033/spark/sqlglot_optimize_same_dialect.sql",
+      "normalized_hash": "b1059499e1ff54f8a51e87af24b8aced7de38dffbf0265285e2ea04f6066bf76"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/PERF_0033/spark/sqlglot_transpile_same_dialect_noop.sql",
+      "normalized_hash": "dcab97db2a3d09c8d8d4dfeea073d84d42f15dfd42818f251d6fbaef3db82877"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/PERF_0034/mysql/sqlglot_optimize_same_dialect.sql",
+      "normalized_hash": "ed986d1cac151f709f7c9263dd1d830179a16555afcbe374d77358494e222acc"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/PERF_0034/mysql/sqlglot_transpile_same_dialect_noop.sql",
+      "normalized_hash": "b803a4520b03fe65b33ef5b73812430dfc03b7a64e67531e78e6b9d669b11aaa"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/PERF_0034/pg/sqlglot_optimize_same_dialect.sql",
+      "normalized_hash": "f684f41485d5c647b6e938e3f057f940bb7f5f36e8040da9095f5f7031b7bdcd"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/PERF_0034/pg/sqlglot_transpile_same_dialect_noop.sql",
+      "normalized_hash": "b803a4520b03fe65b33ef5b73812430dfc03b7a64e67531e78e6b9d669b11aaa"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/PERF_0034/spark/sqlglot_optimize_same_dialect.sql",
+      "normalized_hash": "ed986d1cac151f709f7c9263dd1d830179a16555afcbe374d77358494e222acc"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/PERF_0034/spark/sqlglot_transpile_same_dialect_noop.sql",
+      "normalized_hash": "76cbc9b7766bb204096fa6adfc65cdfdc85db6caa42226cdf463acfca937df2f"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/PERF_0035/mysql/sqlglot_optimize_same_dialect.sql",
+      "normalized_hash": "c7c960d3635ea011b69581cdbd857bbc44445ce5571cddacc7ebe17ffa54a4ea"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/PERF_0035/mysql/sqlglot_transpile_same_dialect_noop.sql",
+      "normalized_hash": "5339ce20aae5ded162a1d1de6b9a675f683b86147e1eabc6b71a7a8bef9e8a99"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/PERF_0035/pg/sqlglot_optimize_same_dialect.sql",
+      "normalized_hash": "feffbc2a13ab7f381e846e081f256bd9cc27ebe9f057c232966ff25b14568655"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/PERF_0035/pg/sqlglot_transpile_same_dialect_noop.sql",
+      "normalized_hash": "5339ce20aae5ded162a1d1de6b9a675f683b86147e1eabc6b71a7a8bef9e8a99"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/PERF_0035/spark/sqlglot_optimize_same_dialect.sql",
+      "normalized_hash": "c7c960d3635ea011b69581cdbd857bbc44445ce5571cddacc7ebe17ffa54a4ea"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/PERF_0035/spark/sqlglot_transpile_same_dialect_noop.sql",
+      "normalized_hash": "72bac0cf43d1985490d456b34cd88d0dfde798fffec62889d7645a6da845dd71"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/PERF_0052/mysql/sqlglot_transpile_same_dialect_noop.sql",
+      "normalized_hash": "2a75ed067360464f7b41d597740fd534db27863bffd6efcd83c749649773caee"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/PERF_0052/pg/sqlglot_transpile_same_dialect_noop.sql",
+      "normalized_hash": "2a75ed067360464f7b41d597740fd534db27863bffd6efcd83c749649773caee"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/PERF_0052/spark/sqlglot_transpile_same_dialect_noop.sql",
+      "normalized_hash": "b6b11fd24bf140fd2255ce4533d9fa1b19ee2130611a7243b80a8d5c0abb0793"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/PERF_0054/mysql/sqlglot_transpile_same_dialect_noop.sql",
+      "normalized_hash": "c2a679aafb35b682b05bebb5bd39e8e9ac0ef82e4f22689912efc9501c265df4"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/PERF_0054/pg/sqlglot_transpile_same_dialect_noop.sql",
+      "normalized_hash": "c2a679aafb35b682b05bebb5bd39e8e9ac0ef82e4f22689912efc9501c265df4"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/PERF_0054/spark/sqlglot_transpile_same_dialect_noop.sql",
+      "normalized_hash": "b50493e652f372509c081c9fb98cb23b031f35a380da67f5a1c0f1d7d2ea27bc"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/PERF_0056/mysql/sqlglot_optimize_same_dialect.sql",
+      "normalized_hash": "d752c7253c5493fbda103d92dfc7468bf66d8b26dc620f90520743b37e578827"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/PERF_0056/mysql/sqlglot_transpile_same_dialect_noop.sql",
+      "normalized_hash": "d6649aef153f3dde8da0142f2bacde1ed1f8b9c0a1abb479e1bbd27c5faf722b"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/PERF_0056/pg/sqlglot_optimize_same_dialect.sql",
+      "normalized_hash": "cec9afd9dbfcf86e3b7992fb4a77e62269cd8a0e76739aedf4ff9c58c1982bf1"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/PERF_0056/pg/sqlglot_transpile_same_dialect_noop.sql",
+      "normalized_hash": "d6649aef153f3dde8da0142f2bacde1ed1f8b9c0a1abb479e1bbd27c5faf722b"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/PERF_0056/spark/sqlglot_optimize_same_dialect.sql",
+      "normalized_hash": "d752c7253c5493fbda103d92dfc7468bf66d8b26dc620f90520743b37e578827"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/PERF_0056/spark/sqlglot_transpile_same_dialect_noop.sql",
+      "normalized_hash": "9231720a7c6bd2601501103947cb362fc9a82c06a163621eca3be583418c98fc"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/PERF_0062/mysql/sqlglot_transpile_same_dialect_noop.sql",
+      "normalized_hash": "89dbc6c6048588d4a023a1154f97a37572e46000f7dc05863ff42e35cf17624d"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/PERF_0062/pg/sqlglot_transpile_same_dialect_noop.sql",
+      "normalized_hash": "89dbc6c6048588d4a023a1154f97a37572e46000f7dc05863ff42e35cf17624d"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/PERF_0062/spark/sqlglot_transpile_same_dialect_noop.sql",
+      "normalized_hash": "257013c16c3b3aee2174a048c482a3f667195cac8fdd486bb4feb8b18f3fb37f"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/PERF_0077/mysql/sqlglot_optimize_same_dialect.sql",
+      "normalized_hash": "2ff43c451f2f3b0910a5227e1791fbc998a24264d5234fe18b4abbf62368d383"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/PERF_0077/mysql/sqlglot_transpile_same_dialect_noop.sql",
+      "normalized_hash": "1c29885c89edda3f5cef94a03b94182879d6a501d2382c58721c3cfbf23ee416"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/PERF_0077/pg/sqlglot_optimize_same_dialect.sql",
+      "normalized_hash": "1827ae6bb8c25af24d8662b605ad3ec63cac163e3291a3ca4d5fffd427b52e0b"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/PERF_0077/pg/sqlglot_transpile_same_dialect_noop.sql",
+      "normalized_hash": "1c29885c89edda3f5cef94a03b94182879d6a501d2382c58721c3cfbf23ee416"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/PERF_0077/spark/sqlglot_optimize_same_dialect.sql",
+      "normalized_hash": "2ff43c451f2f3b0910a5227e1791fbc998a24264d5234fe18b4abbf62368d383"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/PERF_0077/spark/sqlglot_transpile_same_dialect_noop.sql",
+      "normalized_hash": "125c7929fd9c67639118b8dfb372d511d06bfb20ac77d8abd5467c852da62d7f"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/PERF_0082/mysql/sqlglot_optimize_same_dialect.sql",
+      "normalized_hash": "57c18a34ed781af1bfd58421edc0f6b887b85bfd8d7e0d6b4cfcbb6fa4e69f06"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/PERF_0082/mysql/sqlglot_transpile_same_dialect_noop.sql",
+      "normalized_hash": "1e5666583f800f1ed85299ab60bb2f02cee232ebb2e80f8879476e80cf2f1e46"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/PERF_0082/pg/sqlglot_optimize_same_dialect.sql",
+      "normalized_hash": "50a8806008b3559bbb63b0199a47be7218d1f5ee7578fb5fd1b708af807e2d5a"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/PERF_0082/pg/sqlglot_transpile_same_dialect_noop.sql",
+      "normalized_hash": "1e5666583f800f1ed85299ab60bb2f02cee232ebb2e80f8879476e80cf2f1e46"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/PERF_0082/spark/sqlglot_optimize_same_dialect.sql",
+      "normalized_hash": "57c18a34ed781af1bfd58421edc0f6b887b85bfd8d7e0d6b4cfcbb6fa4e69f06"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/PERF_0082/spark/sqlglot_transpile_same_dialect_noop.sql",
+      "normalized_hash": "305d35b2daeda38196f88ea10a5f4a010a49518b318fd56d544de6125b80106b"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/PORT_0003/mysql/sqlglot_optimize_same_dialect.sql",
+      "normalized_hash": "6e23aeeb3418fce9eef83a61af6928af2d9fb16d5308ce81d87e57756195643a"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/PORT_0003/mysql/sqlglot_transpile_same_dialect_noop.sql",
+      "normalized_hash": "f0f719a1e4bab7f78c3477d3b7291f7bbe93c32f1586af2dd7f0db299b135c71"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/PORT_0003/pg/sqlglot_optimize_same_dialect.sql",
+      "normalized_hash": "d320a5b06496032c518d204ba889cd925b6e86af3671bcb2cfd458e06242b765"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/PORT_0003/pg/sqlglot_transpile_same_dialect_noop.sql",
+      "normalized_hash": "c85de7bdcf349d6f55b5eb890c3a6ebf118443c7b2783adbc508b193b5ef272b"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/PORT_0003/spark/sqlglot_optimize_same_dialect.sql",
+      "normalized_hash": "6e23aeeb3418fce9eef83a61af6928af2d9fb16d5308ce81d87e57756195643a"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/PORT_0003/spark/sqlglot_transpile_same_dialect_noop.sql",
+      "normalized_hash": "f0f719a1e4bab7f78c3477d3b7291f7bbe93c32f1586af2dd7f0db299b135c71"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/PORT_0004/mysql/sqlglot_optimize_same_dialect.sql",
+      "normalized_hash": "7e1adc43cca151bef25661b551aedfb6035b373d965b0c9430484394e4ed0a61"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/PORT_0004/mysql/sqlglot_transpile_same_dialect_noop.sql",
+      "normalized_hash": "07aa3a9f6c04175ddbfd8f201434c84d1c0d3f160fd731829c19a7ebd4a358d5"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/PORT_0004/spark/sqlglot_optimize_same_dialect.sql",
+      "normalized_hash": "4cebf7a8de79d888896005cbbd9e81f1fed29db8d8c9e20ba97ffb8525dd29f9"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/PORT_0004/spark/sqlglot_transpile_same_dialect_noop.sql",
+      "normalized_hash": "df2141b6e45685313154b4dbdb6daa9336041d36f8ca80e46324126a9339658e"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/PORT_0005/mysql/sqlglot_optimize_same_dialect.sql",
+      "normalized_hash": "1b701931ebe04704a51ce6d08f6f00011630aa3e80d987f4bf604aeb99da7336"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/PORT_0005/mysql/sqlglot_transpile_same_dialect_noop.sql",
+      "normalized_hash": "2b5530eb615bf83564f2e360df54b72fbd665aa381da899e9f92ee9cc8dbf91f"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/PORT_0005/pg/sqlglot_optimize_same_dialect.sql",
+      "normalized_hash": "46b82f9f40a8bbb627693ccef7fc0df34372d97b4a4e4efda18f35737d822554"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/PORT_0005/pg/sqlglot_transpile_same_dialect_noop.sql",
+      "normalized_hash": "8bcbf38e8681394fd8ce9832c526440d9b79eb7320eb1b013fd29af39e21e437"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/PORT_0005/spark/sqlglot_optimize_same_dialect.sql",
+      "normalized_hash": "1b701931ebe04704a51ce6d08f6f00011630aa3e80d987f4bf604aeb99da7336"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/PORT_0005/spark/sqlglot_transpile_same_dialect_noop.sql",
+      "normalized_hash": "2b5530eb615bf83564f2e360df54b72fbd665aa381da899e9f92ee9cc8dbf91f"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/PORT_0008/mysql/sqlglot_optimize_same_dialect.sql",
+      "normalized_hash": "f9a7f3a822c20d10a6aa8b6ffa1635559b1a7422652a9e3023a440b5ce11143c"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/PORT_0008/mysql/sqlglot_transpile_same_dialect_noop.sql",
+      "normalized_hash": "82b2b628693eeb9f1d8e8a6a5c11449338f80b7ec1ec9d85acd82cd741111974"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/PORT_0008/pg/sqlglot_optimize_same_dialect.sql",
+      "normalized_hash": "bea3a409b359ad307d3a47ee630c77e71086a5544ebe48f361e854ac8b0694d9"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/PORT_0008/pg/sqlglot_transpile_same_dialect_noop.sql",
+      "normalized_hash": "caaeb0ad3d60c023f5322624014c6e8620b13057a31f54357a3d658939c347ec"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/PORT_0008/spark/sqlglot_optimize_same_dialect.sql",
+      "normalized_hash": "45a19e6116ff48bc34943593b53dfba2023a11b9f01d4bff2939799d70a1d67c"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/PORT_0008/spark/sqlglot_transpile_same_dialect_noop.sql",
+      "normalized_hash": "3c53accc238d37600444050a9ce7c8a10c47f7f5f72a754633fd49558e624d1e"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/PORT_0012/mysql/sqlglot_optimize_same_dialect.sql",
+      "normalized_hash": "c973e92d19de53af659d2a3728dd7bef49d7be6e6cb3cd7e73fe2f121bf38213"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/PORT_0012/mysql/sqlglot_transpile_same_dialect_noop.sql",
+      "normalized_hash": "ce1d5902a8f4321bd025391902805434993228081eb993cc2abefa6bc5982b78"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/PORT_0012/pg/sqlglot_optimize_same_dialect.sql",
+      "normalized_hash": "c62a5dc78e6ede83a26c2e22578a682d5db699022959b43b555023507f9e6f40"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/PORT_0012/pg/sqlglot_transpile_same_dialect_noop.sql",
+      "normalized_hash": "e20d4c5413dbeffe5ebe8419c5b9ea4eebc121706f0b493e4d80a42f7bf424be"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/PORT_0012/spark/sqlglot_optimize_same_dialect.sql",
+      "normalized_hash": "c973e92d19de53af659d2a3728dd7bef49d7be6e6cb3cd7e73fe2f121bf38213"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/PORT_0012/spark/sqlglot_transpile_same_dialect_noop.sql",
+      "normalized_hash": "e121f7f41544d972cd49f692b4fb9c32e279efdeb4d8d2f8ae52bb8c66ba359e"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/PORT_0013/mysql/sqlglot_optimize_same_dialect.sql",
+      "normalized_hash": "01eee506601a1c4f7bd040aa74cf1c82bdd6d9bacf353159f58a6a00405dcbc4"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/PORT_0013/mysql/sqlglot_transpile_same_dialect_noop.sql",
+      "normalized_hash": "d94fd968cd6ea789efac1ae600a3c97e3341185a65e1aedcfbc7d398b3c529a0"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/PORT_0013/spark/sqlglot_optimize_same_dialect.sql",
+      "normalized_hash": "01eee506601a1c4f7bd040aa74cf1c82bdd6d9bacf353159f58a6a00405dcbc4"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/PORT_0013/spark/sqlglot_transpile_same_dialect_noop.sql",
+      "normalized_hash": "d94fd968cd6ea789efac1ae600a3c97e3341185a65e1aedcfbc7d398b3c529a0"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/PORT_0022/mysql/sqlglot_optimize_same_dialect.sql",
+      "normalized_hash": "15ae89ea97d604e7712b002a1a82b3236f053b285c4cc0123a49398099cadebb"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/PORT_0022/mysql/sqlglot_transpile_same_dialect_noop.sql",
+      "normalized_hash": "e856cb05ac201ced4f2a8eb2c9b7041798d97251e8f65ad16335b6a95df939fd"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/PORT_0022/spark/sqlglot_optimize_same_dialect.sql",
+      "normalized_hash": "03e6f907b96f96123bb43d34be2f3acf8586b43ec0db5a8a1a87270dfdc2c48a"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/PORT_0022/spark/sqlglot_transpile_same_dialect_noop.sql",
+      "normalized_hash": "e89a692fbd9d91dd6c6402a3755d17b323696867fb3a29784296f09ffe60f4c3"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/PORT_0024/mysql/sqlglot_optimize_same_dialect.sql",
+      "normalized_hash": "ec2b5451db8b4c680c1f4cfd84ebd6c1b0db470675fe55f70ed7de3aeb22e8b1"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/PORT_0024/mysql/sqlglot_transpile_same_dialect_noop.sql",
+      "normalized_hash": "2ee37b02d62d9de81e45f34756763ddc07815aa3691452f0608dc3b140533ee1"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/PORT_0024/spark/sqlglot_optimize_same_dialect.sql",
+      "normalized_hash": "ec2b5451db8b4c680c1f4cfd84ebd6c1b0db470675fe55f70ed7de3aeb22e8b1"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/PORT_0024/spark/sqlglot_transpile_same_dialect_noop.sql",
+      "normalized_hash": "2ee37b02d62d9de81e45f34756763ddc07815aa3691452f0608dc3b140533ee1"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/PORT_0025/mysql/sqlglot_optimize_same_dialect.sql",
+      "normalized_hash": "243df3032b6b88c0fdb27e9285a84b44c67fd61623fce6109b523fd2b6a4c232"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/PORT_0025/mysql/sqlglot_transpile_same_dialect_noop.sql",
+      "normalized_hash": "d15e16fc241e2cb1823bba4a45fe0f3bd2352fe03d0ae2dea24f6b0f91933342"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/PORT_0025/spark/sqlglot_optimize_same_dialect.sql",
+      "normalized_hash": "bddf970beb810d443e9b702bf4e1d3b39c985f0748083591c1fa50d177fc4d99"
+    },
+    {
+      "generated_output_family": "sqlglot",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated/PORT_0025/spark/sqlglot_transpile_same_dialect_noop.sql",
+      "normalized_hash": "7c7b00848e2f6dbcbeca804233c62378a33f5727c0630f61989c28bccb9ef29c"
+    },
+    {
+      "generated_output_family": "direct_llm",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_01/generated/CONS_0005/mysql/direct_llm_same_engine_rewrite.sql",
+      "normalized_hash": "98e399c30075b271b6c547b08c26294adae76ec72e3b65fe5dfc633cc46181c3"
+    },
+    {
+      "generated_output_family": "direct_llm",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_01/generated/CONS_0005/pg/direct_llm_same_engine_rewrite.sql",
+      "normalized_hash": "98e399c30075b271b6c547b08c26294adae76ec72e3b65fe5dfc633cc46181c3"
+    },
+    {
+      "generated_output_family": "direct_llm",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_01/generated/CONS_0005/spark/direct_llm_same_engine_rewrite.sql",
+      "normalized_hash": "98e399c30075b271b6c547b08c26294adae76ec72e3b65fe5dfc633cc46181c3"
+    },
+    {
+      "generated_output_family": "direct_llm",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_01/generated/CONS_0007/mysql/direct_llm_same_engine_rewrite.sql",
+      "normalized_hash": "f9d4daa8e4b8b4f0e6e2dc96d1505dd3e94656b489fe87cd4a71e90335bba05d"
+    },
+    {
+      "generated_output_family": "direct_llm",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_01/generated/CONS_0007/pg/direct_llm_same_engine_rewrite.sql",
+      "normalized_hash": "6747e13bfbc8779296b59f00ccd31549d630e9dd1de96e356e2999e3471d0d05"
+    },
+    {
+      "generated_output_family": "direct_llm",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_01/generated/CONS_0007/spark/direct_llm_same_engine_rewrite.sql",
+      "normalized_hash": "6747e13bfbc8779296b59f00ccd31549d630e9dd1de96e356e2999e3471d0d05"
+    },
+    {
+      "generated_output_family": "direct_llm",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_01/generated/CONS_0009/mysql/direct_llm_same_engine_rewrite.sql",
+      "normalized_hash": "173b9e10397b0664f5c8f86fd2d0fffd5f58e7d9448dbb0c549493dcc8d936e7"
+    },
+    {
+      "generated_output_family": "direct_llm",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_01/generated/CONS_0009/pg/direct_llm_same_engine_rewrite.sql",
+      "normalized_hash": "173b9e10397b0664f5c8f86fd2d0fffd5f58e7d9448dbb0c549493dcc8d936e7"
+    },
+    {
+      "generated_output_family": "direct_llm",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_01/generated/CONS_0009/spark/direct_llm_same_engine_rewrite.sql",
+      "normalized_hash": "173b9e10397b0664f5c8f86fd2d0fffd5f58e7d9448dbb0c549493dcc8d936e7"
+    },
+    {
+      "generated_output_family": "direct_llm",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_01/generated/CONS_0010/mysql/direct_llm_same_engine_rewrite.sql",
+      "normalized_hash": "a58788da2c7b01488a60828894ebf25ad7dbf4a8a92aba72e86e0daf650526d8"
+    },
+    {
+      "generated_output_family": "direct_llm",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_01/generated/CONS_0010/pg/direct_llm_same_engine_rewrite.sql",
+      "normalized_hash": "7f95a2bf1c1421d46453bbf4b4a0e544300269b0985d97bc3fa43feae4bfa684"
+    },
+    {
+      "generated_output_family": "direct_llm",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_01/generated/CONS_0010/spark/direct_llm_same_engine_rewrite.sql",
+      "normalized_hash": "7f95a2bf1c1421d46453bbf4b4a0e544300269b0985d97bc3fa43feae4bfa684"
+    },
+    {
+      "generated_output_family": "direct_llm",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_01/generated/CONS_0011/mysql/direct_llm_same_engine_rewrite.sql",
+      "normalized_hash": "893bbd8bc1c726c9e718f56d660c78f4ba34d6fbe8a30366d11a64a546b4a18b"
+    },
+    {
+      "generated_output_family": "direct_llm",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_01/generated/CONS_0011/pg/direct_llm_same_engine_rewrite.sql",
+      "normalized_hash": "893bbd8bc1c726c9e718f56d660c78f4ba34d6fbe8a30366d11a64a546b4a18b"
+    },
+    {
+      "generated_output_family": "direct_llm",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_01/generated/CONS_0011/spark/direct_llm_same_engine_rewrite.sql",
+      "normalized_hash": "893bbd8bc1c726c9e718f56d660c78f4ba34d6fbe8a30366d11a64a546b4a18b"
+    },
+    {
+      "generated_output_family": "direct_llm",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_01/generated/CONS_0012/mysql/direct_llm_same_engine_rewrite.sql",
+      "normalized_hash": "9da1f2ab168dcbd43686e542b59d103d4e51c6f2a3f28a49331e06d1664e4adf"
+    },
+    {
+      "generated_output_family": "direct_llm",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_01/generated/CONS_0012/pg/direct_llm_same_engine_rewrite.sql",
+      "normalized_hash": "9da1f2ab168dcbd43686e542b59d103d4e51c6f2a3f28a49331e06d1664e4adf"
+    },
+    {
+      "generated_output_family": "direct_llm",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_01/generated/CONS_0012/spark/direct_llm_same_engine_rewrite.sql",
+      "normalized_hash": "9da1f2ab168dcbd43686e542b59d103d4e51c6f2a3f28a49331e06d1664e4adf"
+    },
+    {
+      "generated_output_family": "direct_llm",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_01/generated/CONS_0024/mysql/direct_llm_same_engine_rewrite.sql",
+      "normalized_hash": "c0429c58f5655078aee78d21e28e1e98273e3868f3ed261677c0849407fd33f3"
+    },
+    {
+      "generated_output_family": "direct_llm",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_01/generated/CONS_0024/pg/direct_llm_same_engine_rewrite.sql",
+      "normalized_hash": "c0429c58f5655078aee78d21e28e1e98273e3868f3ed261677c0849407fd33f3"
+    },
+    {
+      "generated_output_family": "direct_llm",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_01/generated/CONS_0024/spark/direct_llm_same_engine_rewrite.sql",
+      "normalized_hash": "c0429c58f5655078aee78d21e28e1e98273e3868f3ed261677c0849407fd33f3"
+    },
+    {
+      "generated_output_family": "direct_llm",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_01/generated/CONS_0036/mysql/direct_llm_same_engine_rewrite.sql",
+      "normalized_hash": "4db2734979942a1acf8fb16fdc3ad9adb45a9ed84d735399d721e0e99bfaee92"
+    },
+    {
+      "generated_output_family": "direct_llm",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_01/generated/CONS_0036/pg/direct_llm_same_engine_rewrite.sql",
+      "normalized_hash": "4db2734979942a1acf8fb16fdc3ad9adb45a9ed84d735399d721e0e99bfaee92"
+    },
+    {
+      "generated_output_family": "direct_llm",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_01/generated/CONS_0036/spark/direct_llm_same_engine_rewrite.sql",
+      "normalized_hash": "54c258d1fda24e80afc5430076ec509f6aa28d490ab2119f0270c8d62cdf6875"
+    },
+    {
+      "generated_output_family": "direct_llm",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_01/generated/CONS_0037/mysql/direct_llm_same_engine_rewrite.sql",
+      "normalized_hash": "9a880604ea6b8489ded7ef56b67a2dece9520b2955ec2057be03c9c09b5fa01a"
+    },
+    {
+      "generated_output_family": "direct_llm",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_01/generated/CONS_0037/pg/direct_llm_same_engine_rewrite.sql",
+      "normalized_hash": "9a880604ea6b8489ded7ef56b67a2dece9520b2955ec2057be03c9c09b5fa01a"
+    },
+    {
+      "generated_output_family": "direct_llm",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_01/generated/CONS_0037/spark/direct_llm_same_engine_rewrite.sql",
+      "normalized_hash": "e244eba5aa1e1153899a49d54e794771c3ba9b9547561e26caee4296936a4e2c"
+    },
+    {
+      "generated_output_family": "direct_llm",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_01/generated/LONGTAIL_0011/mysql/direct_llm_same_engine_rewrite.sql",
+      "normalized_hash": "1890e30631c58bc3792bca787421d2a9fe61cd1e4f6cde379ca9a6c2d4f06745"
+    },
+    {
+      "generated_output_family": "direct_llm",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_01/generated/LONGTAIL_0011/pg/direct_llm_same_engine_rewrite.sql",
+      "normalized_hash": "1890e30631c58bc3792bca787421d2a9fe61cd1e4f6cde379ca9a6c2d4f06745"
+    },
+    {
+      "generated_output_family": "direct_llm",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_01/generated/LONGTAIL_0011/spark/direct_llm_same_engine_rewrite.sql",
+      "normalized_hash": "1890e30631c58bc3792bca787421d2a9fe61cd1e4f6cde379ca9a6c2d4f06745"
+    },
+    {
+      "generated_output_family": "direct_llm",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_01/generated/LONGTAIL_0012/mysql/direct_llm_same_engine_rewrite.sql",
+      "normalized_hash": "ec539e3326f7ed8650373f2c51ddb5efc59b263cfcc6271f263daef20b975312"
+    },
+    {
+      "generated_output_family": "direct_llm",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_01/generated/LONGTAIL_0012/pg/direct_llm_same_engine_rewrite.sql",
+      "normalized_hash": "1f61914acb121276ee90f6edac6dc2c86a61edfd6edd015e90bdd285cc1b1011"
+    },
+    {
+      "generated_output_family": "direct_llm",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_01/generated/LONGTAIL_0012/spark/direct_llm_same_engine_rewrite.sql",
+      "normalized_hash": "1f61914acb121276ee90f6edac6dc2c86a61edfd6edd015e90bdd285cc1b1011"
+    },
+    {
+      "generated_output_family": "direct_llm",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_01/generated/LONGTAIL_0013/mysql/direct_llm_same_engine_rewrite.sql",
+      "normalized_hash": "e83b03b68e0a5f4c2b9206049853fd53e9f6396f86079f5f7faa329f0b695d5a"
+    },
+    {
+      "generated_output_family": "direct_llm",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_01/generated/LONGTAIL_0013/pg/direct_llm_same_engine_rewrite.sql",
+      "normalized_hash": "e83b03b68e0a5f4c2b9206049853fd53e9f6396f86079f5f7faa329f0b695d5a"
+    },
+    {
+      "generated_output_family": "direct_llm",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_01/generated/LONGTAIL_0013/spark/direct_llm_same_engine_rewrite.sql",
+      "normalized_hash": "e83b03b68e0a5f4c2b9206049853fd53e9f6396f86079f5f7faa329f0b695d5a"
+    },
+    {
+      "generated_output_family": "direct_llm",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_01/generated/LONGTAIL_0022/mysql/direct_llm_same_engine_rewrite.sql",
+      "normalized_hash": "ba3ac303b7e4cf1b1d6dedf3f3f495c7da5b2d91235170eeac8e829cda1fa6ff"
+    },
+    {
+      "generated_output_family": "direct_llm",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_01/generated/LONGTAIL_0022/pg/direct_llm_same_engine_rewrite.sql",
+      "normalized_hash": "0799d3ecc1ac1e4b63ade0380d46a7d0e6b5193f280c130318cfd905c580c85f"
+    },
+    {
+      "generated_output_family": "direct_llm",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_01/generated/LONGTAIL_0022/spark/direct_llm_same_engine_rewrite.sql",
+      "normalized_hash": "ba3ac303b7e4cf1b1d6dedf3f3f495c7da5b2d91235170eeac8e829cda1fa6ff"
+    },
+    {
+      "generated_output_family": "direct_llm",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_01/generated/LONGTAIL_0023/mysql/direct_llm_same_engine_rewrite.sql",
+      "normalized_hash": "344de936c120c72ae8c9440e4b8950141aed37063e3af4a9798383222d01609a"
+    },
+    {
+      "generated_output_family": "direct_llm",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_01/generated/LONGTAIL_0023/pg/direct_llm_same_engine_rewrite.sql",
+      "normalized_hash": "e63c88f20626b8761f79287db1ce1b9626131814811bd18175e1de6616df6c37"
+    },
+    {
+      "generated_output_family": "direct_llm",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_01/generated/LONGTAIL_0023/spark/direct_llm_same_engine_rewrite.sql",
+      "normalized_hash": "e63c88f20626b8761f79287db1ce1b9626131814811bd18175e1de6616df6c37"
+    },
+    {
+      "generated_output_family": "direct_llm",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_01/generated/LONGTAIL_0024/mysql/direct_llm_same_engine_rewrite.sql",
+      "normalized_hash": "8071533ea3712c7c93b364e4d74093df47fe79a11cdb548f5fde7f6d5bbcb3f2"
+    },
+    {
+      "generated_output_family": "direct_llm",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_01/generated/LONGTAIL_0024/pg/direct_llm_same_engine_rewrite.sql",
+      "normalized_hash": "8071533ea3712c7c93b364e4d74093df47fe79a11cdb548f5fde7f6d5bbcb3f2"
+    },
+    {
+      "generated_output_family": "direct_llm",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_01/generated/LONGTAIL_0024/spark/direct_llm_same_engine_rewrite.sql",
+      "normalized_hash": "8071533ea3712c7c93b364e4d74093df47fe79a11cdb548f5fde7f6d5bbcb3f2"
+    },
+    {
+      "generated_output_family": "direct_llm",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_01/generated/PERF_0006/mysql/direct_llm_same_engine_rewrite.sql",
+      "normalized_hash": "41a140bc1e740616a495dde641dd414ffc65320daeb1b58efeb6a431da573417"
+    },
+    {
+      "generated_output_family": "direct_llm",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_01/generated/PERF_0006/pg/direct_llm_same_engine_rewrite.sql",
+      "normalized_hash": "41a140bc1e740616a495dde641dd414ffc65320daeb1b58efeb6a431da573417"
+    },
+    {
+      "generated_output_family": "direct_llm",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_01/generated/PERF_0006/spark/direct_llm_same_engine_rewrite.sql",
+      "normalized_hash": "699f86f29350ab3407c861181426ca839ac00a853f2d01ba6378178fe3d0bfcf"
+    },
+    {
+      "generated_output_family": "direct_llm",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_01/generated/PERF_0007/mysql/direct_llm_same_engine_rewrite.sql",
+      "normalized_hash": "1dcdcedd0e94be3f963d41ec84abd6c778d18ab68bbe031562736b30917be22c"
+    },
+    {
+      "generated_output_family": "direct_llm",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_01/generated/PERF_0007/pg/direct_llm_same_engine_rewrite.sql",
+      "normalized_hash": "1dcdcedd0e94be3f963d41ec84abd6c778d18ab68bbe031562736b30917be22c"
+    },
+    {
+      "generated_output_family": "direct_llm",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_01/generated/PERF_0007/spark/direct_llm_same_engine_rewrite.sql",
+      "normalized_hash": "17b16c920c24c494a57599ccd963a07cc45d5f3351bc1e5a0e3ef989e8481a96"
+    },
+    {
+      "generated_output_family": "direct_llm",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_01/generated/PERF_0008/mysql/direct_llm_same_engine_rewrite.sql",
+      "normalized_hash": "78962b4e998905f6518b83fc2a341c85532892dbe7902594d9c712ccd76a0d85"
+    },
+    {
+      "generated_output_family": "direct_llm",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_01/generated/PERF_0008/pg/direct_llm_same_engine_rewrite.sql",
+      "normalized_hash": "78962b4e998905f6518b83fc2a341c85532892dbe7902594d9c712ccd76a0d85"
+    },
+    {
+      "generated_output_family": "direct_llm",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_01/generated/PERF_0008/spark/direct_llm_same_engine_rewrite.sql",
+      "normalized_hash": "78962b4e998905f6518b83fc2a341c85532892dbe7902594d9c712ccd76a0d85"
+    },
+    {
+      "generated_output_family": "direct_llm",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_01/generated/PERF_0013/mysql/direct_llm_same_engine_rewrite.sql",
+      "normalized_hash": "e3c1be5d5b2a788f93cdc7a43da52c341c143bbec352b2ca696be958e7bcbc2e"
+    },
+    {
+      "generated_output_family": "direct_llm",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_01/generated/PERF_0013/pg/direct_llm_same_engine_rewrite.sql",
+      "normalized_hash": "e0b72842601b518b951d05c65cffa4c351a7588b5f46890addee2ed6e820a5f8"
+    },
+    {
+      "generated_output_family": "direct_llm",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_01/generated/PERF_0013/spark/direct_llm_same_engine_rewrite.sql",
+      "normalized_hash": "9611a23ac5e28304c8b20b15f1c7dcd4c6ed2f2061946d1d374aa5a0230a592e"
+    },
+    {
+      "generated_output_family": "direct_llm",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_01/generated/PERF_0017/mysql/direct_llm_same_engine_rewrite.sql",
+      "normalized_hash": "de6ed420bad07c5dadcb1e9068dd6cc156b372db806b55ebf14ed368a2273fe6"
+    },
+    {
+      "generated_output_family": "direct_llm",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_01/generated/PERF_0017/pg/direct_llm_same_engine_rewrite.sql",
+      "normalized_hash": "c53b6a362f9a941927dc2ed0e93192f77cfcfd7cc0dad22e3691c9c9696acf0d"
+    },
+    {
+      "generated_output_family": "direct_llm",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_01/generated/PERF_0017/spark/direct_llm_same_engine_rewrite.sql",
+      "normalized_hash": "c53b6a362f9a941927dc2ed0e93192f77cfcfd7cc0dad22e3691c9c9696acf0d"
+    },
+    {
+      "generated_output_family": "direct_llm",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_01/generated/PERF_0019/mysql/direct_llm_same_engine_rewrite.sql",
+      "normalized_hash": "ff582b0af98ceb4265bd347ccf66dee60175932d7a3faa78bd66acd7bf73b643"
+    },
+    {
+      "generated_output_family": "direct_llm",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_01/generated/PERF_0019/pg/direct_llm_same_engine_rewrite.sql",
+      "normalized_hash": "b016db6439b51f5f50b0206e58fde6ee32345613ca978d1b63f0f958f67d5157"
+    },
+    {
+      "generated_output_family": "direct_llm",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_01/generated/PERF_0019/spark/direct_llm_same_engine_rewrite.sql",
+      "normalized_hash": "ff582b0af98ceb4265bd347ccf66dee60175932d7a3faa78bd66acd7bf73b643"
+    },
+    {
+      "generated_output_family": "direct_llm",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_01/generated/PERF_0024/mysql/direct_llm_same_engine_rewrite.sql",
+      "normalized_hash": "6db0f3f14f58acc8589fae04affa614e083b15c89f77bf7d2dc4308ba31572ab"
+    },
+    {
+      "generated_output_family": "direct_llm",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_01/generated/PERF_0024/pg/direct_llm_same_engine_rewrite.sql",
+      "normalized_hash": "3d9e2e10251ef0a5c544ecef98a5a119eadda865935735db1a0d5a60f7d93207"
+    },
+    {
+      "generated_output_family": "direct_llm",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_01/generated/PERF_0024/spark/direct_llm_same_engine_rewrite.sql",
+      "normalized_hash": "3d9e2e10251ef0a5c544ecef98a5a119eadda865935735db1a0d5a60f7d93207"
+    },
+    {
+      "generated_output_family": "direct_llm",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_01/generated/PERF_0033/mysql/direct_llm_same_engine_rewrite.sql",
+      "normalized_hash": "f9d497d8f620395ed70fe4a1d22b17e18dc221aba0873091a0889ba2a2c230f8"
+    },
+    {
+      "generated_output_family": "direct_llm",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_01/generated/PERF_0033/pg/direct_llm_same_engine_rewrite.sql",
+      "normalized_hash": "f9d497d8f620395ed70fe4a1d22b17e18dc221aba0873091a0889ba2a2c230f8"
+    },
+    {
+      "generated_output_family": "direct_llm",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_01/generated/PERF_0033/spark/direct_llm_same_engine_rewrite.sql",
+      "normalized_hash": "f9d497d8f620395ed70fe4a1d22b17e18dc221aba0873091a0889ba2a2c230f8"
+    },
+    {
+      "generated_output_family": "direct_llm",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_01/generated/PERF_0034/mysql/direct_llm_same_engine_rewrite.sql",
+      "normalized_hash": "bebc8b7d3aa3786cdcc364e835e16d73541163f68157514b319787f809eec84e"
+    },
+    {
+      "generated_output_family": "direct_llm",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_01/generated/PERF_0034/pg/direct_llm_same_engine_rewrite.sql",
+      "normalized_hash": "bebc8b7d3aa3786cdcc364e835e16d73541163f68157514b319787f809eec84e"
+    },
+    {
+      "generated_output_family": "direct_llm",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_01/generated/PERF_0034/spark/direct_llm_same_engine_rewrite.sql",
+      "normalized_hash": "bebc8b7d3aa3786cdcc364e835e16d73541163f68157514b319787f809eec84e"
+    },
+    {
+      "generated_output_family": "direct_llm",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_01/generated/PERF_0035/mysql/direct_llm_same_engine_rewrite.sql",
+      "normalized_hash": "482db698fd9a4b00de4c80fcb4eaa81bbec42ab0c301ffde8df71c779f92890f"
+    },
+    {
+      "generated_output_family": "direct_llm",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_01/generated/PERF_0035/pg/direct_llm_same_engine_rewrite.sql",
+      "normalized_hash": "482db698fd9a4b00de4c80fcb4eaa81bbec42ab0c301ffde8df71c779f92890f"
+    },
+    {
+      "generated_output_family": "direct_llm",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_01/generated/PERF_0035/spark/direct_llm_same_engine_rewrite.sql",
+      "normalized_hash": "482db698fd9a4b00de4c80fcb4eaa81bbec42ab0c301ffde8df71c779f92890f"
+    },
+    {
+      "generated_output_family": "direct_llm",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_01/generated/PERF_0052/mysql/direct_llm_same_engine_rewrite.sql",
+      "normalized_hash": "6bbcc3b089d20f95e70ab2629eedbbe6f52e95d0249147e2965d96883ae05682"
+    },
+    {
+      "generated_output_family": "direct_llm",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_01/generated/PERF_0052/pg/direct_llm_same_engine_rewrite.sql",
+      "normalized_hash": "6bbcc3b089d20f95e70ab2629eedbbe6f52e95d0249147e2965d96883ae05682"
+    },
+    {
+      "generated_output_family": "direct_llm",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_01/generated/PERF_0052/spark/direct_llm_same_engine_rewrite.sql",
+      "normalized_hash": "6bbcc3b089d20f95e70ab2629eedbbe6f52e95d0249147e2965d96883ae05682"
+    },
+    {
+      "generated_output_family": "direct_llm",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_01/generated/PERF_0054/mysql/direct_llm_same_engine_rewrite.sql",
+      "normalized_hash": "2fa71f2a42185b6d6155b0c75ec009b346994dec0a996981cc4b535a5e46c87e"
+    },
+    {
+      "generated_output_family": "direct_llm",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_01/generated/PERF_0054/pg/direct_llm_same_engine_rewrite.sql",
+      "normalized_hash": "2fa71f2a42185b6d6155b0c75ec009b346994dec0a996981cc4b535a5e46c87e"
+    },
+    {
+      "generated_output_family": "direct_llm",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_01/generated/PERF_0054/spark/direct_llm_same_engine_rewrite.sql",
+      "normalized_hash": "2fa71f2a42185b6d6155b0c75ec009b346994dec0a996981cc4b535a5e46c87e"
+    },
+    {
+      "generated_output_family": "direct_llm",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_01/generated/PERF_0056/mysql/direct_llm_same_engine_rewrite.sql",
+      "normalized_hash": "eded15d22377fa66487c2298c8cbd29fb4ff0143260b1ff697811ec9ef1ee5a7"
+    },
+    {
+      "generated_output_family": "direct_llm",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_01/generated/PERF_0056/pg/direct_llm_same_engine_rewrite.sql",
+      "normalized_hash": "eded15d22377fa66487c2298c8cbd29fb4ff0143260b1ff697811ec9ef1ee5a7"
+    },
+    {
+      "generated_output_family": "direct_llm",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_01/generated/PERF_0056/spark/direct_llm_same_engine_rewrite.sql",
+      "normalized_hash": "d6e396736f41cfec68b7eaaa02dcb59a48701e154b4a30cc91a6c8b305b94f66"
+    },
+    {
+      "generated_output_family": "direct_llm",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_01/generated/PERF_0062/mysql/direct_llm_same_engine_rewrite.sql",
+      "normalized_hash": "3ee7b2e1a4cf29ccb3c866f6de001d1bf90199fcd5fd01d577a0441c55691a5f"
+    },
+    {
+      "generated_output_family": "direct_llm",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_01/generated/PERF_0062/pg/direct_llm_same_engine_rewrite.sql",
+      "normalized_hash": "3ee7b2e1a4cf29ccb3c866f6de001d1bf90199fcd5fd01d577a0441c55691a5f"
+    },
+    {
+      "generated_output_family": "direct_llm",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_01/generated/PERF_0062/spark/direct_llm_same_engine_rewrite.sql",
+      "normalized_hash": "3ee7b2e1a4cf29ccb3c866f6de001d1bf90199fcd5fd01d577a0441c55691a5f"
+    },
+    {
+      "generated_output_family": "direct_llm",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_01/generated/PERF_0077/mysql/direct_llm_same_engine_rewrite.sql",
+      "normalized_hash": "b06f9aa6702d2a4a7347ff9f233e95e8dd6be750869028ce04711ea2738a43f8"
+    },
+    {
+      "generated_output_family": "direct_llm",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_01/generated/PERF_0077/pg/direct_llm_same_engine_rewrite.sql",
+      "normalized_hash": "b06f9aa6702d2a4a7347ff9f233e95e8dd6be750869028ce04711ea2738a43f8"
+    },
+    {
+      "generated_output_family": "direct_llm",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_01/generated/PERF_0077/spark/direct_llm_same_engine_rewrite.sql",
+      "normalized_hash": "b06f9aa6702d2a4a7347ff9f233e95e8dd6be750869028ce04711ea2738a43f8"
+    },
+    {
+      "generated_output_family": "direct_llm",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_01/generated/PERF_0082/mysql/direct_llm_same_engine_rewrite.sql",
+      "normalized_hash": "5cd12de2488d96b6c9fd81343202b29ab38647ec5d3d75132643bfad773d788c"
+    },
+    {
+      "generated_output_family": "direct_llm",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_01/generated/PERF_0082/pg/direct_llm_same_engine_rewrite.sql",
+      "normalized_hash": "5cd12de2488d96b6c9fd81343202b29ab38647ec5d3d75132643bfad773d788c"
+    },
+    {
+      "generated_output_family": "direct_llm",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_01/generated/PERF_0082/spark/direct_llm_same_engine_rewrite.sql",
+      "normalized_hash": "5cd12de2488d96b6c9fd81343202b29ab38647ec5d3d75132643bfad773d788c"
+    },
+    {
+      "generated_output_family": "direct_llm",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_01/generated/PORT_0003/mysql/direct_llm_same_engine_rewrite.sql",
+      "normalized_hash": "79319913550616ce9521964d7fdb10ef19c16491c9e4b322a4fd6e1eb41a268f"
+    },
+    {
+      "generated_output_family": "direct_llm",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_01/generated/PORT_0003/pg/direct_llm_same_engine_rewrite.sql",
+      "normalized_hash": "e6adbcbf02c3889e3892407036365a481fbf5a30dee884f5975bb9f4b29e4e6c"
+    },
+    {
+      "generated_output_family": "direct_llm",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_01/generated/PORT_0003/spark/direct_llm_same_engine_rewrite.sql",
+      "normalized_hash": "e6adbcbf02c3889e3892407036365a481fbf5a30dee884f5975bb9f4b29e4e6c"
+    },
+    {
+      "generated_output_family": "direct_llm",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_01/generated/PORT_0004/mysql/direct_llm_same_engine_rewrite.sql",
+      "normalized_hash": "00037ae03261f77daae271ae9a70919a9765fdac4fbf82004287cd960d678606"
+    },
+    {
+      "generated_output_family": "direct_llm",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_01/generated/PORT_0004/pg/direct_llm_same_engine_rewrite.sql",
+      "normalized_hash": "c83375ca8446febe53fc8fe8db4bf99ef56095b84c1510a9a7a9b9ab78df57b4"
+    },
+    {
+      "generated_output_family": "direct_llm",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_01/generated/PORT_0004/spark/direct_llm_same_engine_rewrite.sql",
+      "normalized_hash": "410defa7f9bb3d541f893b33a03cf08d30b936f520d14e29316cb2db056cc06a"
+    },
+    {
+      "generated_output_family": "direct_llm",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_01/generated/PORT_0005/mysql/direct_llm_same_engine_rewrite.sql",
+      "normalized_hash": "4dbaa74b40f9e3bc4446f86bcf1b8920d123438f2fdd5fb210ac15ce2b60c243"
+    },
+    {
+      "generated_output_family": "direct_llm",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_01/generated/PORT_0005/pg/direct_llm_same_engine_rewrite.sql",
+      "normalized_hash": "f33121dd4e7f387a64957177bd7519cea4522f8d113840e335a8d18643ed1782"
+    },
+    {
+      "generated_output_family": "direct_llm",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_01/generated/PORT_0005/spark/direct_llm_same_engine_rewrite.sql",
+      "normalized_hash": "4dbaa74b40f9e3bc4446f86bcf1b8920d123438f2fdd5fb210ac15ce2b60c243"
+    },
+    {
+      "generated_output_family": "direct_llm",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_01/generated/PORT_0008/mysql/direct_llm_same_engine_rewrite.sql",
+      "normalized_hash": "ca205fbe8acde3dc7f7d3e0ebfe5b0177696a75bee519d9cbbe59d005bf16bd7"
+    },
+    {
+      "generated_output_family": "direct_llm",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_01/generated/PORT_0008/pg/direct_llm_same_engine_rewrite.sql",
+      "normalized_hash": "ae69da96e73a96408408c73eab3f6763da1d86137db21e2ebe403066269c3efe"
+    },
+    {
+      "generated_output_family": "direct_llm",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_01/generated/PORT_0008/spark/direct_llm_same_engine_rewrite.sql",
+      "normalized_hash": "d85221638decb797ed0413a2dfe59122c51662249ffa318902bb6e793681b719"
+    },
+    {
+      "generated_output_family": "direct_llm",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_01/generated/PORT_0012/mysql/direct_llm_same_engine_rewrite.sql",
+      "normalized_hash": "3c1764607e7bdd53ee6e9d22036a3f9f58a2c82a48d25be7db0830c17f226598"
+    },
+    {
+      "generated_output_family": "direct_llm",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_01/generated/PORT_0012/pg/direct_llm_same_engine_rewrite.sql",
+      "normalized_hash": "ab542ec90108b03601f8062177ae7a302996a0f76d2d99e915cf0b13727f3808"
+    },
+    {
+      "generated_output_family": "direct_llm",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_01/generated/PORT_0012/spark/direct_llm_same_engine_rewrite.sql",
+      "normalized_hash": "ecce44d2626dc38276440e3b89529500aaaa26711981a2baf5226b2df11734cb"
+    },
+    {
+      "generated_output_family": "direct_llm",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_01/generated/PORT_0013/mysql/direct_llm_same_engine_rewrite.sql",
+      "normalized_hash": "a4272d4a2c3c058d9c69ea5fdaa951a0c5a5d6210b29fdd677061cd76b46de45"
+    },
+    {
+      "generated_output_family": "direct_llm",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_01/generated/PORT_0013/pg/direct_llm_same_engine_rewrite.sql",
+      "normalized_hash": "37d56b5afb14186effe70a4b9ef79636144d6eba02aaf895fa6b28e6f8342d85"
+    },
+    {
+      "generated_output_family": "direct_llm",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_01/generated/PORT_0013/spark/direct_llm_same_engine_rewrite.sql",
+      "normalized_hash": "b368523e6f90f9bac56c48387a44cabe0278bc611b6ae74746a33617b1f07b8c"
+    },
+    {
+      "generated_output_family": "direct_llm",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_01/generated/PORT_0022/mysql/direct_llm_same_engine_rewrite.sql",
+      "normalized_hash": "cbf6f0c89d8cfd52283f48d48a1ff912db1d3075c21ce97713afea3c2fa539cf"
+    },
+    {
+      "generated_output_family": "direct_llm",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_01/generated/PORT_0022/pg/direct_llm_same_engine_rewrite.sql",
+      "normalized_hash": "f470ae8ea741e1fd0cecb8742c5a25e936b0c090717344b38af136d1d832ebfd"
+    },
+    {
+      "generated_output_family": "direct_llm",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_01/generated/PORT_0022/spark/direct_llm_same_engine_rewrite.sql",
+      "normalized_hash": "aa967f59bf2646f7513acda4a6e0bd4459f0c84031e384d6a7d23f9c855bac30"
+    },
+    {
+      "generated_output_family": "direct_llm",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_01/generated/PORT_0024/mysql/direct_llm_same_engine_rewrite.sql",
+      "normalized_hash": "91407b7051bb9d6f9a100792299a4714bdb73899b7e8310c1768323c84537ee7"
+    },
+    {
+      "generated_output_family": "direct_llm",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_01/generated/PORT_0024/pg/direct_llm_same_engine_rewrite.sql",
+      "normalized_hash": "e1d65756c40d8cf9373415a0f2c5a4e6a5fe8c851702eecd44eca0043a0136f2"
+    },
+    {
+      "generated_output_family": "direct_llm",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_01/generated/PORT_0024/spark/direct_llm_same_engine_rewrite.sql",
+      "normalized_hash": "e1d65756c40d8cf9373415a0f2c5a4e6a5fe8c851702eecd44eca0043a0136f2"
+    },
+    {
+      "generated_output_family": "direct_llm",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_01/generated/PORT_0025/mysql/direct_llm_same_engine_rewrite.sql",
+      "normalized_hash": "42864646e2bfb5e8041e800af5c3323f4e9fb22ab0e3a7b4334c19a65cb1b956"
+    },
+    {
+      "generated_output_family": "direct_llm",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_01/generated/PORT_0025/pg/direct_llm_same_engine_rewrite.sql",
+      "normalized_hash": "dd4159e8c1e3b9887a9625cbde18e5cce98cdf15e033fb828cd2a6e75eb5fb05"
+    },
+    {
+      "generated_output_family": "direct_llm",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_01/generated/PORT_0025/spark/direct_llm_same_engine_rewrite.sql",
+      "normalized_hash": "d4f638bd270814dda0e3c966381b36f034beaf10728a97f9b2f657c4748d031f"
+    },
+    {
+      "generated_output_family": "r_bot_pg1_recovery",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/r_bot_pg1_recovery_canary_01/generated/PERF_0006/pg/r_bot_pg_rewrite.sql",
+      "normalized_hash": "4e9ee98a4ed79cbceeaaefb9d2bb9664599853c517977071e69a4f315c7190eb"
+    }
+  ],
+  "manifest_blockers": [
+    "manifest_text_unavailable:/tmp/rewritebench_prior_method_audit/LLM4Rewrite",
+    "manifest_text_unavailable:/tmp/rewritebench_prior_method_audit/LLM4Rewrite/knowledge-base",
+    "manifest_text_unavailable:/tmp/rewritebench_prior_method_audit/LLM4Rewrite/knowledge-base/rule_cluster_funcs",
+    "manifest_text_unavailable:/tmp/rewritebench_prior_method_audit/LLM4Rewrite/rag/stackoverflow-rewrite-embed.zip"
+  ],
+  "normalization_policy": {
+    "collapse_whitespace": true,
+    "lowercase_all_text": true,
+    "remove_trailing_semicolon": true,
+    "strip_block_comments": true,
+    "strip_line_comments": true
+  }
+}
