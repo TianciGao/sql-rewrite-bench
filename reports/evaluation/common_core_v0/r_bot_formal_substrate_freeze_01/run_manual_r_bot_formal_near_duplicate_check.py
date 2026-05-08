@@ -4,18 +4,18 @@ Human-run-only near-duplicate contamination checker for formal R-Bot gate closur
 
 This script does not call any LLM or API, does not run R-Bot, and does not
 execute SQL. It reads denominator source SQL files, computes deterministic
-normalized text features, and compares them against visible text-readable
-included corpus manifest entries.
+normalized text features, and compares them against visible flat-file corpus
+items plus streamed ZIP-derived text rows when those artifacts are available.
 """
 
 from __future__ import annotations
 
 import argparse
 import csv
+import json
 import re
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterable
 
 
 def find_repo_root(start_path: Path) -> Path:
@@ -30,7 +30,9 @@ FREEZE_DIR = Path(__file__).resolve().parent
 ROOT = find_repo_root(FREEZE_DIR)
 
 DENOMINATOR_CSV = ROOT / "reports" / "curation" / "common_core_v0_final_denominator.csv"
-CORPUS_TEXT_MANIFEST_CSV = FREEZE_DIR / "formal_corpus_text_manifest_v1.csv"
+CORPUS_TEXT_MANIFEST_CSV = FREEZE_DIR / "formal_corpus_text_manifest_v2.csv"
+ZIP_TEXT_MANIFEST_CSV = FREEZE_DIR / "formal_zip_text_manifest_v1.csv"
+ZIP_TEXT_HASHES_JSON = FREEZE_DIR / "formal_zip_text_hashes_v1.json"
 
 OUT_CSV = FREEZE_DIR / "formal_near_duplicate_check_v1.csv"
 OUT_SUMMARY_MD = FREEZE_DIR / "formal_near_duplicate_check_summary.md"
@@ -62,6 +64,9 @@ class FeatureRecord:
     token_set: set[str]
     trigram_set: set[str]
     structural_features: dict[str, int]
+    formal_retention_blocker: bool
+    retention_blocker_reason: str
+    source_kind: str
 
 
 def read_csv_rows(path: Path) -> list[dict[str, str]]:
@@ -141,7 +146,15 @@ def safe_read_text(path: Path) -> str | None:
         return None
 
 
-def build_feature_record(item_id: str, path: str, text: str) -> FeatureRecord:
+def build_feature_record(
+    item_id: str,
+    path: str,
+    text: str,
+    *,
+    formal_retention_blocker: bool,
+    retention_blocker_reason: str,
+    source_kind: str,
+) -> FeatureRecord:
     normalized = normalize_sql(text)
     tokens = tokenize_sql(normalized)
     return FeatureRecord(
@@ -151,10 +164,13 @@ def build_feature_record(item_id: str, path: str, text: str) -> FeatureRecord:
         token_set=set(tokens),
         trigram_set=token_ngrams(tokens, 3),
         structural_features=build_structural_features(tokens, normalized),
+        formal_retention_blocker=formal_retention_blocker,
+        retention_blocker_reason=retention_blocker_reason,
+        source_kind=source_kind,
     )
 
 
-def load_manifest_feature_records() -> tuple[list[FeatureRecord], list[str]]:
+def load_visible_manifest_feature_records() -> tuple[list[FeatureRecord], list[str]]:
     rows = read_csv_rows(CORPUS_TEXT_MANIFEST_CSV)
     records: list[FeatureRecord] = []
     blockers: list[str] = []
@@ -163,11 +179,13 @@ def load_manifest_feature_records() -> tuple[list[FeatureRecord], list[str]]:
             continue
         if row.get("path_status") == "missing":
             continue
-        candidate = Path(row["path"])
+        row_path = row.get("path", "")
+        if "::" in row_path or row.get("source_family") == "retrieval_archive_member":
+            continue
+        candidate = Path(row_path)
         if not is_yes(row.get("text_readable")):
             blockers.append(f"binary_or_unavailable_text_corpus:{candidate}")
             continue
-        candidate = Path(row["path"])
         if not candidate.exists():
             blockers.append(f"manifest_path_missing:{candidate}")
             continue
@@ -179,8 +197,73 @@ def load_manifest_feature_records() -> tuple[list[FeatureRecord], list[str]]:
         if not normalized:
             blockers.append(f"manifest_text_empty_after_normalization:{candidate}")
             continue
-        records.append(build_feature_record(row["corpus_item_id"], str(candidate), text))
+        records.append(
+            build_feature_record(
+                row["corpus_item_id"],
+                str(candidate),
+                text,
+                formal_retention_blocker=False,
+                retention_blocker_reason="",
+                source_kind="visible_manifest_file",
+            )
+        )
     return records, blockers
+
+
+def load_zip_text_metadata() -> tuple[dict[str, object] | None, list[str]]:
+    blockers: list[str] = []
+    if not ZIP_TEXT_HASHES_JSON.exists():
+        blockers.append(f"zip_text_hashes_missing:{ZIP_TEXT_HASHES_JSON}")
+        return None, blockers
+    try:
+        payload = json.loads(ZIP_TEXT_HASHES_JSON.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        blockers.append(f"zip_text_hashes_unreadable:{ZIP_TEXT_HASHES_JSON}:{exc}")
+        return None, blockers
+    return payload, blockers
+
+
+def load_zip_manifest_feature_records() -> tuple[list[FeatureRecord], list[str], dict[str, object] | None]:
+    metadata, metadata_blockers = load_zip_text_metadata()
+    rows: list[dict[str, str]] = []
+    blockers = list(metadata_blockers)
+    if not ZIP_TEXT_MANIFEST_CSV.exists():
+        blockers.append(f"zip_text_manifest_missing:{ZIP_TEXT_MANIFEST_CSV}")
+        return [], blockers, metadata
+    try:
+        rows = read_csv_rows(ZIP_TEXT_MANIFEST_CSV)
+    except OSError as exc:
+        blockers.append(f"zip_text_manifest_unreadable:{ZIP_TEXT_MANIFEST_CSV}:{exc}")
+        return [], blockers, metadata
+
+    records: list[FeatureRecord] = []
+    for row in rows:
+        if not is_yes(row.get("included_for_contamination_check")):
+            continue
+        if row.get("path_status") == "missing":
+            continue
+        if not is_yes(row.get("text_readable")):
+            blockers.append(f"binary_or_unavailable_text_corpus:{row.get('zip_entry_name','')}")
+            continue
+        text = row.get("extracted_text", "")
+        normalized = normalize_sql(text)
+        if not normalized:
+            blockers.append(
+                "zip_text_empty_after_normalization:"
+                f"{row.get('zip_entry_name','')}:{row.get('json_field_selector','')}:{row.get('source_record_locator','')}"
+            )
+            continue
+        records.append(
+            build_feature_record(
+                row["zip_text_item_id"],
+                f"{row.get('zip_path','')}::{row.get('zip_entry_name','')}::{row.get('json_field_selector','')}",
+                text,
+                formal_retention_blocker=is_yes(row.get("formal_retention_blocker")),
+                retention_blocker_reason=row.get("retention_blocker_reason", ""),
+                source_kind="zip_text_manifest_row",
+            )
+        )
+    return records, blockers, metadata
 
 
 def write_csv(path: Path, rows: list[dict[str, str]], fieldnames: list[str]) -> None:
@@ -201,7 +284,15 @@ def main() -> int:
     out_md = output_dir / OUT_SUMMARY_MD.name
 
     denominator_rows = [r for r in read_csv_rows(DENOMINATOR_CSV) if r["included_in_common_core_v0"] == "yes"]
-    manifest_records, manifest_blockers = load_manifest_feature_records()
+    visible_records, visible_blockers = load_visible_manifest_feature_records()
+    zip_records, zip_blockers, zip_metadata = load_zip_manifest_feature_records()
+
+    all_records = [*visible_records, *zip_records]
+    all_blockers = [*visible_blockers, *zip_blockers]
+    has_retention_blocker = any(record.formal_retention_blocker for record in all_records)
+    retention_blocker_reasons = sorted(
+        {record.retention_blocker_reason for record in all_records if record.retention_blocker_reason}
+    )
 
     checked_rows: list[dict[str, str]] = []
 
@@ -218,11 +309,13 @@ def main() -> int:
             "near_duplicate_found": "blocked",
             "closest_manifest_item_id": "",
             "closest_manifest_path": "",
+            "closest_manifest_source_kind": "",
             "token_set_jaccard": "",
             "token_trigram_jaccard": "",
             "structural_similarity": "",
             "combined_similarity": "",
-            "attestation_status": "blocked_missing_source_sql",
+            "formal_retention_blocker": "no",
+            "attestation_status": "corpus_text_unavailable",
             "blocker_reason": "",
         }
 
@@ -237,7 +330,14 @@ def main() -> int:
             checked_rows.append(checked)
             continue
 
-        source_record = build_feature_record(case_id, str(source_sql), source_text)
+        source_record = build_feature_record(
+            case_id,
+            str(source_sql),
+            source_text,
+            formal_retention_blocker=False,
+            retention_blocker_reason="",
+            source_kind="denominator_source_sql",
+        )
 
         best_match: FeatureRecord | None = None
         best_scores = {
@@ -246,7 +346,7 @@ def main() -> int:
             "structural_similarity": 0.0,
             "combined_similarity": 0.0,
         }
-        for manifest_record in manifest_records:
+        for manifest_record in all_records:
             token_score = jaccard_similarity(source_record.token_set, manifest_record.token_set)
             trigram_score = jaccard_similarity(source_record.trigram_set, manifest_record.trigram_set)
             structural_score = structural_similarity(
@@ -265,22 +365,22 @@ def main() -> int:
         if best_match is not None:
             checked["closest_manifest_item_id"] = best_match.item_id
             checked["closest_manifest_path"] = best_match.path
+            checked["closest_manifest_source_kind"] = best_match.source_kind
             checked["token_set_jaccard"] = f"{best_scores['token_set_jaccard']:.6f}"
             checked["token_trigram_jaccard"] = f"{best_scores['token_trigram_jaccard']:.6f}"
             checked["structural_similarity"] = f"{best_scores['structural_similarity']:.6f}"
             checked["combined_similarity"] = f"{best_scores['combined_similarity']:.6f}"
 
-        if manifest_blockers or not manifest_records:
-            checked["attestation_status"] = "blocked_corpus_text_unavailable"
+        if all_blockers or not all_records:
+            checked["attestation_status"] = "corpus_text_unavailable"
             checked["near_duplicate_found"] = "blocked"
-            checked["blocker_reason"] = "; ".join(
-                manifest_blockers or ["no text-readable included corpus manifest entries available"]
-            )
+            checked["blocker_reason"] = "; ".join(all_blockers or ["no included corpus text records available"])
             checked_rows.append(checked)
             continue
 
         checked["corpus_text_available"] = "yes"
         checked["near_duplicate_checked"] = "yes"
+        checked["formal_retention_blocker"] = "yes" if has_retention_blocker else "no"
         is_near_duplicate = (
             best_scores["token_set_jaccard"] >= TOKEN_JACCARD_THRESHOLD
             and best_scores["token_trigram_jaccard"] >= TRIGRAM_JACCARD_THRESHOLD
@@ -289,12 +389,15 @@ def main() -> int:
         )
         checked["near_duplicate_found"] = "yes" if is_near_duplicate else "no"
         if is_near_duplicate:
-            checked["attestation_status"] = "failed_near_duplicate_detected"
+            checked["attestation_status"] = "near_duplicate_found"
             checked["blocker_reason"] = (
                 f"visible near-duplicate candidate found in manifest item {checked['closest_manifest_item_id']}"
             )
+        elif has_retention_blocker:
+            checked["attestation_status"] = "formal_retention_blocked"
+            checked["blocker_reason"] = "; ".join(retention_blocker_reasons)
         else:
-            checked["attestation_status"] = "passed"
+            checked["attestation_status"] = "contamination_check_passed_against_visible_text"
             checked["blocker_reason"] = ""
 
         checked_rows.append(checked)
@@ -308,18 +411,23 @@ def main() -> int:
         "near_duplicate_found",
         "closest_manifest_item_id",
         "closest_manifest_path",
+        "closest_manifest_source_kind",
         "token_set_jaccard",
         "token_trigram_jaccard",
         "structural_similarity",
         "combined_similarity",
+        "formal_retention_blocker",
         "attestation_status",
         "blocker_reason",
     ]
     write_csv(out_csv, checked_rows, fieldnames)
 
-    passed = sum(1 for row in checked_rows if row["attestation_status"] == "passed")
-    failed = sum(1 for row in checked_rows if row["attestation_status"] == "failed_near_duplicate_detected")
-    blocked = len(checked_rows) - passed - failed
+    visible_text_passed = sum(
+        1 for row in checked_rows if row["attestation_status"] == "contamination_check_passed_against_visible_text"
+    )
+    failed = sum(1 for row in checked_rows if row["attestation_status"] == "near_duplicate_found")
+    retention_blocked = sum(1 for row in checked_rows if row["attestation_status"] == "formal_retention_blocked")
+    unavailable = sum(1 for row in checked_rows if row["attestation_status"] == "corpus_text_unavailable")
     out_md.write_text(
         "\n".join(
             [
@@ -328,9 +436,10 @@ def main() -> int:
                 "## Status",
                 "",
                 f"- rows covered: `{len(checked_rows)}`",
-                f"- rows passed: `{passed}`",
+                f"- rows passed against visible text: `{visible_text_passed}`",
                 f"- rows failed near-duplicate detection: `{failed}`",
-                f"- rows blocked: `{blocked}`",
+                f"- rows blocked by retention/provenance: `{retention_blocked}`",
+                f"- rows blocked by corpus text unavailability: `{unavailable}`",
                 "",
                 "## Heuristic Features",
                 "",
@@ -344,8 +453,11 @@ def main() -> int:
                 "",
                 "## Corpus Availability",
                 "",
-                f"- visible text-readable included manifest items: `{len(manifest_records)}`",
-                f"- manifest blockers: `{len(manifest_blockers)}`",
+                f"- visible flat-file included manifest items: `{len(visible_records)}`",
+                f"- ZIP-derived text rows available: `{len(zip_records)}`",
+                f"- corpus availability blockers: `{len(all_blockers)}`",
+                f"- ZIP metadata loaded: `{'yes' if zip_metadata is not None else 'no'}`",
+                f"- formal retention blocker present in loaded corpus rows: `{'yes' if has_retention_blocker else 'no'}`",
                 "",
                 "## Gate Impact",
                 "",
