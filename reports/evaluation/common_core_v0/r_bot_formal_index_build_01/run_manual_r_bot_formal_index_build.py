@@ -41,6 +41,14 @@ MANIFEST_HASHES_JSON = (
     ROOT
     / "reports/evaluation/common_core_v0/r_bot_formal_substrate_freeze_01/formal_zip_text_hashes_v1.json"
 )
+ZIP_RETENTION_MANIFEST_JSON = (
+    ROOT
+    / "reports/evaluation/common_core_v0/r_bot_formal_substrate_freeze_01/formal_stackoverflow_zip_retention_manifest_v2.json"
+)
+ZIP_RETENTION_MANIFEST_CSV = (
+    ROOT
+    / "reports/evaluation/common_core_v0/r_bot_formal_substrate_freeze_01/formal_stackoverflow_zip_retention_manifest_v2.csv"
+)
 
 EXPECTED_ZIP_SHA256 = "e7e68b08a4283467f899f05a3150c485e2bf615ccdde4f4ab76e0f08734e546a"
 CORPUS_ARTIFACT_URI = "https://doi.org/10.5281/zenodo.20087267"
@@ -148,6 +156,81 @@ def load_frozen_manifest_metadata() -> dict[str, Any]:
     }
 
 
+def load_zip_retention_metadata() -> dict[str, Any]:
+    if not ZIP_RETENTION_MANIFEST_JSON.exists():
+        raise FileNotFoundError(f"ZIP retention manifest JSON not found: {ZIP_RETENTION_MANIFEST_JSON}")
+    if not ZIP_RETENTION_MANIFEST_CSV.exists():
+        raise FileNotFoundError(f"ZIP retention manifest CSV not found: {ZIP_RETENTION_MANIFEST_CSV}")
+
+    retention_payload = json.loads(ZIP_RETENTION_MANIFEST_JSON.read_text(encoding="utf-8"))
+    csv_rows: list[dict[str, str]] = []
+    with ZIP_RETENTION_MANIFEST_CSV.open(newline="", encoding="utf-8") as handle:
+        reader = csv.DictReader(handle)
+        csv_rows = list(reader)
+
+    if not csv_rows:
+        raise RuntimeError("ZIP retention manifest CSV is empty")
+
+    outer_rows = [row for row in csv_rows if row.get("artifact_scope") == "outer_zip"]
+    if len(outer_rows) != 1:
+        raise RuntimeError(f"Expected exactly one outer_zip row in ZIP retention manifest CSV, found {len(outer_rows)}")
+    outer_row = outer_rows[0]
+
+    expected_uri = CORPUS_ARTIFACT_URI
+    expected_filename = EXPECTED_FILENAME
+    expected_sha = EXPECTED_ZIP_SHA256
+    json_closed = bool(retention_payload.get("zip_external_provenance_closed"))
+    status = str(retention_payload.get("retention_status", ""))
+    uri = str(retention_payload.get("external_artifact_uri", ""))
+    filename = str(retention_payload.get("expected_filename", ""))
+    outer_sha = str(retention_payload.get("outer_zip_sha256", ""))
+
+    if uri != expected_uri:
+        raise RuntimeError(f"ZIP retention manifest URI mismatch: expected {expected_uri}, observed {uri}")
+    if filename != expected_filename:
+        raise RuntimeError(f"ZIP retention manifest filename mismatch: expected {expected_filename}, observed {filename}")
+    if outer_sha != expected_sha:
+        raise RuntimeError(f"ZIP retention manifest SHA-256 mismatch: expected {expected_sha}, observed {outer_sha}")
+    if status != "externally_retained_with_checksum":
+        raise RuntimeError(
+            "ZIP retention manifest status mismatch: expected externally_retained_with_checksum, "
+            f"observed {status}"
+        )
+    if not json_closed:
+        raise RuntimeError("ZIP retention manifest does not mark external provenance as closed")
+
+    csv_uri = outer_row.get("external_artifact_uri", "")
+    csv_filename = outer_row.get("expected_filename", "")
+    csv_sha = outer_row.get("outer_zip_sha256", "")
+    csv_status = outer_row.get("retention_status", "")
+    csv_closed = outer_row.get("zip_external_provenance_closed", "").strip().lower()
+    if csv_uri != expected_uri:
+        raise RuntimeError(f"ZIP retention manifest CSV URI mismatch: expected {expected_uri}, observed {csv_uri}")
+    if csv_filename != expected_filename:
+        raise RuntimeError(
+            f"ZIP retention manifest CSV filename mismatch: expected {expected_filename}, observed {csv_filename}"
+        )
+    if csv_sha != expected_sha:
+        raise RuntimeError(f"ZIP retention manifest CSV SHA-256 mismatch: expected {expected_sha}, observed {csv_sha}")
+    if csv_status != "externally_retained_with_checksum":
+        raise RuntimeError(
+            "ZIP retention manifest CSV status mismatch: expected externally_retained_with_checksum, "
+            f"observed {csv_status}"
+        )
+    if csv_closed != "yes":
+        raise RuntimeError("ZIP retention manifest CSV does not mark external provenance as closed")
+
+    return {
+        "zip_external_artifact_uri": uri,
+        "zip_retention_status": status,
+        "zip_provenance_closed": True,
+        "zip_retention_manifest_path": str(ZIP_RETENTION_MANIFEST_JSON),
+        "zip_retention_manifest_csv_path": str(ZIP_RETENTION_MANIFEST_CSV),
+        "zip_retention_scope": retention_payload.get("scope"),
+        "zip_retention_notes": retention_payload.get("notes", []),
+    }
+
+
 def compute_directory_hashes(index_dir: Path) -> list[dict[str, str]]:
     if not index_dir.exists():
         return []
@@ -206,6 +289,7 @@ def build_identifier(
     error: str | None,
 ) -> dict[str, object]:
     manifest_metadata = load_frozen_manifest_metadata()
+    zip_retention_metadata = load_zip_retention_metadata()
     index_id: str | None = None
     if dry_run:
         index_id = "r_bot_formal_chroma_index_01_dry_run_preview"
@@ -236,13 +320,18 @@ def build_identifier(
         "zip_path_used": str(zip_path),
         "zip_sha256_verified": True,
         "zip_member_hashes": ENTRY_HASHES,
+        "zip_external_artifact_uri": zip_retention_metadata["zip_external_artifact_uri"],
+        "zip_retention_status": zip_retention_metadata["zip_retention_status"],
+        "zip_provenance_closed": zip_retention_metadata["zip_provenance_closed"],
+        "zip_retention_manifest_path": zip_retention_metadata["zip_retention_manifest_path"],
+        "zip_retention_manifest_csv_path": zip_retention_metadata["zip_retention_manifest_csv_path"],
         "manifest_csv_path": manifest_metadata["manifest_csv_path"],
         "manifest_hashes_json_path": manifest_metadata["manifest_hashes_json_path"],
         "extracted_text_row_count": manifest_metadata["extracted_text_row_count"],
         "extracted_rows_by_entry": manifest_metadata["extracted_rows_by_entry"],
         "manifest_normalization_policy": manifest_metadata["normalization_policy"],
-        "manifest_retention_blocker": manifest_metadata["manifest_retention_blocker"],
-        "manifest_retention_blocker_reason": manifest_metadata["manifest_retention_blocker_reason"],
+        "manifest_retention_blocker": not zip_retention_metadata["zip_provenance_closed"],
+        "manifest_retention_blocker_reason": None,
         "dry_run": dry_run,
         "build_executed": status == "built",
         "status": status,
@@ -272,6 +361,10 @@ def write_markdown_report(path: Path, identifier: dict[str, object], error: str 
         f"- manifest CSV: `{identifier['manifest_csv_path']}`",
         f"- manifest hashes JSON: `{identifier['manifest_hashes_json_path']}`",
         f"- manifest retention blocker: `{identifier['manifest_retention_blocker']}`",
+        f"- zip external artifact URI: `{identifier['zip_external_artifact_uri']}`",
+        f"- zip retention status: `{identifier['zip_retention_status']}`",
+        f"- zip provenance closed: `{identifier['zip_provenance_closed']}`",
+        f"- zip retention manifest: `{identifier['zip_retention_manifest_path']}`",
         "",
         "## Index Target",
         "",

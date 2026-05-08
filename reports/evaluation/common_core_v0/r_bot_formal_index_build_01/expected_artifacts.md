@@ -13,6 +13,11 @@ The build helper must derive extracted row metadata from:
 - `reports/evaluation/common_core_v0/r_bot_formal_substrate_freeze_01/formal_zip_text_manifest_v1.csv`
 - `reports/evaluation/common_core_v0/r_bot_formal_substrate_freeze_01/formal_zip_text_hashes_v1.json`
 
+The build helper must derive ZIP provenance closure metadata from:
+
+- `reports/evaluation/common_core_v0/r_bot_formal_substrate_freeze_01/formal_stackoverflow_zip_retention_manifest_v2.json`
+- `reports/evaluation/common_core_v0/r_bot_formal_substrate_freeze_01/formal_stackoverflow_zip_retention_manifest_v2.csv`
+
 ## External Index Output
 
 Default external index output root:
@@ -36,6 +41,10 @@ Current execute-build safety behavior:
 - corpus artifact URI `https://doi.org/10.5281/zenodo.20087267`
 - expected ZIP filename `stackoverflow-rewrite-embed.zip`
 - corpus SHA-256 `e7e68b08a4283467f899f05a3150c485e2bf615ccdde4f4ab76e0f08734e546a`
+- ZIP external artifact URI
+- ZIP retention status
+- ZIP provenance closed flag
+- ZIP retention manifest path
 - embedding model `text-embedding-3-small`
 - rule-vector width `100`
 - total dimension `3172`

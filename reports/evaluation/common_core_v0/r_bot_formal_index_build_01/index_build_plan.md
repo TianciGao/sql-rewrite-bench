@@ -40,9 +40,10 @@ It does not authorize benchmark execution.
 1. Run `run_manual_r_bot_formal_index_build.py` in `--dry-run` mode first.
 2. Review the generated build report and identifier preview.
 3. Confirm the helper is reading the frozen `formal_zip_text_manifest_v1.csv` and `formal_zip_text_hashes_v1.json` package rather than defining an independent row count.
-4. If dry-run metadata is intended to preview a formal run path, pass `--provider-family` explicitly.
-5. Treat `--execute-build` as fail-closed until real embedding/index population is implemented and retained as a formal path.
-6. Only after a real build path exists should the inspect helper be used against a resulting index directory.
+4. Confirm ZIP provenance closure is read from `formal_stackoverflow_zip_retention_manifest_v2.json` rather than from the stale blocker fields inside the older text-manifest package.
+5. If dry-run metadata is intended to preview a formal run path, pass `--provider-family` explicitly.
+6. Treat `--execute-build` as fail-closed until real embedding/index population is implemented and retained as a formal path.
+7. Only after a real build path exists should the inspect helper be used against a resulting index directory.
 
 ## Output Root
 
@@ -81,6 +82,7 @@ Dry-run preview behavior:
 - if `--provider-family` is absent, provider status must be `missing_provider_family`
 - if `--provider-family` is supplied, provider status must be `provider_family_recorded`
 - dry-run row counts must come from the frozen manifest package, not a fresh ZIP recount
+- ZIP provenance closure must come from the retained v2 ZIP retention manifest, not the stale `formal_retention_blocker` field embedded in the older text-manifest package
 
 ## Current Gate Meaning
 
