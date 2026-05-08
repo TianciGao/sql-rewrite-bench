@@ -1,0 +1,66 @@
+{
+  "artifact_name": "stackoverflow-rewrite-embed.zip",
+  "scope": "r_bot_formal_substrate_freeze_01",
+  "original_local_path": "/tmp/rewritebench_prior_method_audit/LLM4Rewrite/rag/stackoverflow-rewrite-embed.zip",
+  "external_artifact_uri": "https://doi.org/10.5281/zenodo.20087267",
+  "external_artifact_citation": "Gao, T., Long, J., Liu, S., & Hao, S. (2026). R-Bot / LLM4Rewrite StackOverflow Rewrite Embedding Corpus for SQL Rewrite Benchmark [Data set]. Zenodo. https://doi.org/10.5281/zenodo.20087267",
+  "external_artifact_doi": "10.5281/zenodo.20087267",
+  "expected_filename": "stackoverflow-rewrite-embed.zip",
+  "retention_status": "externally_retained_with_checksum",
+  "tmp_only": true,
+  "externally_retained": true,
+  "missing_uri": false,
+  "retained_with_checksum": true,
+  "outer_zip_sha256": "e7e68b08a4283467f899f05a3150c485e2bf615ccdde4f4ab76e0f08734e546a",
+  "extraction_contract_ref": "reports/evaluation/common_core_v0/r_bot_formal_substrate_freeze_01/formal_zip_text_extraction_contract.md",
+  "contains_contamination_relevant_text": true,
+  "extracted_text_row_count": 18744,
+  "extracted_field_policy": [
+    "sql",
+    "schema",
+    "rules[]",
+    "question_body_sqls[]",
+    "sql_templates[].template",
+    "sql_template"
+  ],
+  "excluded_from_direct_text_policy": [
+    "__MACOSX metadata sidecars",
+    "embedding vectors as comparison text",
+    "raw ZIP bytes as direct text corpus"
+  ],
+  "entry_hashes": [
+    {
+      "entry_name": "stackoverflow-rewrite-query-optimization.jsonl",
+      "entry_sha256": "cabe00234f4f4e92707b6490e0b540f5aabf97708dd128355243815b772bc4aa",
+      "contains_contamination_relevant_text": true
+    },
+    {
+      "entry_name": "stackoverflow-rewrite-rules-query-optimization.jsonl",
+      "entry_sha256": "cd95e4645c675226c04c2f8c722b6006847778dbf5c6bd27243e304ff2c16c14",
+      "contains_contamination_relevant_text": true
+    },
+    {
+      "entry_name": "stackoverflow-rewrite-sql-templates-query-optimization.jsonl",
+      "entry_sha256": "0b2592bb1c748c7c4ab644ecba330c33c1d0174e54a8b91d1443375955aa2c3e",
+      "contains_contamination_relevant_text": true
+    },
+    {
+      "entry_name": "stackoverflow-rewrite-sql-templates-embed-query-optimization.jsonl",
+      "entry_sha256": "91b45329be8922e8141fdb98f36f9d87d5525eac6b687bec5becb1569b9c83c6",
+      "contains_contamination_relevant_text": true
+    }
+  ],
+  "zip_external_provenance_closed": true,
+  "zip_external_provenance_closure_basis": [
+    "external_artifact_uri is populated with the Zenodo DOI landing page",
+    "expected_filename matches stackoverflow-rewrite-embed.zip",
+    "outer ZIP SHA-256 matches the frozen expected value",
+    "member-level SHA-256 values are preserved from the existing ZIP manifest",
+    "the retained record references the frozen extraction contract"
+  ],
+  "notes": [
+    "This manifest does not copy the ZIP into the repo.",
+    "This manifest closes only the ZIP external provenance blocker.",
+    "This manifest does not close the separate retained index/runtime/artifact-contract blockers."
+  ]
+}
