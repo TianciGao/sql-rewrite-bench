@@ -3,9 +3,10 @@
 ## Status
 
 - rows covered: `40`
-- rows passed: `0`
+- rows passed against visible text: `0`
 - rows failed near-duplicate detection: `0`
-- rows blocked: `40`
+- rows blocked by retention/provenance: `40`
+- rows blocked by corpus text unavailability: `0`
 
 ## Heuristic Features
 
@@ -19,8 +20,11 @@
 
 ## Corpus Availability
 
-- visible text-readable included manifest items: `31`
-- manifest blockers: `1`
+- visible flat-file included manifest items: `31`
+- ZIP-derived text rows available: `18744`
+- corpus availability blockers: `0`
+- ZIP metadata loaded: `yes`
+- formal retention blocker present in loaded corpus rows: `yes`
 
 ## Gate Impact
 

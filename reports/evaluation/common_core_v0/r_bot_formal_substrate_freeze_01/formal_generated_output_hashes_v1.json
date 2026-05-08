@@ -1787,14 +1787,15 @@
       "normalized_hash": "4e9ee98a4ed79cbceeaaefb9d2bb9664599853c517977071e69a4f315c7190eb"
     }
   ],
-  "manifest_blockers": [
-    "binary_or_unavailable_text_corpus:/tmp/rewritebench_prior_method_audit/LLM4Rewrite/rag/stackoverflow-rewrite-embed.zip"
-  ],
+  "manifest_blockers": [],
   "normalization_policy": {
     "collapse_whitespace": true,
     "lowercase_all_text": true,
     "remove_trailing_semicolon": true,
     "strip_block_comments": true,
     "strip_line_comments": true
-  }
+  },
+  "visible_manifest_item_count": 31,
+  "zip_manifest_row_count": 18744,
+  "zip_metadata_loaded": true
 }
