@@ -1,0 +1,153 @@
+{
+  "package_id": "r_bot_formal_substrate_freeze_01",
+  "denominator_id": "common_core_v0_40_same_engine_120",
+  "method_id": "r_bot",
+  "route_id": "r_bot_same_engine_rewrite",
+  "benchmark_ready": false,
+  "formal_gate_status": "closed",
+  "global_policy": {
+    "do_not_copy_large_binaries_into_repo": true,
+    "manifest_only_allowed_for_large_binary_identities": true,
+    "exploratory_pg1_vector_patch_usable_as_formal_evidence": false,
+    "old_prior_method_pg10_reuse_allowed": false
+  },
+  "substrate_items": [
+    {
+      "item": "upstream_LLM4Rewrite_clone",
+      "decision": "deterministically_rebuild_from_pinned_inputs",
+      "identity": {
+        "remote": "https://github.com/curtis-sun/LLM4Rewrite",
+        "commit": "c9c90e5d7867888c3aaba86e4fc9e6d48f53b375"
+      },
+      "formal_requirement": "formal runtime must be built from this exact upstream commit and retain the identity in artifacts",
+      "status": "path_defined_but_not_closed"
+    },
+    {
+      "item": "knowledge_base_rule_corpus",
+      "decision": "deterministically_rebuild_from_pinned_inputs",
+      "identity": {
+        "root_path": "/tmp/rewritebench_prior_method_audit/LLM4Rewrite/knowledge-base",
+        "anchor_file": "rule_cluster_summaries_structured.jsonl",
+        "anchor_sha256": "039823a6b5e87476dfc7a7be1cc9ac1bbeed31ec8972ceaa72364c1a56a03b5d",
+        "rule_cluster_funcs_count": 30
+      },
+      "formal_requirement": "retain manifest-complete inventory and rebuild corpus contents from the pinned upstream checkout",
+      "status": "path_defined_but_not_closed"
+    },
+    {
+      "item": "stackoverflow_rewrite_embed_zip",
+      "decision": "retain_as_external_artifact_with_checksum",
+      "identity": {
+        "path": "/tmp/rewritebench_prior_method_audit/LLM4Rewrite/rag/stackoverflow-rewrite-embed.zip",
+        "sha256": "e7e68b08a4283467f899f05a3150c485e2bf615ccdde4f4ab76e0f08734e546a"
+      },
+      "formal_requirement": "assign external retention URI/provenance and keep checksum in freeze manifest",
+      "status": "path_defined_but_not_closed"
+    },
+    {
+      "item": "chroma_db_index",
+      "decision": "deterministically_rebuild_from_pinned_inputs",
+      "identity": {
+        "current_path": "/tmp/rewritebench_rbot_llm4rewrite_rag_build_openai_like/rag/chroma_db",
+        "current_anchor_hashes": {
+          "chroma.sqlite3": "50d5c588aaae41b3f0d26b7f53b1546bde30632765efaa0a428d9118236392d5",
+          "index_metadata.pickle": "aa39371d0b6c369442bebb8df4b4fca759d6b5abd1a58a2f84b29dd1d61a84d4",
+          "header.bin": "56ac6fd6e2797ab645da45c1904068a760d15d62e298a4307443b2cad56cbffa"
+        }
+      },
+      "formal_requirement": "rebuild index under frozen corpus, frozen dependency snapshot, and frozen 3172 total-dimension policy",
+      "status": "path_defined_but_not_closed"
+    },
+    {
+      "item": "rule_vector_dimension_policy",
+      "decision": "unsupported_must_block_formal_run",
+      "identity": {
+        "formal_total_dimension": 3172,
+        "formal_rule_vector_width": 100,
+        "exploratory_runtime_dimension": 3139
+      },
+      "formal_requirement": "replace exploratory patching with deterministic runtime/index alignment",
+      "status": "blocked_until_policy_freezes"
+    },
+    {
+      "item": "formal_execution_environment",
+      "decision": "repo_manifest_only",
+      "identity": {
+        "smoke_requirements_sha256": "7c944dc6c40904d97e580890d907eea28bddc1615371659441d740a902d9a9c0"
+      },
+      "formal_requirement": "retain requirements, package snapshot, and build recipe; do not retain venv",
+      "status": "path_defined_but_not_closed"
+    },
+    {
+      "item": "provider_model_config",
+      "decision": "repo_manifest_only",
+      "identity": {
+        "model": "gpt-4o-mini",
+        "provider_family": "openai_compatible",
+        "default_provider": "api.gptsapi.net",
+        "default_base_url": "https://api.gptsapi.net/v1",
+        "temperature": 0,
+        "top_p": 1,
+        "max_tokens": 2048,
+        "candidate_count": 1,
+        "feedback_rounds": 0
+      },
+      "formal_requirement": "retain exact provider/model/base_url metadata in run artifacts without exposing secrets",
+      "status": "path_defined_but_not_closed"
+    },
+    {
+      "item": "demo_selection_policy",
+      "decision": "unsupported_must_block_formal_run",
+      "identity": {
+        "top_k": null,
+        "threshold": null,
+        "reranking_mode": null
+      },
+      "formal_requirement": "freeze retrieval mode, top_k, threshold if any, reranking/fusion mode, and per-case exclusion policy",
+      "status": "blocked_until_policy_freezes"
+    },
+    {
+      "item": "contamination_guard",
+      "decision": "unsupported_must_block_formal_run",
+      "identity": {
+        "exclude_denominator_cases": true,
+        "exclude_sqlglot_outputs": true,
+        "exclude_direct_llm_outputs": true,
+        "exclude_calcite_outputs": true,
+        "exclude_rbot_recovery_outputs": true,
+        "normalized_sql_hash_policy_required": true
+      },
+      "formal_requirement": "formal attestation artifact must exist before generation starts",
+      "status": "blocked_until_attested"
+    },
+    {
+      "item": "artifact_contract",
+      "decision": "repo_manifest_only",
+      "identity": {
+        "required_artifacts": [
+          "generated_sql",
+          "selected_rules",
+          "retrieval_trace",
+          "prompt",
+          "raw_response",
+          "token_cost_provider_metadata",
+          "environment_snapshot",
+          "run_results"
+        ]
+      },
+      "formal_requirement": "future formal run must satisfy full retained artifact contract",
+      "status": "blocked_until_formal_run_satisfies_contract"
+    }
+  ],
+  "exact_blockers_before_generation_may_start": [
+    "formal runtime rebuild recipe from pinned LLM4Rewrite commit is not yet written as an executable retained recipe",
+    "external retained artifact URI/provenance for stackoverflow-rewrite-embed.zip is not yet assigned",
+    "knowledge-base manifest is not yet complete enough to close corpus freeze",
+    "formal chroma_db rebuild recipe under the frozen 3172 total-dimension policy is not yet produced",
+    "deterministic rule-vector alignment policy is not yet closed",
+    "exact retrieval top_k is not yet frozen",
+    "exact retrieval threshold/reranking mode is not yet frozen",
+    "formal contamination attestation artifact does not yet exist",
+    "current_benchmark_gate_ready remains false"
+  ]
+}
