@@ -1,0 +1,18 @@
+metric_group,metric_name,numerator,denominator,value,denominator_id,notes
+identity,method_id,,,r_bot,common_core_v0_40_same_engine_120,
+identity,route_id,,,r_bot_same_engine_rewrite,common_core_v0_40_same_engine_120,
+generation,planned_generation_rows,120,120,120,common_core_v0_40_same_engine_120,full_formal_generation_denominator
+generation,generated,7,120,7,common_core_v0_40_same_engine_120,successful_generation_rows
+generation,failed,2,120,2,common_core_v0_40_same_engine_120,generation_failed_rows
+generation,blocked,31,120,31,common_core_v0_40_same_engine_120,blocked_pg_rows
+generation,unsupported,80,120,80,common_core_v0_40_same_engine_120,unsupported_mysql_spark_rows
+generation,generation_success_rate_over_120,7,120,5.83%,common_core_v0_40_same_engine_120,
+execution,execution_denominator_rows,7,7,7,generated_pg7_only,generated_subset_only
+execution,executed,7,7,7,generated_pg7_only,
+execution,execution_failed,0,7,0,generated_pg7_only,
+execution,match_exact,7,7,7,generated_pg7_only,
+execution,mismatch,0,7,0,generated_pg7_only,
+execution,validity_rate_over_generated,7,7,100.00%,generated_pg7_only,
+execution,validity_rate_over_120,7,120,5.83%,common_core_v0_40_same_engine_120,planned_generation_denominator_reference
+rows,generated_row_list,,,\"PERF_0006:pg; PERF_0008:pg; PERF_0013:pg; PERF_0017:pg; PERF_0024:pg; PERF_0052:pg; PERF_0054:pg\",generated_pg7_only,
+rows,failed_row_list,,,\"PERF_0019:pg; PERF_0033:pg\",common_core_v0_40_same_engine_120,
