@@ -1,0 +1,7 @@
+注意:  模式 "ccv0_direct_llm_perf_0024_pg" 不存在
+注意:  串联删除5个其它对象
+DETAIL:  递归删除 表 ccv0_direct_llm_perf_0024_pg.supplier
+递归删除 表 ccv0_direct_llm_perf_0024_pg.nation
+递归删除 表 ccv0_direct_llm_perf_0024_pg.partsupp
+递归删除 表 ccv0_direct_llm_perf_0024_pg.part
+递归删除 表 ccv0_direct_llm_perf_0024_pg.lineitem

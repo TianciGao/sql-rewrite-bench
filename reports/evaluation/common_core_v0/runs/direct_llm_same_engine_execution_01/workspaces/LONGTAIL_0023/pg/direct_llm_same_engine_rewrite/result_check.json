@@ -1,0 +1,7 @@
+{
+  "execution_status_observed": "execution_failed",
+  "consistency_check_status": "not_checked_execution_failed",
+  "error_type": "CalledProcessError",
+  "error_message": "Command '['psql', '-v', 'ON_ERROR_STOP=1', '-X', '-q', '-c', 'SET search_path TO ccv0_direct_llm_longtail_0023_pg;', '-c', \"COPY (WITH OutboundLinks AS (\\n    SELECT\\n        pl.PostId,\\n        COUNT(*) AS outbound_count\\n    FROM\\n        PostLinks pl\\n    GROUP BY\\n        pl.PostId\\n),\\nInboundLinks AS (\\n    SELECT\\n        pl.RelatedPostId AS PostId,\\n        COUNT(*) AS inbound_count\\n    FROM\\n        PostLinks pl\\n    GROUP BY\\n        pl.RelatedPostId\\n)\\nSELECT\\n    p.Id AS PostId,\\n    p.Title,\\n    COALESCE(o.outbound_count, 0) AS outbound_count,\\n    COALESCE(i.inbound_count, 0) AS inbound_count,\\n    COALESCE(o.outbound_count, 0) + COALESCE(i.inbound_count, 0) AS total_links\\nFROM\\n    Posts p\\nLEFT JOIN\\n    OutboundLinks o ON o.PostId = p.Id\\nLEFT JOIN\\n    InboundLinks i ON i.PostId = p.Id\\nWHERE\\n    total_links > 0\\nORDER BY\\n    total_links DESC,\\n    p.Id) TO STDOUT WITH (FORMAT CSV, DELIMITER E'\\\\t', NULL 'NULL');\"]' returned non-zero exit status 1.",
+  "result_check_path": "reports/evaluation/common_core_v0/runs/direct_llm_same_engine_execution_01/workspaces/LONGTAIL_0023/pg/direct_llm_same_engine_rewrite/result_check.json"
+}

@@ -1,0 +1,5 @@
+注意:  模式 "ccv0_direct_llm_longtail_0012_pg" 不存在
+注意:  串联删除3个其它对象
+DETAIL:  递归删除 表 ccv0_direct_llm_longtail_0012_pg.users
+递归删除 表 ccv0_direct_llm_longtail_0012_pg.posts
+递归删除 表 ccv0_direct_llm_longtail_0012_pg.votes

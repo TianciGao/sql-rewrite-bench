@@ -1,0 +1,13 @@
+注意:  模式 "ccv0_direct_llm_perf_0019_pg" 不存在
+错误:  字段 "c_count" 不存在
+LINE 2:     c_count,
+            ^
+HINT:  也许您想要引用列"c_orders.count"。
+注意:  串联删除2个其它对象
+DETAIL:  递归删除 表 ccv0_direct_llm_perf_0019_pg.customer
+递归删除 表 ccv0_direct_llm_perf_0019_pg.orders
+Traceback (most recent call last):
+  File "<stdin>", line 153, in run_postgres_row
+  File "/usr/lib/python3.12/subprocess.py", line 571, in run
+    raise CalledProcessError(retcode, process.args,
+subprocess.CalledProcessError: Command '['psql', '-v', 'ON_ERROR_STOP=1', '-X', '-q', '-c', 'SET search_path TO ccv0_direct_llm_perf_0019_pg;', '-c', "COPY (select\n    c_count,\n    count(*) as custdist\nfrom\n    (\n        select\n            c_custkey,\n            count(o_orderkey)\n        from\n            customer\n            left join orders on\n                c_custkey = o_custkey\n                and o_comment not like '%express%deposits%'\n        group by\n            c_custkey\n    ) as c_orders\ngroup by\n    c_count\norder by\n    custdist desc,\n    c_count desc) TO STDOUT WITH (FORMAT CSV, DELIMITER E'\\t', NULL 'NULL');"]' returned non-zero exit status 1.
