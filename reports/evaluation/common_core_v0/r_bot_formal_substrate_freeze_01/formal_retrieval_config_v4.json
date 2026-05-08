@@ -1,0 +1,110 @@
+{
+  "config_id": "r_bot_formal_retrieval_config_v4",
+  "denominator_id": "common_core_v0_40_same_engine_120",
+  "method_id": "r_bot",
+  "route_id": "r_bot_same_engine_rewrite",
+  "status": "similarity_threshold_closed_other_substrate_items_still_blocked",
+  "current_benchmark_gate_ready": false,
+  "formal_generation_may_start": false,
+  "retrieval_backend": "chroma_backed_retrieval",
+  "retrieval_target": "same_engine_rule_and_example_selection",
+  "paper_faithful_config": {
+    "retrieval_top_k": {
+      "value": 10,
+      "status": "frozen_from_supplied_paper_facts"
+    },
+    "reranking_mode": {
+      "value": "rrf",
+      "status": "frozen_from_supplied_paper_facts"
+    },
+    "rrf_k": {
+      "value": 60,
+      "status": "frozen_from_supplied_paper_facts"
+    },
+    "similarity_threshold": {
+      "value": null,
+      "status": "explicit_none_observed",
+      "basis": "visible retrieval code audit found no retrieval-time threshold parameter or score-cutoff filter"
+    },
+    "embedding_model": {
+      "value": "text-embedding-3-small",
+      "status": "consistent_with_repo_extraction"
+    }
+  },
+  "benchmark_common_config": {
+    "policy_basis": "retain paper retrieval defaults unless a documented benchmark-side exception is approved",
+    "retrieval_top_k": {
+      "value": 10,
+      "status": "frozen_from_paper_default_retained_for_benchmark_common"
+    },
+    "reranking_mode": {
+      "value": "rrf",
+      "status": "frozen_from_paper_default_retained_for_benchmark_common"
+    },
+    "rrf_k": {
+      "value": 60,
+      "status": "frozen_from_paper_default_retained_for_benchmark_common"
+    },
+    "similarity_threshold": {
+      "value": null,
+      "status": "explicit_none_observed",
+      "reason": "visible retrieval implementation shows top_k truncation and reciprocal-rank reranking but no retrieval-time threshold or score-cutoff filtering"
+    },
+    "embedding_model_provider": {
+      "provider_family": "openai_compatible",
+      "provider_name": "api.gptsapi.net",
+      "base_url": "https://api.gptsapi.net/v1",
+      "embedding_model_name": "text-embedding-3-small",
+      "status": "candidate_consistent_with_repo_extraction_but_exact_rebuild_time_attestation_still_required",
+      "reason": "embedding model value is paper-supported and extraction-consistent, but exact retained rebuild-time provider/model/base_url identity is still not fully closed"
+    }
+  },
+  "index_dimension_contract": {
+    "rule_vector_width": 100,
+    "query_embedding_width": 1536,
+    "template_embedding_width": 1536,
+    "total_dimension": 3172,
+    "rule_vector_policy": "formal_deterministic_policy",
+    "exploratory_patch_acceptable_as_formal_evidence": false
+  },
+  "corpus_identifier": {
+    "status": "partially_defined",
+    "knowledge_base_anchor_sha256": "039823a6b5e87476dfc7a7be1cc9ac1bbeed31ec8972ceaa72364c1a56a03b5d",
+    "retrieval_archive_sha256": "e7e68b08a4283467f899f05a3150c485e2bf615ccdde4f4ab76e0f08734e546a",
+    "remaining_blocker": "full corpus manifest and retained external archive provenance handle are not yet complete"
+  },
+  "index_identifier": {
+    "current_tmp_index_identifier": "/tmp/rewritebench_rbot_llm4rewrite_rag_build_openai_like/rag/chroma_db",
+    "current_tmp_index_retained_as_formal_evidence": false,
+    "formal_path": "must_rebuild_deterministically",
+    "status": "blocked_not_yet_rebuilt"
+  },
+  "retrieval_example_source_policy": {
+    "rules_and_examples_may_be_selected_from_frozen_stackoverflow_corpus": true,
+    "condition": "only from the frozen retained corpus line after denominator and generated-output exclusions are attested"
+  },
+  "hard_exclusions": {
+    "exclude_common_core_v0_40_source_sql": true,
+    "exclude_sqlglot_generated_outputs": true,
+    "exclude_direct_llm_generated_outputs": true,
+    "exclude_calcite_generated_outputs": true,
+    "exclude_r_bot_pg1_recovery_outputs": true,
+    "exclude_exact_normalized_duplicates": true,
+    "exclude_near_duplicate_normalized_sql_when_detected": true
+  },
+  "blockers_closed_by_v4": [
+    "retrieval_top_k is frozen at 10 at the documentation freeze layer",
+    "reranking mode is frozen as rrf at the documentation freeze layer",
+    "rrf_k is frozen as 60 at the documentation freeze layer",
+    "embedding model candidate text-embedding-3-small is paper-supported and repo-extraction-consistent",
+    "similarity threshold is closed as explicit_none_observed from visible code audit"
+  ],
+  "remaining_retrieval_blockers": [
+    "embedding provider/model/base_url still needs retained rebuild-time attestation",
+    "formal rebuilt index identifier remains missing",
+    "full corpus manifest and retained external provenance remain incomplete",
+    "contamination guard remains blocked",
+    "artifact contract remains unsatisfied"
+  ],
+  "gate_rule": "formal generation may not start until contamination, corpus, index, artifact, and remaining retrieval-identity blockers are all retained and closed"
+}
