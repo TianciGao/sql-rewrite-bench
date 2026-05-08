@@ -19,12 +19,16 @@ The checker must not:
 
 Required local inputs:
 
-1. `reports/evaluation/common_core_v0/r_bot_formal_substrate_freeze_01/formal_corpus_manifest_draft.csv`
+1. `reports/evaluation/common_core_v0/r_bot_formal_substrate_freeze_01/formal_corpus_text_manifest_v1.csv`
 2. visible generated-output trees if present:
    - `reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generated`
    - `reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_01/generated`
-   - `reports/evaluation/common_core_v0/runs/calcite_same_engine_generation_01/generated`
+   - `reports/evaluation/common_core_v0/runs/calcite_hep_pg40_generation_01/generated`
    - `reports/evaluation/common_core_v0/runs/r_bot_pg1_recovery_canary_01/generated`
+3. visible corpus entries that satisfy all of:
+   - `included_for_contamination_check is yes/true`
+   - `text_readable is yes/true`
+   - `path_status is not missing`
 
 Optional supporting inputs:
 
@@ -50,7 +54,7 @@ For each visible generated SQL file from the known exclusion families, the check
 1. read the generated SQL
 2. normalize it deterministically
 3. compute `normalized_hash`
-4. compare that hash against visible text-readable included corpus manifest entries
+4. compare that hash against visible text-readable included corpus manifest entries selected from the filtered manifest
 5. preserve blocker states when corpus text is incomplete
 
 This checker is about generated-output presence inside the candidate retrieval/demo corpus.
@@ -60,9 +64,16 @@ It is not the denominator exact-match checker.
 
 The checker must not mark generated-output rows passed unless full included corpus text required for the check is actually available.
 
-If any included manifest text source is missing, unreadable, non-text, or empty after normalization, rows must be preserved as:
+If any included manifest source remains unavailable for text checking, rows must be preserved as:
 
 - `blocked_corpus_text_unavailable`
+
+Required examples of exact blocker reasons include:
+
+- `manifest_path_missing:...`
+- `manifest_text_unavailable:...`
+- `manifest_text_empty_after_normalization:...`
+- `binary_or_unavailable_text_corpus:...`
 
 If a generated-output family root is missing, that family must preserve explicit blocked rows such as:
 

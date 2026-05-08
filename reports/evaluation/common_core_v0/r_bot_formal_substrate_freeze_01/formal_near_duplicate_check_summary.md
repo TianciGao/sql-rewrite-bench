@@ -19,8 +19,8 @@
 
 ## Corpus Availability
 
-- visible text-readable included manifest items: `4`
-- manifest blockers: `4`
+- visible text-readable included manifest items: `31`
+- manifest blockers: `1`
 
 ## Gate Impact
 

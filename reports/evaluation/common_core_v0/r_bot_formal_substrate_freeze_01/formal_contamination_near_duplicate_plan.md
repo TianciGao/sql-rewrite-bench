@@ -21,8 +21,11 @@ Required local inputs:
 
 1. `reports/curation/common_core_v0_final_denominator.csv`
 2. denominator case source SQL files under `cases/*/*/source.sql`
-3. `reports/evaluation/common_core_v0/r_bot_formal_substrate_freeze_01/formal_corpus_manifest_draft.csv`
-4. any visible text-readable included corpus entries referenced by that manifest
+3. `reports/evaluation/common_core_v0/r_bot_formal_substrate_freeze_01/formal_corpus_text_manifest_v1.csv`
+4. visible corpus entries that satisfy all of:
+   - `included_for_contamination_check is yes/true`
+   - `text_readable is yes/true`
+   - `path_status is not missing`
 
 Optional supporting inputs:
 
@@ -44,7 +47,7 @@ It is not AST normalization.
 
 ## Heuristic Features
 
-For each denominator source SQL and each visible corpus text item, the checker should compute:
+For each denominator source SQL and each visible corpus text item selected from the filtered manifest, the checker should compute:
 
 1. normalized SQL text
 2. normalized token sequence
@@ -61,7 +64,7 @@ They are intended to produce machine-readable pass/fail/blocker states, not benc
 
 ## Comparison Rule
 
-For each denominator case, the checker should compare the source SQL features against all visible text-readable included manifest items.
+For each denominator case, the checker should compare the source SQL features against all filtered visible text-readable included manifest items.
 
 Minimum recorded outputs per row:
 
@@ -83,7 +86,7 @@ Recommended default trigger:
 
 The checker must not mark a denominator row passed unless full included corpus text required for the check is actually available.
 
-If any included manifest text source is missing, unreadable, non-text, or empty after normalization, rows must be preserved as:
+If any included manifest source remains unavailable for text checking, rows must be preserved as:
 
 - `blocked_corpus_text_unavailable`
 
@@ -92,6 +95,7 @@ Required examples of exact blocker reasons include:
 - `manifest_path_missing:...`
 - `manifest_text_unavailable:...`
 - `manifest_text_empty_after_normalization:...`
+- `binary_or_unavailable_text_corpus:...`
 
 ## Required Outputs
 

@@ -31,7 +31,7 @@ def find_repo_root(start_path: Path) -> Path:
 FREEZE_DIR = Path(__file__).resolve().parent
 ROOT = find_repo_root(FREEZE_DIR)
 
-MANIFEST_DRAFT_CSV = FREEZE_DIR / "formal_corpus_manifest_draft.csv"
+CORPUS_TEXT_MANIFEST_CSV = FREEZE_DIR / "formal_corpus_text_manifest_v1.csv"
 
 OUT_CSV = FREEZE_DIR / "formal_generated_output_exclusion_v1.csv"
 OUT_SUMMARY_MD = FREEZE_DIR / "formal_generated_output_exclusion_summary.md"
@@ -40,8 +40,15 @@ OUT_HASHES_JSON = FREEZE_DIR / "formal_generated_output_hashes_v1.json"
 GENERATED_FAMILIES = {
     "sqlglot": ROOT / "reports" / "evaluation" / "common_core_v0" / "runs" / "sqlglot_same_engine_generation_01" / "generated",
     "direct_llm": ROOT / "reports" / "evaluation" / "common_core_v0" / "runs" / "direct_llm_same_engine_generation_01" / "generated",
-    "calcite": ROOT / "reports" / "evaluation" / "common_core_v0" / "runs" / "calcite_same_engine_generation_01" / "generated",
+    "calcite": ROOT / "reports" / "evaluation" / "common_core_v0" / "runs" / "calcite_hep_pg40_generation_01" / "generated",
     "r_bot_pg1_recovery": ROOT / "reports" / "evaluation" / "common_core_v0" / "runs" / "r_bot_pg1_recovery_canary_01" / "generated",
+}
+
+GENERATED_FAMILY_SQL_GLOBS = {
+    "sqlglot": "*.sql",
+    "direct_llm": "*.sql",
+    "calcite": "calcite_hep_pg_rewrite.sql",
+    "r_bot_pg1_recovery": "*.sql",
 }
 
 
@@ -55,6 +62,10 @@ class HashRecord:
 def read_csv_rows(path: Path) -> list[dict[str, str]]:
     with path.open(newline="", encoding="utf-8") as handle:
         return list(csv.DictReader(handle))
+
+
+def is_yes(value: str | None) -> bool:
+    return (value or "").strip().lower() in {"yes", "true", "1"}
 
 
 def strip_sql_comments(sql: str) -> str:
@@ -76,10 +87,10 @@ def sha256_text(text: str) -> str:
     return hashlib.sha256(text.encode("utf-8")).hexdigest()
 
 
-def iter_sql_files(root: Path) -> Iterable[Path]:
+def iter_sql_files(root: Path, pattern: str = "*.sql") -> Iterable[Path]:
     if not root.exists():
         return []
-    return sorted(path for path in root.rglob("*.sql") if path.is_file())
+    return sorted(path for path in root.rglob(pattern) if path.is_file())
 
 
 def safe_read_text(path: Path) -> str | None:
@@ -92,11 +103,17 @@ def safe_read_text(path: Path) -> str | None:
 
 
 def load_manifest_text_hashes() -> tuple[list[HashRecord], list[str]]:
-    rows = read_csv_rows(MANIFEST_DRAFT_CSV)
+    rows = read_csv_rows(CORPUS_TEXT_MANIFEST_CSV)
     records: list[HashRecord] = []
     blockers: list[str] = []
     for row in rows:
-        if row.get("include_or_exclude") != "include":
+        if not is_yes(row.get("included_for_contamination_check")):
+            continue
+        if row.get("path_status") == "missing":
+            continue
+        candidate = Path(row["path"])
+        if not is_yes(row.get("text_readable")):
+            blockers.append(f"binary_or_unavailable_text_corpus:{candidate}")
             continue
         candidate = Path(row["path"])
         if not candidate.exists():
@@ -112,7 +129,7 @@ def load_manifest_text_hashes() -> tuple[list[HashRecord], list[str]]:
             continue
         records.append(
             HashRecord(
-                item_id=row["manifest_item_id"],
+                item_id=row["corpus_item_id"],
                 path=str(candidate),
                 normalized_hash=sha256_text(normalized),
             )
@@ -160,6 +177,7 @@ def main() -> int:
     }
 
     for family, base_dir in GENERATED_FAMILIES.items():
+        family_pattern = GENERATED_FAMILY_SQL_GLOBS.get(family, "*.sql")
         if not base_dir.exists():
             blocker = f"generated_source_missing:{family}:{base_dir}"
             hash_payload["generated_output_blockers"].append(blocker)
@@ -178,7 +196,7 @@ def main() -> int:
             )
             continue
 
-        for path in iter_sql_files(base_dir):
+        for path in iter_sql_files(base_dir, family_pattern):
             checked = {
                 "generated_output_family": family,
                 "generated_output_path": str(path),

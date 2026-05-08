@@ -30,7 +30,7 @@ FREEZE_DIR = Path(__file__).resolve().parent
 ROOT = find_repo_root(FREEZE_DIR)
 
 DENOMINATOR_CSV = ROOT / "reports" / "curation" / "common_core_v0_final_denominator.csv"
-MANIFEST_DRAFT_CSV = FREEZE_DIR / "formal_corpus_manifest_draft.csv"
+CORPUS_TEXT_MANIFEST_CSV = FREEZE_DIR / "formal_corpus_text_manifest_v1.csv"
 
 OUT_CSV = FREEZE_DIR / "formal_near_duplicate_check_v1.csv"
 OUT_SUMMARY_MD = FREEZE_DIR / "formal_near_duplicate_check_summary.md"
@@ -67,6 +67,10 @@ class FeatureRecord:
 def read_csv_rows(path: Path) -> list[dict[str, str]]:
     with path.open(newline="", encoding="utf-8") as handle:
         return list(csv.DictReader(handle))
+
+
+def is_yes(value: str | None) -> bool:
+    return (value or "").strip().lower() in {"yes", "true", "1"}
 
 
 def strip_sql_comments(sql: str) -> str:
@@ -151,11 +155,17 @@ def build_feature_record(item_id: str, path: str, text: str) -> FeatureRecord:
 
 
 def load_manifest_feature_records() -> tuple[list[FeatureRecord], list[str]]:
-    rows = read_csv_rows(MANIFEST_DRAFT_CSV)
+    rows = read_csv_rows(CORPUS_TEXT_MANIFEST_CSV)
     records: list[FeatureRecord] = []
     blockers: list[str] = []
     for row in rows:
-        if row.get("include_or_exclude") != "include":
+        if not is_yes(row.get("included_for_contamination_check")):
+            continue
+        if row.get("path_status") == "missing":
+            continue
+        candidate = Path(row["path"])
+        if not is_yes(row.get("text_readable")):
+            blockers.append(f"binary_or_unavailable_text_corpus:{candidate}")
             continue
         candidate = Path(row["path"])
         if not candidate.exists():
@@ -169,7 +179,7 @@ def load_manifest_feature_records() -> tuple[list[FeatureRecord], list[str]]:
         if not normalized:
             blockers.append(f"manifest_text_empty_after_normalization:{candidate}")
             continue
-        records.append(build_feature_record(row["manifest_item_id"], str(candidate), text))
+        records.append(build_feature_record(row["corpus_item_id"], str(candidate), text))
     return records, blockers
 
 

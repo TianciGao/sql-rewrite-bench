@@ -1,7 +1,5 @@
 {
-  "generated_output_blockers": [
-    "generated_source_missing:calcite:/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/calcite_same_engine_generation_01/generated"
-  ],
+  "generated_output_blockers": [],
   "generated_output_rows": [
     {
       "generated_output_family": "sqlglot",
@@ -1619,16 +1617,178 @@
       "normalized_hash": "d4f638bd270814dda0e3c966381b36f034beaf10728a97f9b2f657c4748d031f"
     },
     {
+      "generated_output_family": "calcite",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/calcite_hep_pg40_generation_01/generated/CONS_0005/pg/calcite_hep_pg_rewrite.sql",
+      "normalized_hash": "3dddf274150f0d375473f734d7205927bcda3bf95cf003c889da7149b0428a38"
+    },
+    {
+      "generated_output_family": "calcite",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/calcite_hep_pg40_generation_01/generated/CONS_0007/pg/calcite_hep_pg_rewrite.sql",
+      "normalized_hash": "457213f7d862dc838eb6efb76892cd4e73f7b160d3e576338e3996c87a6d6859"
+    },
+    {
+      "generated_output_family": "calcite",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/calcite_hep_pg40_generation_01/generated/CONS_0009/pg/calcite_hep_pg_rewrite.sql",
+      "normalized_hash": "0e0e1891c873beaf11d30e71901017fef44a0fafa8554016283c8388eabaa8e1"
+    },
+    {
+      "generated_output_family": "calcite",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/calcite_hep_pg40_generation_01/generated/CONS_0010/pg/calcite_hep_pg_rewrite.sql",
+      "normalized_hash": "158f68c890b9b5c0c10afecb77cfbc940a8764eef195dc32bae95a20794a69a9"
+    },
+    {
+      "generated_output_family": "calcite",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/calcite_hep_pg40_generation_01/generated/CONS_0011/pg/calcite_hep_pg_rewrite.sql",
+      "normalized_hash": "c23d7d6bf1f26559d2bf3c065826f96d7564751bc62d2be44074b75983abc780"
+    },
+    {
+      "generated_output_family": "calcite",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/calcite_hep_pg40_generation_01/generated/CONS_0012/pg/calcite_hep_pg_rewrite.sql",
+      "normalized_hash": "0559e9230e77554abcc3ee1ae29ea692e7f765266bbf39b0267fec2ef196aaf2"
+    },
+    {
+      "generated_output_family": "calcite",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/calcite_hep_pg40_generation_01/generated/CONS_0024/pg/calcite_hep_pg_rewrite.sql",
+      "normalized_hash": "f0efc777558bdbea860b9c47deea5cbdcb2173016ea2495fa2287f5390b2e738"
+    },
+    {
+      "generated_output_family": "calcite",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/calcite_hep_pg40_generation_01/generated/CONS_0036/pg/calcite_hep_pg_rewrite.sql",
+      "normalized_hash": "0c0c09b7e75013b0b3efa394cdd538bdbe2b6f88d3df6b3c6d1b34d8534b22e8"
+    },
+    {
+      "generated_output_family": "calcite",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/calcite_hep_pg40_generation_01/generated/CONS_0037/pg/calcite_hep_pg_rewrite.sql",
+      "normalized_hash": "d0c18ebf11edfee66d1a40b470e9db37a1fbb23a62eddf647949b9031e44e9a1"
+    },
+    {
+      "generated_output_family": "calcite",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/calcite_hep_pg40_generation_01/generated/LONGTAIL_0011/pg/calcite_hep_pg_rewrite.sql",
+      "normalized_hash": "272de94f657cd92c05e7a05a2283a1637081d19aa3d4ed95cc2f260829217d1c"
+    },
+    {
+      "generated_output_family": "calcite",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/calcite_hep_pg40_generation_01/generated/LONGTAIL_0012/pg/calcite_hep_pg_rewrite.sql",
+      "normalized_hash": "5b71a5c176d6a14a1af84ec358da0dd88316a0e34f4d4e359e0b7f01330b9734"
+    },
+    {
+      "generated_output_family": "calcite",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/calcite_hep_pg40_generation_01/generated/LONGTAIL_0013/pg/calcite_hep_pg_rewrite.sql",
+      "normalized_hash": "0ea0dfde76028fc6f09718c43432ae0bb0b3a85252b3f8ebe9da4d673e5b9b8f"
+    },
+    {
+      "generated_output_family": "calcite",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/calcite_hep_pg40_generation_01/generated/LONGTAIL_0022/pg/calcite_hep_pg_rewrite.sql",
+      "normalized_hash": "ea5b45515515ecfc54020dee8058bd2bbee447be22f3ab3003f7c90f26c8d672"
+    },
+    {
+      "generated_output_family": "calcite",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/calcite_hep_pg40_generation_01/generated/LONGTAIL_0023/pg/calcite_hep_pg_rewrite.sql",
+      "normalized_hash": "718979442c0e0d82583ec8301b97b1ca27510200d1c5d7a4c5fbdb277dadf20b"
+    },
+    {
+      "generated_output_family": "calcite",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/calcite_hep_pg40_generation_01/generated/LONGTAIL_0024/pg/calcite_hep_pg_rewrite.sql",
+      "normalized_hash": "73e1fe1badf0dff73744ac45391e5a996aef2d98a950c95a5e035e99421c2b25"
+    },
+    {
+      "generated_output_family": "calcite",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/calcite_hep_pg40_generation_01/generated/PERF_0006/pg/calcite_hep_pg_rewrite.sql",
+      "normalized_hash": "147f7a20f98f4f5de5f565249d34298b94a26687a78f8d7dc88eec4d36ee14b6"
+    },
+    {
+      "generated_output_family": "calcite",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/calcite_hep_pg40_generation_01/generated/PERF_0007/pg/calcite_hep_pg_rewrite.sql",
+      "normalized_hash": "c29db9d94539b1507baba5e5dd361268f043fd3d9d52ece04f35a8ba7c0baf18"
+    },
+    {
+      "generated_output_family": "calcite",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/calcite_hep_pg40_generation_01/generated/PERF_0008/pg/calcite_hep_pg_rewrite.sql",
+      "normalized_hash": "c8db7040684c9034197ba378115dac1b8c9ce7b5775da3a19a936ef78224f3bf"
+    },
+    {
+      "generated_output_family": "calcite",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/calcite_hep_pg40_generation_01/generated/PERF_0013/pg/calcite_hep_pg_rewrite.sql",
+      "normalized_hash": "f5e5884d14c6475dd189f14d5565082ed3e0dd192473f3009fd4f3e82865b2d9"
+    },
+    {
+      "generated_output_family": "calcite",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/calcite_hep_pg40_generation_01/generated/PERF_0017/pg/calcite_hep_pg_rewrite.sql",
+      "normalized_hash": "7f9794c7a12f3fa20e37f529bf4da33c6643d6d4d5954f292fe24305f3853a97"
+    },
+    {
+      "generated_output_family": "calcite",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/calcite_hep_pg40_generation_01/generated/PERF_0019/pg/calcite_hep_pg_rewrite.sql",
+      "normalized_hash": "d9800c23750d52b4817e3bba76921717f8214bdf9235cbf19c9319f844570d9f"
+    },
+    {
+      "generated_output_family": "calcite",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/calcite_hep_pg40_generation_01/generated/PERF_0024/pg/calcite_hep_pg_rewrite.sql",
+      "normalized_hash": "7e4f8a917cee06adce20d7ce1adf01c60659f2da3a72f1307e19034e8d95dc4e"
+    },
+    {
+      "generated_output_family": "calcite",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/calcite_hep_pg40_generation_01/generated/PERF_0033/pg/calcite_hep_pg_rewrite.sql",
+      "normalized_hash": "c5504c78c6b3012445e780b2e2b5012cfd354a556075cd20ec89fcd0c6f57d83"
+    },
+    {
+      "generated_output_family": "calcite",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/calcite_hep_pg40_generation_01/generated/PERF_0034/pg/calcite_hep_pg_rewrite.sql",
+      "normalized_hash": "5f6a11ec405bd270648406e5d6826c44e5971419540818c28c7292ab763ecba4"
+    },
+    {
+      "generated_output_family": "calcite",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/calcite_hep_pg40_generation_01/generated/PERF_0035/pg/calcite_hep_pg_rewrite.sql",
+      "normalized_hash": "978b4ddfb6c9ed06319a118b6a5b2dfdb61d971f8c1db48a60ad2cdeb6569dc4"
+    },
+    {
+      "generated_output_family": "calcite",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/calcite_hep_pg40_generation_01/generated/PERF_0052/pg/calcite_hep_pg_rewrite.sql",
+      "normalized_hash": "e1ba8ef49103b8d6c3d8a3344ab2007564cdd849c1f5815d10589c601da3cf0a"
+    },
+    {
+      "generated_output_family": "calcite",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/calcite_hep_pg40_generation_01/generated/PERF_0054/pg/calcite_hep_pg_rewrite.sql",
+      "normalized_hash": "05ab67258a56580e716a1bc1705bb57457472955b3da2aab6a8e8bac1b364464"
+    },
+    {
+      "generated_output_family": "calcite",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/calcite_hep_pg40_generation_01/generated/PERF_0056/pg/calcite_hep_pg_rewrite.sql",
+      "normalized_hash": "0564e75dd0fa21570389c5cb278fd28abb38c2a721e3056cd8585a461668e9d0"
+    },
+    {
+      "generated_output_family": "calcite",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/calcite_hep_pg40_generation_01/generated/PERF_0062/pg/calcite_hep_pg_rewrite.sql",
+      "normalized_hash": "3b0ca7d71cac46ef61a6afe8a1f0b644be2dbee6a7f5c948337c83c886110c2f"
+    },
+    {
+      "generated_output_family": "calcite",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/calcite_hep_pg40_generation_01/generated/PERF_0077/pg/calcite_hep_pg_rewrite.sql",
+      "normalized_hash": "4958e277ff98b84d4ec97baf3958ca2fd28858e2e6bada24c0a6c3d51c0c4e6d"
+    },
+    {
+      "generated_output_family": "calcite",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/calcite_hep_pg40_generation_01/generated/PERF_0082/pg/calcite_hep_pg_rewrite.sql",
+      "normalized_hash": "be4ada8207e924abbffccbcd3968f7deca0004a76217010119d310fc83188587"
+    },
+    {
+      "generated_output_family": "calcite",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/calcite_hep_pg40_generation_01/generated/PORT_0013/pg/calcite_hep_pg_rewrite.sql",
+      "normalized_hash": "968765f4bf3c5e1650ebede0e8994adaff66b20ba7f95c0c692bfba051f11c99"
+    },
+    {
+      "generated_output_family": "calcite",
+      "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/calcite_hep_pg40_generation_01/generated/PORT_0024/pg/calcite_hep_pg_rewrite.sql",
+      "normalized_hash": "e3801e516ba38a320c23ce90afcde6fb2bf55d77c6c95a359d7bfa8ce5d53b80"
+    },
+    {
       "generated_output_family": "r_bot_pg1_recovery",
       "generated_output_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/r_bot_pg1_recovery_canary_01/generated/PERF_0006/pg/r_bot_pg_rewrite.sql",
       "normalized_hash": "4e9ee98a4ed79cbceeaaefb9d2bb9664599853c517977071e69a4f315c7190eb"
     }
   ],
   "manifest_blockers": [
-    "manifest_text_unavailable:/tmp/rewritebench_prior_method_audit/LLM4Rewrite",
-    "manifest_text_unavailable:/tmp/rewritebench_prior_method_audit/LLM4Rewrite/knowledge-base",
-    "manifest_text_unavailable:/tmp/rewritebench_prior_method_audit/LLM4Rewrite/knowledge-base/rule_cluster_funcs",
-    "manifest_text_unavailable:/tmp/rewritebench_prior_method_audit/LLM4Rewrite/rag/stackoverflow-rewrite-embed.zip"
+    "binary_or_unavailable_text_corpus:/tmp/rewritebench_prior_method_audit/LLM4Rewrite/rag/stackoverflow-rewrite-embed.zip"
   ],
   "normalization_policy": {
     "collapse_whitespace": true,

@@ -2,16 +2,16 @@
 
 ## Status
 
-- rows covered: `325`
+- rows covered: `357`
 - rows passed: `0`
 - rows failed generated-output exclusion: `0`
-- rows blocked: `325`
+- rows blocked: `357`
 
 ## Corpus Availability
 
-- visible text-readable included manifest items: `4`
-- manifest blockers: `4`
-- generated-output family blockers: `1`
+- visible text-readable included manifest items: `31`
+- manifest blockers: `1`
+- generated-output family blockers: `0`
 
 ## Coverage Scope
 
