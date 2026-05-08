@@ -2,9 +2,9 @@
   "all_required_imports_ok": true,
   "claim_boundary": "smoke_environment_verification_only_not_rbot_result",
   "env_visibility": {
-    "OPENAI_API_BASE": false,
-    "OPENAI_API_KEY": false,
-    "OPENAI_BASE_URL": false
+    "OPENAI_API_BASE": true,
+    "OPENAI_API_KEY": true,
+    "OPENAI_BASE_URL": true
   },
   "package_snapshot_exists": true,
   "probe": "r_bot_smoke_env_verify",
