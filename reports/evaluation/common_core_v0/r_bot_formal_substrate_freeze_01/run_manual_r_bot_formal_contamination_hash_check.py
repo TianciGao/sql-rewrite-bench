@@ -19,8 +19,16 @@ from pathlib import Path
 from typing import Iterable
 
 
-ROOT = Path(__file__).resolve().parents[3]
+def find_repo_root(start_path: Path) -> Path:
+    marker_relpath = Path("reports") / "curation" / "common_core_v0_final_denominator.csv"
+    for candidate in [start_path.resolve(), *start_path.resolve().parents]:
+        if (candidate / ".git").is_dir() or (candidate / marker_relpath).is_file():
+            return candidate
+    raise RuntimeError(f"Unable to locate repo root from {start_path}")
+
+
 FREEZE_DIR = Path(__file__).resolve().parent
+ROOT = find_repo_root(FREEZE_DIR)
 
 DENOMINATOR_CSV = ROOT / "reports" / "curation" / "common_core_v0_final_denominator.csv"
 BASE_ATTESTATION_CSV = FREEZE_DIR / "formal_contamination_attestation_v1.csv"
@@ -320,4 +328,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-
