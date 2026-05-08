@@ -1,0 +1,4 @@
+SELECT "NAME", COUNT(*) AS "C"
+FROM "DEPT"
+GROUP BY "NAME"
+HAVING "NAME" = 'Charlie'

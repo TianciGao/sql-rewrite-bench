@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -u
 
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../../../../../.. && pwd)"
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../../../../.. && pwd)"
 RUN_DIR="$ROOT_DIR/reports/evaluation/common_core_v0/runs/calcite_hep_pg40_generation_01"
 MATRIX_PATH="$RUN_DIR/generation_command_matrix.csv"
 LOG_DIR="$RUN_DIR/logs"
