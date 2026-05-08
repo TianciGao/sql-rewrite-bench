@@ -1,0 +1,108 @@
+{
+  "denominator_id": "common_core_v0_40",
+  "run_scope": "prior_methods_common_core_v0_40_preflight",
+  "methods": [
+    "calcite_hep",
+    "r_bot",
+    "learnedrewrite",
+    "llm_r2"
+  ],
+  "planned_matrix_rows": 480,
+  "engines_considered": [
+    "pg",
+    "mysql",
+    "spark"
+  ],
+  "current_historic_denominator": "prior_method_pg10",
+  "common_core_overlap_denominator": {
+    "denominator_id": "common_core_v0_40_perf_pg9_overlap",
+    "case_ids": [
+      "PERF_0006",
+      "PERF_0008",
+      "PERF_0013",
+      "PERF_0017",
+      "PERF_0019",
+      "PERF_0024",
+      "PERF_0033",
+      "PERF_0052",
+      "PERF_0054"
+    ],
+    "engine": "pg",
+    "claim_boundary": "bounded_perf_pg_overlap_only_not_common_core_v0_40_full"
+  },
+  "method_proposals": {
+    "calcite_hep": {
+      "is_common_core_v0_40_full_feasible_now": false,
+      "safest_denominator": "common_core_v0_40_perf_pg9_overlap",
+      "first_wave_feasible": true,
+      "supports_mysql": false,
+      "supports_spark": false,
+      "notes": "strongest repo-local prior-method candidate; deterministic PG-only overlap rerun is feasible first"
+    },
+    "r_bot": {
+      "is_common_core_v0_40_full_feasible_now": false,
+      "safest_denominator": "prior_method_pg10_until_retrieval_stack_recovered",
+      "next_common_core_denominator_if_recovered": "common_core_v0_40_perf_pg9_overlap_after_retrieval_stack_recovery",
+      "supports_mysql": false,
+      "supports_spark": false,
+      "notes": "historical bounded PG-only evidence exists, but current repo lacks runnable retrieval/control stack"
+    },
+    "learnedrewrite": {
+      "is_common_core_v0_40_full_feasible_now": false,
+      "safest_denominator": "prior_method_pg10_until_adapter_checkpoint_recovered",
+      "next_common_core_denominator_if_recovered": "common_core_v0_40_perf_pg9_overlap_after_adapter_checkpoint_recovery",
+      "supports_mysql": false,
+      "supports_spark": false,
+      "notes": "historical bounded PG-only evidence exists, but current repo lacks adapter/checkpoint/inference stack and most historical outputs were noop-like"
+    },
+    "llm_r2": {
+      "is_common_core_v0_40_full_feasible_now": false,
+      "safest_denominator": "prior_method_pg10_until_runner_recovered",
+      "next_common_core_denominator_if_recovered": "common_core_v0_40_perf_pg9_overlap_after_runner_recovery",
+      "supports_mysql": false,
+      "supports_spark": false,
+      "notes": "historical bounded PG-only evidence is strong, but current repo lacks a runnable official path"
+    }
+  },
+  "recommended_execution_order": [
+    "calcite_hep",
+    "llm_r2",
+    "r_bot",
+    "learnedrewrite"
+  ],
+  "do_not_mix": [
+    "sqlsolver",
+    "verieql",
+    "sqlglot_transpile_port",
+    "llm_translate_port"
+  ],
+  "summary_counts": {
+    "calcite_hep": {
+      "feasible_pg_overlap_subset_only": 9,
+      "unsupported_engine_no_mysql_or_spark_path": 32,
+      "outside_historic_subset_extension_required": 7,
+      "unsupported_outside_perf_scope": 72
+    },
+    "r_bot": {
+      "historical_overlap_case_but_checker_failed": 1,
+      "unsupported_engine_no_mysql_or_spark_path": 32,
+      "outside_historic_subset_extension_required": 7,
+      "subset_rerun_feasible_after_stack_recovery": 6,
+      "historical_overlap_case_generation_failed": 2,
+      "unsupported_outside_perf_scope": 72
+    },
+    "learnedrewrite": {
+      "historical_subset_mostly_noop": 7,
+      "unsupported_engine_no_mysql_or_spark_path": 32,
+      "outside_historic_subset_extension_required": 7,
+      "subset_rerun_feasible_after_artifact_recovery": 2,
+      "unsupported_outside_perf_scope": 72
+    },
+    "llm_r2": {
+      "subset_rerun_feasible_after_runner_recovery": 9,
+      "unsupported_engine_no_mysql_or_spark_path": 32,
+      "outside_historic_subset_extension_required": 7,
+      "unsupported_outside_perf_scope": 72
+    }
+  }
+}
