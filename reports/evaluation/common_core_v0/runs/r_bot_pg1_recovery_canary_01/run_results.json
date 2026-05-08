@@ -1,0 +1,70 @@
+{
+  "run_id": "r_bot_pg1_recovery_canary_01",
+  "method_id": "r_bot",
+  "route_id": "r_bot_pg_rewrite",
+  "denominator_id": "common_core_v0_40_pg40",
+  "canary_denominator_id": "common_core_v0_40_perf_pg1_r_bot_recovery_canary",
+  "planned_rows": 1,
+  "git_commit": "c7a453a6dc4e738e39decbb6b51725a0eb849643",
+  "case_id": "PERF_0006",
+  "pool": "performance",
+  "engine": "pg",
+  "runner_scaffold": "python -m scripts.cli formal-rbot-llm4rewrite-single-case-smoke-run --case PERF_0006",
+  "retrieval_stack_status": "partial_tmp_only",
+  "retrieval_corpus_status": "partial_tmp_only",
+  "prompt_demo_policy_status": "not_frozen",
+  "contamination_guard_status": "not_available",
+  "env_visibility": {
+    "OPENAI_API_KEY": false,
+    "PGHOST": true,
+    "PGPORT": true,
+    "PGDATABASE": true,
+    "PGUSER": true,
+    "PGPASSWORD": true
+  },
+  "tmp_visibility": {
+    "llm4rewrite_clone_visible": true,
+    "rag_index_visible": true,
+    "smoke_venv_visible": true
+  },
+  "dry_run_summary_path": "",
+  "smoke_result_tmp_path": "",
+  "allow_actual_run": true,
+  "dry_run_can_execute_next": false,
+  "actual_run_attempted": false,
+  "generation_status": "blocked",
+  "feasibility_status": "blocked_policy_and_runtime_recovery_required",
+  "blocker_reason": "blocked_policy_missing_prompt_demo_not_frozen; blocked_policy_missing_contamination_guard; actual_run_refused_dry_run_not_ready",
+  "generated_sql_path": "reports/evaluation/common_core_v0/runs/r_bot_pg1_recovery_canary_01/generated/PERF_0006/pg/r_bot_pg_rewrite.sql",
+  "generated_sql_copied": false,
+  "steps": [
+    {
+      "step": "adapter_preflight",
+      "command": "python -m scripts.cli formal-rbot-llm4rewrite-adapter-preflight --case PERF_0006",
+      "exit_code": 0,
+      "stdout_log": "reports/evaluation/common_core_v0/runs/r_bot_pg1_recovery_canary_01/logs/adapter_preflight.stdout.log",
+      "stderr_log": "reports/evaluation/common_core_v0/runs/r_bot_pg1_recovery_canary_01/logs/adapter_preflight.stderr.log"
+    },
+    {
+      "step": "smoke_preflight",
+      "command": "python -m scripts.cli formal-rbot-llm4rewrite-single-case-smoke-preflight --case PERF_0006",
+      "exit_code": 1,
+      "stdout_log": "reports/evaluation/common_core_v0/runs/r_bot_pg1_recovery_canary_01/logs/smoke_preflight.stdout.log",
+      "stderr_log": "reports/evaluation/common_core_v0/runs/r_bot_pg1_recovery_canary_01/logs/smoke_preflight.stderr.log"
+    },
+    {
+      "step": "smoke_dry_run",
+      "command": "python -m scripts.cli formal-rbot-llm4rewrite-single-case-smoke-run --case PERF_0006 --dry-run --fresh-run-name",
+      "exit_code": 1,
+      "stdout_log": "reports/evaluation/common_core_v0/runs/r_bot_pg1_recovery_canary_01/logs/smoke_dry_run.stdout.log",
+      "stderr_log": "reports/evaluation/common_core_v0/runs/r_bot_pg1_recovery_canary_01/logs/smoke_dry_run.stderr.log"
+    }
+  ],
+  "dry_run_payload": {},
+  "actual_run_payload": {},
+  "notes": [
+    "old_r_bot_numeric_results_are_historical_only_not_current_metrics",
+    "this_canary_is_pg_only_and_one_case_only",
+    "actual_generation_depends_on_tmp_substrate_and_unfrozen_policy_state"
+  ]
+}

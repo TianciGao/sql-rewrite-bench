@@ -1,0 +1,28 @@
+# R-Bot / LLM4Rewrite PG1 smoke recovery requirements proposal
+# Planning artifact only. Do not install from this file as part of this task.
+#
+# Boundary:
+# - intended for the external /tmp smoke venv, not as a repo-wide startup dependency
+# - old numeric R-Bot results remain historical-only
+# - this file records the recoverable dependency surface inferred from current scaffolds
+#
+# Important note on psycopg2:
+# - upstream requirements.txt uses `psycopg2`
+# - the smoke dependency probe succeeded only after replacing that line with
+#   `psycopg2-binary` in /tmp, because source build was blocked by missing pg_config
+# - keep that substitution explicit and smoke-scoped
+
+chromadb==1.5.9
+llama-index-core==0.14.21
+llama-index-vector-stores-chroma
+llama-index-embeddings-openai
+llama-index-embeddings-huggingface
+llama-index-llms-openai
+llama-index-llms-openai-like
+jsonlines
+jpype1==1.7.0
+psycopg2-binary==2.9.12
+sqlglot==30.7.0
+prettytable==3.17.0
+scipy==1.17.1
+openai==2.34.0
