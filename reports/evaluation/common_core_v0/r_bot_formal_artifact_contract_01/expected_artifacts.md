@@ -30,6 +30,6 @@ It reports whether:
 - row-level and package-level path definitions are complete
 - required schema keys are defined
 - non-success rows remain explicitly representable
-- secret-hygiene rules are present
+- structured secret-hygiene rules are present and can be applied to actual retained artifacts
 
 It must not treat absent generated run outputs as a failure by itself.

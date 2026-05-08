@@ -30,7 +30,7 @@ It validates:
 - deterministic row-level artifact paths
 - required schema-key definitions
 - row-status coverage for `generated`, `failed`, `blocked`, `unsupported`, and `skipped`
-- secret-hygiene rules
+- structured secret-hygiene rules, then applies them only when scanning actual retained artifacts
 
 It does not require generated outputs to exist already.
 

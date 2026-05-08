@@ -64,6 +64,28 @@ def scan_text_for_secrets(text: str, forbidden_substrings: list[str]) -> str | N
     return None
 
 
+def build_forbidden_secret_tokens(secret_hygiene: dict[str, Any]) -> list[str]:
+    tokens: list[str] = []
+    for item in secret_hygiene.get("forbidden_env_var_assignments", []):
+        env_var_name = item.get("env_var_name")
+        if isinstance(env_var_name, str) and env_var_name:
+            tokens.append(f"{env_var_name}=")
+    for item in secret_hygiene.get("forbidden_http_authorization_patterns", []):
+        header_name = item.get("header_name")
+        token_scheme = item.get("token_scheme")
+        if isinstance(header_name, str) and header_name and isinstance(token_scheme, str) and token_scheme:
+            tokens.append(f"{header_name}: {token_scheme} ")
+    for item in secret_hygiene.get("forbidden_json_value_keys", []):
+        field_name = item.get("field_name")
+        if isinstance(field_name, str) and field_name:
+            tokens.append(f"\"{field_name}\":")
+    for item in secret_hygiene.get("forbidden_value_prefixes", []):
+        value_prefix = item.get("value_prefix")
+        if isinstance(value_prefix, str) and value_prefix:
+            tokens.append(value_prefix)
+    return tokens
+
+
 def validate_expected_paths_spec(spec: dict[str, Any]) -> list[dict[str, Any]]:
     checks: list[dict[str, Any]] = []
     ensure(spec.get("spec_version") == "formal_artifact_expected_paths_v1", "invalid_expected_paths_version", "Unexpected expected-paths spec version.")
@@ -111,11 +133,11 @@ def validate_expected_paths_spec(spec: dict[str, Any]) -> list[dict[str, Any]]:
     checks.append({"name": "package_artifacts", "status": "pass"})
 
     secret_hygiene = spec.get("secret_hygiene", {})
-    forbidden_substrings = secret_hygiene.get("forbidden_substrings", [])
-    ensure(bool(forbidden_substrings), "missing_secret_hygiene_rules", "Expected-paths spec must define forbidden secret substrings.")
-    serialized = json.dumps(spec, sort_keys=True)
-    forbidden_in_spec = scan_text_for_secrets(serialized, forbidden_substrings)
-    ensure(forbidden_in_spec is None, "secret_pattern_in_contract_spec", f"Expected-paths spec contains forbidden token {forbidden_in_spec}.")
+    ensure(bool(secret_hygiene.get("forbidden_env_var_assignments")), "missing_secret_hygiene_rules", "Expected-paths spec must define forbidden environment-assignment secret rules.")
+    ensure(bool(secret_hygiene.get("forbidden_http_authorization_patterns")), "missing_secret_hygiene_rules", "Expected-paths spec must define forbidden authorization-header secret rules.")
+    ensure(bool(secret_hygiene.get("forbidden_json_value_keys")), "missing_secret_hygiene_rules", "Expected-paths spec must define forbidden JSON-key secret rules.")
+    ensure(bool(secret_hygiene.get("forbidden_value_prefixes")), "missing_secret_hygiene_rules", "Expected-paths spec must define forbidden secret value-prefix rules.")
+    ensure(bool(secret_hygiene.get("allowed_visibility_flags")), "missing_secret_hygiene_rules", "Expected-paths spec must define allowed visibility-flag fields.")
     checks.append({"name": "secret_hygiene_spec", "status": "pass"})
     return checks
 
@@ -190,8 +212,16 @@ def validate_existing_outputs_if_present(spec: dict[str, Any]) -> list[dict[str,
         checks.append({"name": "existing_output_scan", "status": "not_applicable", "reason": "planned run root does not exist yet"})
         return checks
 
-    forbidden_substrings = spec["secret_hygiene"]["forbidden_substrings"]
+    forbidden_substrings = build_forbidden_secret_tokens(spec["secret_hygiene"])
     package_artifacts = spec["package_artifacts"]
+    row_artifacts = spec["row_artifacts"]
+    contract_rows = load_csv_rows(CONTRACT_MATRIX_PATH)
+
+    def scan_existing_file(path: Path, artifact_name: str) -> None:
+        text = path.read_text(encoding="utf-8")
+        forbidden = scan_text_for_secrets(text, forbidden_substrings)
+        ensure(forbidden is None, "existing_artifact_secret_detected", f"Forbidden token {forbidden} found in {path}.")
+        checks.append({"name": artifact_name, "status": "pass"})
 
     run_results_path = run_root / package_artifacts["run_results"]["relative_path"]
     if run_results_path.exists():
@@ -218,6 +248,27 @@ def validate_existing_outputs_if_present(spec: dict[str, Any]) -> list[dict[str,
         checks.append({"name": "existing_run_event_long", "status": "pass"})
     else:
         checks.append({"name": "existing_run_event_long", "status": "not_present"})
+
+    row_path_fields = {
+        "generated_sql_path": "generated_sql",
+        "selected_rules_path": "selected_rules",
+        "retrieval_trace_path": "retrieval_trace",
+        "prompt_path": "prompt_text",
+        "raw_response_path": "raw_response",
+        "token_cost_provider_path": "token_cost_provider",
+        "environment_snapshot_path": "environment_snapshot",
+        "row_run_metadata_path": "row_run_metadata",
+    }
+    for row in contract_rows:
+        for path_field, artifact_name in row_path_fields.items():
+            artifact_path = REPO_ROOT / row[path_field]
+            if not artifact_path.exists():
+                continue
+            scan_existing_file(artifact_path, f"existing_{artifact_name}:{row['row_id']}")
+            if "required_schema_keys" in row_artifacts[artifact_name]:
+                payload = json.loads(artifact_path.read_text(encoding="utf-8"))
+                for key in row_artifacts[artifact_name]["required_schema_keys"]:
+                    ensure(key in payload, "existing_row_artifact_schema_mismatch", f"{artifact_path} is missing required key {key}.")
     return checks
 
 

@@ -229,14 +229,48 @@
     }
   },
   "secret_hygiene": {
-    "forbidden_substrings": [
-      "OPENAI_API_KEY=",
-      "PGPASSWORD=",
-      "MYSQL_PWD=",
-      "Authorization: Bearer ",
-      "\"api_key\":",
-      "\"password\":",
-      "sk-"
+    "forbidden_env_var_assignments": [
+      {
+        "env_var_name": "OPENAI_API_KEY",
+        "forbidden_context": "assignment_value_present",
+        "token_type": "provider_api_key"
+      },
+      {
+        "env_var_name": "PGPASSWORD",
+        "forbidden_context": "assignment_value_present",
+        "token_type": "database_password"
+      },
+      {
+        "env_var_name": "MYSQL_PWD",
+        "forbidden_context": "assignment_value_present",
+        "token_type": "database_password"
+      }
+    ],
+    "forbidden_http_authorization_patterns": [
+      {
+        "header_name": "Authorization",
+        "token_scheme": "Bearer",
+        "forbidden_context": "credential_value_present",
+        "token_type": "authorization_header_secret"
+      }
+    ],
+    "forbidden_json_value_keys": [
+      {
+        "field_name": "api_key",
+        "forbidden_context": "json_value_present",
+        "token_type": "provider_api_key"
+      },
+      {
+        "field_name": "password",
+        "forbidden_context": "json_value_present",
+        "token_type": "password_secret"
+      }
+    ],
+    "forbidden_value_prefixes": [
+      {
+        "value_prefix": "sk-",
+        "token_type": "provider_api_key_prefix"
+      }
     ],
     "allowed_visibility_flags": [
       "OPENAI_API_KEY visible",

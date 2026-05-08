@@ -30,7 +30,7 @@ It validates:
 - fixed path layout for all `40` cases x `3` engines
 - required schema-key definitions for row-level and package-level artifacts
 - representation of non-success rows without silent dropping
-- secret-hygiene rules for retained artifacts
+- structured secret-hygiene rules for retained artifacts
 - compatibility with the already-frozen formal Chroma index and runtime lock
 
 ## Expected Formal Run Root
@@ -72,6 +72,7 @@ It must:
 - require row-status enums that preserve denominator awareness
 - not require generated outputs to already exist
 - optionally inspect already-present files under the planned run root when they exist
+- derive forbidden secret-token scans from structured policy rather than literal example assignments in the contract spec
 - fail if any inspected retained file exposes a likely secret
 
 ## Pass Condition
@@ -83,7 +84,7 @@ The contract package passes only if all of the following are true:
 - path templates agree with the frozen run plan
 - non-success rows remain representable without row dropping
 - required package and row schema definitions are present
-- no secret values are embedded in the contract package itself
+- the contract package describes forbidden secret classes structurally rather than embedding literal assignment examples
 
 ## Decision Boundary
 
