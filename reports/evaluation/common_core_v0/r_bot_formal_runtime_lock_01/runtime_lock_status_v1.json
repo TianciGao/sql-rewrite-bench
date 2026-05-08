@@ -1,0 +1,43 @@
+{
+  "runtime_lock_status_id": "r_bot_formal_runtime_lock_status_v1",
+  "status_date": "2026-05-08",
+  "runtime_verification_passed": true,
+  "runtime_verify_status": "runtime_verify_passed_gate_still_closed",
+  "requirements_lock_fully_pinned": true,
+  "package_check_count": 53,
+  "package_failure_count": 0,
+  "all_required_packages_importable": true,
+  "all_required_package_versions_match": true,
+  "python_metadata_captured": true,
+  "platform_metadata_captured": true,
+  "provider_metadata_without_secrets": true,
+  "provider_metadata": {
+    "provider_family": "api.gptsapi.net",
+    "provider_name": "api.gptsapi.net",
+    "base_url": null,
+    "secrets_present": false
+  },
+  "formal_index_visibility": {
+    "index_directory_visible": true,
+    "identifier_path": "reports/evaluation/common_core_v0/r_bot_formal_index_build_01/formal_chroma_index_identifier_v1.json",
+    "index_id": "r_bot_formal_chroma_index_01",
+    "rule_vector_width": 100,
+    "total_dimension": 3172
+  },
+  "runtime_dependency_lock_blocker_closed": true,
+  "current_benchmark_gate_ready": false,
+  "formal_generation_may_start": false,
+  "remaining_blockers": [
+    "retained run-path artifact-contract validation remains open",
+    "denominator-aware formal run evidence has not yet been retained",
+    "generation-side runtime attestation remains incomplete until a formal denominator-aware run satisfies the retained artifact contract"
+  ],
+  "source_documents": [
+    "reports/evaluation/common_core_v0/r_bot_formal_runtime_lock_01/runtime_environment_snapshot_v1.json",
+    "reports/evaluation/common_core_v0/r_bot_formal_runtime_lock_01/runtime_verify_report_v1.md",
+    "reports/evaluation/common_core_v0/r_bot_formal_runtime_lock_01/r_bot_formal_requirements_lock.txt",
+    "reports/evaluation/common_core_v0/r_bot_formal_substrate_freeze_01/formal_gate_status_v11.md",
+    "reports/evaluation/common_core_v0/r_bot_formal_index_build_01/formal_chroma_index_identifier_v1.json",
+    "reports/evaluation/common_core_v0/r_bot_formal_protocol/r_bot_parameter_freeze_v2.json"
+  ]
+}
