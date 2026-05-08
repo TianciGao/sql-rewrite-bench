@@ -107,7 +107,9 @@ platformdirs==4.9.6
 prettytable==3.17.0
 propcache==0.4.1
 protobuf==6.33.6
+psycopg-binary==3.3.4
 psycopg2-binary==2.9.12
+psycopg==3.3.4
 pybase64==1.4.3
 pydantic-settings==2.14.0
 pydantic==2.13.3

@@ -11,6 +11,11 @@
 # - the smoke dependency probe succeeded only after replacing that line with
 #   `psycopg2-binary` in /tmp, because source build was blocked by missing pg_config
 # - keep that substitution explicit and smoke-scoped
+#
+# Important note on psycopg v3:
+# - upstream R-Bot / LLM4Rewrite imports `psycopg`
+# - keep `psycopg[binary]` present in the smoke venv for that upstream import path
+# - keep `psycopg2-binary` as well because existing smoke scaffolds may still import `psycopg2`
 
 chromadb==1.5.9
 llama-index-core==0.14.21
@@ -21,6 +26,7 @@ llama-index-llms-openai
 llama-index-llms-openai-like
 jsonlines
 jpype1==1.7.0
+psycopg[binary]
 psycopg2-binary==2.9.12
 sqlglot==30.7.0
 prettytable==3.17.0

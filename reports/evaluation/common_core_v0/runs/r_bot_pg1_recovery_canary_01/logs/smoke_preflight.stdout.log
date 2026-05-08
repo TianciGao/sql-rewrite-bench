@@ -1,10 +1,7 @@
 {
   "adapter_bundle_verified": true,
-  "blockers": [
-    "missing_OPENAI_API_KEY",
-    "missing_required_python_imports"
-  ],
-  "can_execute_next": false,
+  "blockers": [],
+  "can_execute_next": true,
   "case_id": "PERF_0006",
   "chroma_index_visible": false,
   "claim_boundary": "single_case_harness_preflight_only_not_rbot_result",
@@ -21,7 +18,7 @@
   ],
   "llm4rewrite_clone_visible": true,
   "ok": true,
-  "openai_api_key_visible": false,
+  "openai_api_key_visible": true,
   "pg_env_fields": {
     "PGDATABASE": true,
     "PGHOST": true,
@@ -32,13 +29,13 @@
   "pg_schema_found": true,
   "pool": "performance",
   "rag_assets_visible": true,
-  "ran_at_utc": "2026-05-08T07:33:00+00:00",
+  "ran_at_utc": "2026-05-08T10:16:38+00:00",
   "required_python_imports": {
-    "chromadb": false,
-    "jpype": false,
-    "jsonlines": false,
-    "llama_index": false,
-    "psycopg2": false
+    "chromadb": true,
+    "jpype": true,
+    "jsonlines": true,
+    "llama_index": true,
+    "psycopg2": true
   },
   "single_case_harness_created": true,
   "source_sql_found": true,

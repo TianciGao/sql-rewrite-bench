@@ -25,6 +25,11 @@ Make the canary technically runnable at the Python-environment layer by:
 3. snapshotting the installed packages
 4. verifying the required imports and environment-variable visibility
 
+The smoke dependency surface intentionally includes both PostgreSQL client lines:
+
+- `psycopg` via `psycopg[binary]` for upstream `R-Bot` / `LLM4Rewrite`
+- `psycopg2` via `psycopg2-binary` for existing smoke scaffolds, if needed
+
 ## Files In This Package
 
 - [setup_rbot_smoke_venv.sh](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/r_bot_pg1_recovery_canary_01/setup_rbot_smoke_venv.sh)
@@ -57,6 +62,7 @@ The verify script is human-run only and should:
   - `jpype`
   - `jsonlines`
   - `llama_index`
+  - `psycopg`
   - `psycopg2`
   - `openai`
   - `sqlglot`

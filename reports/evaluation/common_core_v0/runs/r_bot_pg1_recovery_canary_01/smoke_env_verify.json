@@ -35,6 +35,11 @@
       "import_ok": true,
       "version": "2.34.0"
     },
+    "psycopg": {
+      "error": null,
+      "import_ok": true,
+      "version": "3.3.4"
+    },
     "psycopg2": {
       "error": null,
       "import_ok": true,

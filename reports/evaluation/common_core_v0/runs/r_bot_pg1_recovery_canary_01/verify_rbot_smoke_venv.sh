@@ -40,6 +40,7 @@ modules = [
     "jpype",
     "jsonlines",
     "llama_index",
+    "psycopg",
     "psycopg2",
     "openai",
     "sqlglot",

@@ -4,6 +4,11 @@ This document lists the expected artifacts from the smoke environment setup pack
 
 It is environment recovery only.
 
+The smoke environment intentionally keeps both PostgreSQL client package lines present:
+
+- `psycopg` via `psycopg[binary]` for upstream `R-Bot` / `LLM4Rewrite`
+- `psycopg2` via `psycopg2-binary` for existing smoke scaffolds, if needed
+
 ## Setup Artifacts
 
 After a successful human run of
@@ -36,6 +41,7 @@ the following should exist:
   - `jpype`
   - `jsonlines`
   - `llama_index`
+  - `psycopg`
   - `psycopg2`
   - `openai`
   - `sqlglot`
