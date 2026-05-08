@@ -1,0 +1,42 @@
+ t0a | t0b 
+-----+-----
+   1 |   1
+(1 row)
+
+ t0a | t0b 
+-----+-----
+   1 |   1
+(1 row)
+
+ t0a | t0b 
+-----+-----
+   1 |   1
+(1 row)
+
+ t0a | t0b 
+-----+-----
+   1 |   1
+(1 row)
+
+ t0a | t0b 
+-----+-----
+   1 |   1
+(1 row)
+
+ t0a | t0b 
+-----+-----
+   1 |   1
+(1 row)
+
+ t0a | t0b 
+-----+-----
+   1 |   1
+(1 row)
+
+ t0a | t0b 
+-----+-----
+   1 |   1
+(1 row)
+
+case_id=CONS_0009 pool=consistency engine=pg route_id=calcite_hep_pg_rewrite
+warmup_count=1 repeat_count=3

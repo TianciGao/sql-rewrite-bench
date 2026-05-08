@@ -1,0 +1,50 @@
+  i_item_id  | total_sales 
+-------------+-------------
+ item_lace   |       50.00
+ item_orchid |      600.00
+(2 rows)
+
+  i_item_id  | total_sales 
+-------------+-------------
+ item_lace   |       50.00
+ item_orchid |      600.00
+(2 rows)
+
+  i_item_id  | total_sales 
+-------------+-------------
+ item_lace   |       50.00
+ item_orchid |      600.00
+(2 rows)
+
+  i_item_id  | total_sales 
+-------------+-------------
+ item_lace   |       50.00
+ item_orchid |      600.00
+(2 rows)
+
+  i_item_id  | total_sales 
+-------------+-------------
+ item_lace   |       50.00
+ item_orchid |      600.00
+(2 rows)
+
+  i_item_id  | total_sales 
+-------------+-------------
+ item_lace   |       50.00
+ item_orchid |      600.00
+(2 rows)
+
+  i_item_id  | total_sales 
+-------------+-------------
+ item_lace   |       50.00
+ item_orchid |      600.00
+(2 rows)
+
+  i_item_id  | total_sales 
+-------------+-------------
+ item_lace   |       50.00
+ item_orchid |      600.00
+(2 rows)
+
+case_id=PERF_0034 pool=performance engine=pg route_id=calcite_hep_pg_rewrite
+warmup_count=1 repeat_count=3

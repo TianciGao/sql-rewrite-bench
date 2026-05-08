@@ -1,0 +1,42 @@
+ d_year | brand_id |   brand   | sum_agg 
+--------+----------+-----------+---------
+   2001 |      700 | Brand#700 |  123.45
+(1 row)
+
+ d_year | brand_id |   brand   | sum_agg 
+--------+----------+-----------+---------
+   2001 |      700 | Brand#700 |  123.45
+(1 row)
+
+ d_year | brand_id |   brand   | sum_agg 
+--------+----------+-----------+---------
+   2001 |      700 | Brand#700 |  123.45
+(1 row)
+
+ d_year | brand_id |   brand   | sum_agg 
+--------+----------+-----------+---------
+   2001 |      700 | Brand#700 |  123.45
+(1 row)
+
+ d_year | brand_id |   brand   | sum_agg 
+--------+----------+-----------+---------
+   2001 |      700 | Brand#700 |  123.45
+(1 row)
+
+ d_year | brand_id |   brand   | sum_agg 
+--------+----------+-----------+---------
+   2001 |      700 | Brand#700 |  123.45
+(1 row)
+
+ d_year | brand_id |   brand   | sum_agg 
+--------+----------+-----------+---------
+   2001 |      700 | Brand#700 |  123.45
+(1 row)
+
+ d_year | brand_id |   brand   | sum_agg 
+--------+----------+-----------+---------
+   2001 |      700 | Brand#700 |  123.45
+(1 row)
+
+case_id=PERF_0054 pool=performance engine=pg route_id=calcite_hep_pg_rewrite
+warmup_count=1 repeat_count=3

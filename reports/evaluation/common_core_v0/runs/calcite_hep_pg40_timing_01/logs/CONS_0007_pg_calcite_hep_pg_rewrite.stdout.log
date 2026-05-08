@@ -1,0 +1,50 @@
+ empid | deptno |   name   |  salary  | commission 
+-------+--------+----------+----------+------------
+   110 |     10 | Theodore | 11500.00 |        250
+   170 |     30 | Theodore | 11500.00 |        250
+(2 rows)
+
+ empid | deptno |   name   |  salary  | commission 
+-------+--------+----------+----------+------------
+   110 |     10 | Theodore | 11500.00 |        250
+   170 |     30 | Theodore | 11500.00 |        250
+(2 rows)
+
+ empid | deptno |   name   |  salary  | commission 
+-------+--------+----------+----------+------------
+   110 |     10 | Theodore | 11500.00 |        250
+   170 |     30 | Theodore | 11500.00 |        250
+(2 rows)
+
+ empid | deptno |   name   |  salary  | commission 
+-------+--------+----------+----------+------------
+   110 |     10 | Theodore | 11500.00 |        250
+   170 |     30 | Theodore | 11500.00 |        250
+(2 rows)
+
+ empid | deptno |   name   |  salary  | commission 
+-------+--------+----------+----------+------------
+   110 |     10 | Theodore | 11500.00 |        250
+   170 |     30 | Theodore | 11500.00 |        250
+(2 rows)
+
+ empid | deptno |   name   |  salary  | commission 
+-------+--------+----------+----------+------------
+   110 |     10 | Theodore | 11500.00 |        250
+   170 |     30 | Theodore | 11500.00 |        250
+(2 rows)
+
+ empid | deptno |   name   |  salary  | commission 
+-------+--------+----------+----------+------------
+   110 |     10 | Theodore | 11500.00 |        250
+   170 |     30 | Theodore | 11500.00 |        250
+(2 rows)
+
+ empid | deptno |   name   |  salary  | commission 
+-------+--------+----------+----------+------------
+   110 |     10 | Theodore | 11500.00 |        250
+   170 |     30 | Theodore | 11500.00 |        250
+(2 rows)
+
+case_id=CONS_0007 pool=consistency engine=pg route_id=calcite_hep_pg_rewrite
+warmup_count=1 repeat_count=3
