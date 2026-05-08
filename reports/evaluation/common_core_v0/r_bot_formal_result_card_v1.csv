@@ -1,0 +1,22 @@
+section,key,value
+identity,method_id,r_bot
+identity,route_id,r_bot_same_engine_rewrite
+generation,formal_generation_denominator,common_core_v0_40_same_engine_120
+generation,planned_generation_rows,120
+generation,generated,7
+generation,failed,2
+generation,blocked,31
+generation,unsupported,80
+generation,generated_rows,"PERF_0006:pg; PERF_0008:pg; PERF_0013:pg; PERF_0017:pg; PERF_0024:pg; PERF_0052:pg; PERF_0054:pg"
+generation,failed_rows,"PERF_0019:pg; PERF_0033:pg"
+execution,execution_denominator,generated_pg7_only
+execution,executed,7
+execution,match_exact,7
+execution,mismatch,0
+timing,timing_denominator,generated_pg7_match_exact_only
+timing,timing_success,7
+timing,gm_speedup_pg7_only,0.947444
+timing,regression_rate_at_20pct_pg7_only,28.57%
+timing,material_regression_rows,"PERF_0006; PERF_0054"
+caveat,denominator_caveat,"not full 120-row timing; not tri-engine timing; not leaderboard-comparable without denominator labels"
+paper,recommended_paper_wording,"On the frozen common_core_v0_40 same-engine denominator (120 planned rows = 40 cases x 3 engines), the recovered formal R-Bot route produced 7 PostgreSQL generations, 2 PostgreSQL generation failures, 31 PostgreSQL blocked rows, and 80 mysql/spark unsupported rows. All 7 generated PostgreSQL rows passed exact-match execution validity. Timing evidence is available only for this generated_pg7_match_exact_only subset, where GM_Speedup = 0.947444 and RegressionRate@20% = 28.57% (2/7). These timing figures are subset-scoped and are not directly comparable to full-denominator or tri-engine leaderboard results without explicit denominator labels."
