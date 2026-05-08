@@ -1,0 +1,24 @@
+SYSTEM / OPERATOR INSTRUCTION
+Produce exactly one semantics-preserving SQL rewrite of the input query in the same target dialect.
+
+REQUIREMENTS
+- Output SQL only.
+- Do not use markdown fences.
+- Do not add explanations.
+- Do not add comments unless comments already exist in the input SQL.
+- Do not output DDL.
+- Do not output INSERT, UPDATE, DELETE, MERGE, COPY, or any data-changing statement.
+- Preserve result semantics exactly.
+- Keep the rewrite in the same target engine / dialect.
+- Avoid engine-specific functions unless they are compatible with the target engine.
+- If the original query is already near-minimal, you may return an equivalent no-op rewrite, but still output SQL only.
+
+TARGET ENGINE
+spark
+
+SCHEMA
+CREATE TABLE account (account_id INT, account_date DATE) USING PARQUET;
+CREATE TABLE loan (account_id INT, duration INT, amount INT) USING PARQUET;
+
+SOURCE SQL
+SELECT `t1`.`account_id` FROM `loan` AS `t1` INNER JOIN `account` AS `t2` ON `t1`.`account_id` = `t2`.`account_id` WHERE DATE_FORMAT( CAST( `t2`.`account_date` AS DATETIME ) , '%Y' ) = '1993' AND `t1`.`duration` > 12 ORDER BY `t1`.`amount` DESC LIMIT 1

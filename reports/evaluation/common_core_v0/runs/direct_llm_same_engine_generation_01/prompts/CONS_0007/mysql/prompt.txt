@@ -1,0 +1,33 @@
+SYSTEM / OPERATOR INSTRUCTION
+Produce exactly one semantics-preserving SQL rewrite of the input query in the same target dialect.
+
+REQUIREMENTS
+- Output SQL only.
+- Do not use markdown fences.
+- Do not add explanations.
+- Do not add comments unless comments already exist in the input SQL.
+- Do not output DDL.
+- Do not output INSERT, UPDATE, DELETE, MERGE, COPY, or any data-changing statement.
+- Preserve result semantics exactly.
+- Keep the rewrite in the same target engine / dialect.
+- Avoid engine-specific functions unless they are compatible with the target engine.
+- If the original query is already near-minimal, you may return an equivalent no-op rewrite, but still output SQL only.
+
+TARGET ENGINE
+mysql
+
+SCHEMA
+CREATE TABLE tmp_emps (empid INT NOT NULL, deptno INT NOT NULL, name VARCHAR(32) NOT NULL, salary DECIMAL(10,2) NOT NULL, commission INT);
+
+SOURCE SQL
+SELECT *
+FROM tmp_emps e1
+WHERE EXISTS (
+  SELECT *
+  FROM (
+    SELECT e2.deptno
+    FROM tmp_emps e2
+    WHERE e2.commission = e1.commission
+  ) AS table3
+  WHERE table3.deptno <> e1.deptno
+);

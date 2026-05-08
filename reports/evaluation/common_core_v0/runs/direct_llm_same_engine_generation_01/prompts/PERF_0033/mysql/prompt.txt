@@ -1,0 +1,66 @@
+SYSTEM / OPERATOR INSTRUCTION
+Produce exactly one semantics-preserving SQL rewrite of the input query in the same target dialect.
+
+REQUIREMENTS
+- Output SQL only.
+- Do not use markdown fences.
+- Do not add explanations.
+- Do not add comments unless comments already exist in the input SQL.
+- Do not output DDL.
+- Do not output INSERT, UPDATE, DELETE, MERGE, COPY, or any data-changing statement.
+- Preserve result semantics exactly.
+- Keep the rewrite in the same target engine / dialect.
+- Avoid engine-specific functions unless they are compatible with the target engine.
+- If the original query is already near-minimal, you may return an equivalent no-op rewrite, but still output SQL only.
+
+TARGET ENGINE
+mysql
+
+SCHEMA
+-- PERF_0033 draft MySQL schema for package enablement review only.
+-- Derived mechanically from schema/ddl_pg.sql.
+-- Draft only: do not treat as executed or validated.
+
+create table date_dim
+(
+    d_date_sk int primary key,
+    d_moy int,
+    d_year int
+);
+
+create table item
+(
+    i_item_sk int primary key,
+    i_manager_id int,
+    i_brand_id int,
+    i_brand varchar(50)
+);
+
+create table store_sales
+(
+    ss_sold_date_sk int,
+    ss_item_sk int,
+    ss_ext_sales_price decimal(9,2)
+);
+
+SOURCE SQL
+-- PERF_0033 source SQL.
+-- Frozen from TPC-DS query55.tpl via repaired repo-local dsqgen:
+--   COUNT=1, QUALIFY=Y, SCALE=1, DIALECT=ansi
+-- PostgreSQL normalization only replaces TOP 100 with LIMIT 100.
+
+select
+    i.i_brand_id as brand_id,
+    i.i_brand as brand,
+    sum(ss.ss_ext_sales_price) as ext_price
+from date_dim d,
+     store_sales ss,
+     item i
+where d.d_date_sk = ss.ss_sold_date_sk
+  and ss.ss_item_sk = i.i_item_sk
+  and i.i_manager_id = 36
+  and d.d_moy = 12
+  and d.d_year = 2001
+group by i.i_brand, i.i_brand_id
+order by ext_price desc, i.i_brand_id
+limit 100;

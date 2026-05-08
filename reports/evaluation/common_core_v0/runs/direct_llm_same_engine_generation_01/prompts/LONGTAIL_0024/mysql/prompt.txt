@@ -1,0 +1,67 @@
+SYSTEM / OPERATOR INSTRUCTION
+Produce exactly one semantics-preserving SQL rewrite of the input query in the same target dialect.
+
+REQUIREMENTS
+- Output SQL only.
+- Do not use markdown fences.
+- Do not add explanations.
+- Do not add comments unless comments already exist in the input SQL.
+- Do not output DDL.
+- Do not output INSERT, UPDATE, DELETE, MERGE, COPY, or any data-changing statement.
+- Preserve result semantics exactly.
+- Keep the rewrite in the same target engine / dialect.
+- Avoid engine-specific functions unless they are compatible with the target engine.
+- If the original query is already near-minimal, you may return an equivalent no-op rewrite, but still output SQL only.
+
+TARGET ENGINE
+mysql
+
+SCHEMA
+CREATE TABLE Posts (
+  Id INT,
+  Title TEXT,
+  Score INT,
+  ViewCount INT
+);
+
+CREATE TABLE PostHistory (
+  Id INT,
+  PostId INT,
+  UserId INT,
+  PostHistoryTypeId INT,
+  CreationDate TIMESTAMP,
+  Text TEXT
+);
+
+SOURCE SQL
+WITH HistoryStats AS (
+    SELECT
+        ph.PostId,
+        COUNT(*) AS revision_count,
+        COUNT(DISTINCT ph.UserId) AS distinct_editors,
+        MIN(ph.CreationDate) AS first_revision_at,
+        MAX(ph.CreationDate) AS last_revision_at
+    FROM
+        PostHistory ph
+    GROUP BY
+        ph.PostId
+)
+SELECT
+    p.Id AS PostId,
+    p.Title,
+    hs.revision_count,
+    hs.distinct_editors,
+    hs.first_revision_at,
+    hs.last_revision_at,
+    p.Score,
+    p.ViewCount
+FROM
+    HistoryStats hs
+JOIN
+    Posts p ON p.Id = hs.PostId
+WHERE
+    hs.revision_count >= 2
+ORDER BY
+    hs.revision_count DESC,
+    hs.last_revision_at DESC,
+    p.Id;

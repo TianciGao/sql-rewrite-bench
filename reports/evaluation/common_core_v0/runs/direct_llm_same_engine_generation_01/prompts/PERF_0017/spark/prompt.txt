@@ -1,0 +1,98 @@
+SYSTEM / OPERATOR INSTRUCTION
+Produce exactly one semantics-preserving SQL rewrite of the input query in the same target dialect.
+
+REQUIREMENTS
+- Output SQL only.
+- Do not use markdown fences.
+- Do not add explanations.
+- Do not add comments unless comments already exist in the input SQL.
+- Do not output DDL.
+- Do not output INSERT, UPDATE, DELETE, MERGE, COPY, or any data-changing statement.
+- Preserve result semantics exactly.
+- Keep the rewrite in the same target engine / dialect.
+- Avoid engine-specific functions unless they are compatible with the target engine.
+- If the original query is already near-minimal, you may return an equivalent no-op rewrite, but still output SQL only.
+
+TARGET ENGINE
+spark
+
+SCHEMA
+-- PERF_0017 minimal Spark SQL schema.
+-- Covers only tables and columns referenced by source.sql and rewrite candidates.
+-- No data rows, load path, execution success, or validation result is implied.
+
+create table customer
+(
+    c_custkey INT,
+    c_name STRING,
+    c_address STRING,
+    c_nationkey INT,
+    c_phone STRING,
+    c_acctbal DECIMAL(15,2),
+    c_comment STRING
+);
+
+create table orders
+(
+    o_orderkey INT,
+    o_custkey INT,
+    o_orderdate DATE
+);
+
+create table lineitem
+(
+    l_orderkey INT,
+    l_extendedprice DECIMAL(15,2),
+    l_discount DECIMAL(15,2),
+    l_returnflag STRING
+);
+
+create table nation
+(
+    n_nationkey INT,
+    n_name STRING
+);
+
+SOURCE SQL
+-- PERF_0017 source layer
+-- Source registry row: SRC_001 (TPC-H)
+-- Raw source file: datasets/raw/tpch/TPC-H V3.0.1/dbgen/queries/10.sql
+-- Seed: TPC-H Query 10, Returned Item Reporting Query
+-- Freeze method: manual freeze because local qgen executable was not used for this batch.
+-- Reference substitution file: datasets/raw/tpch/TPC-H V3.0.1/ref_data/1/subparam_10
+-- Substitutions: :1 = 1993-11-01; :n 20 = LIMIT 20.
+-- No execution, equivalence, rewrite, or validation claim is made by this file.
+
+-- TPC-H/TPC-R Returned Item Reporting Query (Q10)
+select
+    c_custkey,
+    c_name,
+    sum(l_extendedprice * (1 - l_discount)) as revenue,
+    c_acctbal,
+    n_name,
+    c_address,
+    c_phone,
+    c_comment
+from
+    customer,
+    orders,
+    lineitem,
+    nation
+where
+    c_custkey = o_custkey
+    and l_orderkey = o_orderkey
+    and o_orderdate >= date '1993-11-01'
+    and o_orderdate < date '1993-11-01' + interval '3' month
+    and l_returnflag = 'R'
+    and c_nationkey = n_nationkey
+group by
+    c_custkey,
+    c_name,
+    c_acctbal,
+    c_phone,
+    n_name,
+    c_address,
+    c_comment
+order by
+    revenue desc
+limit 20;

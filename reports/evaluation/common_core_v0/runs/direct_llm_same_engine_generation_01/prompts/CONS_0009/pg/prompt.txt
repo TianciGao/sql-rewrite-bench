@@ -1,0 +1,38 @@
+SYSTEM / OPERATOR INSTRUCTION
+Produce exactly one semantics-preserving SQL rewrite of the input query in the same target dialect.
+
+REQUIREMENTS
+- Output SQL only.
+- Do not use markdown fences.
+- Do not add explanations.
+- Do not add comments unless comments already exist in the input SQL.
+- Do not output DDL.
+- Do not output INSERT, UPDATE, DELETE, MERGE, COPY, or any data-changing statement.
+- Preserve result semantics exactly.
+- Keep the rewrite in the same target engine / dialect.
+- Avoid engine-specific functions unless they are compatible with the target engine.
+- If the original query is already near-minimal, you may return an equivalent no-op rewrite, but still output SQL only.
+
+TARGET ENGINE
+pg
+
+SCHEMA
+CREATE TABLE t0 (t0a INTEGER, t0b INTEGER);
+CREATE TABLE t1 (t1a INTEGER, t1b INTEGER, t1c INTEGER);
+CREATE TABLE t2 (t2a INTEGER, t2b INTEGER, t2c INTEGER);
+
+SOURCE SQL
+SELECT *
+FROM t0
+WHERE t0a < (
+  SELECT SUM(c)
+  FROM (
+    SELECT t1c AS c
+    FROM t1
+    WHERE t1a = t0a
+    UNION ALL
+    SELECT t2c AS c
+    FROM t2
+    WHERE t2b = t0b
+  ) AS tmp
+);

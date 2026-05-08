@@ -1,0 +1,110 @@
+SYSTEM / OPERATOR INSTRUCTION
+Produce exactly one semantics-preserving SQL rewrite of the input query in the same target dialect.
+
+REQUIREMENTS
+- Output SQL only.
+- Do not use markdown fences.
+- Do not add explanations.
+- Do not add comments unless comments already exist in the input SQL.
+- Do not output DDL.
+- Do not output INSERT, UPDATE, DELETE, MERGE, COPY, or any data-changing statement.
+- Preserve result semantics exactly.
+- Keep the rewrite in the same target engine / dialect.
+- Avoid engine-specific functions unless they are compatible with the target engine.
+- If the original query is already near-minimal, you may return an equivalent no-op rewrite, but still output SQL only.
+
+TARGET ENGINE
+mysql
+
+SCHEMA
+-- PERF_0062 draft MySQL schema for package enablement review only.
+-- Derived mechanically from schema/ddl_pg.sql.
+-- Draft only: do not treat as executed or validated.
+
+create table store_sales (
+  ss_store_sk int,
+  ss_sold_date_sk int,
+  ss_cdemo_sk int,
+  ss_hdemo_sk int,
+  ss_addr_sk int,
+  ss_quantity int,
+  ss_ext_sales_price decimal(9,2),
+  ss_ext_wholesale_cost decimal(9,2),
+  ss_sales_price decimal(9,2),
+  ss_net_profit decimal(9,2)
+);
+
+create table store (
+  s_store_sk int primary key
+);
+
+create table customer_demographics (
+  cd_demo_sk int primary key,
+  cd_marital_status varchar(20),
+  cd_education_status varchar(50)
+);
+
+create table household_demographics (
+  hd_demo_sk int primary key,
+  hd_dep_count int
+);
+
+create table customer_address (
+  ca_address_sk int primary key,
+  ca_country varchar(50),
+  ca_state varchar(20)
+);
+
+create table date_dim (
+  d_date_sk int primary key,
+  d_year int
+);
+
+SOURCE SQL
+-- PERF_0062 source SQL.
+-- Frozen from TPC-DS query_templates/query13.tpl via repaired repo-local dsqgen:
+--   COUNT=1, QUALIFY=Y, SCALE=1, DIALECT=ansi
+
+select avg(ss_quantity),
+       avg(ss_ext_sales_price),
+       avg(ss_ext_wholesale_cost),
+       sum(ss_ext_wholesale_cost)
+from store_sales,
+     store,
+     customer_demographics,
+     household_demographics,
+     customer_address,
+     date_dim
+where s_store_sk = ss_store_sk
+  and ss_sold_date_sk = d_date_sk
+  and d_year = 2001
+  and ((ss_hdemo_sk = hd_demo_sk
+        and cd_demo_sk = ss_cdemo_sk
+        and cd_marital_status = 'D'
+        and cd_education_status = '2 yr Degree'
+        and ss_sales_price between 100.00 and 150.00
+        and hd_dep_count = 3)
+       or (ss_hdemo_sk = hd_demo_sk
+        and cd_demo_sk = ss_cdemo_sk
+        and cd_marital_status = 'S'
+        and cd_education_status = 'Secondary'
+        and ss_sales_price between 50.00 and 100.00
+        and hd_dep_count = 1)
+       or (ss_hdemo_sk = hd_demo_sk
+        and cd_demo_sk = ss_cdemo_sk
+        and cd_marital_status = 'W'
+        and cd_education_status = 'Advanced Degree'
+        and ss_sales_price between 150.00 and 200.00
+        and hd_dep_count = 1))
+  and ((ss_addr_sk = ca_address_sk
+        and ca_country = 'United States'
+        and ca_state in ('CO', 'IL', 'MN')
+        and ss_net_profit between 100 and 200)
+       or (ss_addr_sk = ca_address_sk
+        and ca_country = 'United States'
+        and ca_state in ('OH', 'MT', 'NM')
+        and ss_net_profit between 150 and 300)
+       or (ss_addr_sk = ca_address_sk
+        and ca_country = 'United States'
+        and ca_state in ('TX', 'MO', 'MI')
+        and ss_net_profit between 50 and 250));
