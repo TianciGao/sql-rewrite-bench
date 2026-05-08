@@ -1,0 +1,22 @@
+{
+  "case_id": "LONGTAIL_0011",
+  "engine": "pg",
+  "route_id": "direct_llm_same_engine_rewrite",
+  "warmup_count": 1,
+  "repeat_count": 3,
+  "source_runtime_ms": [
+    301.41814693342894,
+    440.84630999714136,
+    366.8528590351343
+  ],
+  "generated_runtime_ms": [
+    407.36677194945514,
+    407.11878100410104,
+    298.8670440390706
+  ],
+  "median_source_ms": 366.8528590351343,
+  "median_generated_ms": 407.11878100410104,
+  "speedup_ratio": 0.9010953956246958,
+  "status": "success",
+  "notes": ""
+}

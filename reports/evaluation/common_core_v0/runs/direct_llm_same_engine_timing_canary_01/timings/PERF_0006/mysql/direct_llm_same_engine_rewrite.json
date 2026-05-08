@@ -1,0 +1,22 @@
+{
+  "case_id": "PERF_0006",
+  "engine": "mysql",
+  "route_id": "direct_llm_same_engine_rewrite",
+  "warmup_count": 1,
+  "repeat_count": 3,
+  "source_runtime_ms": [
+    114.8533079540357,
+    116.03875702712685,
+    116.27037299331278
+  ],
+  "generated_runtime_ms": [
+    117.45310295373201,
+    127.64036899898201,
+    119.97844593133777
+  ],
+  "median_source_ms": 116.03875702712685,
+  "median_generated_ms": 119.97844593133777,
+  "speedup_ratio": 0.9671633611051642,
+  "status": "success",
+  "notes": ""
+}
