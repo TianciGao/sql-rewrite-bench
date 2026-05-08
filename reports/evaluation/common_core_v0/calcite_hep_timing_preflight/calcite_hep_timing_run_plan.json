@@ -1,0 +1,21 @@
+{
+  "denominator_id": "common_core_v0_40_pg40",
+  "method_id": "calcite_hep",
+  "route_id": "calcite_hep_pg_rewrite",
+  "run_scope": "calcite_hep_pg40_timing_preflight",
+  "planned_rows": 40,
+  "generation_success_rows": 29,
+  "executed_rows": 23,
+  "match_exact_rows": 21,
+  "mismatch_rows": 2,
+  "execution_failed_rows": 6,
+  "generation_failed_rows": 11,
+  "timing_eligible_rows": 21,
+  "speedup_eligible_rows": 21,
+  "output_directory": "reports/evaluation/common_core_v0/runs/calcite_hep_pg40_timing_01/",
+  "engine": "pg",
+  "warmup_count": 1,
+  "repeat_count": 3,
+  "no_final_gm_speedup_computed_here": true,
+  "no_final_regression_rate_computed_here": true
+}
