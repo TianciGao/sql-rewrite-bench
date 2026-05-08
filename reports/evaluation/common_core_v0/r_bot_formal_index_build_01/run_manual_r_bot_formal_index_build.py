@@ -3,12 +3,12 @@
 Human-run-only formal R-Bot Chroma index build helper.
 
 This script does not run databases, does not execute SQL, and does not run
-R-Bot. It verifies the retained ZIP artifact, streams the frozen JSONL members,
-and either:
+R-Bot. It verifies the retained ZIP artifact, reuses the frozen extracted-text
+manifest package, and either:
 
 1. performs a dry-run that writes identifier/report metadata only, or
-2. builds a Chroma-compatible index when explicitly asked and when the runtime
-   environment already provides the required dependencies and embedding access.
+2. fails closed for execute-build until real embedding/index population is
+   explicitly implemented as a formal path.
 """
 
 from __future__ import annotations
@@ -17,12 +17,11 @@ import argparse
 import csv
 import hashlib
 import json
-import os
 import sys
 import zipfile
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Iterable
+from typing import Any
 
 
 ROOT = Path(__file__).resolve().parents[4]
@@ -34,6 +33,14 @@ DEFAULT_COLLECTION = "r_bot_formal_stackoverflow"
 
 IDENTIFIER_OUTPUT = BUILD_DIR / "formal_chroma_index_identifier_v1.json"
 BUILD_REPORT_OUTPUT = BUILD_DIR / "formal_chroma_index_build_report_v1.md"
+MANIFEST_CSV = (
+    ROOT
+    / "reports/evaluation/common_core_v0/r_bot_formal_substrate_freeze_01/formal_zip_text_manifest_v1.csv"
+)
+MANIFEST_HASHES_JSON = (
+    ROOT
+    / "reports/evaluation/common_core_v0/r_bot_formal_substrate_freeze_01/formal_zip_text_hashes_v1.json"
+)
 
 EXPECTED_ZIP_SHA256 = "e7e68b08a4283467f899f05a3150c485e2bf615ccdde4f4ab76e0f08734e546a"
 CORPUS_ARTIFACT_URI = "https://doi.org/10.5281/zenodo.20087267"
@@ -66,112 +73,24 @@ ENTRY_HASHES = {
 }
 
 
+class FormalIndexBuildError(RuntimeError):
+    """Base error for formal index build helper failures."""
+
+
+class MissingProviderFamilyError(FormalIndexBuildError):
+    """Raised when formal metadata is missing an explicit provider family."""
+
+
+class ExecuteBuildNotImplementedError(FormalIndexBuildError):
+    """Raised when execute-build is requested before a real build path exists."""
+
+
 def sha256_file(path: Path) -> str:
     digest = hashlib.sha256()
     with path.open("rb") as handle:
         for chunk in iter(lambda: handle.read(1024 * 1024), b""):
             digest.update(chunk)
     return digest.hexdigest()
-
-
-def iter_extracted_rows(zip_path: Path) -> Iterable[dict[str, str]]:
-    with zipfile.ZipFile(zip_path) as archive:
-        for entry_name in ALLOWED_TEXT_ENTRIES:
-            with archive.open(entry_name) as handle:
-                for raw_line in handle:
-                    payload = json.loads(raw_line.decode("utf-8"))
-                    if entry_name == "stackoverflow-rewrite-query-optimization.jsonl":
-                        for text in payload.get("question_body_sqls", []):
-                            if str(text).strip():
-                                yield {"entry_name": entry_name, "json_field_selector": "question_body_sqls[]"}
-                        continue
-                    if entry_name == "stackoverflow-rewrite-rules-query-optimization.jsonl":
-                        if str(payload.get("sql", "")).strip():
-                            yield {"entry_name": entry_name, "json_field_selector": "sql"}
-                        if str(payload.get("schema", "")).strip():
-                            yield {"entry_name": entry_name, "json_field_selector": "schema"}
-                        for text in payload.get("rules", []):
-                            if str(text).strip():
-                                yield {"entry_name": entry_name, "json_field_selector": "rules[]"}
-                        continue
-                    if entry_name == "stackoverflow-rewrite-sql-templates-query-optimization.jsonl":
-                        for text in payload.get("question_body_sqls", []):
-                            if str(text).strip():
-                                yield {"entry_name": entry_name, "json_field_selector": "question_body_sqls[]"}
-                        for item in payload.get("sql_templates", []):
-                            if isinstance(item, dict) and str(item.get("template", "")).strip():
-                                yield {"entry_name": entry_name, "json_field_selector": "sql_templates[].template"}
-                        continue
-                    if entry_name == "stackoverflow-rewrite-sql-templates-embed-query-optimization.jsonl":
-                        if str(payload.get("sql_template", "")).strip():
-                            yield {"entry_name": entry_name, "json_field_selector": "sql_template"}
-
-
-def summarize_rows(zip_path: Path) -> tuple[int, dict[str, int]]:
-    total = 0
-    per_entry: dict[str, int] = {name: 0 for name in ALLOWED_TEXT_ENTRIES}
-    for row in iter_extracted_rows(zip_path):
-        total += 1
-        per_entry[row["entry_name"]] = per_entry.get(row["entry_name"], 0) + 1
-    return total, per_entry
-
-
-def compute_directory_hashes(index_dir: Path) -> list[dict[str, str]]:
-    if not index_dir.exists():
-        return []
-    rows: list[dict[str, str]] = []
-    for path in sorted(p for p in index_dir.rglob("*") if p.is_file()):
-        rows.append(
-            {
-                "path": str(path),
-                "sha256": sha256_file(path),
-                "size_bytes": str(path.stat().st_size),
-            }
-        )
-    return rows
-
-
-def build_identifier(
-    *,
-    zip_path: Path,
-    index_dir: Path,
-    collection_name: str,
-    provider_family: str | None,
-    build_command: str,
-    dry_run: bool,
-    built: bool,
-) -> dict[str, object]:
-    extracted_rows, per_entry = summarize_rows(zip_path)
-    identifier = {
-        "index_id": f"r_bot_formal_chroma_index_01{'_dry_run' if dry_run else ''}",
-        "build_timestamp": datetime.now(timezone.utc).isoformat(),
-        "corpus_artifact_uri": CORPUS_ARTIFACT_URI,
-        "corpus_sha256": EXPECTED_ZIP_SHA256,
-        "expected_zip_filename": EXPECTED_FILENAME,
-        "extraction_contract_version": EXTRACTION_CONTRACT_VERSION,
-        "embedding_model": EMBEDDING_MODEL,
-        "embedding_provider_base_url_family": provider_family,
-        "rule_vector_width": RULE_VECTOR_WIDTH,
-        "total_dimension": TOTAL_DIMENSION,
-        "retrieval_top_k": RETRIEVAL_TOP_K,
-        "reranking_mode": RERANKING_MODE,
-        "rrf_k": RRF_K,
-        "similarity_threshold": SIMILARITY_THRESHOLD,
-        "similarity_threshold_policy": SIMILARITY_THRESHOLD_POLICY,
-        "chroma_collection_name": collection_name,
-        "index_directory": str(index_dir),
-        "index_file_hashes": compute_directory_hashes(index_dir),
-        "build_script_command": build_command,
-        "zip_path_used": str(zip_path),
-        "zip_sha256_verified": True,
-        "zip_member_hashes": ENTRY_HASHES,
-        "extracted_text_row_count": extracted_rows,
-        "extracted_rows_by_entry": per_entry,
-        "dry_run": dry_run,
-        "build_executed": built,
-        "status": "built" if built else "dry_run_not_built",
-    }
-    return identifier
 
 
 def ensure_zip_is_valid(zip_path: Path) -> None:
@@ -189,29 +108,148 @@ def ensure_zip_is_valid(zip_path: Path) -> None:
                 raise RuntimeError(f"Missing expected ZIP member: {entry_name}")
 
 
-def try_build_index(index_dir: Path, collection_name: str, provider_family: str | None) -> None:
-    try:
-        import chromadb  # type: ignore
-    except Exception as exc:  # pragma: no cover - human-run path
-        raise RuntimeError(
-            "chromadb is not importable in this environment; rerun in a prepared environment or use --dry-run"
-        ) from exc
+def load_frozen_manifest_metadata() -> dict[str, Any]:
+    if not MANIFEST_HASHES_JSON.exists():
+        raise FileNotFoundError(f"Frozen manifest hashes JSON not found: {MANIFEST_HASHES_JSON}")
+    if not MANIFEST_CSV.exists():
+        raise FileNotFoundError(f"Frozen manifest CSV not found: {MANIFEST_CSV}")
 
-    # The actual embedding/index build requires human-supplied runtime wiring.
-    # This helper only prepares the deterministic output location and a named
-    # Chroma collection shell when explicitly requested.
-    index_dir.mkdir(parents=True, exist_ok=True)
-    client = chromadb.PersistentClient(path=str(index_dir))
-    client.get_or_create_collection(collection_name)
+    hash_payload = json.loads(MANIFEST_HASHES_JSON.read_text(encoding="utf-8"))
+    row_count_from_csv = 0
+    row_counts_by_entry_from_csv: dict[str, int] = {name: 0 for name in ALLOWED_TEXT_ENTRIES}
 
-    if not provider_family:
+    with MANIFEST_CSV.open(newline="", encoding="utf-8") as handle:
+        reader = csv.DictReader(handle)
+        for row in reader:
+            row_count_from_csv += 1
+            entry_name = row.get("zip_entry_name", "")
+            row_counts_by_entry_from_csv[entry_name] = row_counts_by_entry_from_csv.get(entry_name, 0) + 1
+
+    manifest_row_count = int(hash_payload["row_count"])
+    manifest_row_counts_by_entry = {
+        name: int(hash_payload["row_counts_by_entry"].get(name, 0)) for name in ALLOWED_TEXT_ENTRIES
+    }
+
+    if row_count_from_csv != manifest_row_count:
         raise RuntimeError(
-            "embedding provider/base_url family must be supplied when executing the build; use --provider-family"
+            f"Frozen manifest row-count mismatch: CSV={row_count_from_csv}, hashes_json={manifest_row_count}"
         )
+    if row_counts_by_entry_from_csv != manifest_row_counts_by_entry:
+        raise RuntimeError("Frozen manifest per-entry row-count mismatch between CSV and hashes JSON")
 
-    raise RuntimeError(
-        "Build shell created, but actual embedding population is intentionally not automated here without explicit human wiring for embedding/API execution."
+    return {
+        "manifest_csv_path": str(MANIFEST_CSV),
+        "manifest_hashes_json_path": str(MANIFEST_HASHES_JSON),
+        "extracted_text_row_count": manifest_row_count,
+        "extracted_rows_by_entry": manifest_row_counts_by_entry,
+        "normalization_policy": hash_payload.get("normalization_policy", {}),
+        "manifest_retention_blocker": hash_payload.get("formal_retention_blocker"),
+        "manifest_retention_blocker_reason": hash_payload.get("retention_blocker_reason"),
+    }
+
+
+def compute_directory_hashes(index_dir: Path) -> list[dict[str, str]]:
+    if not index_dir.exists():
+        return []
+    rows: list[dict[str, str]] = []
+    for path in sorted(p for p in index_dir.rglob("*") if p.is_file()):
+        rows.append(
+            {
+                "path": str(path),
+                "sha256": sha256_file(path),
+                "size_bytes": str(path.stat().st_size),
+            }
+        )
+    return rows
+
+
+def resolve_provider_family(provider_family: str | None, *, formal_required: bool) -> tuple[str | None, str]:
+    normalized = provider_family.strip() if provider_family and provider_family.strip() else None
+    if normalized:
+        return normalized, "provider_family_recorded"
+    if formal_required:
+        raise MissingProviderFamilyError(
+            "embedding provider/base_url family must be supplied for formal index metadata; use --provider-family"
+        )
+    return None, "missing_provider_family"
+
+
+def try_build_index(index_dir: Path, collection_name: str, provider_family: str) -> None:
+    _ = (index_dir, collection_name, provider_family)
+    raise ExecuteBuildNotImplementedError(
+        "Real embedding/index population is not implemented in this helper; execute-build remains disabled."
     )
+
+
+def determine_status(*, dry_run: bool, provider_status: str, error: str | None) -> str:
+    if error:
+        if provider_status == "missing_provider_family":
+            return "missing_provider_family"
+        if "Real embedding/index population is not implemented" in error:
+            return "execute_build_not_implemented_real_index"
+        return "execute_build_failed"
+    if dry_run:
+        return provider_status
+    return "built"
+
+
+def build_identifier(
+    *,
+    zip_path: Path,
+    index_dir: Path,
+    collection_name: str,
+    provider_family: str | None,
+    provider_status: str,
+    build_command: str,
+    dry_run: bool,
+    status: str,
+    error: str | None,
+) -> dict[str, object]:
+    manifest_metadata = load_frozen_manifest_metadata()
+    index_id: str | None = None
+    if dry_run:
+        index_id = "r_bot_formal_chroma_index_01_dry_run_preview"
+    elif status == "built":
+        index_id = "r_bot_formal_chroma_index_01"
+
+    identifier = {
+        "index_id": index_id,
+        "build_timestamp": datetime.now(timezone.utc).isoformat(),
+        "corpus_artifact_uri": CORPUS_ARTIFACT_URI,
+        "corpus_sha256": EXPECTED_ZIP_SHA256,
+        "expected_zip_filename": EXPECTED_FILENAME,
+        "extraction_contract_version": EXTRACTION_CONTRACT_VERSION,
+        "embedding_model": EMBEDDING_MODEL,
+        "embedding_provider_base_url_family": provider_family,
+        "embedding_provider_status": provider_status,
+        "rule_vector_width": RULE_VECTOR_WIDTH,
+        "total_dimension": TOTAL_DIMENSION,
+        "retrieval_top_k": RETRIEVAL_TOP_K,
+        "reranking_mode": RERANKING_MODE,
+        "rrf_k": RRF_K,
+        "similarity_threshold": SIMILARITY_THRESHOLD,
+        "similarity_threshold_policy": SIMILARITY_THRESHOLD_POLICY,
+        "chroma_collection_name": collection_name,
+        "index_directory": str(index_dir),
+        "index_file_hashes": compute_directory_hashes(index_dir),
+        "build_script_command": build_command,
+        "zip_path_used": str(zip_path),
+        "zip_sha256_verified": True,
+        "zip_member_hashes": ENTRY_HASHES,
+        "manifest_csv_path": manifest_metadata["manifest_csv_path"],
+        "manifest_hashes_json_path": manifest_metadata["manifest_hashes_json_path"],
+        "extracted_text_row_count": manifest_metadata["extracted_text_row_count"],
+        "extracted_rows_by_entry": manifest_metadata["extracted_rows_by_entry"],
+        "manifest_normalization_policy": manifest_metadata["normalization_policy"],
+        "manifest_retention_blocker": manifest_metadata["manifest_retention_blocker"],
+        "manifest_retention_blocker_reason": manifest_metadata["manifest_retention_blocker_reason"],
+        "dry_run": dry_run,
+        "build_executed": status == "built",
+        "status": status,
+    }
+    if error:
+        identifier["error"] = error
+    return identifier
 
 
 def write_markdown_report(path: Path, identifier: dict[str, object], error: str | None) -> None:
@@ -225,8 +263,15 @@ def write_markdown_report(path: Path, identifier: dict[str, object], error: str 
         f"- ZIP SHA-256 verified: `{'yes' if identifier['zip_sha256_verified'] else 'no'}`",
         f"- extracted text row count: `{identifier['extracted_text_row_count']}`",
         f"- embedding model: `{identifier['embedding_model']}`",
+        f"- provider status: `{identifier['embedding_provider_status']}`",
         f"- rule-vector width: `{identifier['rule_vector_width']}`",
         f"- total dimension: `{identifier['total_dimension']}`",
+        "",
+        "## Frozen Manifest",
+        "",
+        f"- manifest CSV: `{identifier['manifest_csv_path']}`",
+        f"- manifest hashes JSON: `{identifier['manifest_hashes_json_path']}`",
+        f"- manifest retention blocker: `{identifier['manifest_retention_blocker']}`",
         "",
         "## Index Target",
         "",
@@ -245,6 +290,7 @@ def write_markdown_report(path: Path, identifier: dict[str, object], error: str 
             "",
             "## Gate Note",
             "",
+            "- formal Chroma index blocker closed: `no`",
             "- formal `R-Bot @120` generation may start: `no`",
         ]
     )
@@ -270,27 +316,37 @@ def main() -> int:
     ensure_zip_is_valid(zip_path)
 
     build_command = " ".join(sys.argv)
-    built = False
     error: str | None = None
-    if args.execute_build:
-        try:
-            try_build_index(index_dir, args.collection_name, args.provider_family)
-            built = True
-        except Exception as exc:  # pragma: no cover - human-run path
-            error = str(exc)
+    provider_status = "missing_provider_family"
+    provider_family: str | None = None
+    try:
+        provider_family, provider_status = resolve_provider_family(
+            args.provider_family,
+            formal_required=args.execute_build,
+        )
+        if args.execute_build:
+            assert provider_family is not None
+            try_build_index(index_dir, args.collection_name, provider_family)
+    except FormalIndexBuildError as exc:  # pragma: no cover - control-flow path
+        error = str(exc)
+
+    status = determine_status(
+        dry_run=not args.execute_build,
+        provider_status=provider_status,
+        error=error,
+    )
 
     identifier = build_identifier(
         zip_path=zip_path,
         index_dir=index_dir,
         collection_name=args.collection_name,
-        provider_family=args.provider_family,
+        provider_family=provider_family,
+        provider_status=provider_status,
         build_command=build_command,
         dry_run=not args.execute_build,
-        built=built,
+        status=status,
+        error=error,
     )
-    if error:
-        identifier["status"] = "execute_requested_but_not_completed"
-        identifier["error"] = error
 
     identifier_output.write_text(json.dumps(identifier, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     write_markdown_report(report_output, identifier, error)

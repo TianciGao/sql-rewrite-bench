@@ -17,13 +17,15 @@ Recommended order:
 
 1. run the build helper with default dry-run mode
 2. review the identifier/report outputs
-3. rerun with `--execute-build` only in a prepared environment
-4. run the inspect helper against the resulting index directory
+3. verify the dry-run metadata is manifest-driven and that provider-family status is explicit
+4. do not treat `--execute-build` as a real formal build path until embedding/index population is implemented
+5. run the inspect helper only against a genuinely built retained index directory
 
 ## Important Constraints
 
 - do not treat the visible `/tmp` scratch index as formal evidence
 - do not copy large index files into the repo
 - do not mark the formal gate open from this package alone
+- do not treat an unimplemented `--execute-build` attempt as a completed formal index build
 - formal `R-Bot @120` generation may not start until the remaining runtime lock
   and artifact-contract blockers are also closed

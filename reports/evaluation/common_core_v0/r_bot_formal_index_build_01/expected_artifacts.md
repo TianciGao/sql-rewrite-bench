@@ -8,6 +8,11 @@ Human-run scripts in this package are expected to write:
 - [formal_chroma_index_build_report_v1.md](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/r_bot_formal_index_build_01/formal_chroma_index_build_report_v1.md)
 - [formal_chroma_index_inspect_report_v1.md](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/r_bot_formal_index_build_01/formal_chroma_index_inspect_report_v1.md)
 
+The build helper must derive extracted row metadata from:
+
+- `reports/evaluation/common_core_v0/r_bot_formal_substrate_freeze_01/formal_zip_text_manifest_v1.csv`
+- `reports/evaluation/common_core_v0/r_bot_formal_substrate_freeze_01/formal_zip_text_hashes_v1.json`
+
 ## External Index Output
 
 Default external index output root:
@@ -19,6 +24,12 @@ Expected retained output shape outside the repo:
 - Chroma index directory
 - retained file hashes for produced index files
 - collection name recorded in the identifier JSON
+
+Current execute-build safety behavior:
+
+- `--execute-build` must fail closed with status `execute_build_not_implemented_real_index` until real embedding/index population exists
+- no incomplete Chroma shell should be created and then mistaken for a formal index
+- no complete-looking formal index identifier should be emitted for an unimplemented build path
 
 ## Required Frozen Metadata In Identifier
 
@@ -36,3 +47,4 @@ Expected retained output shape outside the repo:
 ## Gate Note
 
 Producing these artifacts does not by itself open the formal gate.
+The formal Chroma index blocker remains closed.
