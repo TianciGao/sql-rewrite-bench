@@ -1,0 +1,69 @@
+{
+  "config_id": "r_bot_formal_retrieval_config_v2",
+  "denominator_id": "common_core_v0_40_same_engine_120",
+  "method_id": "r_bot",
+  "route_id": "r_bot_same_engine_rewrite",
+  "status": "partially_frozen_still_blocked",
+  "current_benchmark_gate_ready": false,
+  "formal_generation_may_start": false,
+  "retrieval_backend": "chroma_backed_retrieval",
+  "retrieval_target": "same_engine_rule_and_example_selection",
+  "retrieval_top_k": {
+    "value": null,
+    "status": "blocked_not_yet_frozen",
+    "reason": "exact top_k has not been recovered from a frozen runner contract or attested benchmark-side policy"
+  },
+  "reranking_mode": {
+    "value": null,
+    "status": "blocked_not_yet_frozen",
+    "reason": "exact reranking or fusion mode is not yet surfaced from retained runner evidence"
+  },
+  "similarity_threshold": {
+    "value": null,
+    "status": "blocked_not_yet_frozen",
+    "reason": "no retained evidence yet supports freezing a positive threshold or explicit none"
+  },
+  "embedding_model_provider": {
+    "provider_family": "openai_compatible",
+    "provider_name": "api.gptsapi.net",
+    "base_url": "https://api.gptsapi.net/v1",
+    "embedding_model_name": "text-embedding-3-small_or_exact_upstream_equivalent_if_attested",
+    "status": "blocked_until_exact_rebuild_identity_is_attested",
+    "reason": "provider family is aligned, but exact embedding model identity still requires retained rebuild-time attestation"
+  },
+  "index_dimension_contract": {
+    "rule_vector_width": 100,
+    "query_embedding_width": 1536,
+    "template_embedding_width": 1536,
+    "total_dimension": 3172,
+    "rule_vector_policy": "formal_deterministic_policy",
+    "exploratory_patch_acceptable_as_formal_evidence": false
+  },
+  "corpus_identifier": {
+    "status": "partially_defined",
+    "knowledge_base_anchor_sha256": "039823a6b5e87476dfc7a7be1cc9ac1bbeed31ec8972ceaa72364c1a56a03b5d",
+    "retrieval_archive_sha256": "e7e68b08a4283467f899f05a3150c485e2bf615ccdde4f4ab76e0f08734e546a",
+    "remaining_blocker": "full corpus manifest and retained external archive provenance handle are not yet complete"
+  },
+  "index_identifier": {
+    "current_tmp_index_identifier": "/tmp/rewritebench_rbot_llm4rewrite_rag_build_openai_like/rag/chroma_db",
+    "current_tmp_index_retained_as_formal_evidence": false,
+    "formal_path": "must_rebuild_deterministically",
+    "status": "blocked_not_yet_rebuilt"
+  },
+  "retrieval_example_source_policy": {
+    "rules_and_examples_may_be_selected_from_frozen_stackoverflow_corpus": true,
+    "condition": "only from the frozen retained corpus line after denominator and generated-output exclusions are attested"
+  },
+  "hard_exclusions": {
+    "exclude_common_core_v0_40_source_sql": true,
+    "exclude_sqlglot_generated_outputs": true,
+    "exclude_direct_llm_generated_outputs": true,
+    "exclude_calcite_generated_outputs": true,
+    "exclude_r_bot_pg1_recovery_outputs": true,
+    "exclude_exact_normalized_duplicates": true,
+    "exclude_near_duplicate_normalized_sql_when_detected": true
+  },
+  "gate_rule": "formal generation may not start until retrieval_top_k, reranking_mode, similarity_threshold, embedding_model_provider identity, completed contamination attestation, and rebuilt formal index identifier are all retained"
+}
+
