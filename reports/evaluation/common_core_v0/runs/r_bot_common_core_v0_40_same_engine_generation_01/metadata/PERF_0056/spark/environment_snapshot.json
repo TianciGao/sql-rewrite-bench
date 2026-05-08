@@ -1,0 +1,28 @@
+{
+  "base_url_family": "api.gptsapi.net",
+  "base_url_visible": true,
+  "case_id": "PERF_0056",
+  "contamination_guard_attested_at_generation_time": null,
+  "engine": "spark",
+  "formal_chroma_index_identifier_path": "reports/evaluation/common_core_v0/r_bot_formal_index_build_01/formal_chroma_index_identifier_v1.json",
+  "index_directory": "/tmp/rewritebench_rbot_formal_chroma_index_01",
+  "index_id": "r_bot_formal_chroma_index_01",
+  "method_id": "r_bot",
+  "openai_api_key_visible": true,
+  "platform": {
+    "machine": "x86_64",
+    "platform": "Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+    "release": "6.6.87.2-microsoft-standard-WSL2",
+    "system": "Linux",
+    "version": "#1 SMP PREEMPT_DYNAMIC Thu Jun  5 18:30:46 UTC 2025"
+  },
+  "provider_family": "api.gptsapi.net",
+  "provider_name": "api.gptsapi.net",
+  "python_executable": "/tmp/rewritebench_rbot_llm4rewrite_venv_smoke/bin/python",
+  "python_version": null,
+  "requirements_lock_path": "reports/evaluation/common_core_v0/r_bot_formal_runtime_lock_01/r_bot_formal_requirements_lock.txt",
+  "route_id": "r_bot_same_engine_rewrite",
+  "rule_vector_width": 100,
+  "runtime_snapshot_path": "reports/evaluation/common_core_v0/r_bot_formal_runtime_lock_01/runtime_environment_snapshot_v1.json",
+  "total_dimension": 3172
+}

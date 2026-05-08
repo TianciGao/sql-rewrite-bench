@@ -1,0 +1,8 @@
+{
+  "available": true,
+  "input_cost": "87.25",
+  "output_cost": 99.0,
+  "rewrite_time_ms": 14,
+  "token_usage_available": false,
+  "used_rules_count": 3
+}

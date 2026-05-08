@@ -1,0 +1,46 @@
+{
+  "base_url_family": "api.gptsapi.net",
+  "claim_boundary": "formal_same_engine_generation_only_not_execution_timing_speedup_or_leaderboard_evidence",
+  "counts_by_engine": {
+    "mysql": 40,
+    "pg": 40,
+    "spark": 40
+  },
+  "counts_by_pool": {
+    "consistency": 27,
+    "longtail": 18,
+    "performance": 48,
+    "portability": 27
+  },
+  "counts_by_status": {
+    "blocked": 31,
+    "failed": 2,
+    "generated": 7,
+    "unsupported": 80
+  },
+  "current_benchmark_gate_ready": false,
+  "current_benchmark_metric_evidence": false,
+  "denominator_id": "common_core_v0_40_same_engine_120",
+  "formal_index_directory": "/tmp/rewritebench_rbot_formal_chroma_index_01",
+  "formal_index_identifier_path": "reports/evaluation/common_core_v0/r_bot_formal_index_build_01/formal_chroma_index_identifier_v1.json",
+  "formal_runtime_python": "/tmp/rewritebench_rbot_llm4rewrite_venv_smoke/bin/python",
+  "generation_summary_path": "reports/evaluation/common_core_v0/runs/r_bot_common_core_v0_40_same_engine_generation_01/generation_summary.csv",
+  "git_commit": "",
+  "method_id": "r_bot",
+  "model_name": "gpt-4o-mini",
+  "notes": [
+    "generation package only",
+    "no execution, validity, timing, speedup, or leaderboard evidence is produced by this package alone",
+    "rows remain denominator-aware and explicit for blocked, unsupported, failed, and generated statuses"
+  ],
+  "parameter_freeze_path": "reports/evaluation/common_core_v0/r_bot_formal_protocol/r_bot_parameter_freeze_v2.json",
+  "planned_rows": 120,
+  "provider_name": "api.gptsapi.net",
+  "reranking_mode": "rrf",
+  "retrieval_top_k": 10,
+  "route_id": "r_bot_same_engine_rewrite",
+  "rrf_k": 60,
+  "run_event_long_path": "reports/evaluation/common_core_v0/runs/r_bot_common_core_v0_40_same_engine_generation_01/run_event_long.csv",
+  "run_id": "r_bot_same_engine_generation_01",
+  "similarity_threshold_policy": "explicit_none_observed"
+}

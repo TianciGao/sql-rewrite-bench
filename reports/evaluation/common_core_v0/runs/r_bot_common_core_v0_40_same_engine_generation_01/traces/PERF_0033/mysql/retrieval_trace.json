@@ -1,0 +1,14 @@
+{
+  "artifact_kind": "retrieval_trace",
+  "available": false,
+  "case_id": "PERF_0033",
+  "collection_name": "r_bot_formal_stackoverflow",
+  "engine": "mysql",
+  "index_id": "r_bot_formal_chroma_index_01",
+  "method_id": "r_bot",
+  "reason": "Recovered committed R-Bot runner path is PG-only; same-engine mysql/spark generation path is not recovered in committed CLI and must remain explicit, not dropped.",
+  "retrieval_status": "unsupported",
+  "retrieved_examples": [],
+  "route_id": "r_bot_same_engine_rewrite",
+  "row_status": "unsupported"
+}
