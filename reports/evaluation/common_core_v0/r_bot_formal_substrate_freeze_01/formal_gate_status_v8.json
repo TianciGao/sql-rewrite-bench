@@ -5,7 +5,6 @@
   "method_id": "r_bot",
   "route_id": "r_bot_same_engine_rewrite",
   "basis": {
-    "prior_gate_status": "formal_gate_status_v7",
     "artifacts": [
       "reports/evaluation/common_core_v0/r_bot_formal_substrate_freeze_01/formal_zip_text_manifest_v1.csv",
       "reports/evaluation/common_core_v0/r_bot_formal_substrate_freeze_01/formal_zip_text_hashes_v1.json",
@@ -15,97 +14,47 @@
       "reports/evaluation/common_core_v0/r_bot_formal_substrate_freeze_01/formal_generated_output_exclusion_v1.csv",
       "reports/evaluation/common_core_v0/r_bot_formal_substrate_freeze_01/formal_generated_output_exclusion_summary.md",
       "reports/evaluation/common_core_v0/r_bot_formal_substrate_freeze_01/formal_generated_output_hashes_v1.json",
-      "reports/evaluation/common_core_v0/r_bot_formal_substrate_freeze_01/formal_gate_status_v7.md",
       "reports/evaluation/common_core_v0/r_bot_formal_protocol/r_bot_parameter_freeze_v2.json"
     ]
   },
   "direct_answers": {
     "zip_text_manifest_extracted_rows": 18744,
-    "zip_derived_text_included_in_contamination_checks": true,
-    "near_duplicate_check_status": "blocked_retention_provenance_missing",
-    "generated_output_exclusion_status": "blocked_retention_provenance_missing",
-    "near_duplicate_failures_found": 0,
-    "generated_output_matches_found": 0,
+    "zip_text_included_in_contamination_checks": true,
+    "near_duplicate_failures": 0,
+    "generated_output_exact_matches": 0,
     "corpus_text_unavailable_blockers": 0,
     "generated_output_family_blockers": 0,
     "current_benchmark_gate_ready": false,
     "formal_generation_may_start": false
   },
-  "what_changed_in_v8": {
-    "closed_items": [
-      "stackoverflow-rewrite-embed.zip is no longer treated as wholly unavailable text for checker consumption",
-      "ZIP text manifest now contributes 18744 streamed text rows",
-      "ZIP-derived text is included in both contamination checks",
-      "corpus_text_unavailable blockers reduced to 0",
-      "generated-output family blockers remain at 0 with Calcite path still resolved"
-    ],
-    "remaining_open_items": [
-      "near-duplicate checking remains blocked by retention/provenance rather than text unavailability",
-      "generated-output exclusion remains blocked by retention/provenance rather than text unavailability",
-      "retained external provenance / URI for stackoverflow-rewrite-embed.zip is still missing",
-      "prior retained index/runtime/artifact-contract blockers remain open"
-    ]
-  },
   "zip_text_manifest": {
     "zip_path": "/tmp/rewritebench_prior_method_audit/LLM4Rewrite/rag/stackoverflow-rewrite-embed.zip",
     "zip_sha256_verified": true,
     "extracted_text_rows": 18744,
-    "streamed_member_row_counts": {
-      "stackoverflow-rewrite-query-optimization.jsonl": 2428,
-      "stackoverflow-rewrite-rules-query-optimization.jsonl": 6584,
-      "stackoverflow-rewrite-sql-templates-query-optimization.jsonl": 5934,
-      "stackoverflow-rewrite-sql-templates-embed-query-optimization.jsonl": 3798
-    },
-    "zip_derived_text_included_in_contamination_checks": true,
-    "formal_retention_blocker": true
+    "zip_text_included_in_contamination_checks": true
   },
   "near_duplicate_check": {
-    "status": "blocked_retention_provenance_missing",
     "rows_covered": 40,
-    "rows_passed_against_visible_text": 0,
-    "rows_failed_near_duplicate_detection": 0,
+    "near_duplicate_failures": 0,
     "rows_blocked_by_retention_provenance": 40,
     "rows_blocked_by_corpus_text_unavailability": 0,
     "visible_flat_file_included_manifest_items": 31,
-    "zip_derived_text_rows_available": 18744,
-    "corpus_availability_blockers": 0,
-    "attestation_status_counts": {
-      "formal_retention_blocked": 40
-    }
+    "zip_derived_text_rows_available": 18744
   },
   "generated_output_exclusion": {
-    "status": "blocked_retention_provenance_missing",
     "rows_covered": 357,
-    "rows_passed_against_visible_text": 0,
-    "rows_failed_generated_output_exclusion": 0,
+    "generated_output_exact_matches": 0,
     "rows_blocked_by_retention_provenance": 357,
     "rows_blocked_by_corpus_text_unavailability": 0,
     "visible_flat_file_included_manifest_items": 31,
     "zip_derived_text_rows_available": 18744,
-    "manifest_blockers": 0,
-    "generated_output_family_blockers": 0,
-    "attestation_status_counts": {
-      "formal_retention_blocked": 357
-    }
+    "generated_output_family_blockers": 0
   },
-  "remaining_primary_blocker": {
-    "name": "stackoverflow_rewrite_embed_zip",
-    "path": "/tmp/rewritebench_prior_method_audit/LLM4Rewrite/rag/stackoverflow-rewrite-embed.zip",
-    "blocker_reason": "retained_external_provenance_uri_missing",
-    "why_it_still_blocks": [
-      "ZIP text is visible and checker-consumable",
-      "ZIP-derived text is included in contamination checks",
-      "the archive remains tmp-only",
-      "retained external provenance / URI is still missing"
-    ]
-  },
-  "remaining_gate_blockers": [
-    "retained external provenance / URI for stackoverflow-rewrite-embed.zip remains missing",
-    "exact retained rebuild-time embedding provider/model/base_url identity still requires final attestation",
-    "the formal rebuilt retained index identifier/package does not yet exist",
-    "dependency lock remains candidate-only rather than a retained final lock",
-    "retained runtime package snapshot and environment metadata path do not yet exist",
-    "the future retained run package has not yet been validated against the full artifact contract"
+  "remaining_blockers": [
+    "ZIP external retained URI/provenance for stackoverflow-rewrite-embed.zip",
+    "formal index identifier/rebuild",
+    "runtime lock",
+    "artifact-contract validation"
   ],
   "gate_outcome": {
     "current_benchmark_gate_ready": false,
