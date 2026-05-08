@@ -1,56 +1,57 @@
 {
-  "build_executed": false,
-  "build_script_command": "reports/evaluation/common_core_v0/r_bot_formal_index_build_01/run_manual_r_bot_formal_index_build.py --provider-family api.gptsapi.net",
-  "build_timestamp": "2026-05-08T17:09:01.779528+00:00",
+  "build_script_command": "reports/evaluation/common_core_v0/r_bot_formal_index_build_01/run_manual_r_bot_formal_index_inspect.py --index-dir /tmp/rewritebench_rbot_formal_chroma_index_01 --collection-name r_bot_formal_stackoverflow --provider-family api.gptsapi.net --index-id r_bot_formal_chroma_index_01",
+  "build_timestamp": "2026-05-08T18:25:05.330392+00:00",
   "chroma_collection_name": "r_bot_formal_stackoverflow",
+  "collection_document_count": 5507,
+  "collection_verified_dimension": 3172,
   "corpus_artifact_uri": "https://doi.org/10.5281/zenodo.20087267",
   "corpus_sha256": "e7e68b08a4283467f899f05a3150c485e2bf615ccdde4f4ab76e0f08734e546a",
-  "dry_run": true,
+  "current_benchmark_gate_ready": false,
   "embedding_model": "text-embedding-3-small",
   "embedding_provider_base_url_family": "api.gptsapi.net",
-  "embedding_provider_status": "provider_family_recorded",
   "expected_zip_filename": "stackoverflow-rewrite-embed.zip",
-  "extracted_rows_by_entry": {
-    "stackoverflow-rewrite-query-optimization.jsonl": 2428,
-    "stackoverflow-rewrite-rules-query-optimization.jsonl": 6584,
-    "stackoverflow-rewrite-sql-templates-embed-query-optimization.jsonl": 3798,
-    "stackoverflow-rewrite-sql-templates-query-optimization.jsonl": 5934
-  },
-  "extracted_text_row_count": 18744,
   "extraction_contract_version": "reports/evaluation/common_core_v0/r_bot_formal_substrate_freeze_01/formal_zip_text_extraction_contract.md",
+  "formal_generation_may_start": false,
   "index_directory": "/tmp/rewritebench_rbot_formal_chroma_index_01",
-  "index_file_hashes": [],
-  "index_id": "r_bot_formal_chroma_index_01_dry_run_preview",
-  "manifest_csv_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/r_bot_formal_substrate_freeze_01/formal_zip_text_manifest_v1.csv",
-  "manifest_hashes_json_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/r_bot_formal_substrate_freeze_01/formal_zip_text_hashes_v1.json",
-  "manifest_normalization_policy": {
-    "collapse_whitespace": true,
-    "lowercase_all_text": true,
-    "remove_trailing_semicolon": true,
-    "strip_block_comments": true,
-    "strip_line_comments": true
-  },
-  "manifest_retention_blocker": false,
-  "manifest_retention_blocker_reason": null,
+  "index_file_hashes": [
+    {
+      "path": "/tmp/rewritebench_rbot_formal_chroma_index_01/1d3373e2-b207-4aac-98f7-4dfee2b48486/data_level0.bin",
+      "sha256": "f10b51be06c8cfe1afbea5030faad67cd4c426fc965e68b7c372a5e11ab58d16",
+      "size_bytes": "65679360"
+    },
+    {
+      "path": "/tmp/rewritebench_rbot_formal_chroma_index_01/1d3373e2-b207-4aac-98f7-4dfee2b48486/header.bin",
+      "sha256": "c68bdcd0ce66a9593c9c8aede656a6a9e185cd83ebaa9a8f7097213715d0c206",
+      "size_bytes": "100"
+    },
+    {
+      "path": "/tmp/rewritebench_rbot_formal_chroma_index_01/1d3373e2-b207-4aac-98f7-4dfee2b48486/index_metadata.pickle",
+      "sha256": "12cdbab3220bd78ed458f64f3dd7f4fa68b34fd4ed0ce7bf1f3d4a0b90f69223",
+      "size_bytes": "757908"
+    },
+    {
+      "path": "/tmp/rewritebench_rbot_formal_chroma_index_01/1d3373e2-b207-4aac-98f7-4dfee2b48486/length.bin",
+      "sha256": "8f5cd589e1574c6a39a4b6fb18ccfb66aa643bd3a4577dff36d50758b555f196",
+      "size_bytes": "20480"
+    },
+    {
+      "path": "/tmp/rewritebench_rbot_formal_chroma_index_01/1d3373e2-b207-4aac-98f7-4dfee2b48486/link_lists.bin",
+      "sha256": "705e8007e177909cc6c7a4f2ff1537d004bca39aa705a2872f08efcb3b3fff55",
+      "size_bytes": "45980"
+    },
+    {
+      "path": "/tmp/rewritebench_rbot_formal_chroma_index_01/chroma.sqlite3",
+      "sha256": "4a0a864b130d52591a94c55f2efceac4d1ac2b8e8b0dc2d021d17598f2742ed2",
+      "size_bytes": "123506688"
+    }
+  ],
+  "index_id": "r_bot_formal_chroma_index_01",
   "reranking_mode": "rrf",
   "retrieval_top_k": 10,
   "rrf_k": 60,
   "rule_vector_width": 100,
   "similarity_threshold": null,
   "similarity_threshold_policy": "explicit_none_observed",
-  "status": "provider_family_recorded",
-  "total_dimension": 3172,
-  "zip_external_artifact_uri": "https://doi.org/10.5281/zenodo.20087267",
-  "zip_member_hashes": {
-    "stackoverflow-rewrite-query-optimization.jsonl": "cabe00234f4f4e92707b6490e0b540f5aabf97708dd128355243815b772bc4aa",
-    "stackoverflow-rewrite-rules-query-optimization.jsonl": "cd95e4645c675226c04c2f8c722b6006847778dbf5c6bd27243e304ff2c16c14",
-    "stackoverflow-rewrite-sql-templates-embed-query-optimization.jsonl": "91b45329be8922e8141fdb98f36f9d87d5525eac6b687bec5becb1569b9c83c6",
-    "stackoverflow-rewrite-sql-templates-query-optimization.jsonl": "0b2592bb1c748c7c4ab644ecba330c33c1d0174e54a8b91d1443375955aa2c3e"
-  },
-  "zip_path_used": "/tmp/rewritebench_prior_method_audit/LLM4Rewrite/rag/stackoverflow-rewrite-embed.zip",
-  "zip_provenance_closed": true,
-  "zip_retention_manifest_csv_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/r_bot_formal_substrate_freeze_01/formal_stackoverflow_zip_retention_manifest_v2.csv",
-  "zip_retention_manifest_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/r_bot_formal_substrate_freeze_01/formal_stackoverflow_zip_retention_manifest_v2.json",
-  "zip_retention_status": "externally_retained_with_checksum",
-  "zip_sha256_verified": true
+  "status": "inspected_existing_index_gate_still_closed",
+  "total_dimension": 3172
 }

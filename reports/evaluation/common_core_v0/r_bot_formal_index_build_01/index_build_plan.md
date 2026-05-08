@@ -42,8 +42,9 @@ It does not authorize benchmark execution.
 3. Confirm the helper is reading the frozen `formal_zip_text_manifest_v1.csv` and `formal_zip_text_hashes_v1.json` package rather than defining an independent row count.
 4. Confirm ZIP provenance closure is read from `formal_stackoverflow_zip_retention_manifest_v2.json` rather than from the stale blocker fields inside the older text-manifest package.
 5. If dry-run metadata is intended to preview a formal run path, pass `--provider-family` explicitly.
-6. Treat `--execute-build` as fail-closed until real embedding/index population is implemented and retained as a formal path.
-7. Only after a real build path exists should the inspect helper be used against a resulting index directory.
+6. `--execute-build` now targets a real provider-free corpus build that reuses retained ZIP embeddings and computes the `100`-dimensional rule vector locally.
+7. If a stored semantic component is malformed or a non-empty template lacks its retained embedding, the build must fail closed with a precise status.
+8. The inspect helper should be used after build to verify the resulting collection count and stored embedding dimension.
 
 ## Output Root
 
@@ -83,6 +84,8 @@ Dry-run preview behavior:
 - if `--provider-family` is supplied, provider status must be `provider_family_recorded`
 - dry-run row counts must come from the frozen manifest package, not a fresh ZIP recount
 - ZIP provenance closure must come from the retained v2 ZIP retention manifest, not the stale `formal_retention_blocker` field embedded in the older text-manifest package
+- execute-build must not call an embedding provider when retained ZIP vectors are present
+- execute-build may use explicit upstream-compatible zero-filled fallback vectors only for the known upstream empty-sql or empty-template cases, and those counts must be retained in metadata
 
 ## Current Gate Meaning
 

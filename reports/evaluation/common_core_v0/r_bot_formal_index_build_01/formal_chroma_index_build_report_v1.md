@@ -2,8 +2,8 @@
 
 ## Status
 
-- dry run: `yes`
-- build executed: `no`
+- dry run: `no`
+- build executed: `yes`
 - ZIP SHA-256 verified: `yes`
 - extracted text row count: `18744`
 - embedding model: `text-embedding-3-small`
@@ -29,9 +29,17 @@
 
 ## Outcome
 
-- status: `provider_family_recorded`
+- status: `built_real_index_gate_still_closed`
+
+## Build Facts
+
+- collection document count: `5507`
+- verified embedding dimension: `3172`
+- zero-fill rule vector count: `669`
+- zero-fill template embedding count: `1479`
 
 ## Gate Note
 
 - formal Chroma index blocker closed: `no`
+- current benchmark gate ready: `false`
 - formal `R-Bot @120` generation may start: `no`

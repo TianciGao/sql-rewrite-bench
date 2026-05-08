@@ -32,9 +32,10 @@ Expected retained output shape outside the repo:
 
 Current execute-build safety behavior:
 
-- `--execute-build` must fail closed with status `execute_build_not_implemented_real_index` until real embedding/index population exists
-- no incomplete Chroma shell should be created and then mistaken for a formal index
-- no complete-looking formal index identifier should be emitted for an unimplemented build path
+- `--execute-build` must build the external Chroma directory only from retained ZIP contents and local rule-vector construction
+- `--execute-build` must not call an embedding provider for corpus-side vector materialization
+- malformed stored semantic vectors or missing non-empty template embeddings must fail closed with a precise status
+- no incomplete Chroma directory should remain under the final retained path after a failed build
 
 ## Required Frozen Metadata In Identifier
 
@@ -48,6 +49,10 @@ Current execute-build safety behavior:
 - embedding model `text-embedding-3-small`
 - rule-vector width `100`
 - total dimension `3172`
+- collection document count
+- verified stored embedding dimension
+- zero-fill rule-vector fallback count
+- zero-fill template-embedding fallback count
 - retrieval `top_k = 10`
 - reranking `rrf`
 - `rrf_k = 60`
