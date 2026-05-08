@@ -1,0 +1,75 @@
+{
+  "run_id": "r_bot_pg1_execution_canary_01",
+  "mode": "manual_human_execution",
+  "method_id": "r_bot",
+  "route_id": "r_bot_pg_rewrite",
+  "case_id": "PERF_0006",
+  "engine": "pg",
+  "pool": "performance",
+  "planned_rows": 1,
+  "rows_ready_to_execute": 1,
+  "denominator_id": "common_core_v0_40_pg40",
+  "canary_denominator_id": "common_core_v0_40_perf_pg1_r_bot_execution_canary",
+  "claim_boundary": "exploratory_smoke_only_not_current_common_core_metric_evidence",
+  "current_benchmark_metric_evidence": false,
+  "recovery_run_reference": {
+    "run_id": "r_bot_pg1_recovery_canary_01",
+    "run_results_path": "reports/evaluation/common_core_v0/runs/r_bot_pg1_recovery_canary_01/run_results.json",
+    "generated_sql_path": "reports/evaluation/common_core_v0/runs/r_bot_pg1_recovery_canary_01/generated/PERF_0006/pg/r_bot_pg_rewrite.sql"
+  },
+  "git_commit": "1ea3993bf69e3951e7a177ef64dd0e358b0749ea",
+  "pg_check_exit_code": 0,
+  "counts_by_execution_status_observed": {
+    "executed": 1
+  },
+  "counts_by_consistency_check_status": {
+    "match_exact": 1
+  },
+  "records": [
+    {
+      "row_key": "pg_check",
+      "record_kind": "preflight",
+      "execution_status_observed": "executed",
+      "consistency_check_status": "not_applicable",
+      "command": "python -m scripts.cli pg-check",
+      "exit_code": 0,
+      "stdout_log": "reports/evaluation/common_core_v0/runs/r_bot_pg1_execution_canary_01/logs/pg_check.stdout.log",
+      "stderr_log": "reports/evaluation/common_core_v0/runs/r_bot_pg1_execution_canary_01/logs/pg_check.stderr.log",
+      "claim_boundary": "exploratory_smoke_only_not_current_common_core_metric_evidence",
+      "current_benchmark_metric_evidence": false
+    },
+    {
+      "row_key": "perf_0006__pg__r_bot_pg_rewrite",
+      "record_kind": "execution_row",
+      "case_id": "PERF_0006",
+      "pool": "performance",
+      "engine": "pg",
+      "method_id": "r_bot",
+      "route_id": "r_bot_pg_rewrite",
+      "denominator_id": "common_core_v0_40_pg40",
+      "canary_denominator_id": "common_core_v0_40_perf_pg1_r_bot_execution_canary",
+      "planned_row_status": "ready_to_execute",
+      "claim_boundary": "exploratory_smoke_only_not_current_common_core_metric_evidence",
+      "current_benchmark_metric_evidence": false,
+      "generated_sql_path": "reports/evaluation/common_core_v0/runs/r_bot_pg1_recovery_canary_01/generated/PERF_0006/pg/r_bot_pg_rewrite.sql",
+      "source_sql_path": "cases/PERF/PERF_0006/source.sql",
+      "schema_path": "cases/PERF/PERF_0006/schema/ddl_pg.sql",
+      "witness_data_path": "cases/PERF/PERF_0006/validation/pg_witness_data.sql",
+      "stdout_log": "reports/evaluation/common_core_v0/runs/r_bot_pg1_execution_canary_01/logs/perf_0006__pg__r_bot_pg_rewrite.stdout.log",
+      "stderr_log": "reports/evaluation/common_core_v0/runs/r_bot_pg1_execution_canary_01/logs/perf_0006__pg__r_bot_pg_rewrite.stderr.log",
+      "caveat": "exploratory_pg1_recovery_only_do_not_upgrade_to_current_common_core_metric_evidence",
+      "execution_status_observed": "executed",
+      "result_check_path": "reports/evaluation/common_core_v0/runs/r_bot_pg1_execution_canary_01/workspaces/PERF_0006/pg/r_bot_pg_rewrite/result_check.json",
+      "source_output_path": "reports/evaluation/common_core_v0/runs/r_bot_pg1_execution_canary_01/workspaces/PERF_0006/pg/r_bot_pg_rewrite/source.tsv",
+      "generated_output_path": "reports/evaluation/common_core_v0/runs/r_bot_pg1_execution_canary_01/workspaces/PERF_0006/pg/r_bot_pg_rewrite/generated.tsv",
+      "exact_match": true,
+      "consistency_check_status": "match_exact"
+    }
+  ],
+  "notes": [
+    "exploratory_pg1_recovery_evidence_only",
+    "do_not_treat_as_current_common_core_metric_evidence",
+    "no_timing_no_speedup_no_leaderboard",
+    "generated_sql_is_executed_as_retained_from_recovery_package_without_modification"
+  ]
+}
