@@ -1,0 +1,10 @@
+注意:  模式 "ccv0_calcite_hep_cons_0036" 不存在
+错误:  关系 "DEPT" 不存在
+LINE 2: FROM "DEPT"
+             ^
+注意:  递归删除 表 ccv0_calcite_hep_cons_0036.dept
+Traceback (most recent call last):
+  File "<stdin>", line 138, in run_pg_row
+  File "/usr/lib/python3.12/subprocess.py", line 571, in run
+    raise CalledProcessError(retcode, process.args,
+subprocess.CalledProcessError: Command '['psql', '-v', 'ON_ERROR_STOP=1', '-X', '-q', '-c', 'SET search_path TO ccv0_calcite_hep_cons_0036;', '-c', 'COPY (SELECT "NAME", COUNT(*) AS "C"\nFROM "DEPT"\nGROUP BY "NAME"\nHAVING "NAME" = \'Charlie\') TO STDOUT WITH (FORMAT CSV, DELIMITER E\'\\t\', NULL \'NULL\');']' returned non-zero exit status 1.

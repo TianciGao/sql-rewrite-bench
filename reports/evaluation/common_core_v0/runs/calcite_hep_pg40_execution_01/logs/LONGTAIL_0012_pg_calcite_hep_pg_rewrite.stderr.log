@@ -1,0 +1,13 @@
+注意:  模式 "ccv0_calcite_hep_longtail_0012" 不存在
+错误:  关系 "Users" 不存在
+LINE 3: FROM "Users"
+             ^
+注意:  串联删除3个其它对象
+DETAIL:  递归删除 表 ccv0_calcite_hep_longtail_0012.users
+递归删除 表 ccv0_calcite_hep_longtail_0012.posts
+递归删除 表 ccv0_calcite_hep_longtail_0012.votes
+Traceback (most recent call last):
+  File "<stdin>", line 138, in run_pg_row
+  File "/usr/lib/python3.12/subprocess.py", line 571, in run
+    raise CalledProcessError(retcode, process.args,
+subprocess.CalledProcessError: Command '['psql', '-v', 'ON_ERROR_STOP=1', '-X', '-q', '-c', 'SET search_path TO ccv0_calcite_hep_longtail_0012;', '-c', 'COPY (SELECT "UserName", "TotalPosts", "TotalQuestions", "TotalAnswers", "LastPostTitle", "LastPostDate", "AvgUpVotes", "AvgDownVotes", "Reputation", "Views", ROW_NUMBER() OVER (ORDER BY "TotalPosts" DESC) AS "rank_value"\nFROM (SELECT "Users"."DisplayName" AS "UserName", "Posts"."Title" AS "LastPostTitle", "Users"."Reputation", "Users"."Views", COUNT(DISTINCT "Posts"."Id") AS "TotalPosts", COALESCE(SUM(CASE WHEN "Posts"."PostTypeId" = 1 THEN 1 ELSE 0 END), 0) AS "TotalQuestions", COALESCE(SUM(CASE WHEN "Posts"."PostTypeId" = 2 THEN 1 ELSE 0 END), 0) AS "TotalAnswers", MAX("Posts"."CreationDate") AS "LastPostDate", CAST(COALESCE(SUM(CASE WHEN "t0"."UpVotes" IS NOT NULL THEN CAST("t0"."UpVotes" AS INTEGER) ELSE 0 END), 0) / COUNT(*) AS INTEGER) AS "AvgUpVotes", CAST(COALESCE(SUM(CASE WHEN "t0"."DownVotes" IS NOT NULL THEN CAST("t0"."DownVotes" AS INTEGER) ELSE 0 END), 0) / COUNT(*) AS INTEGER) AS "AvgDownVotes"\nFROM "Users"\nLEFT JOIN "Posts" ON "Users"."Id" = "Posts"."OwnerUserId"\nLEFT JOIN (SELECT "PostId", COALESCE(SUM(CASE WHEN "VoteTypeId" = 2 THEN 1 ELSE 0 END), 0) AS "UpVotes", COALESCE(SUM(CASE WHEN "VoteTypeId" = 3 THEN 1 ELSE 0 END), 0) AS "DownVotes"\nFROM "Votes"\nGROUP BY "PostId") AS "t0" ON "Posts"."Id" = "t0"."PostId"\nWHERE "Users"."Reputation" > 1000\nGROUP BY "Users"."DisplayName", "Posts"."Title", "Users"."Reputation", "Users"."Views") AS "t4"\nWHERE "t4"."TotalPosts" > 0\nORDER BY "TotalPosts" DESC, "LastPostDate" DESC\nFETCH NEXT 10 ROWS ONLY) TO STDOUT WITH (FORMAT CSV, DELIMITER E\'\\t\', NULL \'NULL\');']' returned non-zero exit status 1.

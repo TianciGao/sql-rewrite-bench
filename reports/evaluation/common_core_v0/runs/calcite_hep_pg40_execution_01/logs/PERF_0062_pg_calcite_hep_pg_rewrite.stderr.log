@@ -1,0 +1,8 @@
+注意:  模式 "ccv0_calcite_hep_perf_0062" 不存在
+注意:  串联删除6个其它对象
+DETAIL:  递归删除 表 ccv0_calcite_hep_perf_0062.store_sales
+递归删除 表 ccv0_calcite_hep_perf_0062.store
+递归删除 表 ccv0_calcite_hep_perf_0062.customer_demographics
+递归删除 表 ccv0_calcite_hep_perf_0062.household_demographics
+递归删除 表 ccv0_calcite_hep_perf_0062.customer_address
+递归删除 表 ccv0_calcite_hep_perf_0062.date_dim
