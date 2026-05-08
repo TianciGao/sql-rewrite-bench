@@ -59,6 +59,7 @@ python reports/evaluation/common_core_v0/r_bot_formal_runtime_lock_01/run_manual
 - Python version and platform fields are captured
 - required packages are importable
 - required package versions match the formal lock
+- distribution version verification is done separately from module import verification
 - provider/base_url metadata fields are read from the retained index identifier without secrets
 - formal Chroma index directory is visible
 - retained index identifier exists
@@ -67,6 +68,13 @@ python reports/evaluation/common_core_v0/r_bot_formal_runtime_lock_01/run_manual
   - `rule_vector_width = 100`
   - `total_dimension = 3172`
   - `embedding_model = text-embedding-3-small`
+
+Explicit verifier import-target mappings include:
+
+- `PyYAML -> yaml`
+- `scikit-learn -> sklearn`
+- `llama-index-instrumentation -> llama_index_instrumentation`
+- `llama-index-workflows -> workflows`
 
 ### Non-Goals
 

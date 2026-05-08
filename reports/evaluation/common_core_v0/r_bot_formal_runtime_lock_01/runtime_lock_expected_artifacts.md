@@ -37,6 +37,7 @@ The retained snapshot must include:
 - retained `rule_vector_width`
 - retained `total_dimension`
 - per-package import/version checks
+  - with distribution version checks separated from import-target checks
 - final verifier status
 - explicit `current_benchmark_gate_ready = false`
 - explicit `formal_generation_may_start = false`

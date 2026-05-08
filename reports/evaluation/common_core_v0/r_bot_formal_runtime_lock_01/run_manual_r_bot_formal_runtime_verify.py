@@ -37,6 +37,7 @@ EXPECTED_RULE_VECTOR_WIDTH = 100
 EXPECTED_EMBEDDING_MODEL = "text-embedding-3-small"
 
 IMPORT_TARGETS = {
+    "PyYAML": "yaml",
     "chromadb": "chromadb",
     "jsonlines": "jsonlines",
     "jpype1": "jpype",
@@ -44,17 +45,18 @@ IMPORT_TARGETS = {
     "llama-index-core": "llama_index.core",
     "llama-index-embeddings-huggingface": "llama_index.embeddings.huggingface",
     "llama-index-embeddings-openai": "llama_index.embeddings.openai",
-    "llama-index-instrumentation": "llama_index.instrumentation",
+    "llama-index-instrumentation": "llama_index_instrumentation",
     "llama-index-llms-openai": "llama_index.llms.openai",
     "llama-index-llms-openai-like": "llama_index.llms.openai_like",
     "llama-index-vector-stores-chroma": "llama_index.vector_stores.chroma",
-    "llama-index-workflows": "llama_index.workflows",
+    "llama-index-workflows": "workflows",
     "numpy": "numpy",
     "openai": "openai",
     "prettytable": "prettytable",
     "psycopg": "psycopg",
     "psycopg-binary": "psycopg",
     "psycopg2-binary": "psycopg2",
+    "scikit-learn": "sklearn",
     "scipy": "scipy",
     "sentence-transformers": "sentence_transformers",
     "sqlalchemy": "sqlalchemy",
@@ -135,16 +137,23 @@ def check_packages(requirements: list[tuple[str, str]]) -> tuple[list[dict[str, 
         observed_version: str | None = None
         import_ok = False
         version_match = False
-        error: str | None = None
+        error_parts: list[str] = []
+
         try:
-            importlib.import_module(import_target)
-            import_ok = True
             observed_version = metadata.version(distribution)
             version_match = observed_version == expected_version
             if not version_match:
-                error = f"version mismatch: expected {expected_version}, observed {observed_version}"
+                error_parts.append(f"version mismatch: expected {expected_version}, observed {observed_version}")
         except Exception as exc:
-            error = str(exc)
+            error_parts.append(f"version check failed: {exc}")
+
+        try:
+            importlib.import_module(import_target)
+            import_ok = True
+        except Exception as exc:
+            error_parts.append(f"import failed for {import_target}: {exc}")
+
+        error = "; ".join(error_parts) if error_parts else None
 
         row = {
             "distribution": distribution,
