@@ -1,0 +1,34 @@
+{
+  "row_key": "PERF_0054__pg__r_bot_same_engine_rewrite",
+  "case_id": "PERF_0054",
+  "pool": "performance",
+  "engine": "pg",
+  "method_id": "r_bot",
+  "route_id": "r_bot_same_engine_rewrite",
+  "generation_denominator_id": "common_core_v0_40_same_engine_120",
+  "timing_denominator_id": "generated_pg7_match_exact_only",
+  "claim_boundary": "formal_generated_pg7_match_exact_timing_only_not_full_120_or_leaderboard_evidence",
+  "current_benchmark_metric_evidence": false,
+  "warmup_count": 1,
+  "repeat_count": 3,
+  "source_runtime_ms": [
+    487.3616110999137,
+    371.56585697084665,
+    378.7215390475467
+  ],
+  "generated_runtime_ms": [
+    403.2858939608559,
+    481.14510893356055,
+    477.66319406218827
+  ],
+  "median_source_ms": 378.7215390475467,
+  "median_generated_ms": 477.66319406218827,
+  "speedup_ratio": 0.7928631382016005,
+  "timing_status": "timing_success",
+  "timing_json_path": "reports/evaluation/common_core_v0/runs/r_bot_pg7_timing_01/timings/PERF_0054/pg/r_bot_same_engine_rewrite.json",
+  "stdout_log": "reports/evaluation/common_core_v0/runs/r_bot_pg7_timing_01/logs/PERF_0054_pg_r_bot_same_engine_rewrite.stdout.log",
+  "stderr_log": "reports/evaluation/common_core_v0/runs/r_bot_pg7_timing_01/logs/PERF_0054_pg_r_bot_same_engine_rewrite.stderr.log",
+  "workspace_dir": "reports/evaluation/common_core_v0/runs/r_bot_pg7_timing_01/workspaces/PERF_0054/pg/r_bot_same_engine_rewrite",
+  "notes": "",
+  "caveat": "generated_pg_row_from_formal_120_generation_run_and_match_exact_pg7_execution_only"
+}
