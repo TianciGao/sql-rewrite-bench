@@ -1,0 +1,46 @@
+{
+  "canary_denominator_id": "r_bot_mysql_spark_generation_canary_01",
+  "case_id": "PERF_0007",
+  "claim_boundary": "mysql_spark_generation_canary_only_not_execution_timing_speedup_or_leaderboard_evidence",
+  "engine": "spark",
+  "failure_category": "output_sql_missing",
+  "failure_reason": "method finished without extractable output_sql",
+  "generation_only": true,
+  "method_id": "r_bot",
+  "pool": "performance",
+  "rewriter_database": "Spark",
+  "route_id": "r_bot_same_engine_rewrite",
+  "row_status": "failed",
+  "run_id": "r_bot_mysql_spark_generation_canary_01",
+  "runtime_patch_info": {
+    "calcite_layout": {
+      "calcite_root": "/tmp/rewritebench_rbot_mysql_spark_canary_01_runtime/PERF_0007/spark/CalciteRewrite",
+      "expected_from_cwd": "/tmp/rewritebench_rbot_mysql_spark_canary_01_runtime/PERF_0007/spark/my_rewriter/CalciteRewrite",
+      "expected_jar_dir": "/tmp/rewritebench_rbot_mysql_spark_canary_01_runtime/PERF_0007/spark/my_rewriter/CalciteRewrite/out/artifacts/LearnedRewrite_jar",
+      "expected_jar_exists": true,
+      "layout_mode": "symlinked_relative_into_my_rewriter"
+    },
+    "chroma_mode": "symlink",
+    "jar_patch": {
+      "jar_path": "/tmp/rewritebench_rbot_mysql_spark_canary_01_runtime/PERF_0007/spark/CalciteRewrite/out/artifacts/LearnedRewrite_jar/LearnedRewrite.jar",
+      "removed_signature_entries": [
+        "META-INF/DUMMY.SF",
+        "META-INF/DUMMY.DSA"
+      ]
+    },
+    "rag_jsonl": {
+      "mode_by_file": {
+        "stackoverflow-rewrite-query-optimization.jsonl": "extracted_from_zip:stackoverflow-rewrite-query-optimization.jsonl",
+        "stackoverflow-rewrite-rules-query-optimization.jsonl": "extracted_from_zip:stackoverflow-rewrite-rules-query-optimization.jsonl",
+        "stackoverflow-rewrite-sql-templates-embed-query-optimization.jsonl": "extracted_from_zip:stackoverflow-rewrite-sql-templates-embed-query-optimization.jsonl",
+        "stackoverflow-rewrite-sql-templates-query-optimization.jsonl": "extracted_from_zip:stackoverflow-rewrite-sql-templates-query-optimization.jsonl"
+      }
+    }
+  },
+  "schema_path": "cases/PERF/PERF_0007/schema/ddl_spark.sql",
+  "source_denominator_id": "common_core_v0_40_same_engine_120",
+  "source_sql_path": "cases/PERF/PERF_0007/source.sql",
+  "target_engine_prompt_label": "Spark SQL",
+  "witness_data_path": "cases/PERF/PERF_0007/validation/spark_witness_data.sql",
+  "witness_data_used_for_generation": false
+}
