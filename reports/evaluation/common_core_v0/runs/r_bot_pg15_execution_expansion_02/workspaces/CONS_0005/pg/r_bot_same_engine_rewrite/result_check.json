@@ -1,0 +1,10 @@
+{
+  "execution_status_observed": "executed",
+  "result_check_path": "reports/evaluation/common_core_v0/runs/r_bot_pg15_execution_expansion_02/workspaces/CONS_0005/pg/r_bot_same_engine_rewrite/result_check.json",
+  "source_output_path": "reports/evaluation/common_core_v0/runs/r_bot_pg15_execution_expansion_02/workspaces/CONS_0005/pg/r_bot_same_engine_rewrite/source.tsv",
+  "generated_output_path": "reports/evaluation/common_core_v0/runs/r_bot_pg15_execution_expansion_02/workspaces/CONS_0005/pg/r_bot_same_engine_rewrite/generated.tsv",
+  "claim_boundary": "formal_generated_pg15_from_pg40_expansion_execution_validity_only_not_timing_speedup_or_leaderboard_evidence",
+  "current_benchmark_metric_evidence": false,
+  "exact_match": true,
+  "consistency_check_status": "match_exact"
+}

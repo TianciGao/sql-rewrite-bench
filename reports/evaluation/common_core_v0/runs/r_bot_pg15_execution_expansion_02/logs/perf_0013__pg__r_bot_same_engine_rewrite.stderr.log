@@ -1,0 +1,8 @@
+注意:  模式 "rbot_pg15_exec_perf_0013" 不存在
+注意:  串联删除6个其它对象
+DETAIL:  递归删除 表 rbot_pg15_exec_perf_0013.customer
+递归删除 表 rbot_pg15_exec_perf_0013.orders
+递归删除 表 rbot_pg15_exec_perf_0013.lineitem
+递归删除 表 rbot_pg15_exec_perf_0013.supplier
+递归删除 表 rbot_pg15_exec_perf_0013.nation
+递归删除 表 rbot_pg15_exec_perf_0013.region
