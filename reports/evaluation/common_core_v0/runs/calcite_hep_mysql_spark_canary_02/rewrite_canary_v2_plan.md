@@ -30,6 +30,9 @@ The v2 package attempts:
 - MySQL rows via `org.apache.calcite.sql.dialect.MysqlSqlDialect.DEFAULT`
 - Spark rows via `org.apache.calcite.sql.dialect.SparkSqlDialect.DEFAULT`
 
+The package-local wrapper is the only place where Calcite-version API
+compatibility fixes should be applied for this canary.
+
 The package does not:
 
 - use `PostgresqlSqlDialect` for MySQL or Spark same-engine evidence

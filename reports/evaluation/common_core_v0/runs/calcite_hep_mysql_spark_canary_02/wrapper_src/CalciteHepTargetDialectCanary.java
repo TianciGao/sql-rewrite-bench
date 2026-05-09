@@ -20,7 +20,6 @@ import org.apache.calcite.rel.rel2sql.RelToSqlConverter;
 import org.apache.calcite.rel.rules.CoreRules;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
-import org.apache.calcite.schema.Table;
 import org.apache.calcite.schema.impl.AbstractTable;
 import org.apache.calcite.sql.SqlDialect;
 import org.apache.calcite.sql.SqlNode;
@@ -463,9 +462,5 @@ public final class CalciteHepTargetDialectCanary {
             return builder.build();
         }
 
-        @Override
-        public Table extend(List<org.apache.calcite.rel.type.RelDataTypeField> fields) {
-            return this;
-        }
     }
 }

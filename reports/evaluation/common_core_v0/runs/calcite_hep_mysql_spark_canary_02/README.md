@@ -22,6 +22,9 @@ rendering through:
 - `MysqlSqlDialect.DEFAULT`
 - `SparkSqlDialect.DEFAULT`
 
+If the visible Calcite checkout differs from older wrapper API assumptions,
+only this package-local wrapper should be adapted.
+
 ## Important boundary
 
 This package is not:

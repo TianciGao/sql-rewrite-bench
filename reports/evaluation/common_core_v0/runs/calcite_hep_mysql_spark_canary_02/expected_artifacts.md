@@ -45,5 +45,10 @@ If target dialect routing cannot be established safely for an engine:
 - block only that engine
 - keep the other engine attemptable if safe
 
+If the package-local wrapper does not compile against the visible Calcite API:
+
+- package-level preflight should classify this as `wrapper_compile_failed`
+- rows should remain `preflight_blocked`
+
 The package must not silently reinterpret PostgreSQL-dialect output as MySQL or
 Spark same-engine evidence.
