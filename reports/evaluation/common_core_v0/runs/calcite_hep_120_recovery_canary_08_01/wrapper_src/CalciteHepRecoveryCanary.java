@@ -90,9 +90,10 @@ public final class CalciteHepRecoveryCanary {
         result.put("rewrite_changed", "");
 
         SqlDialect dialect = selectDialect(engine);
-        SqlParser.Config parserConfig = selectParserConfig(engine);
+        Lex parserLex = selectParserLex(engine);
+        SqlParser.Config parserConfig = SqlParser.config().withLex(parserLex);
         result.put("dialect_class_used", dialect.getClass().getName());
-        result.put("parser_lex_used", parserConfig.lex().name());
+        result.put("parser_lex_used", parserLex.name());
 
         String parseCandidateSql = stripTrailingSemicolon(sourceSql);
         String emittedSql = null;
@@ -173,13 +174,13 @@ public final class CalciteHepRecoveryCanary {
         }
     }
 
-    private static SqlParser.Config selectParserConfig(String engine) {
+    private static Lex selectParserLex(String engine) {
         switch (engine) {
             case "pg":
-                return SqlParser.config().withLex(Lex.JAVA);
+                return Lex.JAVA;
             case "mysql":
             case "spark":
-                return SqlParser.config().withLex(Lex.MYSQL);
+                return Lex.MYSQL;
             default:
                 throw new IllegalArgumentException("unsupported parser engine: " + engine);
         }

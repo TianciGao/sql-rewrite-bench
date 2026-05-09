@@ -13,14 +13,14 @@ This is a **proposed** denominator-aware evidence row for later review. It does 
 | `timing_denominator_id` | `NA_not_computed` |
 | `engine_scope` | `tri_engine_same_engine_fail_closed_mixed_evidence` |
 | `planned_generation_or_route_rows` | `120` |
-| `generated_or_ready_rows` | `89` |
-| `executed_rows` | `82` |
-| `match_exact_rows` | `70` |
+| `generated_or_ready_rows` | `97` |
+| `executed_rows` | `87` |
+| `match_exact_rows` | `75` |
 | `timing_success_rows` | `NA_not_computed` |
-| `denominator_caveat` | `Retained PG40 route evidence plus bounded non-PG MySQL/Spark expansion synthesized into a fail-closed 120-row correctness ledger; not a full timing packet and not leaderboard-comparable` |
+| `denominator_caveat` | `Retained PG40 route evidence plus bounded non-PG MySQL/Spark expansion and recovery-canary evidence synthesized into a fail-closed 120-row correctness ledger; not a full timing packet and not leaderboard-comparable` |
 | `leaderboard_comparable` | `no` |
-| `executable_rate` | `0.6833` |
-| `result_consistency_rate` | `0.5833` |
+| `executable_rate` | `0.7250` |
+| `result_consistency_rate` | `0.6250` |
 | `negative_rejection_rate` | `NA_not_computed` |
 | `gm_speedup` | `NA_not_computed` |
 | `regression_rate_20pct` | `NA_not_computed` |
@@ -33,5 +33,5 @@ This is a **proposed** denominator-aware evidence row for later review. It does 
 | `attribution_coverage` | `NA_not_computed` |
 | `material_regression_rows` | `NA_not_computed` |
 | `high_variance_watchlist` | `NA_not_computed` |
-| `caveat` | `Proposed paper row only. Treat parser failures, HEP rewrite failures, setup failures, execution failures, and mismatches as non-exact in-denominator rows. Requires a separate paper-readiness check before canonical table integration.` |
-| `source_summary_files` | `reports/evaluation/common_core_v0/calcite_hep_120_fail_closed_synthesis_v1.md; reports/evaluation/common_core_v0/calcite_hep_validity_summary_v1.md; reports/evaluation/common_core_v0/calcite_hep_speedup_summary_v1.md; reports/evaluation/common_core_v0/calcite_hep_mysql_spark_execution_expansion_result_card_v1.md` |
+| `caveat` | `Proposed paper row only. Treat parser failures, HEP rewrite failures, setup failures, execution failures, and mismatches as non-exact in-denominator rows. The bounded recovery canary lifts the fail-closed ledger from 70/120 to 75/120 but does not make the row timing-backed or leaderboard-comparable. Requires a separate paper-readiness check before canonical table integration.` |
+| `source_summary_files` | `reports/evaluation/common_core_v0/calcite_hep_120_fail_closed_synthesis_v1.md; reports/evaluation/common_core_v0/calcite_hep_120_recovery_canary_08_result_card_v1.md; reports/evaluation/common_core_v0/calcite_hep_validity_summary_v1.md; reports/evaluation/common_core_v0/calcite_hep_speedup_summary_v1.md; reports/evaluation/common_core_v0/calcite_hep_mysql_spark_execution_expansion_result_card_v1.md` |
