@@ -210,6 +210,36 @@ def strip_runtime_jar_signatures(runtime_root: Path) -> dict[str, Any]:
     return {"jar_path": str(jar_path), "removed_signature_entries": removed}
 
 
+def ensure_runtime_calcite_layout(runtime_root: Path) -> dict[str, Any]:
+    calcite_root = runtime_root / "CalciteRewrite"
+    expected_from_cwd = runtime_root / "my_rewriter" / "CalciteRewrite"
+    expected_jar_dir = expected_from_cwd / "out" / "artifacts" / "LearnedRewrite_jar"
+    expected_jar_path = expected_jar_dir / "LearnedRewrite.jar"
+
+    if not calcite_root.is_dir():
+        raise RuntimeError(f"Missing copied CalciteRewrite root at {calcite_root}")
+
+    if expected_from_cwd.exists() or expected_from_cwd.is_symlink():
+        if expected_from_cwd.is_symlink() or expected_from_cwd.is_file():
+            expected_from_cwd.unlink()
+        else:
+            shutil.rmtree(expected_from_cwd)
+    try:
+        os.symlink("../CalciteRewrite", expected_from_cwd, target_is_directory=True)
+        layout_mode = "symlinked_relative_into_my_rewriter"
+    except OSError:
+        shutil.copytree(calcite_root, expected_from_cwd)
+        layout_mode = "copied_into_my_rewriter"
+
+    return {
+        "layout_mode": layout_mode,
+        "calcite_root": str(calcite_root),
+        "expected_from_cwd": str(expected_from_cwd),
+        "expected_jar_dir": str(expected_jar_dir),
+        "expected_jar_exists": expected_jar_path.is_file(),
+    }
+
+
 def provision_required_rag_jsonl(runtime_root: Path) -> dict[str, Any]:
     rag_dir = runtime_root / "rag"
     rag_dir.mkdir(parents=True, exist_ok=True)
@@ -260,6 +290,7 @@ def prepare_runtime_root(runtime_root: Path) -> dict[str, Any]:
 
     rag_info = provision_required_rag_jsonl(runtime_root)
     jar_info = strip_runtime_jar_signatures(runtime_root)
+    calcite_layout_info = ensure_runtime_calcite_layout(runtime_root)
 
     replace_once(
         runtime_root / "my_rewriter" / "config.py",
@@ -349,6 +380,7 @@ def prepare_runtime_root(runtime_root: Path) -> dict[str, Any]:
         "chroma_mode": chroma_mode,
         "rag_jsonl": rag_info,
         "jar_patch": jar_info,
+        "calcite_layout": calcite_layout_info,
     }
 
 
@@ -455,6 +487,18 @@ def run_engine_preflight(engine: str) -> tuple[bool, str, str]:
         if not (runtime_root / "rag" / filename).is_file():
             return False, "missing_rag_jsonl", f"Required RAG JSONL missing after runtime prep: {filename}"
 
+    actual_cwd = runtime_root / "my_rewriter"
+    expected_jar_dir = actual_cwd / "CalciteRewrite" / "out" / "artifacts" / "LearnedRewrite_jar"
+    expected_jar_path = expected_jar_dir / "LearnedRewrite.jar"
+    jar_layout_info = {
+        "actual_cwd": str(actual_cwd),
+        "runtime_root": str(runtime_root),
+        "expected_calcite_jar_dir": str(expected_jar_dir),
+        "learned_rewrite_jar_exists": expected_jar_path.is_file(),
+    }
+    if not expected_jar_dir.is_dir() or not expected_jar_path.is_file():
+        return False, "calcite_rewrite_jar_missing", json.dumps(jar_layout_info, sort_keys=True)
+
     preflight_script = f"""
 from my_rewriter.database import DBArgs
 from my_rewriter.rag_retrieve import init_docstore
@@ -471,15 +515,26 @@ print("preflight_ok")
         env["OPENAI_API_BASE"] = base_url
     proc = subprocess.run(
         [str(Path(sys.executable)), "-c", preflight_script],
-        cwd=runtime_root / "my_rewriter",
+        cwd=actual_cwd,
         env=env,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         text=True,
     )
     if proc.returncode != 0:
-        return False, "java_or_runtime_import_failed", proc.stderr.strip() or proc.stdout.strip() or "preflight import failed"
-    return True, "ok", json.dumps(runtime_info, sort_keys=True)
+        failure_info = {
+            **jar_layout_info,
+            "runtime_info": runtime_info,
+            "stderr": proc.stderr.strip(),
+            "stdout": proc.stdout.strip(),
+        }
+        return False, "java_or_runtime_import_failed", json.dumps(failure_info, sort_keys=True)
+    success_info = {
+        **jar_layout_info,
+        "runtime_info": runtime_info,
+        "stdout": proc.stdout.strip(),
+    }
+    return True, "ok", json.dumps(success_info, sort_keys=True)
 
 
 def generate_row(row: dict[str, str]) -> tuple[str, str]:

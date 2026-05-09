@@ -35,6 +35,7 @@ The canary now uses a bounded temp-runtime recovery path instead of a fake Postg
 - witness-data files remain metadata only and are not executed
 - the temp runtime removes live DB cost/execution dependencies
 - Java rewrite and Calcite rule matching are told the target engine explicitly through runtime patching
+- the temp runtime now also materializes `my_rewriter/CalciteRewrite/out/artifacts/LearnedRewrite_jar` at the exact relative path expected by `rewrite.py`
 
 This remains fail-closed. If the recovered non-PG route cannot safely initialize, the package writes explicit blocked status rather than silently dropping rows.
 
@@ -51,8 +52,9 @@ The shell runner checks:
 5. canary source/schema/witness paths exist
 6. visible upstream LLM4Rewrite tree exists
 7. required RAG JSONL files can be provisioned
-8. copied Java runtime import works
-9. generation-only non-PG runtime patch initializes safely
+8. `my_rewriter/CalciteRewrite/out/artifacts/LearnedRewrite_jar/LearnedRewrite.jar` exists from the subprocess working directory
+9. copied Java runtime import works
+10. generation-only non-PG runtime patch initializes safely
 
 If preflight fails, the runner writes:
 

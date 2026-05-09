@@ -31,6 +31,7 @@ For each generated canary row:
 If the recovered MySQL/Spark generation route is still unsafe, the package should fail closed at preflight:
 
 - `run_results.json` should record `status = preflight_failed`
+- `run_results.json` should use `failure_category = calcite_rewrite_jar_missing` when the temp runtime does not expose the expected `CalciteRewrite/out/artifacts/LearnedRewrite_jar` path from subprocess cwd
 - `run_event_long.csv` should still contain all `6` rows with explicit `preflight_blocked` status
 
 This package should never silently drop rows or convert a blocked feasibility canary into a support claim.

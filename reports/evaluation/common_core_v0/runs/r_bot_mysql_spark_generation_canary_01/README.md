@@ -29,6 +29,7 @@ The shell runner now contains a bounded generation-only non-PG adapter recovery:
 
 - it prepares a temp runtime copy of upstream `LLM4Rewrite`
 - it provisions retained RAG files and the formal Chroma index
+- it materializes `my_rewriter/CalciteRewrite/out/artifacts/LearnedRewrite_jar` at the relative path expected by upstream `rewrite.py`
 - it removes live DB execution/cost dependencies
 - it passes the target engine explicitly into the rewrite path
 
