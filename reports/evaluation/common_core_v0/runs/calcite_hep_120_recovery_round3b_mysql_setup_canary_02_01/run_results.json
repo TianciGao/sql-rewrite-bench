@@ -1,0 +1,70 @@
+{
+  "run_id": "calcite_hep_120_recovery_round3b_mysql_setup_canary_02_01",
+  "method_id": "calcite_hep",
+  "route_id": "calcite_hep_same_engine_rewrite",
+  "denominator_id": "common_core_v0_40_same_engine_120",
+  "previous_fail_closed_exact_ledger": "84/120",
+  "planned_rows": 2,
+  "recovered_exact_count": 0,
+  "new_fail_closed_exact_ledger": "84/120",
+  "maximum_possible_ledger_after_this_canary": "86/120",
+  "counts_by_engine": {
+    "mysql": {
+      "executed": 2
+    }
+  },
+  "counts_by_execution_status": {
+    "executed": 2
+  },
+  "counts_by_consistency_status": {
+    "mismatch": 2
+  },
+  "current_benchmark_metric_evidence": false,
+  "timing_denominator_id": "NA_not_computed",
+  "leaderboard_comparable": "no",
+  "claim_boundary": "calcite_hep_120_recovery_round3b_mysql_setup_canary_only_not_timing_speedup_or_leaderboard_evidence",
+  "records": [
+    {
+      "row_key": "PERF_0062:mysql",
+      "case_id": "PERF_0062",
+      "pool": "PERF",
+      "engine": "mysql",
+      "previous_ledger": "84/120",
+      "previous_status": "generated_execution_failed",
+      "attempted_recovery_family": "mysql_shared_db_setup_isolation",
+      "execution_status": "executed",
+      "exact_match": false,
+      "consistency_status": "mismatch",
+      "recovered_exact": false,
+      "failure_category": "",
+      "blocker_reason": "",
+      "source_sql_path": "cases/PERF/PERF_0062/source.sql",
+      "schema_path": "cases/PERF/PERF_0062/schema/ddl_mysql.sql",
+      "witness_data_path": "cases/PERF/PERF_0062/validation/mysql_witness_data.sql",
+      "generated_sql_path": "reports/evaluation/common_core_v0/runs/calcite_hep_120_recovery_round3_canary_10_01/generated/PERF_0062/mysql/calcite_hep_recovery_round3_rewrite.sql",
+      "result_check_path": "reports/evaluation/common_core_v0/runs/calcite_hep_120_recovery_round3b_mysql_setup_canary_02_01/workspaces/PERF_0062/mysql/result_check.json",
+      "claim_boundary": "calcite_hep_120_recovery_round3b_mysql_setup_canary_only_not_timing_speedup_or_leaderboard_evidence"
+    },
+    {
+      "row_key": "LONGTAIL_0013:mysql",
+      "case_id": "LONGTAIL_0013",
+      "pool": "LONGTAIL",
+      "engine": "mysql",
+      "previous_ledger": "84/120",
+      "previous_status": "generated_execution_failed",
+      "attempted_recovery_family": "mysql_shared_db_setup_isolation",
+      "execution_status": "executed",
+      "exact_match": false,
+      "consistency_status": "mismatch",
+      "recovered_exact": false,
+      "failure_category": "",
+      "blocker_reason": "",
+      "source_sql_path": "cases/LONGTAIL/LONGTAIL_0013/source.sql",
+      "schema_path": "cases/LONGTAIL/LONGTAIL_0013/schema/ddl_mysql.sql",
+      "witness_data_path": "cases/LONGTAIL/LONGTAIL_0013/validation/mysql_witness_data.sql",
+      "generated_sql_path": "reports/evaluation/common_core_v0/runs/calcite_hep_120_recovery_round3_canary_10_01/generated/LONGTAIL_0013/mysql/calcite_hep_recovery_round3_rewrite.sql",
+      "result_check_path": "reports/evaluation/common_core_v0/runs/calcite_hep_120_recovery_round3b_mysql_setup_canary_02_01/workspaces/LONGTAIL_0013/mysql/result_check.json",
+      "claim_boundary": "calcite_hep_120_recovery_round3b_mysql_setup_canary_only_not_timing_speedup_or_leaderboard_evidence"
+    }
+  ]
+}

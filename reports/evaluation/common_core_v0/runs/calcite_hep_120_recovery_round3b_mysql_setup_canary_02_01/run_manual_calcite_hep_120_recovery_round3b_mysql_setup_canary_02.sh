@@ -123,6 +123,24 @@ def extract_table_names(ddl_text: str) -> list[str]:
     return table_names
 
 
+EXPLICIT_CLEANUP_TABLES = {
+    "PERF_0062:mysql": [
+        "store_sales",
+        "store",
+        "customer_demographics",
+        "household_demographics",
+        "customer_address",
+        "date_dim",
+    ],
+    "LONGTAIL_0013:mysql": [
+        "Users",
+        "Posts",
+        "Votes",
+        "Badges",
+    ],
+}
+
+
 def read_rows() -> list[dict[str, str]]:
     with MATRIX_PATH.open(newline="", encoding="utf-8") as handle:
         return list(csv.DictReader(handle))
@@ -172,10 +190,10 @@ def run_mysql_execution(row: dict[str, str]) -> dict[str, Any]:
         return payload
 
     ddl_text = copied["schema"].read_text(encoding="utf-8")
-    table_names = extract_table_names(ddl_text)
+    table_names = EXPLICIT_CLEANUP_TABLES.get(row["row_key"], extract_table_names(ddl_text))
     drop_sql = ""
     if table_names:
-      drop_sql = "DROP TABLE IF EXISTS " + ", ".join(f"`{name}`" for name in table_names) + ";"
+        drop_sql = "DROP TABLE IF EXISTS " + ", ".join(f"`{name}`" for name in table_names) + ";"
 
     def mysql_exec(sql: str, stdout_path: Path, stderr_path: Path, batch_output: bool = False) -> None:
         cmd = mysql_args() + [db_name]

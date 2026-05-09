@@ -21,8 +21,9 @@ with retained MySQL `ERROR 1044` access-denied evidence.
 ## Package Change
 
 - use the existing `MYSQL_DATABASE` from `scripts/env_mysql.sh`
-- derive row-local cleanup from case-local DDL table names
-- drop those tables inside the existing database before schema load
+- use explicit row-local cleanup table sets inside the existing database before schema load:
+  - `PERF_0062:mysql`: `store_sales`, `store`, `customer_demographics`, `household_demographics`, `customer_address`, `date_dim`
+  - `LONGTAIL_0013:mysql`: `Users`, `Posts`, `Votes`, `Badges`
 - load schema and witness data
 - execute retained Round-3 source and generated SQL
 - compare outputs exactly under the unchanged checker

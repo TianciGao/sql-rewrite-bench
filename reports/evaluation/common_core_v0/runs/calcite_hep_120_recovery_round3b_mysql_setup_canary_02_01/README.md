@@ -34,6 +34,10 @@ Rows only:
 - avoids the Round-3 `CREATE/DROP DATABASE` strategy
 - uses the existing `MYSQL_DATABASE`
 - performs safe per-row table cleanup before and after each row
+  - `PERF_0062:mysql`:
+    `store_sales`, `store`, `customer_demographics`, `household_demographics`, `customer_address`, `date_dim`
+  - `LONGTAIL_0013:mysql`:
+    `Users`, `Posts`, `Votes`, `Badges`
 - keeps exact-match checker semantics unchanged
 
 ## Success Rule
