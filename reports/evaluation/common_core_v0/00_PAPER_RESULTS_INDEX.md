@@ -33,6 +33,9 @@ from this file rather than left isolated.
   - [calcite_hep_mysql_spark_canary_result_card_v1.md](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/calcite_hep_mysql_spark_canary_result_card_v1.md)
 - Bounded MySQL/Spark execution-expansion result card:
   - [calcite_hep_mysql_spark_execution_expansion_result_card_v1.md](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/calcite_hep_mysql_spark_execution_expansion_result_card_v1.md)
+- Fail-closed `120`-row synthesis and proposed paper row:
+  - [calcite_hep_120_fail_closed_synthesis_v1.md](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/calcite_hep_120_fail_closed_synthesis_v1.md)
+  - [calcite_hep_method_comparison_proposed_row_v1.md](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/calcite_hep_method_comparison_proposed_row_v1.md)
 
 ### R-Bot
 
@@ -72,10 +75,18 @@ from this file rather than left isolated.
   - `49` match_exact
   - `10` mismatch
   - `1` Spark setup artifact
+- A denominator-aware fail-closed `120`-row synthesis now exists:
+  - retained PG evidence contributes `21 / 40` exact matches
+  - retained non-PG evidence contributes `49 / 80` exact matches
+  - combined fail-closed exact-match ledger is `70 / 120`
+  - this is still evidence-ledger material, not timing, speedup, or leaderboard evidence
 - This canary should not be merged into the canonical method-comparison row
   unless a separate denominator-aware policy is created.
 - This non-PG expansion should also not be merged into the canonical
   method-comparison row unless a separate denominator-aware policy is created.
+- The fail-closed `120`-row synthesis should not be merged into the canonical
+  method-comparison row without a separate paper-readiness check and an
+  explicit policy for mixed retained PG + bounded non-PG evidence rows.
 
 ## Do Not Claim
 
@@ -109,6 +120,10 @@ Use this Calcite HEP MySQL/Spark non-PG expansion framing:
 
 `Calcite HEP was extended beyond PostgreSQL with explicit MySQL/Spark target-dialect rendering. In the bounded non-PG expansion, 80 MySQL/Spark rows were attempted for rewrite, 60 produced retained target-dialect SQL, and execution-validity on those 60 rows yielded 59 executed and 49 exact matches. This is bounded non-PG execution-validity evidence, not timing, speedup, leaderboard, or full 120-row comparable evidence.`
 
+Use this Calcite HEP `120`-row fail-closed framing:
+
+`Using retained PG40 route artifacts and the bounded non-PG MySQL/Spark expansion, Calcite HEP currently supports a fail-closed 120-row correctness ledger with 70 exact matches out of the intended 120-row tri-engine same-engine denominator. This ledger keeps parser, rewrite, setup, execution, and mismatch failures in-denominator as non-exact rows. It is useful paper evidence, but it is not timing, speedup, or leaderboard-comparable evidence.`
+
 ## Major Source Artifact Paths
 
 - Canonical ledger:
@@ -125,3 +140,7 @@ Use this Calcite HEP MySQL/Spark non-PG expansion framing:
   - [calcite_hep_mysql_spark_canary_result_card_v1.csv](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/calcite_hep_mysql_spark_canary_result_card_v1.csv)
 - Calcite HEP MySQL/Spark execution-expansion result card:
   - [calcite_hep_mysql_spark_execution_expansion_result_card_v1.csv](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/calcite_hep_mysql_spark_execution_expansion_result_card_v1.csv)
+- Calcite HEP fail-closed `120`-row synthesis:
+  - [calcite_hep_120_fail_closed_synthesis_v1.csv](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/calcite_hep_120_fail_closed_synthesis_v1.csv)
+- Calcite HEP proposed method-comparison row:
+  - [calcite_hep_method_comparison_proposed_row_v1.csv](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/calcite_hep_method_comparison_proposed_row_v1.csv)
