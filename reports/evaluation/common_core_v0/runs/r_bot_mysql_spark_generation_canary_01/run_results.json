@@ -1,0 +1,24 @@
+{
+  "canary_denominator_id": "r_bot_mysql_spark_generation_canary_01",
+  "claim_boundary": "mysql_spark_generation_canary_only_not_execution_timing_speedup_or_leaderboard_evidence",
+  "current_benchmark_metric_evidence": false,
+  "engine_scope": "mysql_and_spark_canary_only",
+  "failure_category": "engine_adapter_not_implemented_mysql_spark",
+  "failure_reason": "Visible upstream my_rewriter/database.py still only implements db=postgresql",
+  "method_id": "r_bot",
+  "notes": [
+    "human-run only package",
+    "generation-only canary",
+    "no SQL execution in this runner",
+    "no timing or speedup evidence",
+    "rows remain explicit even when preflight blocks route execution"
+  ],
+  "planned_rows": 6,
+  "route_id": "r_bot_same_engine_rewrite",
+  "run_id": "r_bot_mysql_spark_generation_canary_01",
+  "source_denominator_id": "common_core_v0_40_same_engine_120",
+  "status": "preflight_failed",
+  "status_counts": {
+    "preflight_blocked": 6
+  }
+}

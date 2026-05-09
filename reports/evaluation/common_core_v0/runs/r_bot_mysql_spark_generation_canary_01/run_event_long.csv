@@ -1,0 +1,7 @@
+row_key,case_id,pool,engine,row_status,failure_category,failure_reason,generated_sql_exists,prompt_exists,raw_response_exists,selected_rules_exists,retrieval_trace_exists,token_cost_exists,provider_metadata_exists,row_metadata_exists
+PERF_0006:mysql,PERF_0006,performance,mysql,preflight_blocked,engine_adapter_not_implemented_mysql_spark,Visible upstream my_rewriter/database.py still only implements db=postgresql,no,no,no,no,no,no,no,no
+PERF_0006:spark,PERF_0006,performance,spark,preflight_blocked,engine_adapter_not_implemented_mysql_spark,Visible upstream my_rewriter/database.py still only implements db=postgresql,no,no,no,no,no,no,no,no
+PERF_0007:mysql,PERF_0007,performance,mysql,preflight_blocked,engine_adapter_not_implemented_mysql_spark,Visible upstream my_rewriter/database.py still only implements db=postgresql,no,no,no,no,no,no,no,no
+PERF_0007:spark,PERF_0007,performance,spark,preflight_blocked,engine_adapter_not_implemented_mysql_spark,Visible upstream my_rewriter/database.py still only implements db=postgresql,no,no,no,no,no,no,no,no
+CONS_0005:mysql,CONS_0005,consistency,mysql,preflight_blocked,engine_adapter_not_implemented_mysql_spark,Visible upstream my_rewriter/database.py still only implements db=postgresql,no,no,no,no,no,no,no,no
+CONS_0005:spark,CONS_0005,consistency,spark,preflight_blocked,engine_adapter_not_implemented_mysql_spark,Visible upstream my_rewriter/database.py still only implements db=postgresql,no,no,no,no,no,no,no,no
