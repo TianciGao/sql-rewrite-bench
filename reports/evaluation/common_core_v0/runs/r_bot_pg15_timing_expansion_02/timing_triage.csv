@@ -1,0 +1,16 @@
+case_id,engine,pool,median_source_ms,median_generated_ms,speedup_ratio,timing_status,material_regression_lt_0_8,variance_watchlist,notes
+PERF_0006,pg,performance,376.400599,379.397234,0.992102,timing_success,no,yes,generated outlier run at 686.091608 ms
+PERF_0007,pg,performance,495.742877,616.102595,0.804643,timing_success,no,yes,generated repeats show wide spread
+PERF_0008,pg,performance,477.554582,486.271162,0.982075,timing_success,no,no,near-parity median
+PERF_0013,pg,performance,432.855090,491.480802,0.880716,timing_success,no,yes,source and generated repeats both high-variance
+PERF_0017,pg,performance,372.227991,372.839029,0.998361,timing_success,no,yes,generated outlier run at 879.801269 ms
+PERF_0024,pg,performance,373.895693,373.891135,1.000012,timing_success,no,yes,source outlier run at 573.965830 ms
+PERF_0052,pg,performance,376.302581,486.804782,0.773005,timing_success,yes,yes,material regression with elevated source first repeat
+PERF_0054,pg,performance,371.125917,394.171610,0.941534,timing_success,no,no,modest regression without major repeat anomaly
+PERF_0062,pg,performance,379.004350,482.704658,0.785168,timing_success,yes,yes,material regression with unstable source repeats
+CONS_0005,pg,consistency,441.811145,476.473903,0.927252,timing_success,no,yes,generated repeats show wide spread
+CONS_0007,pg,consistency,372.782463,592.324415,0.629355,timing_success,yes,yes,strongest material regression in subset
+CONS_0009,pg,consistency,480.721847,371.037618,1.295615,timing_success,no,no,strongest apparent speedup row in subset
+CONS_0010,pg,consistency,471.371609,477.044668,0.988108,timing_success,no,no,near-parity median
+CONS_0012,pg,consistency,366.623089,369.505673,0.992199,timing_success,no,yes,source outlier run at 593.874405 ms
+CONS_0036,pg,consistency,369.243766,365.572512,1.010042,timing_success,no,no,slight speedup with stable median
