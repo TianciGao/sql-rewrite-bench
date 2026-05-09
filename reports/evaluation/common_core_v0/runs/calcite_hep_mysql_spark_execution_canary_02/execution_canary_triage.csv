@@ -1,0 +1,7 @@
+row_key,case_id,pool,engine,execution_status,consistency_status,source_tsv_exists,generated_tsv_exists,result_check_exists,mismatch_root_cause,timing_eligible,next_step_recommendation
+PERF_0006:mysql,PERF_0006,performance,mysql,executed,mismatch,yes,yes,yes,aggregate_rewrite_precision_decimal_scale_loss,no,exclude_from_timing
+PERF_0006:spark,PERF_0006,performance,spark,executed,mismatch,yes,yes,yes,aggregate_rewrite_precision_decimal_scale_loss,no,exclude_from_timing
+PERF_0007:mysql,PERF_0007,performance,mysql,executed,match_exact,yes,yes,yes,,yes,eligible_for_match_exact_4_timing_denominator
+PERF_0007:spark,PERF_0007,performance,spark,executed,match_exact,yes,yes,yes,,yes,eligible_for_match_exact_4_timing_denominator
+CONS_0005:mysql,CONS_0005,consistency,mysql,executed,match_exact,yes,yes,yes,,yes,eligible_for_match_exact_4_timing_denominator
+CONS_0005:spark,CONS_0005,consistency,spark,executed,match_exact,yes,yes,yes,,yes,eligible_for_match_exact_4_timing_denominator
