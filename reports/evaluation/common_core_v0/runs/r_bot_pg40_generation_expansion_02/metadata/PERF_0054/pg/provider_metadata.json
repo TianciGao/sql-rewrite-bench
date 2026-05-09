@@ -1,0 +1,16 @@
+{
+  "base_url": "https://api.gptsapi.net/v1",
+  "base_url_env_visible": true,
+  "base_url_family": "api.gptsapi.net",
+  "case_id": "PERF_0054",
+  "claim_boundary": "formal_pg_generation_expansion_only_not_execution_timing_speedup_or_leaderboard_evidence",
+  "embedding_model": "text-embedding-3-small",
+  "engine": "pg",
+  "method_id": "r_bot",
+  "model_name": "gpt-4o-mini",
+  "openai_api_key_visible": true,
+  "provider_name": "api.gptsapi.net",
+  "route_id": "r_bot_same_engine_rewrite",
+  "rule_vector_width": 100,
+  "total_dimension": 3172
+}

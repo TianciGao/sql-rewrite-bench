@@ -14,3 +14,5 @@ Boundary:
 - no leaderboard claim
 
 MySQL and Spark remain unsupported in this package.
+
+The runner now includes a package-level preflight, uses an unsigned temp runtime copy of `LearnedRewrite.jar` only inside `/tmp`, and provisions the required upstream RAG JSONL corpus files into the temp runtime `rag/` directory. The retained upstream artifact and retained ZIP are not modified in place.

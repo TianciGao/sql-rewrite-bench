@@ -51,8 +51,19 @@ Per row, the human-run script will:
    - `my_rewriter/db_utils.py` no longer computes `output_cost` through DB execution
    - `my_rewriter/config.py` uses the formal model from the retained parameter freeze
    - `rag/my_query_fusion_retriver.py` aligns the rule-vector width to `100`
+   - the copied `LearnedRewrite.jar` has stale `META-INF/*.SF` and `*.DSA` signature entries removed in the temp runtime copy only
+   - the copied runtime `rag/` directory contains the required upstream JSONL corpus files, sourced from visible upstream files or extracted from the retained ZIP into the temp runtime only
 4. Run the patched runtime with the formal Python environment and visible `OPENAI_API_KEY`.
 5. Extract row artifacts into this package.
+
+Before the row loop, the runner now performs a fail-closed package preflight against the patched temp runtime:
+
+- verify the formal Chroma index directory is visible
+- verify the required `rag/*.jsonl` files exist at the actual runtime path used by the subprocess
+- `import my_rewriter.rewrite`
+- `from rewriter import Rewriter, RewriteResult, MyRules`
+
+If that preflight fails, the run stops before any of the 40 row attempts.
 
 ## Why This Is Bounded
 

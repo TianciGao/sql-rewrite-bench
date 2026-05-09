@@ -1,0 +1,3 @@
+available=false
+row_status=failed
+reason=raw_response_log_missing

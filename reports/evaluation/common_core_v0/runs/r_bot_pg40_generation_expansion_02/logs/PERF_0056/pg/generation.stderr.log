@@ -1,0 +1,174 @@
+log4j:WARN No appenders could be found for logger (org.apache.calcite.sql.parser).
+log4j:WARN Please initialize the log4j system properly.
+log4j:WARN See http://logging.apache.org/log4j/1.2/faq.html#noconfig for more info.
+java.lang.UnsupportedOperationException: Unsupported type when convertTypeToSpec: ANY
+	at org.apache.calcite.sql.type.SqlTypeUtil.convertTypeToSpec(SqlTypeUtil.java:1143)
+	at org.apache.calcite.sql.SqlDialect.getCastSpec(SqlDialect.java:861)
+	at org.apache.calcite.sql.dialect.PostgresqlSqlDialect.getCastSpec(PostgresqlSqlDialect.java:102)
+	at org.apache.calcite.sql.dialect.PostgresqlSqlDialect.rewriteSingleValueExpr(PostgresqlSqlDialect.java:117)
+	at org.apache.calcite.rel.rel2sql.RelToSqlConverter.buildAggregate(RelToSqlConverter.java:613)
+	at org.apache.calcite.rel.rel2sql.RelToSqlConverter.visitAggregate(RelToSqlConverter.java:578)
+	at org.apache.calcite.rel.rel2sql.RelToSqlConverter.visit(RelToSqlConverter.java:558)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77)
+	at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:569)
+	at org.apache.calcite.util.ReflectUtil$2.invoke(ReflectUtil.java:533)
+	at org.apache.calcite.rel.rel2sql.RelToSqlConverter.dispatch(RelToSqlConverter.java:144)
+	at org.apache.calcite.rel.rel2sql.RelToSqlConverter.visitInput(RelToSqlConverter.java:152)
+	at org.apache.calcite.rel.rel2sql.SqlImplementor.visitInput(SqlImplementor.java:309)
+	at org.apache.calcite.rel.rel2sql.SqlImplementor.visitInput(SqlImplementor.java:297)
+	at org.apache.calcite.rel.rel2sql.RelToSqlConverter.visit(RelToSqlConverter.java:242)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77)
+	at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:569)
+	at org.apache.calcite.util.ReflectUtil$2.invoke(ReflectUtil.java:533)
+	at org.apache.calcite.rel.rel2sql.RelToSqlConverter.dispatch(RelToSqlConverter.java:144)
+	at org.apache.calcite.rel.rel2sql.RelToSqlConverter.visitInput(RelToSqlConverter.java:152)
+	at org.apache.calcite.rel.rel2sql.SqlImplementor.visitInput(SqlImplementor.java:309)
+	at org.apache.calcite.rel.rel2sql.SqlImplementor.visitInput(SqlImplementor.java:297)
+	at org.apache.calcite.rel.rel2sql.RelToSqlConverter.visit(RelToSqlConverter.java:417)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77)
+	at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:569)
+	at org.apache.calcite.util.ReflectUtil$2.invoke(ReflectUtil.java:533)
+	at org.apache.calcite.rel.rel2sql.RelToSqlConverter.dispatch(RelToSqlConverter.java:144)
+	at org.apache.calcite.rel.rel2sql.RelToSqlConverter.visitInput(RelToSqlConverter.java:152)
+	at org.apache.calcite.rel.rel2sql.SqlImplementor.visitInput(SqlImplementor.java:309)
+	at org.apache.calcite.rel.rel2sql.SqlImplementor.visitInput(SqlImplementor.java:303)
+	at org.apache.calcite.rel.rel2sql.RelToSqlConverter.visit(RelToSqlConverter.java:470)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77)
+	at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:569)
+	at org.apache.calcite.util.ReflectUtil$2.invoke(ReflectUtil.java:533)
+	at org.apache.calcite.rel.rel2sql.RelToSqlConverter.dispatch(RelToSqlConverter.java:144)
+	at org.apache.calcite.rel.rel2sql.RelToSqlConverter.visitInput(RelToSqlConverter.java:152)
+	at org.apache.calcite.rel.rel2sql.SqlImplementor.visitInput(SqlImplementor.java:309)
+	at org.apache.calcite.rel.rel2sql.SqlImplementor.visitInput(SqlImplementor.java:303)
+	at org.apache.calcite.rel.rel2sql.RelToSqlConverter.visit(RelToSqlConverter.java:485)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77)
+	at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:569)
+	at org.apache.calcite.util.ReflectUtil$2.invoke(ReflectUtil.java:533)
+	at org.apache.calcite.rel.rel2sql.RelToSqlConverter.dispatch(RelToSqlConverter.java:144)
+	at org.apache.calcite.rel.rel2sql.RelToSqlConverter.visitInput(RelToSqlConverter.java:152)
+	at org.apache.calcite.rel.rel2sql.SqlImplementor.visitInput(SqlImplementor.java:309)
+	at org.apache.calcite.rel.rel2sql.SqlImplementor.visitInput(SqlImplementor.java:303)
+	at org.apache.calcite.rel.rel2sql.RelToSqlConverter.visit(RelToSqlConverter.java:485)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77)
+	at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:569)
+	at org.apache.calcite.util.ReflectUtil$2.invoke(ReflectUtil.java:533)
+	at org.apache.calcite.rel.rel2sql.RelToSqlConverter.dispatch(RelToSqlConverter.java:144)
+	at org.apache.calcite.rel.rel2sql.RelToSqlConverter.visitInput(RelToSqlConverter.java:152)
+	at org.apache.calcite.rel.rel2sql.RelToSqlConverter.visitAggregate(RelToSqlConverter.java:573)
+	at org.apache.calcite.rel.rel2sql.RelToSqlConverter.visit(RelToSqlConverter.java:558)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77)
+	at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:569)
+	at org.apache.calcite.util.ReflectUtil$2.invoke(ReflectUtil.java:533)
+	at org.apache.calcite.rel.rel2sql.RelToSqlConverter.dispatch(RelToSqlConverter.java:144)
+	at org.apache.calcite.rel.rel2sql.RelToSqlConverter.visitInput(RelToSqlConverter.java:152)
+	at org.apache.calcite.rel.rel2sql.RelToSqlConverter.visit(RelToSqlConverter.java:461)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77)
+	at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:569)
+	at org.apache.calcite.util.ReflectUtil$2.invoke(ReflectUtil.java:533)
+	at org.apache.calcite.rel.rel2sql.RelToSqlConverter.dispatch(RelToSqlConverter.java:144)
+	at org.apache.calcite.rel.rel2sql.RelToSqlConverter.visitInput(RelToSqlConverter.java:152)
+	at org.apache.calcite.rel.rel2sql.SqlImplementor.visitInput(SqlImplementor.java:309)
+	at org.apache.calcite.rel.rel2sql.SqlImplementor.visitInput(SqlImplementor.java:303)
+	at org.apache.calcite.rel.rel2sql.RelToSqlConverter.visit(RelToSqlConverter.java:1036)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77)
+	at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:569)
+	at org.apache.calcite.util.ReflectUtil$2.invoke(ReflectUtil.java:533)
+	at org.apache.calcite.rel.rel2sql.RelToSqlConverter.dispatch(RelToSqlConverter.java:144)
+	at org.apache.calcite.rel.rel2sql.RelToSqlConverter.visitInput(RelToSqlConverter.java:152)
+	at org.apache.calcite.rel.rel2sql.SqlImplementor.visitInput(SqlImplementor.java:309)
+	at org.apache.calcite.rel.rel2sql.SqlImplementor.visitInput(SqlImplementor.java:297)
+	at org.apache.calcite.rel.rel2sql.SqlImplementor.visitRoot(SqlImplementor.java:273)
+	at rewriter.Rewriter.matchRules(Rewriter.java:95)
+	at rewriter.Rewriter.matchNormalRules(Rewriter.java:117)
+	at rewriter.Rewriter.matchAllRules(Rewriter.java:121)
+	Suppressed: java.lang.Throwable: Error while converting RelNode to SqlNode:
+LogicalSort(sort0=[$1], sort1=[$0], dir0=[ASC], dir1=[ASC], fetch=[100])
+  LogicalFilter(condition=[>=($1, 10)])
+    LogicalAggregate(group=[{0}], cnt=[COUNT()])
+      LogicalProject(state=[$1])
+        LogicalProject(ca_address_sk=[$0], ca_state=[$1], c_customer_sk=[$2], c_current_addr_sk=[$3], ss_customer_sk=[$4], ss_sold_date_sk=[$5], ss_item_sk=[$6], d_date_sk=[$7], d_year=[$8], d_moy=[$9], d_month_seq=[$10], i_item_sk=[$11], i_current_price=[$12], i_category=[$13])
+          LogicalFilter(condition=[AND(=($0, $3), =($2, $4), =($5, $7), =($6, $11), =($10, $14), >($12, *(1.2:DECIMAL(2, 1), $15)))])
+            LogicalCorrelate(correlation=[$cor0], joinType=[left], requiredColumns=[{13}])
+              LogicalJoin(condition=[true], joinType=[left])
+                LogicalJoin(condition=[true], joinType=[inner])
+                  LogicalJoin(condition=[true], joinType=[inner])
+                    LogicalJoin(condition=[true], joinType=[inner])
+                      LogicalJoin(condition=[true], joinType=[inner])
+                        LogicalTableScan(table=[[CATALOG, SALES, customer_address]])
+                        LogicalTableScan(table=[[CATALOG, SALES, customer]])
+                      LogicalTableScan(table=[[CATALOG, SALES, store_sales]])
+                    LogicalTableScan(table=[[CATALOG, SALES, date_dim]])
+                  LogicalTableScan(table=[[CATALOG, SALES, item]])
+                LogicalAggregate(group=[{}], agg#0=[SINGLE_VALUE($0)])
+                  LogicalAggregate(group=[{0}])
+                    LogicalProject(d_month_seq=[$3(d_month_seq)])
+                      LogicalFilter(condition=[AND(=($1(d_year), 2000), =($2(d_moy), 2))])
+                        LogicalTableScan(table=[[CATALOG, SALES, date_dim]])
+              LogicalAggregate(group=[{}], EXPR$0=[AVG($0)])
+                LogicalProject(i_current_price=[$1(i_current_price)])
+                  LogicalFilter(condition=[=($2(i_category), $cor0.i_category)])
+                    LogicalTableScan(table=[[CATALOG, SALES, item]])
+
+		at org.apache.calcite.util.Util.throwAsRuntime(Util.java:965)
+		at org.apache.calcite.rel.rel2sql.SqlImplementor.visitRoot(SqlImplementor.java:275)
+		... 3 more
+Traceback (most recent call last):
+  File "<string>", line 50, in <module>
+  File "/tmp/rewritebench_rbot_llm4rewrite_pg40_expansion_runner/PERF_0056/runtime_patch_v4/my_rewriter/test_utils.py", line 25, in test
+    res = rag_retrieve(query, schema, docstore, embed_dim=model_args['EMBED_DIM'], RETRIEVER_TOP_K=RETRIEVER_TOP_K)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/rewritebench_rbot_llm4rewrite_pg40_expansion_runner/PERF_0056/runtime_patch_v4/my_rewriter/rag_retrieve.py", line 69, in rag_retrieve
+    retriever_res = retriever.retrieve(query)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/rewritebench_rbot_llm4rewrite_venv_smoke/lib/python3.12/site-packages/llama_index_instrumentation/dispatcher.py", line 413, in wrapper
+    result = func(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/rewritebench_rbot_llm4rewrite_venv_smoke/lib/python3.12/site-packages/llama_index/core/base/base_retriever.py", line 216, in retrieve
+    nodes = self._retrieve(query_bundle)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/rewritebench_rbot_llm4rewrite_venv_smoke/lib/python3.12/site-packages/llama_index_instrumentation/dispatcher.py", line 413, in wrapper
+    result = func(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/rewritebench_rbot_llm4rewrite_pg40_expansion_runner/PERF_0056/runtime_patch_v4/rag/my_query_fusion_retriver.py", line 311, in _retrieve
+    synthesized_queries = self._get_queries(query_bundle.query_str)
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/rewritebench_rbot_llm4rewrite_pg40_expansion_runner/PERF_0056/runtime_patch_v4/rag/my_query_fusion_retriver.py", line 116, in _get_queries
+    sql_templates = list(gen_sql_templates(original_query).keys())
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/rewritebench_rbot_llm4rewrite_pg40_expansion_runner/PERF_0056/runtime_patch_v4/rag/gen_sql_templates.py", line 423, in gen_sql_templates
+    final_sql = _gen_sql_template(pre_tree, col_name, table_name)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/rewritebench_rbot_llm4rewrite_pg40_expansion_runner/PERF_0056/runtime_patch_v4/rag/gen_sql_templates.py", line 364, in _gen_sql_template
+    transformed_tree = transform(parsed_tree, transformer, reserved_identifier=col_name, reserved_table=table_name)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/rewritebench_rbot_llm4rewrite_pg40_expansion_runner/PERF_0056/runtime_patch_v4/rag/gen_sql_templates.py", line 44, in transform
+    new_node = fun(node, *args, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/rewritebench_rbot_llm4rewrite_pg40_expansion_runner/PERF_0056/runtime_patch_v4/rag/gen_sql_templates.py", line 327, in transformer
+    node = merge_tables(node)
+           ^^^^^^^^^^^^^^^^^^
+  File "/tmp/rewritebench_rbot_llm4rewrite_pg40_expansion_runner/PERF_0056/runtime_patch_v4/rag/gen_sql_templates.py", line 202, in merge_tables
+    if len(joins) > 0 and is_identifiers_masked(node.args.get('from')):
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/rewritebench_rbot_llm4rewrite_pg40_expansion_runner/PERF_0056/runtime_patch_v4/rag/gen_sql_templates.py", line 148, in is_identifiers_masked
+    flags = [v.this == '_' for v in node.find_all(exp.Identifier)]
+                                    ^^^^^^^^^^^^^
+AttributeError: 'NoneType' object has no attribute 'find_all'

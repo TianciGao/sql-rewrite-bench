@@ -1,0 +1,45 @@
+log4j:WARN No appenders could be found for logger (org.apache.calcite.sql.parser).
+log4j:WARN Please initialize the log4j system properly.
+log4j:WARN See http://logging.apache.org/log4j/1.2/faq.html#noconfig for more info.
+Traceback (most recent call last):
+  File "<string>", line 50, in <module>
+  File "/tmp/rewritebench_rbot_llm4rewrite_pg40_expansion_runner/PERF_0033/runtime_patch_v4/my_rewriter/test_utils.py", line 25, in test
+    res = rag_retrieve(query, schema, docstore, embed_dim=model_args['EMBED_DIM'], RETRIEVER_TOP_K=RETRIEVER_TOP_K)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/rewritebench_rbot_llm4rewrite_pg40_expansion_runner/PERF_0033/runtime_patch_v4/my_rewriter/rag_retrieve.py", line 69, in rag_retrieve
+    retriever_res = retriever.retrieve(query)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/rewritebench_rbot_llm4rewrite_venv_smoke/lib/python3.12/site-packages/llama_index_instrumentation/dispatcher.py", line 413, in wrapper
+    result = func(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/rewritebench_rbot_llm4rewrite_venv_smoke/lib/python3.12/site-packages/llama_index/core/base/base_retriever.py", line 216, in retrieve
+    nodes = self._retrieve(query_bundle)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/rewritebench_rbot_llm4rewrite_venv_smoke/lib/python3.12/site-packages/llama_index_instrumentation/dispatcher.py", line 413, in wrapper
+    result = func(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/rewritebench_rbot_llm4rewrite_pg40_expansion_runner/PERF_0033/runtime_patch_v4/rag/my_query_fusion_retriver.py", line 311, in _retrieve
+    synthesized_queries = self._get_queries(query_bundle.query_str)
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/rewritebench_rbot_llm4rewrite_pg40_expansion_runner/PERF_0033/runtime_patch_v4/rag/my_query_fusion_retriver.py", line 116, in _get_queries
+    sql_templates = list(gen_sql_templates(original_query).keys())
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/rewritebench_rbot_llm4rewrite_pg40_expansion_runner/PERF_0033/runtime_patch_v4/rag/gen_sql_templates.py", line 423, in gen_sql_templates
+    final_sql = _gen_sql_template(pre_tree, col_name, table_name)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/rewritebench_rbot_llm4rewrite_pg40_expansion_runner/PERF_0033/runtime_patch_v4/rag/gen_sql_templates.py", line 364, in _gen_sql_template
+    transformed_tree = transform(parsed_tree, transformer, reserved_identifier=col_name, reserved_table=table_name)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/rewritebench_rbot_llm4rewrite_pg40_expansion_runner/PERF_0033/runtime_patch_v4/rag/gen_sql_templates.py", line 44, in transform
+    new_node = fun(node, *args, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/rewritebench_rbot_llm4rewrite_pg40_expansion_runner/PERF_0033/runtime_patch_v4/rag/gen_sql_templates.py", line 327, in transformer
+    node = merge_tables(node)
+           ^^^^^^^^^^^^^^^^^^
+  File "/tmp/rewritebench_rbot_llm4rewrite_pg40_expansion_runner/PERF_0033/runtime_patch_v4/rag/gen_sql_templates.py", line 202, in merge_tables
+    if len(joins) > 0 and is_identifiers_masked(node.args.get('from')):
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/rewritebench_rbot_llm4rewrite_pg40_expansion_runner/PERF_0033/runtime_patch_v4/rag/gen_sql_templates.py", line 148, in is_identifiers_masked
+    flags = [v.this == '_' for v in node.find_all(exp.Identifier)]
+                                    ^^^^^^^^^^^^^
+AttributeError: 'NoneType' object has no attribute 'find_all'

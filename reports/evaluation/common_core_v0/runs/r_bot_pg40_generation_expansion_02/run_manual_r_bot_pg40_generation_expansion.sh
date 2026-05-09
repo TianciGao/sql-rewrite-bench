@@ -83,6 +83,7 @@ import shutil
 import subprocess
 import sys
 import time
+import zipfile
 from collections import Counter
 from datetime import datetime, timezone
 from pathlib import Path
@@ -113,6 +114,14 @@ SOURCE_DENOMINATOR_ID = "common_core_v0_40_same_engine_120"
 PG_EXPANSION_DENOMINATOR_ID = "common_core_v0_40_pg40"
 CLAIM_BOUNDARY = "formal_pg_generation_expansion_only_not_execution_timing_speedup_or_leaderboard_evidence"
 UPSTREAM_ROOT = Path("/tmp/rewritebench_prior_method_audit/LLM4Rewrite")
+UPSTREAM_RAG_DIR = UPSTREAM_ROOT / "rag"
+UPSTREAM_RAG_ZIP = UPSTREAM_RAG_DIR / "stackoverflow-rewrite-embed.zip"
+REQUIRED_RAG_JSONL_FILES = [
+    "stackoverflow-rewrite-query-optimization.jsonl",
+    "stackoverflow-rewrite-rules-query-optimization.jsonl",
+    "stackoverflow-rewrite-sql-templates-query-optimization.jsonl",
+    "stackoverflow-rewrite-sql-templates-embed-query-optimization.jsonl",
+]
 
 with FORMAL_PARAMETER_FREEZE.open("r", encoding="utf-8") as handle:
     parameter_freeze = json.load(handle)
@@ -181,6 +190,69 @@ def replace_once(path: Path, old: str, new: str) -> bool:
         return False
     path.write_text(text.replace(old, new, 1), encoding="utf-8")
     return True
+
+
+def provision_required_rag_jsonl(runtime_root: Path) -> dict[str, Any]:
+    runtime_rag_dir = runtime_root / "rag"
+    runtime_rag_dir.mkdir(parents=True, exist_ok=True)
+    provisioned_files: list[dict[str, str]] = []
+    missing_files: list[str] = []
+
+    zip_members: set[str] = set()
+    if UPSTREAM_RAG_ZIP.is_file():
+        with zipfile.ZipFile(UPSTREAM_RAG_ZIP, "r") as archive:
+            zip_members = set(archive.namelist())
+
+    for filename in REQUIRED_RAG_JSONL_FILES:
+        dst_path = runtime_rag_dir / filename
+        if dst_path.exists() or dst_path.is_symlink():
+            if dst_path.is_dir() and not dst_path.is_symlink():
+                shutil.rmtree(dst_path)
+            else:
+                dst_path.unlink()
+
+        src_path = UPSTREAM_RAG_DIR / filename
+        if src_path.is_file():
+            try:
+                os.symlink(src_path, dst_path)
+                provision_mode = "symlinked_from_upstream_rag"
+            except OSError:
+                shutil.copy2(src_path, dst_path)
+                provision_mode = "copied_from_upstream_rag"
+            provisioned_files.append(
+                {
+                    "filename": filename,
+                    "provision_mode": provision_mode,
+                    "source_path": str(src_path),
+                    "runtime_path": str(dst_path),
+                }
+            )
+            continue
+
+        if UPSTREAM_RAG_ZIP.is_file() and filename in zip_members:
+            with zipfile.ZipFile(UPSTREAM_RAG_ZIP, "r") as archive:
+                with archive.open(filename, "r") as src_fh, dst_path.open("wb") as dst_fh:
+                    shutil.copyfileobj(src_fh, dst_fh)
+            provisioned_files.append(
+                {
+                    "filename": filename,
+                    "provision_mode": "extracted_from_upstream_zip",
+                    "source_path": str(UPSTREAM_RAG_ZIP),
+                    "runtime_path": str(dst_path),
+                }
+            )
+            continue
+
+        missing_files.append(filename)
+
+    return {
+        "runtime_rag_dir": str(runtime_rag_dir),
+        "upstream_rag_dir": str(UPSTREAM_RAG_DIR),
+        "upstream_rag_zip": str(UPSTREAM_RAG_ZIP),
+        "required_files": REQUIRED_RAG_JSONL_FILES,
+        "provisioned_files": provisioned_files,
+        "missing_files": missing_files,
+    }
 
 
 def ensure_placeholder_artifacts(row: dict[str, str], row_status: str, reason: str) -> None:
@@ -257,8 +329,248 @@ def parse_response_records(raw_response_path: Path) -> list[dict[str, Any]]:
     return records
 
 
+def prepare_runtime_root(runtime_root: Path, benchmark_model_name: str, rule_vector_width: int) -> dict[str, Any]:
+    if runtime_root.exists():
+        shutil.rmtree(runtime_root)
+    shutil.copytree(UPSTREAM_ROOT, runtime_root)
+
+    runtime_chroma_dir = runtime_root / "rag" / "chroma_db"
+    if runtime_chroma_dir.exists() or runtime_chroma_dir.is_symlink():
+        if runtime_chroma_dir.is_dir() and not runtime_chroma_dir.is_symlink():
+            shutil.rmtree(runtime_chroma_dir)
+        else:
+            runtime_chroma_dir.unlink()
+    try:
+        os.symlink(FORMAL_INDEX_DIR, runtime_chroma_dir, target_is_directory=True)
+        chroma_link_mode = "symlink"
+    except OSError:
+        shutil.copytree(FORMAL_INDEX_DIR, runtime_chroma_dir)
+        chroma_link_mode = "copied_tree"
+
+    rag_jsonl_info = provision_required_rag_jsonl(runtime_root)
+
+    replace_once(
+        runtime_root / "my_rewriter" / "config.py",
+        '            Settings.llm = OpenAI(\n                model="gpt-4o"\n            )\n',
+        f'            Settings.llm = OpenAI(\n                model="{benchmark_model_name}"\n            )\n',
+    )
+
+    for rel in ["knowledge-base/rule_cluster_funcs/24.py", "rag/gen_sql_templates.py"]:
+        shim_path = runtime_root / rel
+        if shim_path.is_file():
+            shim_text = shim_path.read_text(encoding="utf-8")
+            shim_text = shim_text.replace(
+                "from sqlglot.optimizer.simplify import NONDETERMINISTIC",
+                "from sqlglot.optimizer.simplify import Simplifier\nNONDETERMINISTIC = Simplifier.NONDETERMINISTIC",
+            )
+            shim_path.write_text(shim_text, encoding="utf-8")
+
+    replace_once(
+        runtime_root / "my_rewriter" / "test_utils.py",
+        "    db = Database(pg_args)\n    input_cost = db.cost_estimation(query)\n    logging.info(f'Input Cost: {input_cost}')\n",
+        "    input_cost = None\n    logging.info(f'Input Cost: {input_cost}')\n",
+    )
+    replace_once(
+        runtime_root / "my_rewriter" / "db_utils.py",
+        "    db = Database(db_args)\n    used_rules = [str(r) for r in res.rules]\n    output_sql = str(res.sql)\n    rewrite_time = int(res.time)\n    output_cost = -1\n    if output_sql != 'None':\n        output_cost = db.cost_estimation(output_sql)\n",
+        "    used_rules = [str(r) for r in res.rules]\n    output_sql = str(res.sql)\n    rewrite_time = int(res.time)\n    output_cost = None\n",
+    )
+
+    runtime_query_fusion_path = runtime_root / "rag" / "my_query_fusion_retriver.py"
+    rule_vector_patch_applied = False
+    if runtime_query_fusion_path.is_file():
+        runtime_query_fusion_text = runtime_query_fusion_path.read_text(encoding="utf-8")
+        original_block = (
+            "        rules_one_hot: List[float] = []\n"
+            "        rules_one_hot.extend(get_one_hot(NL_RULES, matched_rules['nl']))\n"
+            "        rules_one_hot.extend(get_one_hot(NORMAL_RULES, matched_rules['calcite_normal']))\n"
+            "        one_cnt = sum(rules_one_hot)\n"
+            "        if one_cnt > 0:\n"
+            "            rules_one_hot = [x / math.sqrt(one_cnt) for x in rules_one_hot]\n"
+        )
+        patched_block = (
+            "        rules_one_hot: List[float] = []\n"
+            "        rules_one_hot.extend(get_one_hot(NL_RULES, matched_rules['nl']))\n"
+            "        rules_one_hot.extend(get_one_hot(NORMAL_RULES, matched_rules['calcite_normal']))\n"
+            f"        target_rule_vector_dim = {rule_vector_width}\n"
+            "        if len(rules_one_hot) < target_rule_vector_dim:\n"
+            "            rules_one_hot.extend([0.0] * (target_rule_vector_dim - len(rules_one_hot)))\n"
+            "        elif len(rules_one_hot) > target_rule_vector_dim:\n"
+            "            rules_one_hot = rules_one_hot[:target_rule_vector_dim]\n"
+            "        one_cnt = sum(rules_one_hot)\n"
+            "        if one_cnt > 0:\n"
+            "            rules_one_hot = [x / math.sqrt(one_cnt) for x in rules_one_hot]\n"
+        )
+        if original_block in runtime_query_fusion_text:
+            runtime_query_fusion_path.write_text(
+                runtime_query_fusion_text.replace(original_block, patched_block, 1),
+                encoding="utf-8",
+            )
+            rule_vector_patch_applied = True
+
+    calcite_src_jar_dir = (
+        UPSTREAM_ROOT / "CalciteRewrite" / "out" / "artifacts" / "LearnedRewrite_jar"
+    )
+    calcite_dst_jar_dir = (
+        runtime_root / "my_rewriter" / "CalciteRewrite" / "out" / "artifacts" / "LearnedRewrite_jar"
+    )
+    calcite_dst_jar_dir.mkdir(parents=True, exist_ok=True)
+    if calcite_src_jar_dir.is_dir():
+        for jar_path in calcite_src_jar_dir.iterdir():
+            if jar_path.is_file():
+                shutil.copy2(jar_path, calcite_dst_jar_dir / jar_path.name)
+
+    temp_learnedrewrite_jar = calcite_dst_jar_dir / "LearnedRewrite.jar"
+    removed_signature_entries: list[str] = []
+    if temp_learnedrewrite_jar.is_file():
+        temp_unsigned_jar = calcite_dst_jar_dir / "LearnedRewrite.unsigned.jar"
+        with zipfile.ZipFile(temp_learnedrewrite_jar, "r") as zin, zipfile.ZipFile(temp_unsigned_jar, "w") as zout:
+            for item in zin.infolist():
+                upper_name = item.filename.upper()
+                if upper_name.startswith("META-INF/") and (
+                    upper_name.endswith(".SF") or upper_name.endswith(".RSA") or upper_name.endswith(".DSA")
+                ):
+                    removed_signature_entries.append(item.filename)
+                    continue
+                zout.writestr(item, zin.read(item.filename))
+        temp_unsigned_jar.replace(temp_learnedrewrite_jar)
+
+    cache_dir = runtime_root / "my_rewriter" / "cache"
+    cache_dir.mkdir(parents=True, exist_ok=True)
+    cache_file = cache_dir / "common_core_v0_40_pg40_generation_only.jsonl"
+    if not cache_file.exists():
+        cache_file.write_text("", encoding="utf-8")
+
+    return {
+        "runtime_root": str(runtime_root),
+        "chroma_link_mode": chroma_link_mode,
+        "formal_index_dir_visible": FORMAL_INDEX_DIR.is_dir(),
+        "runtime_chroma_dir": str(runtime_chroma_dir),
+        "rag_jsonl_info": rag_jsonl_info,
+        "rule_vector_patch_applied": rule_vector_patch_applied,
+        "removed_signature_entries": removed_signature_entries,
+        "unsigned_runtime_jar": str(temp_learnedrewrite_jar),
+    }
+
+
 with COMMAND_MATRIX.open("r", encoding="utf-8", newline="") as handle:
     rows = list(csv.DictReader(handle))
+
+preflight_runner_dir = TMP_RUNNER_ROOT / "_java_preflight"
+preflight_runtime_root = preflight_runner_dir / "runtime_patch_v4_preflight"
+preflight_log_dir = LOG_ROOT / "_preflight"
+preflight_log_dir.mkdir(parents=True, exist_ok=True)
+preflight_stdout_path = preflight_log_dir / "java_import_preflight.stdout.log"
+preflight_stderr_path = preflight_log_dir / "java_import_preflight.stderr.log"
+
+preflight_runtime_info = prepare_runtime_root(
+    preflight_runtime_root,
+    benchmark_model_name=benchmark_model_name,
+    rule_vector_width=rule_vector_width,
+)
+
+preflight_required_rag_paths = [
+    preflight_runtime_root / "rag" / filename for filename in REQUIRED_RAG_JSONL_FILES
+]
+preflight_missing_rag_paths = [
+    str(path) for path in preflight_required_rag_paths if not path.is_file()
+]
+preflight_missing_index = not FORMAL_INDEX_DIR.is_dir()
+
+preflight_script = """
+from my_rewriter.rewrite import get_normal_rules
+from rewriter import Rewriter, RewriteResult, MyRules
+rules = get_normal_rules()
+print(f"java_import_preflight_ok normal_rule_count={len(rules)}")
+for rel_path in [
+    "../rag/stackoverflow-rewrite-query-optimization.jsonl",
+    "../rag/stackoverflow-rewrite-rules-query-optimization.jsonl",
+    "../rag/stackoverflow-rewrite-sql-templates-query-optimization.jsonl",
+    "../rag/stackoverflow-rewrite-sql-templates-embed-query-optimization.jsonl",
+]:
+    with open(rel_path, "r", encoding="utf-8") as handle:
+        handle.readline()
+"""
+
+preflight_env = os.environ.copy()
+preflight_env["PYTHONPATH"] = str(preflight_runtime_root)
+if base_url:
+    preflight_env["OPENAI_BASE_URL"] = base_url
+    preflight_env["OPENAI_API_BASE"] = base_url
+
+with preflight_stdout_path.open("w", encoding="utf-8") as stdout_fh, preflight_stderr_path.open("w", encoding="utf-8") as stderr_fh:
+    if preflight_missing_rag_paths or preflight_missing_index:
+        stdout_fh.write("")
+        failure_lines = []
+        if preflight_missing_index:
+            failure_lines.append(f"missing formal index directory: {FORMAL_INDEX_DIR}")
+        if preflight_missing_rag_paths:
+            failure_lines.append("missing required rag jsonl files:")
+            failure_lines.extend(preflight_missing_rag_paths)
+        stderr_fh.write("\n".join(failure_lines) + "\n")
+        preflight_proc = subprocess.CompletedProcess(
+            args=[str(FORMAL_PYTHON), "-c", preflight_script],
+            returncode=1,
+        )
+    else:
+        preflight_proc = subprocess.run(
+            [str(FORMAL_PYTHON), "-c", preflight_script],
+            cwd=preflight_runtime_root / "my_rewriter",
+            env=preflight_env,
+            stdout=stdout_fh,
+            stderr=stderr_fh,
+            text=True,
+        )
+
+if preflight_proc.returncode != 0:
+    if preflight_missing_rag_paths:
+        preflight_status = "runtime_rag_corpus_preflight_failed"
+        preflight_failure_category = "missing_rag_jsonl_runtime_corpus"
+        preflight_failure_summary = "missing required upstream rag jsonl files in temp runtime"
+    elif preflight_missing_index:
+        preflight_status = "formal_index_preflight_failed"
+        preflight_failure_category = "missing_formal_index_dir"
+        preflight_failure_summary = f"missing formal index directory: {FORMAL_INDEX_DIR}"
+    else:
+        preflight_status = "java_import_preflight_failed"
+        preflight_failure_category = "java_runtime_or_upstream_rag_resolution_failure"
+        preflight_failure_summary = f"preflight exited with code {preflight_proc.returncode}"
+    with RUN_EVENT_LONG_PATH.open("w", encoding="utf-8", newline="") as handle:
+        writer = csv.DictWriter(handle, fieldnames=run_event_fieldnames)
+        writer.writeheader()
+    run_results_payload = {
+        "run_id": RUN_ID,
+        "method_id": METHOD_ID,
+        "route_id": ROUTE_ID,
+        "source_generation_denominator_id": SOURCE_DENOMINATOR_ID,
+        "pg_expansion_denominator_id": PG_EXPANSION_DENOMINATOR_ID,
+        "engine_scope": "pg_only",
+        "planned_rows": len(rows),
+        "status_counts": {},
+        "pool_counts": {},
+        "previous_generation_status_class_counts": {},
+        "preflight_status": preflight_status,
+        "preflight_failure_category": preflight_failure_category,
+        "preflight_failure_summary": preflight_failure_summary,
+        "preflight_stdout_path": str(preflight_stdout_path),
+        "preflight_stderr_path": str(preflight_stderr_path),
+        "preflight_runtime_root": str(preflight_runtime_root),
+        "preflight_runtime_info": preflight_runtime_info,
+        "preflight_required_rag_paths": [str(path) for path in preflight_required_rag_paths],
+        "preflight_missing_rag_paths": preflight_missing_rag_paths,
+        "preflight_formal_index_visible": not preflight_missing_index,
+        "claim_boundary": CLAIM_BOUNDARY,
+        "current_benchmark_metric_evidence": False,
+        "notes": [
+            "PG-only expansion run",
+            "fail-closed package preflight stopped row attempts",
+            "no row-level generation attempted after preflight failure",
+            "unsigned runtime copy is used only inside the temp harness directory",
+            "runtime rag jsonl corpus must be provisioned before upstream retrieval can start",
+        ],
+    }
+    RUN_RESULTS_PATH.write_text(json.dumps(run_results_payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    sys.exit(1)
 
 counts_by_status: Counter[str] = Counter()
 counts_by_pool: Counter[str] = Counter()
@@ -415,95 +727,11 @@ for row in rows:
     upstream_log_path = runner_dir / f"rbot_{case_id.lower()}_{int(time.time() * 1000)}.log"
 
     runner_dir.mkdir(parents=True, exist_ok=True)
-    if runtime_root.exists():
-        shutil.rmtree(runtime_root)
-    shutil.copytree(UPSTREAM_ROOT, runtime_root)
-
-    runtime_chroma_dir = runtime_root / "rag" / "chroma_db"
-    if runtime_chroma_dir.exists() or runtime_chroma_dir.is_symlink():
-        if runtime_chroma_dir.is_dir() and not runtime_chroma_dir.is_symlink():
-            shutil.rmtree(runtime_chroma_dir)
-        else:
-            runtime_chroma_dir.unlink()
-    try:
-        os.symlink(FORMAL_INDEX_DIR, runtime_chroma_dir, target_is_directory=True)
-    except OSError:
-        shutil.copytree(FORMAL_INDEX_DIR, runtime_chroma_dir)
-
-    replace_once(
-        runtime_root / "my_rewriter" / "config.py",
-        '            Settings.llm = OpenAI(\n                model="gpt-4o"\n            )\n',
-        f'            Settings.llm = OpenAI(\n                model="{benchmark_model_name}"\n            )\n',
+    runtime_info = prepare_runtime_root(
+        runtime_root,
+        benchmark_model_name=benchmark_model_name,
+        rule_vector_width=rule_vector_width,
     )
-
-    for rel in ["knowledge-base/rule_cluster_funcs/24.py", "rag/gen_sql_templates.py"]:
-        shim_path = runtime_root / rel
-        if shim_path.is_file():
-            shim_text = shim_path.read_text(encoding="utf-8")
-            shim_text = shim_text.replace(
-                "from sqlglot.optimizer.simplify import NONDETERMINISTIC",
-                "from sqlglot.optimizer.simplify import Simplifier\nNONDETERMINISTIC = Simplifier.NONDETERMINISTIC",
-            )
-            shim_path.write_text(shim_text, encoding="utf-8")
-
-    replace_once(
-        runtime_root / "my_rewriter" / "test_utils.py",
-        "    db = Database(pg_args)\n    input_cost = db.cost_estimation(query)\n    logging.info(f'Input Cost: {input_cost}')\n",
-        "    input_cost = None\n    logging.info(f'Input Cost: {input_cost}')\n",
-    )
-    replace_once(
-        runtime_root / "my_rewriter" / "db_utils.py",
-        "    db = Database(db_args)\n    used_rules = [str(r) for r in res.rules]\n    output_sql = str(res.sql)\n    rewrite_time = int(res.time)\n    output_cost = -1\n    if output_sql != 'None':\n        output_cost = db.cost_estimation(output_sql)\n",
-        "    used_rules = [str(r) for r in res.rules]\n    output_sql = str(res.sql)\n    rewrite_time = int(res.time)\n    output_cost = None\n",
-    )
-
-    runtime_query_fusion_path = runtime_root / "rag" / "my_query_fusion_retriver.py"
-    if runtime_query_fusion_path.is_file():
-        runtime_query_fusion_text = runtime_query_fusion_path.read_text(encoding="utf-8")
-        original_block = (
-            "        rules_one_hot: List[float] = []\n"
-            "        rules_one_hot.extend(get_one_hot(NL_RULES, matched_rules['nl']))\n"
-            "        rules_one_hot.extend(get_one_hot(NORMAL_RULES, matched_rules['calcite_normal']))\n"
-            "        one_cnt = sum(rules_one_hot)\n"
-            "        if one_cnt > 0:\n"
-            "            rules_one_hot = [x / math.sqrt(one_cnt) for x in rules_one_hot]\n"
-        )
-        patched_block = (
-            "        rules_one_hot: List[float] = []\n"
-            "        rules_one_hot.extend(get_one_hot(NL_RULES, matched_rules['nl']))\n"
-            "        rules_one_hot.extend(get_one_hot(NORMAL_RULES, matched_rules['calcite_normal']))\n"
-            f"        target_rule_vector_dim = {rule_vector_width}\n"
-            "        if len(rules_one_hot) < target_rule_vector_dim:\n"
-            "            rules_one_hot.extend([0.0] * (target_rule_vector_dim - len(rules_one_hot)))\n"
-            "        elif len(rules_one_hot) > target_rule_vector_dim:\n"
-            "            rules_one_hot = rules_one_hot[:target_rule_vector_dim]\n"
-            "        one_cnt = sum(rules_one_hot)\n"
-            "        if one_cnt > 0:\n"
-            "            rules_one_hot = [x / math.sqrt(one_cnt) for x in rules_one_hot]\n"
-        )
-        if original_block in runtime_query_fusion_text:
-            runtime_query_fusion_path.write_text(
-                runtime_query_fusion_text.replace(original_block, patched_block, 1),
-                encoding="utf-8",
-            )
-
-    calcite_src_jar_dir = (
-        UPSTREAM_ROOT / "CalciteRewrite" / "out" / "artifacts" / "LearnedRewrite_jar"
-    )
-    calcite_dst_jar_dir = (
-        runtime_root / "my_rewriter" / "CalciteRewrite" / "out" / "artifacts" / "LearnedRewrite_jar"
-    )
-    calcite_dst_jar_dir.mkdir(parents=True, exist_ok=True)
-    if calcite_src_jar_dir.is_dir():
-        for jar_path in calcite_src_jar_dir.iterdir():
-            if jar_path.is_file():
-                shutil.copy2(jar_path, calcite_dst_jar_dir / jar_path.name)
-
-    cache_dir = runtime_root / "my_rewriter" / "cache"
-    cache_dir.mkdir(parents=True, exist_ok=True)
-    cache_file = cache_dir / "common_core_v0_40_pg40_generation_only.jsonl"
-    if not cache_file.exists():
-        cache_file.write_text("", encoding="utf-8")
 
     if prompt_log_path.exists():
         prompt_log_path.unlink()
@@ -682,6 +910,7 @@ test(
             "upstream_log_path": str(upstream_log_path),
             "temp_runner_dir": str(runner_dir),
             "runtime_patch_root": str(runtime_root),
+            "runtime_patch_info": runtime_info,
         }
     )
     write_json(expected_row_metadata_path, row_metadata)

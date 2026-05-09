@@ -1,0 +1,363 @@
+org.apache.calcite.sql.parser.SqlParseException: Lexical error at line 1, column 29.  Encountered: "`" (96), after : ""
+	at org.apache.calcite.sql.parser.impl.SqlParserImpl.convertException(SqlParserImpl.java:413)
+	at org.apache.calcite.sql.parser.impl.SqlParserImpl.normalizeException(SqlParserImpl.java:159)
+	at org.apache.calcite.sql.parser.SqlParser.handleException(SqlParser.java:159)
+	at org.apache.calcite.sql.parser.SqlParser.parseQuery(SqlParser.java:174)
+	at org.apache.calcite.sql.test.AbstractSqlTester.parseQuery(AbstractSqlTester.java:168)
+	at org.apache.calcite.sql.test.AbstractSqlTester.convertSqlToRel2(AbstractSqlTester.java:534)
+	at org.apache.calcite.sql.test.SqlTester.convertSqlToRel(SqlTester.java:291)
+	at org.apache.calcite.test.RelSupplier$SqlRelSupplier.apply(RelSupplier.java:98)
+	at org.apache.calcite.test.RelOptFixture.toRel(RelOptFixture.java:305)
+	at rewriter.Rewriter.matchRules(Rewriter.java:63)
+	at rewriter.Rewriter.matchNormalRules(Rewriter.java:117)
+	at rewriter.Rewriter.matchAllRules(Rewriter.java:121)
+Caused by: org.apache.calcite.sql.parser.impl.TokenMgrError: Lexical error at line 1, column 29.  Encountered: "`" (96), after : ""
+	at org.apache.calcite.sql.parser.impl.SqlParserImplTokenManager.getNextToken(SqlParserImplTokenManager.java:26551)
+	at org.apache.calcite.sql.parser.impl.SqlParserImpl.jj_ntk(SqlParserImpl.java:42844)
+	at org.apache.calcite.sql.parser.impl.SqlParserImpl.AddExpression2b(SqlParserImpl.java:17683)
+	at org.apache.calcite.sql.parser.impl.SqlParserImpl.Expression2(SqlParserImpl.java:17741)
+	at org.apache.calcite.sql.parser.impl.SqlParserImpl.Expression(SqlParserImpl.java:17672)
+	at org.apache.calcite.sql.parser.impl.SqlParserImpl.AddExpression(SqlParserImpl.java:17663)
+	at org.apache.calcite.sql.parser.impl.SqlParserImpl.AddExpressions(SqlParserImpl.java:13117)
+	at org.apache.calcite.sql.parser.impl.SqlParserImpl.ExpressionCommaList(SqlParserImpl.java:13107)
+	at org.apache.calcite.sql.parser.impl.SqlParserImpl.CaseExpression(SqlParserImpl.java:19755)
+	at org.apache.calcite.sql.parser.impl.SqlParserImpl.AtomicRowExpression(SqlParserImpl.java:19233)
+	at org.apache.calcite.sql.parser.impl.SqlParserImpl.Expression3(SqlParserImpl.java:18071)
+	at org.apache.calcite.sql.parser.impl.SqlParserImpl.AddExpression2b(SqlParserImpl.java:17699)
+	at org.apache.calcite.sql.parser.impl.SqlParserImpl.Expression2(SqlParserImpl.java:17741)
+	at org.apache.calcite.sql.parser.impl.SqlParserImpl.Expression(SqlParserImpl.java:17672)
+	at org.apache.calcite.sql.parser.impl.SqlParserImpl.LeafQueryOrExpr(SqlParserImpl.java:17649)
+	at org.apache.calcite.sql.parser.impl.SqlParserImpl.QueryOrExpr(SqlParserImpl.java:17002)
+	at org.apache.calcite.sql.parser.impl.SqlParserImpl.OrderedQueryOrExpr(SqlParserImpl.java:583)
+	at org.apache.calcite.sql.parser.impl.SqlParserImpl.PartitionedQueryOrQueryOrExpr(SqlParserImpl.java:6901)
+	at org.apache.calcite.sql.parser.impl.SqlParserImpl.AddArg0(SqlParserImpl.java:2517)
+	at org.apache.calcite.sql.parser.impl.SqlParserImpl.FunctionParameterList(SqlParserImpl.java:1958)
+	at org.apache.calcite.sql.parser.impl.SqlParserImpl.NamedCall(SqlParserImpl.java:31023)
+	at org.apache.calcite.sql.parser.impl.SqlParserImpl.NamedFunctionCall(SqlParserImpl.java:30585)
+	at org.apache.calcite.sql.parser.impl.SqlParserImpl.AtomicRowExpression(SqlParserImpl.java:18866)
+	at org.apache.calcite.sql.parser.impl.SqlParserImpl.Expression3(SqlParserImpl.java:18071)
+	at org.apache.calcite.sql.parser.impl.SqlParserImpl.AddExpression2b(SqlParserImpl.java:17699)
+	at org.apache.calcite.sql.parser.impl.SqlParserImpl.Expression2(SqlParserImpl.java:17741)
+	at org.apache.calcite.sql.parser.impl.SqlParserImpl.Expression(SqlParserImpl.java:17672)
+	at org.apache.calcite.sql.parser.impl.SqlParserImpl.AddExpression(SqlParserImpl.java:17663)
+	at org.apache.calcite.sql.parser.impl.SqlParserImpl.BuiltinFunctionCall(SqlParserImpl.java:26476)
+	at org.apache.calcite.sql.parser.impl.SqlParserImpl.AtomicRowExpression(SqlParserImpl.java:18842)
+	at org.apache.calcite.sql.parser.impl.SqlParserImpl.Expression3(SqlParserImpl.java:18071)
+	at org.apache.calcite.sql.parser.impl.SqlParserImpl.AddExpression2b(SqlParserImpl.java:17699)
+	at org.apache.calcite.sql.parser.impl.SqlParserImpl.Expression2(SqlParserImpl.java:17741)
+	at org.apache.calcite.sql.parser.impl.SqlParserImpl.Expression(SqlParserImpl.java:17672)
+	at org.apache.calcite.sql.parser.impl.SqlParserImpl.SelectExpression(SqlParserImpl.java:10075)
+	at org.apache.calcite.sql.parser.impl.SqlParserImpl.AddSelectItem(SqlParserImpl.java:8872)
+	at org.apache.calcite.sql.parser.impl.SqlParserImpl.SqlSelect(SqlParserImpl.java:4709)
+	at org.apache.calcite.sql.parser.impl.SqlParserImpl.LeafQuery(SqlParserImpl.java:795)
+	at org.apache.calcite.sql.parser.impl.SqlParserImpl.LeafQueryOrExpr(SqlParserImpl.java:17168)
+	at org.apache.calcite.sql.parser.impl.SqlParserImpl.QueryOrExpr(SqlParserImpl.java:17002)
+	at org.apache.calcite.sql.parser.impl.SqlParserImpl.OrderedQueryOrExpr(SqlParserImpl.java:583)
+	at org.apache.calcite.sql.parser.impl.SqlParserImpl.SqlStmt(SqlParserImpl.java:4092)
+	at org.apache.calcite.sql.parser.impl.SqlParserImpl.SqlStmtEof(SqlParserImpl.java:4130)
+	at org.apache.calcite.sql.parser.impl.SqlParserImpl.parseSqlStmtEof(SqlParserImpl.java:207)
+	at org.apache.calcite.sql.parser.SqlParser.parseQuery(SqlParser.java:172)
+	... 8 more
+org.apache.calcite.sql.parser.SqlParseException: Lexical error at line 1, column 29.  Encountered: "`" (96), after : ""
+	at org.apache.calcite.sql.parser.impl.SqlParserImpl.convertException(SqlParserImpl.java:413)
+	at org.apache.calcite.sql.parser.impl.SqlParserImpl.normalizeException(SqlParserImpl.java:159)
+	at org.apache.calcite.sql.parser.SqlParser.handleException(SqlParser.java:159)
+	at org.apache.calcite.sql.parser.SqlParser.parseQuery(SqlParser.java:174)
+	at org.apache.calcite.sql.test.AbstractSqlTester.parseQuery(AbstractSqlTester.java:168)
+	at org.apache.calcite.sql.test.AbstractSqlTester.convertSqlToRel2(AbstractSqlTester.java:534)
+	at org.apache.calcite.sql.test.SqlTester.convertSqlToRel(SqlTester.java:291)
+	at org.apache.calcite.test.RelSupplier$SqlRelSupplier.apply(RelSupplier.java:98)
+	at org.apache.calcite.test.RelOptFixture.toRel(RelOptFixture.java:305)
+	at rewriter.Rewriter.matchRules(Rewriter.java:63)
+	at rewriter.Rewriter.matchExploreRules(Rewriter.java:113)
+	at rewriter.Rewriter.matchAllRules(Rewriter.java:125)
+Caused by: org.apache.calcite.sql.parser.impl.TokenMgrError: Lexical error at line 1, column 29.  Encountered: "`" (96), after : ""
+	at org.apache.calcite.sql.parser.impl.SqlParserImplTokenManager.getNextToken(SqlParserImplTokenManager.java:26551)
+	at org.apache.calcite.sql.parser.impl.SqlParserImpl.jj_ntk(SqlParserImpl.java:42844)
+	at org.apache.calcite.sql.parser.impl.SqlParserImpl.AddExpression2b(SqlParserImpl.java:17683)
+	at org.apache.calcite.sql.parser.impl.SqlParserImpl.Expression2(SqlParserImpl.java:17741)
+	at org.apache.calcite.sql.parser.impl.SqlParserImpl.Expression(SqlParserImpl.java:17672)
+	at org.apache.calcite.sql.parser.impl.SqlParserImpl.AddExpression(SqlParserImpl.java:17663)
+	at org.apache.calcite.sql.parser.impl.SqlParserImpl.AddExpressions(SqlParserImpl.java:13117)
+	at org.apache.calcite.sql.parser.impl.SqlParserImpl.ExpressionCommaList(SqlParserImpl.java:13107)
+	at org.apache.calcite.sql.parser.impl.SqlParserImpl.CaseExpression(SqlParserImpl.java:19755)
+	at org.apache.calcite.sql.parser.impl.SqlParserImpl.AtomicRowExpression(SqlParserImpl.java:19233)
+	at org.apache.calcite.sql.parser.impl.SqlParserImpl.Expression3(SqlParserImpl.java:18071)
+	at org.apache.calcite.sql.parser.impl.SqlParserImpl.AddExpression2b(SqlParserImpl.java:17699)
+	at org.apache.calcite.sql.parser.impl.SqlParserImpl.Expression2(SqlParserImpl.java:17741)
+	at org.apache.calcite.sql.parser.impl.SqlParserImpl.Expression(SqlParserImpl.java:17672)
+	at org.apache.calcite.sql.parser.impl.SqlParserImpl.LeafQueryOrExpr(SqlParserImpl.java:17649)
+	at org.apache.calcite.sql.parser.impl.SqlParserImpl.QueryOrExpr(SqlParserImpl.java:17002)
+	at org.apache.calcite.sql.parser.impl.SqlParserImpl.OrderedQueryOrExpr(SqlParserImpl.java:583)
+	at org.apache.calcite.sql.parser.impl.SqlParserImpl.PartitionedQueryOrQueryOrExpr(SqlParserImpl.java:6901)
+	at org.apache.calcite.sql.parser.impl.SqlParserImpl.AddArg0(SqlParserImpl.java:2517)
+	at org.apache.calcite.sql.parser.impl.SqlParserImpl.FunctionParameterList(SqlParserImpl.java:1958)
+	at org.apache.calcite.sql.parser.impl.SqlParserImpl.NamedCall(SqlParserImpl.java:31023)
+	at org.apache.calcite.sql.parser.impl.SqlParserImpl.NamedFunctionCall(SqlParserImpl.java:30585)
+	at org.apache.calcite.sql.parser.impl.SqlParserImpl.AtomicRowExpression(SqlParserImpl.java:18866)
+	at org.apache.calcite.sql.parser.impl.SqlParserImpl.Expression3(SqlParserImpl.java:18071)
+	at org.apache.calcite.sql.parser.impl.SqlParserImpl.AddExpression2b(SqlParserImpl.java:17699)
+	at org.apache.calcite.sql.parser.impl.SqlParserImpl.Expression2(SqlParserImpl.java:17741)
+	at org.apache.calcite.sql.parser.impl.SqlParserImpl.Expression(SqlParserImpl.java:17672)
+	at org.apache.calcite.sql.parser.impl.SqlParserImpl.AddExpression(SqlParserImpl.java:17663)
+	at org.apache.calcite.sql.parser.impl.SqlParserImpl.BuiltinFunctionCall(SqlParserImpl.java:26476)
+	at org.apache.calcite.sql.parser.impl.SqlParserImpl.AtomicRowExpression(SqlParserImpl.java:18842)
+	at org.apache.calcite.sql.parser.impl.SqlParserImpl.Expression3(SqlParserImpl.java:18071)
+	at org.apache.calcite.sql.parser.impl.SqlParserImpl.AddExpression2b(SqlParserImpl.java:17699)
+	at org.apache.calcite.sql.parser.impl.SqlParserImpl.Expression2(SqlParserImpl.java:17741)
+	at org.apache.calcite.sql.parser.impl.SqlParserImpl.Expression(SqlParserImpl.java:17672)
+	at org.apache.calcite.sql.parser.impl.SqlParserImpl.SelectExpression(SqlParserImpl.java:10075)
+	at org.apache.calcite.sql.parser.impl.SqlParserImpl.AddSelectItem(SqlParserImpl.java:8872)
+	at org.apache.calcite.sql.parser.impl.SqlParserImpl.SqlSelect(SqlParserImpl.java:4709)
+	at org.apache.calcite.sql.parser.impl.SqlParserImpl.LeafQuery(SqlParserImpl.java:795)
+	at org.apache.calcite.sql.parser.impl.SqlParserImpl.LeafQueryOrExpr(SqlParserImpl.java:17168)
+	at org.apache.calcite.sql.parser.impl.SqlParserImpl.QueryOrExpr(SqlParserImpl.java:17002)
+	at org.apache.calcite.sql.parser.impl.SqlParserImpl.OrderedQueryOrExpr(SqlParserImpl.java:583)
+	at org.apache.calcite.sql.parser.impl.SqlParserImpl.SqlStmt(SqlParserImpl.java:4092)
+	at org.apache.calcite.sql.parser.impl.SqlParserImpl.SqlStmtEof(SqlParserImpl.java:4130)
+	at org.apache.calcite.sql.parser.impl.SqlParserImpl.parseSqlStmtEof(SqlParserImpl.java:207)
+	at org.apache.calcite.sql.parser.SqlParser.parseQuery(SqlParser.java:172)
+	... 8 more
+Traceback (most recent call last):
+  File "<string>", line 50, in <module>
+  File "/tmp/rewritebench_rbot_llm4rewrite_pg40_expansion_runner/PORT_0024/runtime_patch_v4/my_rewriter/test_utils.py", line 25, in test
+    res = rag_retrieve(query, schema, docstore, embed_dim=model_args['EMBED_DIM'], RETRIEVER_TOP_K=RETRIEVER_TOP_K)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/rewritebench_rbot_llm4rewrite_pg40_expansion_runner/PORT_0024/runtime_patch_v4/my_rewriter/rag_retrieve.py", line 69, in rag_retrieve
+    retriever_res = retriever.retrieve(query)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/rewritebench_rbot_llm4rewrite_venv_smoke/lib/python3.12/site-packages/llama_index_instrumentation/dispatcher.py", line 413, in wrapper
+    result = func(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/rewritebench_rbot_llm4rewrite_venv_smoke/lib/python3.12/site-packages/llama_index/core/base/base_retriever.py", line 216, in retrieve
+    nodes = self._retrieve(query_bundle)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/rewritebench_rbot_llm4rewrite_venv_smoke/lib/python3.12/site-packages/llama_index_instrumentation/dispatcher.py", line 413, in wrapper
+    result = func(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/rewritebench_rbot_llm4rewrite_pg40_expansion_runner/PORT_0024/runtime_patch_v4/rag/my_query_fusion_retriver.py", line 311, in _retrieve
+    synthesized_queries = self._get_queries(query_bundle.query_str)
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/rewritebench_rbot_llm4rewrite_pg40_expansion_runner/PORT_0024/runtime_patch_v4/rag/my_query_fusion_retriver.py", line 116, in _get_queries
+    sql_templates = list(gen_sql_templates(original_query).keys())
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/rewritebench_rbot_llm4rewrite_pg40_expansion_runner/PORT_0024/runtime_patch_v4/rag/gen_sql_templates.py", line 377, in gen_sql_templates
+    expr_tree = sqlglot.parse_one(sql, dialect=dialect)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/rewritebench_rbot_llm4rewrite_venv_smoke/lib/python3.12/site-packages/sqlglot/__init__.py", line 160, in parse_one
+    result = dialect.parse(sql, **opts)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/rewritebench_rbot_llm4rewrite_venv_smoke/lib/python3.12/site-packages/sqlglot/dialects/dialect.py", line 1119, in parse
+    return self.parser(**opts).parse(self.tokenize(sql), sql)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/rewritebench_rbot_llm4rewrite_venv_smoke/lib/python3.12/site-packages/sqlglot/parser.py", line 2034, in parse
+    return self._parse(
+           ^^^^^^^^^^^^
+  File "/tmp/rewritebench_rbot_llm4rewrite_venv_smoke/lib/python3.12/site-packages/sqlglot/parser.py", line 2154, in _parse
+    return self._parse_batch_statements(parse_method=parse_method, sep_first_statement=False)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/rewritebench_rbot_llm4rewrite_venv_smoke/lib/python3.12/site-packages/sqlglot/parser.py", line 2121, in _parse_batch_statements
+    expressions.append(parse_method(self))
+                       ^^^^^^^^^^^^^^^^^^
+  File "/tmp/rewritebench_rbot_llm4rewrite_venv_smoke/lib/python3.12/site-packages/sqlglot/parser.py", line 2284, in _parse_statement
+    expression = self._parse_set_operations(expression) if expression else self._parse_select()
+                                                                           ^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/rewritebench_rbot_llm4rewrite_venv_smoke/lib/python3.12/site-packages/sqlglot/parser.py", line 3763, in _parse_select
+    query = self._parse_select_query(
+            ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/rewritebench_rbot_llm4rewrite_venv_smoke/lib/python3.12/site-packages/sqlglot/parser.py", line 3849, in _parse_select_query
+    projections, exclude = self._parse_projections()
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/rewritebench_rbot_llm4rewrite_venv_smoke/lib/python3.12/site-packages/sqlglot/parser.py", line 3719, in _parse_projections
+    return self._parse_expressions(), None
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/rewritebench_rbot_llm4rewrite_venv_smoke/lib/python3.12/site-packages/sqlglot/parser.py", line 8434, in _parse_expressions
+    return self._parse_csv(self._parse_expression)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/rewritebench_rbot_llm4rewrite_venv_smoke/lib/python3.12/site-packages/sqlglot/parser.py", line 8399, in _parse_csv
+    parse_result = parse_method()
+                   ^^^^^^^^^^^^^^
+  File "/tmp/rewritebench_rbot_llm4rewrite_venv_smoke/lib/python3.12/site-packages/sqlglot/parser.py", line 5655, in _parse_expression
+    return self._parse_alias(self._parse_assignment())
+                             ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/rewritebench_rbot_llm4rewrite_venv_smoke/lib/python3.12/site-packages/sqlglot/parser.py", line 5658, in _parse_assignment
+    this = self._parse_disjunction()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/rewritebench_rbot_llm4rewrite_venv_smoke/lib/python3.12/site-packages/sqlglot/parser.py", line 5680, in _parse_disjunction
+    this = self._parse_conjunction()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/rewritebench_rbot_llm4rewrite_venv_smoke/lib/python3.12/site-packages/sqlglot/parser.py", line 5692, in _parse_conjunction
+    this = self._parse_equality()
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/rewritebench_rbot_llm4rewrite_venv_smoke/lib/python3.12/site-packages/sqlglot/parser.py", line 5704, in _parse_equality
+    this = self._parse_comparison()
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/rewritebench_rbot_llm4rewrite_venv_smoke/lib/python3.12/site-packages/sqlglot/parser.py", line 5716, in _parse_comparison
+    this = self._parse_range()
+           ^^^^^^^^^^^^^^^^^^^
+  File "/tmp/rewritebench_rbot_llm4rewrite_venv_smoke/lib/python3.12/site-packages/sqlglot/parser.py", line 5726, in _parse_range
+    this = this or self._parse_bitwise()
+                   ^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/rewritebench_rbot_llm4rewrite_venv_smoke/lib/python3.12/site-packages/sqlglot/parser.py", line 5927, in _parse_bitwise
+    this = self._parse_term()
+           ^^^^^^^^^^^^^^^^^^
+  File "/tmp/rewritebench_rbot_llm4rewrite_venv_smoke/lib/python3.12/site-packages/sqlglot/parser.py", line 5960, in _parse_term
+    this = self._parse_factor()
+           ^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/rewritebench_rbot_llm4rewrite_venv_smoke/lib/python3.12/site-packages/sqlglot/parser.py", line 5983, in _parse_factor
+    this = self._parse_at_time_zone(parse_method())
+                                    ^^^^^^^^^^^^^^
+  File "/tmp/rewritebench_rbot_llm4rewrite_venv_smoke/lib/python3.12/site-packages/sqlglot/parser.py", line 6015, in _parse_unary
+    return self._parse_type()
+           ^^^^^^^^^^^^^^^^^^
+  File "/tmp/rewritebench_rbot_llm4rewrite_venv_smoke/lib/python3.12/site-packages/sqlglot/parser.py", line 6020, in _parse_type
+    if not fallback_to_identifier and (atom := self._parse_atom()) is not None:
+                                               ^^^^^^^^^^^^^^^^^^
+  File "/tmp/rewritebench_rbot_llm4rewrite_venv_smoke/lib/python3.12/site-packages/sqlglot/parser.py", line 6415, in _parse_atom
+    and (column := self._parse_column()) is not None
+                   ^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/rewritebench_rbot_llm4rewrite_venv_smoke/lib/python3.12/site-packages/sqlglot/parser.py", line 6440, in _parse_column
+    this = self._parse_column_reference()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/rewritebench_rbot_llm4rewrite_venv_smoke/lib/python3.12/site-packages/sqlglot/parser.py", line 6527, in _parse_column_reference
+    this = self._parse_field()
+           ^^^^^^^^^^^^^^^^^^^
+  File "/tmp/rewritebench_rbot_llm4rewrite_venv_smoke/lib/python3.12/site-packages/sqlglot/parser.py", line 6756, in _parse_field
+    field = self._parse_primary() or self._parse_function(
+                                     ^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/rewritebench_rbot_llm4rewrite_venv_smoke/lib/python3.12/site-packages/sqlglot/parser.py", line 6779, in _parse_function
+    func = self._parse_function_call(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/rewritebench_rbot_llm4rewrite_venv_smoke/lib/python3.12/site-packages/sqlglot/parser.py", line 6833, in _parse_function_call
+    result = parser(self)
+             ^^^^^^^^^^^^
+  File "/tmp/rewritebench_rbot_llm4rewrite_venv_smoke/lib/python3.12/site-packages/sqlglot/parser.py", line 1492, in <lambda>
+    "CAST": lambda self: self._parse_cast(self.STRICT_CAST),
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/rewritebench_rbot_llm4rewrite_venv_smoke/lib/python3.12/site-packages/sqlglot/parser.py", line 7648, in _parse_cast
+    this = self._parse_assignment()
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/rewritebench_rbot_llm4rewrite_venv_smoke/lib/python3.12/site-packages/sqlglot/parser.py", line 5658, in _parse_assignment
+    this = self._parse_disjunction()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/rewritebench_rbot_llm4rewrite_venv_smoke/lib/python3.12/site-packages/sqlglot/parser.py", line 5680, in _parse_disjunction
+    this = self._parse_conjunction()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/rewritebench_rbot_llm4rewrite_venv_smoke/lib/python3.12/site-packages/sqlglot/parser.py", line 5692, in _parse_conjunction
+    this = self._parse_equality()
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/rewritebench_rbot_llm4rewrite_venv_smoke/lib/python3.12/site-packages/sqlglot/parser.py", line 5704, in _parse_equality
+    this = self._parse_comparison()
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/rewritebench_rbot_llm4rewrite_venv_smoke/lib/python3.12/site-packages/sqlglot/parser.py", line 5716, in _parse_comparison
+    this = self._parse_range()
+           ^^^^^^^^^^^^^^^^^^^
+  File "/tmp/rewritebench_rbot_llm4rewrite_venv_smoke/lib/python3.12/site-packages/sqlglot/parser.py", line 5726, in _parse_range
+    this = this or self._parse_bitwise()
+                   ^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/rewritebench_rbot_llm4rewrite_venv_smoke/lib/python3.12/site-packages/sqlglot/parser.py", line 5927, in _parse_bitwise
+    this = self._parse_term()
+           ^^^^^^^^^^^^^^^^^^
+  File "/tmp/rewritebench_rbot_llm4rewrite_venv_smoke/lib/python3.12/site-packages/sqlglot/parser.py", line 5960, in _parse_term
+    this = self._parse_factor()
+           ^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/rewritebench_rbot_llm4rewrite_venv_smoke/lib/python3.12/site-packages/sqlglot/parser.py", line 5983, in _parse_factor
+    this = self._parse_at_time_zone(parse_method())
+                                    ^^^^^^^^^^^^^^
+  File "/tmp/rewritebench_rbot_llm4rewrite_venv_smoke/lib/python3.12/site-packages/sqlglot/parser.py", line 6015, in _parse_unary
+    return self._parse_type()
+           ^^^^^^^^^^^^^^^^^^
+  File "/tmp/rewritebench_rbot_llm4rewrite_venv_smoke/lib/python3.12/site-packages/sqlglot/parser.py", line 6020, in _parse_type
+    if not fallback_to_identifier and (atom := self._parse_atom()) is not None:
+                                               ^^^^^^^^^^^^^^^^^^
+  File "/tmp/rewritebench_rbot_llm4rewrite_venv_smoke/lib/python3.12/site-packages/sqlglot/parser.py", line 6415, in _parse_atom
+    and (column := self._parse_column()) is not None
+                   ^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/rewritebench_rbot_llm4rewrite_venv_smoke/lib/python3.12/site-packages/sqlglot/parser.py", line 6440, in _parse_column
+    this = self._parse_column_reference()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/rewritebench_rbot_llm4rewrite_venv_smoke/lib/python3.12/site-packages/sqlglot/parser.py", line 6527, in _parse_column_reference
+    this = self._parse_field()
+           ^^^^^^^^^^^^^^^^^^^
+  File "/tmp/rewritebench_rbot_llm4rewrite_venv_smoke/lib/python3.12/site-packages/sqlglot/parser.py", line 6756, in _parse_field
+    field = self._parse_primary() or self._parse_function(
+                                     ^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/rewritebench_rbot_llm4rewrite_venv_smoke/lib/python3.12/site-packages/sqlglot/parser.py", line 6779, in _parse_function
+    func = self._parse_function_call(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/rewritebench_rbot_llm4rewrite_venv_smoke/lib/python3.12/site-packages/sqlglot/parser.py", line 6858, in _parse_function_call
+    args = self._parse_function_args(alias)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/rewritebench_rbot_llm4rewrite_venv_smoke/lib/python3.12/site-packages/sqlglot/parser.py", line 6792, in _parse_function_args
+    return self._parse_csv(lambda: self._parse_lambda(alias=alias))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/rewritebench_rbot_llm4rewrite_venv_smoke/lib/python3.12/site-packages/sqlglot/parser.py", line 8399, in _parse_csv
+    parse_result = parse_method()
+                   ^^^^^^^^^^^^^^
+  File "/tmp/rewritebench_rbot_llm4rewrite_venv_smoke/lib/python3.12/site-packages/sqlglot/parser.py", line 6792, in <lambda>
+    return self._parse_csv(lambda: self._parse_lambda(alias=alias))
+                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/rewritebench_rbot_llm4rewrite_venv_smoke/lib/python3.12/site-packages/sqlglot/parser.py", line 7014, in _parse_lambda
+    this = self._parse_select_or_expression(alias=alias)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/rewritebench_rbot_llm4rewrite_venv_smoke/lib/python3.12/site-packages/sqlglot/parser.py", line 8441, in _parse_select_or_expression
+    else self._parse_assignment()
+         ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/rewritebench_rbot_llm4rewrite_venv_smoke/lib/python3.12/site-packages/sqlglot/parser.py", line 5658, in _parse_assignment
+    this = self._parse_disjunction()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/rewritebench_rbot_llm4rewrite_venv_smoke/lib/python3.12/site-packages/sqlglot/parser.py", line 5680, in _parse_disjunction
+    this = self._parse_conjunction()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/rewritebench_rbot_llm4rewrite_venv_smoke/lib/python3.12/site-packages/sqlglot/parser.py", line 5692, in _parse_conjunction
+    this = self._parse_equality()
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/rewritebench_rbot_llm4rewrite_venv_smoke/lib/python3.12/site-packages/sqlglot/parser.py", line 5704, in _parse_equality
+    this = self._parse_comparison()
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/rewritebench_rbot_llm4rewrite_venv_smoke/lib/python3.12/site-packages/sqlglot/parser.py", line 5716, in _parse_comparison
+    this = self._parse_range()
+           ^^^^^^^^^^^^^^^^^^^
+  File "/tmp/rewritebench_rbot_llm4rewrite_venv_smoke/lib/python3.12/site-packages/sqlglot/parser.py", line 5726, in _parse_range
+    this = this or self._parse_bitwise()
+                   ^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/rewritebench_rbot_llm4rewrite_venv_smoke/lib/python3.12/site-packages/sqlglot/parser.py", line 5927, in _parse_bitwise
+    this = self._parse_term()
+           ^^^^^^^^^^^^^^^^^^
+  File "/tmp/rewritebench_rbot_llm4rewrite_venv_smoke/lib/python3.12/site-packages/sqlglot/parser.py", line 5960, in _parse_term
+    this = self._parse_factor()
+           ^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/rewritebench_rbot_llm4rewrite_venv_smoke/lib/python3.12/site-packages/sqlglot/parser.py", line 5983, in _parse_factor
+    this = self._parse_at_time_zone(parse_method())
+                                    ^^^^^^^^^^^^^^
+  File "/tmp/rewritebench_rbot_llm4rewrite_venv_smoke/lib/python3.12/site-packages/sqlglot/parser.py", line 6015, in _parse_unary
+    return self._parse_type()
+           ^^^^^^^^^^^^^^^^^^
+  File "/tmp/rewritebench_rbot_llm4rewrite_venv_smoke/lib/python3.12/site-packages/sqlglot/parser.py", line 6079, in _parse_type
+    return self._parse_column()
+           ^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/rewritebench_rbot_llm4rewrite_venv_smoke/lib/python3.12/site-packages/sqlglot/parser.py", line 6440, in _parse_column
+    this = self._parse_column_reference()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/rewritebench_rbot_llm4rewrite_venv_smoke/lib/python3.12/site-packages/sqlglot/parser.py", line 6527, in _parse_column_reference
+    this = self._parse_field()
+           ^^^^^^^^^^^^^^^^^^^
+  File "/tmp/rewritebench_rbot_llm4rewrite_venv_smoke/lib/python3.12/site-packages/sqlglot/parser.py", line 6756, in _parse_field
+    field = self._parse_primary() or self._parse_function(
+                                     ^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/rewritebench_rbot_llm4rewrite_venv_smoke/lib/python3.12/site-packages/sqlglot/parser.py", line 6779, in _parse_function
+    func = self._parse_function_call(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/rewritebench_rbot_llm4rewrite_venv_smoke/lib/python3.12/site-packages/sqlglot/parser.py", line 6814, in _parse_function_call
+    return self._parse_window(parser(self))
+                              ^^^^^^^^^^^^
+  File "/tmp/rewritebench_rbot_llm4rewrite_venv_smoke/lib/python3.12/site-packages/sqlglot/parser.py", line 1469, in <lambda>
+    "CASE": lambda self: self._parse_case(),
+                         ^^^^^^^^^^^^^^^^^^
+  File "/tmp/rewritebench_rbot_llm4rewrite_venv_smoke/lib/python3.12/site-packages/sqlglot/parser.py", line 7564, in _parse_case
+    self.raise_error("Expected END after CASE", self._prev)
+  File "/tmp/rewritebench_rbot_llm4rewrite_venv_smoke/lib/python3.12/site-packages/sqlglot/parser.py", line 1991, in raise_error
+    raise error
+sqlglot.errors.ParseError: Expected END after CASE. Line 1, Col: 39.
+  SELECT CAST( SUM( CASE WHEN `[4mistextless[0m` = 0 AND `isstoryspotlight` = 1 THEN 1 ELSE 0 END ) AS DOUBLE ) * 100 / COUNT( `id` ) FROM `cards`
+
