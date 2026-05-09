@@ -1,0 +1,88 @@
+# Paper Results Index for common_core_v0
+
+This is the first file to read when writing the paper results section.
+
+It is the stable entry point for the paper-facing result artifacts under
+`reports/evaluation/common_core_v0/`. Future result summaries should be linked
+from this file rather than left isolated.
+
+## Canonical Paper-Facing Tables
+
+- Denominator-aware evidence ledger:
+  - [method_comparison_summary_v2.md](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/method_comparison_summary_v2.md)
+- Safety / readiness check for the canonical ledger:
+  - [method_comparison_summary_v2_paper_readiness_check_v2.md](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/method_comparison_summary_v2_paper_readiness_check_v2.md)
+
+## Method Summary Files
+
+### SQLGlot
+
+- [sqlglot_validity_summary_v1.md](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/sqlglot_validity_summary_v1.md)
+- [sqlglot_speedup_summary_v1.md](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/sqlglot_speedup_summary_v1.md)
+
+### Direct LLM
+
+- [direct_llm_validity_summary_v1.md](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/direct_llm_validity_summary_v1.md)
+- [direct_llm_speedup_summary_v1.md](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/direct_llm_speedup_summary_v1.md)
+
+### Calcite HEP
+
+- [calcite_hep_validity_summary_v1.md](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/calcite_hep_validity_summary_v1.md)
+- [calcite_hep_speedup_summary_v1.md](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/calcite_hep_speedup_summary_v1.md)
+
+### R-Bot
+
+- Canonical current PostgreSQL paper-facing evidence:
+  - [r_bot_pg_expansion_result_card_v2.md](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/r_bot_pg_expansion_result_card_v2.md)
+  - [r_bot_pg15_speedup_summary_v2.md](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/r_bot_pg15_speedup_summary_v2.md)
+- Historical retained PG7 evidence:
+  - [r_bot_formal_result_card_v1.md](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/r_bot_formal_result_card_v1.md)
+  - [r_bot_pg7_speedup_summary_v1.md](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/r_bot_pg7_speedup_summary_v1.md)
+- MySQL/Spark boundary evidence:
+  - [r_bot_mysql_spark_canary_result_card_v1.md](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/r_bot_mysql_spark_canary_result_card_v1.md)
+
+## R-Bot Current Paper-Safe Status
+
+- R-Bot PG evidence is represented by PG expansion v2.
+- R-Bot MySQL/Spark canary reached generation attempts but generated `0 / 6`
+  executable SQL outputs.
+- MySQL/Spark for R-Bot remain `NA_not_computed`, not `correctness = 0`.
+- R-Bot is `pg_only` in
+  [method_comparison_summary_v2.md](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/method_comparison_summary_v2.md).
+
+## Do Not Claim
+
+- Do not call
+  [method_comparison_summary_v2.md](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/method_comparison_summary_v2.md)
+  a leaderboard.
+- Do not rank methods using subset-scoped rows as if denominators matched.
+- Do not say R-Bot MySQL/Spark correctness is `0`.
+- Do not say R-Bot full `120` timing exists.
+- Do not say `speedup_transfer_rate` is computed.
+
+## Paper-Safe Wording Snippets
+
+Use this table-level framing:
+
+`Table X is a denominator-aware evidence ledger, not a ranked leaderboard. Rows differ in route structure, engine scope, execution scope, and timing scope.`
+
+Use this R-Bot PostgreSQL framing:
+
+`For R-Bot, the current canonical paper-facing evidence is the PostgreSQL expansion v2 path, with generation on PG40 and timing only on the generated_pg15_from_pg40_expansion_match_exact_only subset.`
+
+Use this R-Bot MySQL/Spark framing:
+
+`Under the recovered R-Bot route, MySQL/Spark canary rows reached generation attempts, but produced no extractable final SQL. The retained responses contain rule-selection or rewrite-strategy text rather than executable target-engine SQL. Therefore, MySQL/Spark execution, timing, and speedup metrics remain not computed for R-Bot.`
+
+## Major Source Artifact Paths
+
+- Canonical ledger:
+  - [method_comparison_summary_v2.csv](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/method_comparison_summary_v2.csv)
+- Ledger safety check:
+  - [method_comparison_summary_v2_paper_readiness_check_v2.csv](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/method_comparison_summary_v2_paper_readiness_check_v2.csv)
+- R-Bot PG result card:
+  - [r_bot_pg_expansion_result_card_v2.csv](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/r_bot_pg_expansion_result_card_v2.csv)
+- R-Bot PG speedup summary:
+  - [r_bot_pg15_speedup_summary_v2.csv](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/r_bot_pg15_speedup_summary_v2.csv)
+- R-Bot MySQL/Spark canary boundary card:
+  - [r_bot_mysql_spark_canary_result_card_v1.csv](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/r_bot_mysql_spark_canary_result_card_v1.csv)
