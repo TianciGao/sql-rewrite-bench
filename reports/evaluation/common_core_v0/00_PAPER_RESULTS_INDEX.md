@@ -36,6 +36,7 @@ from this file rather than left isolated.
 - Fail-closed `120`-row synthesis, bounded recovery canary result card, and proposed paper row:
   - [calcite_hep_120_fail_closed_synthesis_v1.md](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/calcite_hep_120_fail_closed_synthesis_v1.md)
   - [calcite_hep_120_recovery_canary_08_result_card_v1.md](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/calcite_hep_120_recovery_canary_08_result_card_v1.md)
+  - [calcite_hep_120_recovery_round2_canary_09_result_card_v1.md](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/calcite_hep_120_recovery_round2_canary_09_result_card_v1.md)
   - [calcite_hep_method_comparison_proposed_row_v1.md](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/calcite_hep_method_comparison_proposed_row_v1.md)
 
 ### R-Bot
@@ -77,11 +78,12 @@ from this file rather than left isolated.
   - `10` mismatch
   - `1` Spark setup artifact
 - A denominator-aware fail-closed `120`-row synthesis now exists and has been updated after the bounded recovery canary:
-  - retained PG evidence still contributes `21 / 40` exact matches
-  - retained non-PG evidence now contributes `54 / 80` exact matches
-  - combined fail-closed exact-match ledger improved from `70 / 120` to `75 / 120`
+  - retained PG evidence now contributes `24 / 40` exact matches
+  - retained non-PG evidence now contributes `56 / 80` exact matches
+  - combined fail-closed exact-match ledger improved from `70 / 120` to `80 / 120`
   - the recovery canary added `5` recovered exact rows: `PERF_0008:mysql`, `PERF_0013:mysql`, `PERF_0017:mysql`, `PERF_0019:mysql`, `PERF_0077:spark`
-  - the remaining audited PG rows `LONGTAIL_0022:pg`, `LONGTAIL_0023:pg`, and `LONGTAIL_0024:pg` now reach target-dialect PostgreSQL SQL generation but fail during execution
+  - the round-2 recovery canary added `5` more recovered exact rows: `LONGTAIL_0022:pg`, `LONGTAIL_0023:pg`, `LONGTAIL_0024:pg`, `LONGTAIL_0012:mysql`, `LONGTAIL_0012:spark`
+  - the remaining audited round-2 rows are still non-exact or non-recovered: `PERF_0062:mysql`, `PERF_0062:spark`, `LONGTAIL_0013:mysql`, `LONGTAIL_0013:spark`
   - this is still evidence-ledger material, not timing, speedup, or leaderboard evidence
 - This canary should not be merged into the canonical method-comparison row
   unless a separate denominator-aware policy is created.
@@ -125,7 +127,7 @@ Use this Calcite HEP MySQL/Spark non-PG expansion framing:
 
 Use this Calcite HEP `120`-row fail-closed framing:
 
-`Using retained PG40 route artifacts, the bounded non-PG MySQL/Spark expansion, and the bounded recovery canary, Calcite HEP currently supports a fail-closed 120-row correctness ledger with 75 exact matches out of the intended 120-row tri-engine same-engine denominator. This ledger keeps parser, rewrite, setup, execution, and mismatch failures in-denominator as non-exact rows. It is useful paper evidence, but it is not timing, speedup, or leaderboard-comparable evidence.`
+`Using retained PG40 route artifacts, the bounded non-PG MySQL/Spark expansion, and the bounded recovery canaries, Calcite HEP currently supports a fail-closed 120-row correctness ledger with 80 exact matches out of the intended 120-row tri-engine same-engine denominator. This ledger keeps parser, rewrite, setup, execution, and mismatch failures in-denominator as non-exact rows. It is useful paper evidence, but it is not timing, speedup, or leaderboard-comparable evidence.`
 
 ## Major Source Artifact Paths
 
@@ -147,5 +149,7 @@ Use this Calcite HEP `120`-row fail-closed framing:
   - [calcite_hep_120_fail_closed_synthesis_v1.csv](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/calcite_hep_120_fail_closed_synthesis_v1.csv)
 - Calcite HEP bounded recovery canary result card:
   - [calcite_hep_120_recovery_canary_08_result_card_v1.csv](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/calcite_hep_120_recovery_canary_08_result_card_v1.csv)
+- Calcite HEP bounded recovery round2 canary result card:
+  - [calcite_hep_120_recovery_round2_canary_09_result_card_v1.csv](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/calcite_hep_120_recovery_round2_canary_09_result_card_v1.csv)
 - Calcite HEP proposed method-comparison row:
   - [calcite_hep_method_comparison_proposed_row_v1.csv](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/calcite_hep_method_comparison_proposed_row_v1.csv)
