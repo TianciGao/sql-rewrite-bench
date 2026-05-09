@@ -31,6 +31,8 @@ from this file rather than left isolated.
 - [calcite_hep_speedup_summary_v1.md](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/calcite_hep_speedup_summary_v1.md)
 - Bounded MySQL/Spark canary boundary card:
   - [calcite_hep_mysql_spark_canary_result_card_v1.md](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/calcite_hep_mysql_spark_canary_result_card_v1.md)
+- Bounded MySQL/Spark execution-expansion result card:
+  - [calcite_hep_mysql_spark_execution_expansion_result_card_v1.md](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/calcite_hep_mysql_spark_execution_expansion_result_card_v1.md)
 
 ### R-Bot
 
@@ -62,8 +64,18 @@ from this file rather than left isolated.
   - `6 / 6` executed
   - `4 / 6` match_exact
   - `2 / 6` mismatch due to aggregate decimal scale loss
+- A bounded MySQL/Spark non-PG expansion now exists:
+  - `80` attempted rewrite rows
+  - `60` rewrite_success
+  - `60` execution-planned rows
+  - `59` executed
+  - `49` match_exact
+  - `10` mismatch
+  - `1` Spark setup artifact
 - This canary should not be merged into the canonical method-comparison row
   unless a separate denominator-aware policy is created.
+- This non-PG expansion should also not be merged into the canonical
+  method-comparison row unless a separate denominator-aware policy is created.
 
 ## Do Not Claim
 
@@ -93,6 +105,10 @@ Use this Calcite HEP MySQL/Spark framing:
 
 `Calcite HEP was extended in a bounded MySQL/Spark canary with explicit target-dialect rendering. The canary generated 6/6 target-dialect SQL candidates and all 6 executed, but only 4/6 matched exactly. The two mismatches were both PERF_0006 and were caused by aggregate rewrite precision / decimal scale loss. Therefore this is useful boundary evidence, but not full MySQL/Spark correctness, timing, speedup, or leaderboard evidence.`
 
+Use this Calcite HEP MySQL/Spark non-PG expansion framing:
+
+`Calcite HEP was extended beyond PostgreSQL with explicit MySQL/Spark target-dialect rendering. In the bounded non-PG expansion, 80 MySQL/Spark rows were attempted for rewrite, 60 produced retained target-dialect SQL, and execution-validity on those 60 rows yielded 59 executed and 49 exact matches. This is bounded non-PG execution-validity evidence, not timing, speedup, leaderboard, or full 120-row comparable evidence.`
+
 ## Major Source Artifact Paths
 
 - Canonical ledger:
@@ -107,3 +123,5 @@ Use this Calcite HEP MySQL/Spark framing:
   - [r_bot_mysql_spark_canary_result_card_v1.csv](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/r_bot_mysql_spark_canary_result_card_v1.csv)
 - Calcite HEP MySQL/Spark canary boundary card:
   - [calcite_hep_mysql_spark_canary_result_card_v1.csv](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/calcite_hep_mysql_spark_canary_result_card_v1.csv)
+- Calcite HEP MySQL/Spark execution-expansion result card:
+  - [calcite_hep_mysql_spark_execution_expansion_result_card_v1.csv](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/calcite_hep_mysql_spark_execution_expansion_result_card_v1.csv)
