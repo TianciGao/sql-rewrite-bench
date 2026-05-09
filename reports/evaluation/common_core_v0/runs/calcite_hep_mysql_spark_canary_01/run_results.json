@@ -1,0 +1,28 @@
+{
+  "calcite_checkout_root": "/home/tianci_gao/code/sql-rewrite-bench/datasets/raw/calcite/calcite",
+  "canary_denominator_id": "calcite_hep_mysql_spark_canary_01",
+  "claim_boundary": "mysql_spark_rewrite_canary_only_not_execution_timing_speedup_or_leaderboard_evidence",
+  "current_benchmark_metric_evidence": false,
+  "failure_category": "target_engine_dialect_not_implemented",
+  "failure_reason": "Visible CalciteHepRewriteSmoke.java renders with PostgresqlSqlDialect and does not expose MysqlSqlDialect or SparkSqlDialect output routing",
+  "method_id": "calcite_hep",
+  "notes": [
+    "human-run only package",
+    "rewrite-only canary",
+    "no SQL execution",
+    "no timing or speedup evidence",
+    "does not overwrite existing Calcite HEP PG evidence"
+  ],
+  "planned_rows": 6,
+  "route_id": "calcite_hep_same_engine_rewrite",
+  "run_id": "calcite_hep_mysql_spark_canary_01",
+  "status": "preflight_failed",
+  "status_counts": {
+    "planned_canary_attempt": 0,
+    "preflight_blocked": 6
+  },
+  "wrapper_has_mysql_renderer": false,
+  "wrapper_has_spark_renderer": false,
+  "wrapper_source": "/home/tianci_gao/code/sql-rewrite-bench/tools/calcite_hep/CalciteHepRewriteSmoke.java",
+  "wrapper_uses_postgresql_dialect": true
+}
