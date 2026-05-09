@@ -28,9 +28,18 @@ For each generated canary row:
 
 ## Fail-closed behavior
 
-If the upstream MySQL/Spark route is still unsafe, the package should fail closed at preflight:
+If the recovered MySQL/Spark generation route is still unsafe, the package should fail closed at preflight:
 
 - `run_results.json` should record `status = preflight_failed`
 - `run_event_long.csv` should still contain all `6` rows with explicit `preflight_blocked` status
 
 This package should never silently drop rows or convert a blocked feasibility canary into a support claim.
+
+## Generation-only boundary
+
+Even when rows are attempted successfully:
+
+- witness-data paths remain metadata only
+- no MySQL or Spark SQL is executed
+- no execution/validity artifacts are produced by this package
+- no timing or speedup artifacts are produced by this package

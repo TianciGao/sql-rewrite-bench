@@ -26,12 +26,17 @@ It is **not** a full MySQL/Spark evaluation and does **not** update the retained
 - each selected case has both MySQL and Spark witness-data files
 - the scope is intentionally small enough to separate harness feasibility from benchmark-claim expansion
 
-## Current blocker model
+## Generation-only non-PG recovery
 
-The visible upstream runtime still exposes a PostgreSQL-only adapter in `my_rewriter/database.py`. Because of that, this canary runner is intentionally fail-closed:
+The canary now uses a bounded temp-runtime recovery path instead of a fake PostgreSQL adapter:
 
-- if the non-PostgreSQL route is still unsafe, the package preflight stops before row attempts
-- the script writes explicit package-level and row-level blocked status rather than silently dropping rows
+- non-PG rows keep explicit `mysql` or `spark` engine labels
+- schema files remain engine-specific
+- witness-data files remain metadata only and are not executed
+- the temp runtime removes live DB cost/execution dependencies
+- Java rewrite and Calcite rule matching are told the target engine explicitly through runtime patching
+
+This remains fail-closed. If the recovered non-PG route cannot safely initialize, the package writes explicit blocked status rather than silently dropping rows.
 
 ## Planned preflight
 
@@ -45,9 +50,11 @@ The shell runner checks:
    - `OPENAI_BASE_URL`
 5. canary source/schema/witness paths exist
 6. visible upstream LLM4Rewrite tree exists
-7. upstream database adapter is not still PostgreSQL-only
+7. required RAG JSONL files can be provisioned
+8. copied Java runtime import works
+9. generation-only non-PG runtime patch initializes safely
 
-If the adapter check fails, the runner writes:
+If preflight fails, the runner writes:
 
 - `run_results.json`
 - `run_event_long.csv`
@@ -77,5 +84,5 @@ It cannot support:
 
 ## Expected next decision boundary
 
-- if preflight fails on the adapter route, the next patch target is engine-adapter recovery
+- if preflight still fails, the next patch target is the exact runtime blocker reported in `run_results.json`
 - if preflight passes and some rows generate, the next package should be engine-specific execution/validity for only the generated rows

@@ -25,11 +25,14 @@ This package is **not**:
 
 ## Current expected behavior
 
-At the time this package was created, the visible upstream runtime still used a PostgreSQL-only `DBArgs` path. Because of that, the shell runner is intentionally fail-closed:
+The shell runner now contains a bounded generation-only non-PG adapter recovery:
 
-- if the adapter is still PostgreSQL-only, preflight writes explicit blocked status and exits before row attempts
-- rows remain explicit in `run_event_long.csv`
-- no rows are silently dropped
+- it prepares a temp runtime copy of upstream `LLM4Rewrite`
+- it provisions retained RAG files and the formal Chroma index
+- it removes live DB execution/cost dependencies
+- it passes the target engine explicitly into the rewrite path
+
+If that recovered route still cannot initialize safely, preflight writes explicit blocked status and exits before row attempts. Rows remain explicit in `run_event_long.csv`; they are never silently dropped.
 
 ## Environment
 
