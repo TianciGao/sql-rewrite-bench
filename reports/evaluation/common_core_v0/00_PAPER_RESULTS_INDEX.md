@@ -44,6 +44,13 @@ from this file rather than left isolated.
   - [llm_r2_120_run_plan_v1.json](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/llm_r2_120_run_plan_v1.json)
 - This LLM-R2 packet is preflight scaffolding only.
 - It does not claim generation support, execution support, or `120`-row evidence.
+- A reviewable Stage-1 R-Bot preflight scaffold now also exists:
+  - [r_bot_120_preflight_v1.md](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/r_bot_120_preflight_v1.md)
+  - [r_bot_120_candidate_matrix_v1.csv](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/r_bot_120_candidate_matrix_v1.csv)
+  - [r_bot_120_dependency_matrix_v1.csv](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/r_bot_120_dependency_matrix_v1.csv)
+  - [r_bot_120_run_plan_v1.json](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/r_bot_120_run_plan_v1.json)
+- This R-Bot packet is preflight scaffolding only.
+- It does not claim generation support, execution support, or `120`-row evidence.
 
 ## Method Summary Files
 

@@ -1,0 +1,83 @@
+{
+  "method_id": "r_bot",
+  "route_id": "r_bot_same_engine_rewrite",
+  "denominator_id": "common_core_v0_40_same_engine_120",
+  "manifest_path": "reports/evaluation/common_core_v0/common_core_v0_40_same_engine_120_rerun_manifest_v1.csv",
+  "planned_rows": 120,
+  "allowed_actions": [
+    "read_retained_artifacts_only",
+    "materialize_stage1_preflight_scaffold_only",
+    "record_candidate_status_without_generation",
+    "record_dependency_gaps_without_execution",
+    "prepare_human_review_gate_for_later_generation"
+  ],
+  "forbidden_actions": [
+    "run_r_bot_generation",
+    "generate_sql_outputs",
+    "execute_postgresql_queries",
+    "execute_mysql_queries",
+    "execute_spark_queries",
+    "run_timing_or_speedup_measurements",
+    "create_result_cards_or_proposed_rows"
+  ],
+  "required_dependencies": [
+    {
+      "dependency": "retrieval_corpus",
+      "status": "missing"
+    },
+    {
+      "dependency": "demo_policy",
+      "status": "defined_on_paper_not_closed"
+    },
+    {
+      "dependency": "rule_pool",
+      "status": "missing"
+    },
+    {
+      "dependency": "contamination_contract",
+      "status": "defined_on_paper_not_attested"
+    },
+    {
+      "dependency": "input_format_contract",
+      "status": "partially_recovered_from_formal_protocol"
+    },
+    {
+      "dependency": "output_sql_contract",
+      "status": "defined_on_paper_not_satisfied"
+    },
+    {
+      "dependency": "per_engine_sql_dialect_support",
+      "status": "pg_partial_only_mysql_spark_not_recovered"
+    },
+    {
+      "dependency": "generated_sql_retention_path",
+      "status": "planned_only_not_satisfied"
+    },
+    {
+      "dependency": "checker_handoff",
+      "status": "partial_pg_historical_evidence_only"
+    },
+    {
+      "dependency": "timing_policy",
+      "status": "pg_subset_only_historical"
+    },
+    {
+      "dependency": "failure_bucket_policy",
+      "status": "available_stage0_draft"
+    },
+    {
+      "dependency": "reproducibility_contract",
+      "status": "missing"
+    }
+  ],
+  "expected_outputs_if_later_executed": [
+    "reports/evaluation/common_core_v0/runs/r_bot_common_core_v0_40_same_engine_generation_01/run_results.json",
+    "reports/evaluation/common_core_v0/runs/r_bot_common_core_v0_40_same_engine_generation_01/run_event_long.csv",
+    "reports/evaluation/common_core_v0/runs/r_bot_common_core_v0_40_same_engine_generation_01/generated/<CASE>/<engine>/r_bot_same_engine_rewrite.sql",
+    "reports/evaluation/common_core_v0/runs/r_bot_common_core_v0_40_same_engine_generation_01/traces/<CASE>/<engine>/selected_rules.json",
+    "reports/evaluation/common_core_v0/runs/r_bot_common_core_v0_40_same_engine_generation_01/traces/<CASE>/<engine>/retrieval_trace.json",
+    "reports/evaluation/common_core_v0/runs/r_bot_common_core_v0_40_same_engine_generation_01/prompts/<CASE>/<engine>/prompt.txt"
+  ],
+  "human_run_required": true,
+  "safety_boundary": "stage1_preflight_only_no_generation_no_db_execution_no_timing_no_r_bot_generation"
+}
