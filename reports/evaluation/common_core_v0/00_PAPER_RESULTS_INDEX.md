@@ -74,8 +74,14 @@ from this file rather than left isolated.
   - [llm_r2_bounded_pg_overlap_command_matrix_v1.csv](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/llm_r2_bounded_pg_overlap_command_matrix_v1.csv)
   - [llm_r2_bounded_pg_overlap_expected_artifacts_v1.csv](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/llm_r2_bounded_pg_overlap_expected_artifacts_v1.csv)
   - [llm_r2_bounded_pg_overlap_failure_bucket_mapping_v1.csv](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/llm_r2_bounded_pg_overlap_failure_bucket_mapping_v1.csv)
+- A reviewable LLM-R2 bounded PostgreSQL overlap human-run approval record and packet now also exist:
+  - [llm_r2_bounded_pg_overlap_human_run_approval_v1.md](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/llm_r2_bounded_pg_overlap_human_run_approval_v1.md)
+  - [llm_r2_bounded_pg_overlap_human_run_approval_v1.csv](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/llm_r2_bounded_pg_overlap_human_run_approval_v1.csv)
+  - [llm_r2_bounded_pg_overlap_human_run_packet_v1.md](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/llm_r2_bounded_pg_overlap_human_run_packet_v1.md)
 - This LLM-R2 packet is preflight scaffolding only.
-- It does not claim generation support, execution support, or `120`-row evidence.
+- It does not claim `120`-row evidence, and the human-run approval is limited
+  to the fixed 8-row PostgreSQL slice with no Codex, checker, timing, or full
+  `120` authorization.
 - A reviewable Stage-1 R-Bot preflight scaffold now also exists:
   - [r_bot_120_preflight_v1.md](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/r_bot_120_preflight_v1.md)
   - [r_bot_120_candidate_matrix_v1.csv](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/r_bot_120_candidate_matrix_v1.csv)
