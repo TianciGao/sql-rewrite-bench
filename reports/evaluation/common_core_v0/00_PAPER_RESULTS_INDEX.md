@@ -125,6 +125,13 @@ from this file rather than left isolated.
 - This LLM-R2 PG3 packet is read-only path recovery only.
 - It does not authorize PostgreSQL execution, checker, timing, or speedup.
 - It does not create correctness, exact-match, or `120`-row evidence.
+- A completed LLM-R2 supported PG3 PostgreSQL execution/checker governance
+  review packet now also exists:
+  - [llm_r2_supported_pg3_pg_execution_checker_review_v1.md](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/llm_r2_supported_pg3_pg_execution_checker_review_v1.md)
+  - [llm_r2_supported_pg3_pg_execution_checker_review_v1.csv](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/llm_r2_supported_pg3_pg_execution_checker_review_v1.csv)
+- This LLM-R2 PG3 packet is governance review of a completed local human-run.
+- It is PG3-only and not PG40 or full `120` evidence.
+- It is not MySQL/Spark evidence and not timing/speedup evidence.
 
 ## Method Summary Files
 

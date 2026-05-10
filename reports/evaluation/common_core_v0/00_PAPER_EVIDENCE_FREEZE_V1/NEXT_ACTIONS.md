@@ -2,8 +2,8 @@
 
 ## Highest-Priority Next Action
 
-Human review recovered LLM-R2 PG3 execution inputs and decide whether to
-authorize PG execution/checker human-run.
+Human decide whether to expand LLM-R2 from PG3 to a larger PostgreSQL slice,
+or stop and report PG3 bounded evidence.
 
 ## Explicitly Deferred Actions
 
