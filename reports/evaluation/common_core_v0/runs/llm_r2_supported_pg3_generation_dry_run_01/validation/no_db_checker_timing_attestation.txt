@@ -1,0 +1,13 @@
+This human-run was authorized only for LLM-R2 PG3 generation dry-run.
+
+Confirmed scope:
+- LLM-R2 runner invocation only
+- PostgreSQL engine execution not run
+- checker not run
+- timing not run
+- speedup not run
+- MySQL/Spark not run
+- full 120 generation not run
+- result card/proposed row not created
+
+Generated outputs are not paper evidence until governance review.

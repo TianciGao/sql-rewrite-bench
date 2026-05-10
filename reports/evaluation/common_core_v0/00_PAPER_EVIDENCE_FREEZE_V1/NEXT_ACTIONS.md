@@ -2,8 +2,8 @@
 
 ## Highest-Priority Next Action
 
-Human review the LLM-R2 slice-to-runner compatibility addendum and decide
-whether to reapprove the 3-row supported PG subset dry-run.
+Human review static SQL inspection and decide whether to authorize a future PG
+execution/checker planning packet.
 
 ## Explicitly Deferred Actions
 

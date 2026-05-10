@@ -83,10 +83,19 @@ from this file rather than left isolated.
   - [llm_r2_slice_to_runner_compatibility_addendum_v1.csv](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/llm_r2_slice_to_runner_compatibility_addendum_v1.csv)
   - [llm_r2_supported_pg3_candidate_slice_v1.csv](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/llm_r2_supported_pg3_candidate_slice_v1.csv)
   - [llm_r2_unsupported_pg5_wrapper_extension_plan_v1.md](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/llm_r2_unsupported_pg5_wrapper_extension_plan_v1.md)
+- A completed LLM-R2 supported PG3 generation dry-run governance review now
+  also exists:
+  - [llm_r2_supported_pg3_generation_dry_run_review_v1.md](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/llm_r2_supported_pg3_generation_dry_run_review_v1.md)
+  - [llm_r2_supported_pg3_generation_dry_run_review_v1.csv](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/llm_r2_supported_pg3_generation_dry_run_review_v1.csv)
+  - retained run directory:
+    [runs/llm_r2_supported_pg3_generation_dry_run_01](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/llm_r2_supported_pg3_generation_dry_run_01)
 - This LLM-R2 packet is preflight scaffolding only.
 - It does not claim `120`-row evidence, and the original 8-row approval is now
   superseded by runner-compatibility review. Only a 3-row PG subset is
   currently runner-supported, pending separate human reapproval.
+- The completed PG3 local human-run packet is generation-only dry-run evidence
+  under governance review, not PostgreSQL execution, checker, timing, speedup,
+  MySQL/Spark, or full `120` evidence.
 - A reviewable Stage-1 R-Bot preflight scaffold now also exists:
   - [r_bot_120_preflight_v1.md](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/r_bot_120_preflight_v1.md)
   - [r_bot_120_candidate_matrix_v1.csv](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/r_bot_120_candidate_matrix_v1.csv)
@@ -94,6 +103,13 @@ from this file rather than left isolated.
   - [r_bot_120_run_plan_v1.json](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/r_bot_120_run_plan_v1.json)
 - This R-Bot packet is preflight scaffolding only.
 - It does not claim generation support, execution support, or `120`-row evidence.
+- A reviewable LLM-R2 supported PG3 static SQL inspection packet now also
+  exists:
+  - [llm_r2_supported_pg3_static_sql_inspection_v1.md](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/llm_r2_supported_pg3_static_sql_inspection_v1.md)
+  - [llm_r2_supported_pg3_static_sql_inspection_v1.csv](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/llm_r2_supported_pg3_static_sql_inspection_v1.csv)
+- This LLM-R2 PG3 packet is static inspection only.
+- It does not authorize PostgreSQL execution, checker, timing, or speedup.
+- It does not create paper evidence or `120`-row evidence.
 
 ## Method Summary Files
 

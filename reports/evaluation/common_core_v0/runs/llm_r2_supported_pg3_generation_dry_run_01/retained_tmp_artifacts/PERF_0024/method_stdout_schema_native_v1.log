@@ -1,0 +1,49 @@
+SELECT lineitem.l_shipmode, SUM(CASE WHEN CAST(orders.o_orderpriority AS CHAR(8)) = '1-URGENT' OR CAST(orders.o_orderpriority AS CHAR(6)) = '2-HIGH' THEN 1 ELSE 0 END) AS high_line_count, SUM(CASE WHEN CAST(orders.o_orderpriority AS CHAR(8)) <> '1-URGENT' AND CAST(orders.o_orderpriority AS CHAR(6)) <> '2-HIGH' THEN 1 ELSE 0 END) AS low_line_count FROM orders, lineitem WHERE orders.o_orderkey = lineitem.l_orderkey AND ((lineitem.l_shipmode = 'SHIP' OR lineitem.l_shipmode = 'MAIL') AND lineitem.l_commitdate < lineitem.l_receiptdate) AND (lineitem.l_shipdate < lineitem.l_commitdate AND (lineitem.l_receiptdate >= DATE '1996-01-01' AND lineitem.l_receiptdate < (DATE '1996-01-01' + INTERVAL '1' YEAR))) GROUP BY lineitem.l_shipmode ORDER BY lineitem.l_shipmode
+preprocess time:  2.391439199447632
+query pool embeddings collected
+demo sql:  select avg(ss_quantity) ,avg(ss_ext_sales_price) ,avg(ss_ext_wholesale_cost) ,sum(ss_ext_wholesale_cost) from store_sales ,store ,customer_demographics ,household_demographics ,customer_address ,date_dim where s_store_sk = ss_store_sk and ss_sold_date_sk = d_date_sk and d_year = 2001 and((ss_hdemo_sk=hd_demo_sk and cd_demo_sk = ss_cdemo_sk and cd_marital_status = 'D' and cd_education_status = '4 yr Degree' and ss_sales_price between 100.00 and 150.00 and hd_dep_count = 3 )or (ss_hdemo_sk=hd_demo_sk and cd_demo_sk = ss_cdemo_sk and cd_marital_status = 'S' and cd_education_status = 'Advanced Degree' and ss_sales_price between 50.00 and 100.00 and hd_dep_count = 1 ) or (ss_hdemo_sk=hd_demo_sk and cd_demo_sk = ss_cdemo_sk and cd_marital_status = 'S' and cd_education_status = '2 yr Degree' and ss_sales_price between 150.00 and 200.00 and hd_dep_count = 1 )) and((ss_addr_sk = ca_address_sk and ca_country = 'United States' and ca_state in ('GA', 'MD', 'MS') and ss_net_profit between 100 and 200 ) or (ss_addr_sk = ca_address_sk and ca_country = 'United States' and ca_state in ('FL', 'IN', 'PA') and ss_net_profit between 150 and 300 ) or (ss_addr_sk = ca_address_sk and ca_country = 'United States' and ca_state in ('AL', 'KS', 'TX') and ss_net_profit between 50 and 250 ))  ;
+demo rules: Rules selected:  ['FILTER_REDUCE_EXPRESSIONS', 'FILTER_MERGE', 'FILTER_MULTI_JOIN_MERGE', 'FILTER_PROJECT_TRANSPOSE', 'FILTER_SCAN', 'JOIN_CONDITION_PUSH', 'JOIN_REDUCE_EXPRESSIONS']
+True
+out_rules:  ['FILTER_REDUCE_EXPRESSIONS', 'FILTER_MERGE', 'FILTER_PROJECT_TRANSPOSE', 'FILTER_INTO_JOIN', 'JOIN_CONDITION_PUSH', 'JOIN_REDUCE_EXPRESSIONS']
+-- PERF_0024 source query.
+-- TPC-H Q20 frozen from ref_data/1/subparam_20.
+-- Substitutions: :1 = 'pale' :2 = DATE '1997-01-01' :3 = 'BRAZIL' :n = -1.
+
+select
+    s_name,
+    s_address
+from
+    supplier,
+    nation
+where
+    s_suppkey in (
+        select
+            ps_suppkey
+        from
+            partsupp
+        where
+            ps_partkey in (
+                select
+                    p_partkey
+                from
+                    part
+                where
+                    p_name like 'pale%'
+            )
+            and ps_availqty > (
+                select
+                    0.5 * sum(l_quantity)
+                from
+                    lineitem
+                where
+                    l_partkey = ps_partkey
+                    and l_suppkey = ps_suppkey
+                    and l_shipdate >= date '1997-01-01'
+                    and l_shipdate < date '1997-01-01' + interval '1' year
+            )
+    )
+    and s_nationkey = n_nationkey
+    and n_name = 'BRAZIL'
+order by
+    s_name;
+['FILTER_REDUCE_EXPRESSIONS', 'FILTER_MERGE', 'FILTER_PROJECT_TRANSPOSE', 'FILTER_INTO_JOIN', 'JOIN_CONDITION_PUSH', 'JOIN_REDUCE_EXPRESSIONS']
