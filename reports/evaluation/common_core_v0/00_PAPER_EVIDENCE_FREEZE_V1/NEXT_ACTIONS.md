@@ -2,9 +2,9 @@
 
 ## Highest-Priority Next Action
 
-Human review the LLM-R2 recovered-extraction execute-mode implementation and
-decide whether to authorize a bounded recovered-route human-run, or stop and
-preserve the current PG9 bounded evidence as final.
+Human decide whether to preserve LLM-R2 recovered-extraction PG6 as separate
+bounded appendix evidence, or authorize recovered-route PG3 reruns before any
+broader recovered-route claim.
 
 ## Explicitly Deferred Actions
 
@@ -16,3 +16,5 @@ preserve the current PG9 bounded evidence as final.
 - Do not reinterpret original-route PG9 evidence in place.
 - No PostgreSQL, checker, timing, or speedup authorization is added by the
   recovered-extraction execute mode itself.
+- Do not claim recovered PG9 unless `PERF_0006`, `PERF_0013`, and `PERF_0024`
+  are separately rerun under the recovered route.

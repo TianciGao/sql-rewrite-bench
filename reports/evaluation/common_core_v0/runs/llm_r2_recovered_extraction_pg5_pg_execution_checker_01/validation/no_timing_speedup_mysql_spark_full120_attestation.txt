@@ -1,0 +1,15 @@
+This human-run was authorized only for LLM-R2 recovered-extraction PG5 PostgreSQL execution/checker.
+
+Confirmed scope:
+- PostgreSQL setup/source/generated execution was attempted only for PERF_0017, PERF_0019, PERF_0033, PERF_0052, PERF_0054.
+- Exact TSV comparison checker was attempted only for those 5 PG rows.
+- Timing was not run.
+- Speedup was not computed.
+- MySQL was not run.
+- Spark was not run.
+- PG40 was not run.
+- Full 120 was not run.
+- No result card or proposed row was created.
+
+Original recovered SQL files were not modified; execution used semicolon-normalized copies only.
+The result_check JSON files were reconstructed from retained exit-code and TSV artifacts after an earlier Python boolean typo.

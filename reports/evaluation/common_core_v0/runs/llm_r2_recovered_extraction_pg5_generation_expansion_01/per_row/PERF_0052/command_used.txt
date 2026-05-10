@@ -1,0 +1,1 @@
+python -m scripts.cli formal-llmr2-recovered-extraction-route --case PERF_0052 --force-cpu --schema-native-contract

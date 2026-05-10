@@ -174,6 +174,20 @@ from this file rather than left isolated.
 - It does not authorize PostgreSQL execution, checker, timing, or paper-table
   promotion.
   and preserve original-route evidence unchanged.
+- A separate LLM-R2 recovered-extraction PG6 bounded evidence review packet
+  now also exists:
+  - [llm_r2_recovered_extraction_pg6_bounded_evidence_review_v1.md](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/llm_r2_recovered_extraction_pg6_bounded_evidence_review_v1.md)
+  - [llm_r2_recovered_extraction_pg6_bounded_evidence_review_v1.csv](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/llm_r2_recovered_extraction_pg6_bounded_evidence_review_v1.csv)
+  - [runs/llm_r2_recovered_extraction_perf0008_generation_canary_01](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/llm_r2_recovered_extraction_perf0008_generation_canary_01)
+  - [runs/llm_r2_recovered_extraction_perf0008_pg_execution_checker_canary_01](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/llm_r2_recovered_extraction_perf0008_pg_execution_checker_canary_01)
+  - [runs/llm_r2_recovered_extraction_pg5_generation_expansion_01](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/llm_r2_recovered_extraction_pg5_generation_expansion_01)
+  - [runs/llm_r2_recovered_extraction_pg5_pg_execution_checker_01](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/llm_r2_recovered_extraction_pg5_pg_execution_checker_01)
+- This packet freezes separate recovered-extraction-route PG-only bounded
+  evidence on 6 rows with `6/6` generation, `6/6` PostgreSQL source
+  executions, `6/6` PostgreSQL generated executions, and `6/6` exact matches.
+- It is not original-route PG9 evidence, not recovered PG9 evidence, not PG40
+  evidence, not tri-engine `120` evidence, not timing evidence, and not
+  leaderboard-comparable.
 
 ## Method Summary Files
 

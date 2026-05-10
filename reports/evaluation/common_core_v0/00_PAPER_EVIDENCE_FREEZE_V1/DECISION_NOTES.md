@@ -37,6 +37,15 @@
   The fixed interpretation remains generation-only recovered-route engineering.
   It does not itself authorize PostgreSQL execution, checker, timing, or any
   paper-table promotion.
+- LLM-R2 now also has a separate recovered-extraction PG6 bounded evidence
+  review packet:
+  [llm_r2_recovered_extraction_pg6_bounded_evidence_review_v1.md](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/llm_r2_recovered_extraction_pg6_bounded_evidence_review_v1.md).
+  The fixed interpretation is separate route-scoped bounded PostgreSQL
+  evidence on 6 rows:
+  `6/6` generated rows, `6/6` PostgreSQL source executions, `6/6` PostgreSQL
+  generated executions, and `6/6` exact matches. This is not original-route
+  PG9 evidence, not recovered PG9 evidence, not PG40 evidence, not tri-engine
+  `120` evidence, not timing evidence, and not leaderboard-comparable.
 - SQLSolver and VeriEQL are support/verifier, not rewrite methods for the
   current rerun campaign.
 - SQLGlot cross-dialect and LLM Translate are portability routes, not Track A
