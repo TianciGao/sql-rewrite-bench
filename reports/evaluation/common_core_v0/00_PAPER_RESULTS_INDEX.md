@@ -17,6 +17,15 @@ from this file rather than left isolated.
 
 ## Governance Boundary
 
+- Fixed first-read evidence freeze folder now exists:
+  - [00_PAPER_EVIDENCE_FREEZE_V1/README.md](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/00_PAPER_EVIDENCE_FREEZE_V1/README.md)
+  - [00_PAPER_EVIDENCE_FREEZE_V1/METHOD_STATUS_LEDGER.csv](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/00_PAPER_EVIDENCE_FREEZE_V1/METHOD_STATUS_LEDGER.csv)
+  - [00_PAPER_EVIDENCE_FREEZE_V1/ARTIFACT_INDEX.csv](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/00_PAPER_EVIDENCE_FREEZE_V1/ARTIFACT_INDEX.csv)
+  - [00_PAPER_EVIDENCE_FREEZE_V1/RERUN_CAMPAIGN_LEDGER.csv](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/00_PAPER_EVIDENCE_FREEZE_V1/RERUN_CAMPAIGN_LEDGER.csv)
+  - [00_PAPER_EVIDENCE_FREEZE_V1/DECISION_NOTES.md](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/00_PAPER_EVIDENCE_FREEZE_V1/DECISION_NOTES.md)
+  - [00_PAPER_EVIDENCE_FREEZE_V1/NEXT_ACTIONS.md](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/00_PAPER_EVIDENCE_FREEZE_V1/NEXT_ACTIONS.md)
+- Future ChatGPT and Codex sessions should read this freeze folder first before
+  proposing new Common-core v0 paper-results or `120`-rerun work.
 - [paper_table_row_admission_policy_v1.md](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/paper_table_row_admission_policy_v1.md)
   is a reviewable policy draft only.
 - It does not update `method_comparison_summary_v2`.
