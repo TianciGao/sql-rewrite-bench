@@ -20,6 +20,8 @@ from this file rather than left isolated.
 - [sqlglot_validity_summary_v1.md](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/sqlglot_validity_summary_v1.md)
 - [sqlglot_speedup_summary_v1.md](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/sqlglot_speedup_summary_v1.md)
 - [sqlglot_paper_route_audit_v1.md](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/sqlglot_paper_route_audit_v1.md)
+- [sqlglot_optimize_same_dialect_result_card_v1.md](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/sqlglot_optimize_same_dialect_result_card_v1.md)
+- [sqlglot_optimize_same_dialect_proposed_row_v1.md](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/sqlglot_optimize_same_dialect_proposed_row_v1.md)
 - [sqlglot_transpile_same_dialect_noop_result_card_v1.md](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/sqlglot_transpile_same_dialect_noop_result_card_v1.md)
 - [sqlglot_method_comparison_proposed_row_v1.md](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/sqlglot_method_comparison_proposed_row_v1.md)
 
@@ -69,6 +71,14 @@ from this file rather than left isolated.
   - match_exact `72 / 120`
   - exact among executed `72 / 72`
   - timing only on `timing_success_72_on_transpile_noop_route`
+- A second retained paper-facing SQLGlot route is:
+  - `sqlglot_optimize_same_dialect`
+  - denominator `common_core_v0_40_same_engine_120_optimize_route`
+  - generated `75 / 120`
+  - executed `65 / 120`
+  - match_exact `65 / 120`
+  - exact among executed `65 / 65`
+  - timing only on `timing_success_65_on_optimize_route`
 - This is denominator-aware route evidence, not cross-dialect portability
   evidence, not a full SQLGlot method-family aggregate, and not
   leaderboard-comparable evidence.
@@ -165,6 +175,10 @@ Use this SQLGlot route-level framing:
 
 `SQLGlot transpile_same_dialect_noop is a same-engine 120-row route-level evidence row. It is denominator-aware route evidence, not cross-dialect portability evidence, not a full SQLGlot method-family aggregate, and not a leaderboard-comparable scalar. Unsupported, failed, and no-op rows remain explicit in denominator accounting.`
 
+Use this SQLGlot optimize-route framing:
+
+`SQLGlot optimize_same_dialect is a same-engine route-level evidence row. It is denominator-aware route evidence, not cross-dialect portability evidence, not a full SQLGlot method-family aggregate, and not a leaderboard-comparable scalar unless retained timing/speedup evidence explicitly supports that boundary.`
+
 ## Major Source Artifact Paths
 
 - Canonical ledger:
@@ -201,3 +215,7 @@ Use this SQLGlot route-level framing:
   - [sqlglot_transpile_same_dialect_noop_result_card_v1.csv](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/sqlglot_transpile_same_dialect_noop_result_card_v1.csv)
 - SQLGlot proposed method-comparison row:
   - [sqlglot_method_comparison_proposed_row_v1.csv](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/sqlglot_method_comparison_proposed_row_v1.csv)
+- SQLGlot optimize_same_dialect result card:
+  - [sqlglot_optimize_same_dialect_result_card_v1.csv](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/sqlglot_optimize_same_dialect_result_card_v1.csv)
+- SQLGlot optimize_same_dialect proposed row:
+  - [sqlglot_optimize_same_dialect_proposed_row_v1.csv](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/sqlglot_optimize_same_dialect_proposed_row_v1.csv)
