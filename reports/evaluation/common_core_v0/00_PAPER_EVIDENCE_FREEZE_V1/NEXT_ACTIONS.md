@@ -2,8 +2,8 @@
 
 ## Highest-Priority Next Action
 
-Review LLM-R2 recovery plan and decide whether to authorize runner recovery
-scaffolding.
+Run the static LLM-R2 dry-run validator and review whether runner recovery
+scaffolding is complete enough for a bounded PG overlap dry-run plan.
 
 ## Explicitly Deferred Actions
 

@@ -59,6 +59,11 @@ from this file rather than left isolated.
   - [llm_r2_120_recovery_plan_v1.md](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/llm_r2_120_recovery_plan_v1.md)
   - [llm_r2_120_recovery_plan_v1.csv](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/llm_r2_120_recovery_plan_v1.csv)
   - [llm_r2_120_recovery_checklist_v1.md](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/llm_r2_120_recovery_checklist_v1.md)
+- A reviewable LLM-R2 runner recovery scaffold now also exists:
+  - [llm_r2_120_runner_recovery_scaffold_v1.md](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/llm_r2_120_runner_recovery_scaffold_v1.md)
+  - [llm_r2_120_runner_recovery_scaffold_v1.csv](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/llm_r2_120_runner_recovery_scaffold_v1.csv)
+  - [llm_r2_120_runner_dry_run_validator_v1.py](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/llm_r2_120_runner_dry_run_validator_v1.py)
+  - [llm_r2_120_runner_recovery_inventory_v1.json](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/llm_r2_120_runner_recovery_inventory_v1.json)
 - This LLM-R2 packet is preflight scaffolding only.
 - It does not claim generation support, execution support, or `120`-row evidence.
 - A reviewable Stage-1 R-Bot preflight scaffold now also exists:
