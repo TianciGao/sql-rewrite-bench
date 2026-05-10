@@ -2,8 +2,8 @@
 
 ## Highest-Priority Next Action
 
-Human review LLM-R2 PG3 execution/checker plan and decide whether to authorize
-PG execution/checker human-run.
+Human review recovered LLM-R2 PG3 execution inputs and decide whether to
+authorize PG execution/checker human-run.
 
 ## Explicitly Deferred Actions
 

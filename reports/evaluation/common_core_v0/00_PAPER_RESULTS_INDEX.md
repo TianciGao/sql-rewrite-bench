@@ -118,6 +118,13 @@ from this file rather than left isolated.
 - This LLM-R2 PG3 packet is planning only.
 - It does not authorize PostgreSQL execution, checker, timing, or speedup.
 - It does not create correctness, exact-match, or `120`-row evidence.
+- A reviewable LLM-R2 supported PG3 PostgreSQL execution input recovery packet
+  now also exists:
+  - [llm_r2_supported_pg3_pg_execution_input_recovery_v1.md](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/llm_r2_supported_pg3_pg_execution_input_recovery_v1.md)
+  - [llm_r2_supported_pg3_pg_execution_input_recovery_v1.csv](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/llm_r2_supported_pg3_pg_execution_input_recovery_v1.csv)
+- This LLM-R2 PG3 packet is read-only path recovery only.
+- It does not authorize PostgreSQL execution, checker, timing, or speedup.
+- It does not create correctness, exact-match, or `120`-row evidence.
 
 ## Method Summary Files
 
