@@ -22,4 +22,3 @@ Plan observability in this table is support evidence. It does not rank rewrite m
 - Table 5 is a support-track table.
 - Current retained evidence supports artifact-existence and readiness statements more strongly than denominator-complete numeric observability metrics.
 - Node alignment and attribution remain future experiment outputs rather than current paper-safe counts.
-

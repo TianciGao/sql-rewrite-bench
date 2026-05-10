@@ -18,4 +18,3 @@ Verifier support tools evaluate SQL pairs or support evidence. They are not rewr
 - Table 9 is a support-track table rather than a rewrite leaderboard table.
 - SQLSolver currently has only a bounded smoke packet in retained evidence.
 - VeriEQL currently has only a bounded `CONS_0035` canary packet and its positive outcome remains caveated.
-

@@ -16,4 +16,3 @@ Support-layer metrics are not rewrite method ranking metrics.
 - SQLSolver and VeriEQL are support/verifier tools, not rewrite generators.
 - The retained artifacts are bounded smoke or canary packets rather than denominator-complete support tables.
 - No row here should be read as CONS9-complete verifier support unless a dedicated retained packet later proves that scope.
-

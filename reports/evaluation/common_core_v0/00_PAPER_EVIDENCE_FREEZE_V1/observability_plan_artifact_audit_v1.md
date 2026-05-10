@@ -21,4 +21,3 @@ Support-layer metrics are not rewrite method ranking metrics.
 - Track B observability currently has retained controls-side plan artifacts and method-side preflight/readiness notes.
 - No retained Common-core v0 packet proves denominator-complete numeric `PlanParseRate`, `NodeAlignmentCoverage`, or `AttributionCoverage`.
 - The current audit therefore records readiness and artifact existence rather than full observability metrics.
-
