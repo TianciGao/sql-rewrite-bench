@@ -30,6 +30,13 @@ from this file rather than left isolated.
 - These rerun drafts are planning-only.
 - They do not authorize execution.
 - They do not create result cards or proposed rows.
+- A reviewable Stage-1 LearnedRewrite preflight scaffold now also exists:
+  - [learnedrewrite_120_preflight_v1.md](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/learnedrewrite_120_preflight_v1.md)
+  - [learnedrewrite_120_candidate_matrix_v1.csv](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/learnedrewrite_120_candidate_matrix_v1.csv)
+  - [learnedrewrite_120_dependency_matrix_v1.csv](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/learnedrewrite_120_dependency_matrix_v1.csv)
+  - [learnedrewrite_120_run_plan_v1.json](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/learnedrewrite_120_run_plan_v1.json)
+- This LearnedRewrite packet is preflight scaffolding only.
+- It does not claim generation support, execution support, or `120`-row evidence.
 
 ## Method Summary Files
 

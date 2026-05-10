@@ -1,0 +1,75 @@
+{
+  "method_id": "learnedrewrite",
+  "route_id": "learnedrewrite_same_engine_120_preflight",
+  "denominator_id": "common_core_v0_40_same_engine_120",
+  "manifest_path": "reports/evaluation/common_core_v0/common_core_v0_40_same_engine_120_rerun_manifest_v1.csv",
+  "planned_rows": 120,
+  "allowed_actions": [
+    "read_retained_artifacts_only",
+    "materialize_stage1_preflight_scaffold_only",
+    "record_candidate_status_without_generation",
+    "record_dependency_gaps_without_execution",
+    "prepare_human_review_gate_for_later_generation"
+  ],
+  "forbidden_actions": [
+    "run_learnedrewrite_inference",
+    "generate_sql_outputs",
+    "execute_postgresql_queries",
+    "execute_mysql_queries",
+    "execute_spark_queries",
+    "run_timing_or_speedup_measurements",
+    "create_result_cards_or_proposed_rows"
+  ],
+  "required_dependencies": [
+    {
+      "dependency": "adapter",
+      "status": "missing"
+    },
+    {
+      "dependency": "checkpoint",
+      "status": "missing"
+    },
+    {
+      "dependency": "inference_entrypoint",
+      "status": "missing"
+    },
+    {
+      "dependency": "input_format_contract",
+      "status": "partially_recovered_from_readiness_notes"
+    },
+    {
+      "dependency": "output_sql_extraction",
+      "status": "UNKNOWN_NOT_RECOVERED"
+    },
+    {
+      "dependency": "per-engine_sql_dialect_support",
+      "status": "pg_bounded_only_mysql_spark_not_recovered"
+    },
+    {
+      "dependency": "generated_sql_retention_path",
+      "status": "missing_for_common_core_120"
+    },
+    {
+      "dependency": "checker_handoff",
+      "status": "bounded_pg_only_historical_evidence"
+    },
+    {
+      "dependency": "timing_policy",
+      "status": "not_ready_subset_only_historical_pg"
+    },
+    {
+      "dependency": "failure_bucket_policy",
+      "status": "available_stage0_draft"
+    }
+  ],
+  "expected_outputs_if_later_executed": [
+    "reports/evaluation/common_core_v0/runs/learnedrewrite_same_engine_generation_01/run_results.json",
+    "reports/evaluation/common_core_v0/runs/learnedrewrite_same_engine_generation_01/run_event_long.csv",
+    "reports/evaluation/common_core_v0/runs/learnedrewrite_same_engine_execution_01/run_results.json",
+    "reports/evaluation/common_core_v0/runs/learnedrewrite_same_engine_execution_01/run_event_long.csv",
+    "per-row generated SQL artifacts under a future learnedrewrite run directory",
+    "per-row checker outputs such as source.tsv, generated.tsv, and result_check.json"
+  ],
+  "human_run_required": true,
+  "safety_boundary": "stage1_preflight_only_no_generation_no_db_execution_no_timing_no_learnedrewrite_inference"
+}
