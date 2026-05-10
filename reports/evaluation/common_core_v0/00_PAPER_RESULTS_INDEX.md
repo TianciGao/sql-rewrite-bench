@@ -166,6 +166,13 @@ from this file rather than left isolated.
 - This packet is scaffold and patch-boundary planning only.
 - It introduces a separate route id and artifact family without changing the
   frozen PG9 original-route evidence packet.
+- A separate LLM-R2 recovered-extraction execute-mode packet now also exists:
+  - [llm_r2_recovered_extraction_execute_mode_plan_v1.md](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/llm_r2_recovered_extraction_execute_mode_plan_v1.md)
+  - [llm_r2_recovered_extraction_execute_mode_plan_v1.csv](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/llm_r2_recovered_extraction_execute_mode_plan_v1.csv)
+- This packet documents the implemented generation-only non-dry-run execute
+  mode for the separate recovered route.
+- It does not authorize PostgreSQL execution, checker, timing, or paper-table
+  promotion.
   and preserve original-route evidence unchanged.
 
 ## Method Summary Files

@@ -31,6 +31,12 @@
   canonical original-route bounded evidence. Any future recovered-extraction
   output must be emitted as a separate route and must not overwrite or
   reinterpret the original-route packet.
+- LLM-R2 now also has a non-dry-run execute-mode implementation for that
+  separate recovered route:
+  [llm_r2_recovered_extraction_execute_mode_plan_v1.md](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/llm_r2_recovered_extraction_execute_mode_plan_v1.md).
+  The fixed interpretation remains generation-only recovered-route engineering.
+  It does not itself authorize PostgreSQL execution, checker, timing, or any
+  paper-table promotion.
 - SQLSolver and VeriEQL are support/verifier, not rewrite methods for the
   current rerun campaign.
 - SQLGlot cross-dialect and LLM Translate are portability routes, not Track A
