@@ -23,6 +23,19 @@
 - No failed, unsupported, no-op, or mismatch rows may be silently dropped from
   denominator accounting.
 
+## Human recovery-priority decision
+
+- `date = 2026-05-10`
+- approved recovery priority:
+  1. `llm_r2`
+  2. `r_bot`
+  3. `learnedrewrite`
+- `llm_r2` is the highest-priority recovery candidate.
+- `r_bot` is held as final mixed-scope evidence for now and should not be
+  pursued immediately as a full `120` rerun target.
+- `learnedrewrite` is deferred unless adapter, checkpoint, and inference
+  artifacts are provided.
+
 ## Why this freeze folder exists
 
 The Common-core v0 evidence now spans:

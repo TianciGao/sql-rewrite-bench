@@ -1,4 +1,5 @@
 artifact_id,category,path,status,method_or_scope,denominator_id,why_it_matters,first_read_priority,caveat
+recovery_priority_decision,governance_decision,reports/evaluation/common_core_v0/00_PAPER_EVIDENCE_FREEZE_V1/RECOVERY_PRIORITY_DECISION_V1.md,ready,track_a_same_engine_rewrite,common_core_v0_40_same_engine_120,records the human-approved recovery priority after R-Bot reconciliation,p0,decision record only and not execution authorization
 paper_results_index,entrypoint,reports/evaluation/common_core_v0/00_PAPER_RESULTS_INDEX.md,ready,common_core_v0,common_core_v0_40_same_engine_120,current paper-facing index and stable link hub,p0,entrypoint only and not a leaderboard
 common_core_readme,governance,reports/evaluation/common_core_v0/README.md,ready,common_core_v0,common_core_v0_40_same_engine_120,defines denominator-aware evidence-ledger framing,p0,documentation framing and not benchmark evidence
 method_comparison_ledger,ledger,reports/evaluation/common_core_v0/method_comparison_summary_v2.md,ready,common_core_v0,mixed_denominators_retained,canonical denominator-aware evidence ledger currently in use,p0,evidence ledger only and not a ranked leaderboard
