@@ -19,6 +19,9 @@ from this file rather than left isolated.
 
 - [sqlglot_validity_summary_v1.md](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/sqlglot_validity_summary_v1.md)
 - [sqlglot_speedup_summary_v1.md](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/sqlglot_speedup_summary_v1.md)
+- [sqlglot_paper_route_audit_v1.md](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/sqlglot_paper_route_audit_v1.md)
+- [sqlglot_transpile_same_dialect_noop_result_card_v1.md](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/sqlglot_transpile_same_dialect_noop_result_card_v1.md)
+- [sqlglot_method_comparison_proposed_row_v1.md](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/sqlglot_method_comparison_proposed_row_v1.md)
 
 ### Direct LLM
 
@@ -52,6 +55,23 @@ from this file rather than left isolated.
   - [r_bot_pg7_speedup_summary_v1.md](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/r_bot_pg7_speedup_summary_v1.md)
 - MySQL/Spark boundary evidence:
   - [r_bot_mysql_spark_canary_result_card_v1.md](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/r_bot_mysql_spark_canary_result_card_v1.md)
+
+## SQLGlot Current Paper-Safe Status
+
+- SQLGlot retains two same-engine route-level rows:
+  - `sqlglot_optimize_same_dialect`
+  - `sqlglot_transpile_same_dialect_noop`
+- The next promoted paper-facing SQLGlot route is:
+  - `sqlglot_transpile_same_dialect_noop`
+  - denominator `common_core_v0_40_same_engine_120_transpile_noop_route`
+  - generated `78 / 120`
+  - executed `72 / 120`
+  - match_exact `72 / 120`
+  - exact among executed `72 / 72`
+  - timing only on `timing_success_72_on_transpile_noop_route`
+- This is denominator-aware route evidence, not cross-dialect portability
+  evidence, not a full SQLGlot method-family aggregate, and not
+  leaderboard-comparable evidence.
 
 ## R-Bot Current Paper-Safe Status
 
@@ -141,6 +161,10 @@ Use this Calcite HEP post-93 ceiling framing:
 
 `Calcite HEP reaches a fail-closed exact-match ledger of 93/120 on the common_core_v0_40_same_engine_120 denominator. A post-93 frontier audit found no additional low-risk or medium-risk recovery candidates under the unchanged route, denominator, and checker. The remaining gaps are dominated by semantic mismatches, parser/deep-feature support gaps, or methodology-boundary PORT rows. Therefore 93/120 is the current paper-safe ceiling for this Calcite HEP route. This is bounded execution-validity evidence, not timing, speedup, leaderboard, or full 120-row comparable evidence.`
 
+Use this SQLGlot route-level framing:
+
+`SQLGlot transpile_same_dialect_noop is a same-engine 120-row route-level evidence row. It is denominator-aware route evidence, not cross-dialect portability evidence, not a full SQLGlot method-family aggregate, and not a leaderboard-comparable scalar. Unsupported, failed, and no-op rows remain explicit in denominator accounting.`
+
 ## Major Source Artifact Paths
 
 - Canonical ledger:
@@ -171,3 +195,9 @@ Use this Calcite HEP post-93 ceiling framing:
   - [calcite_hep_120_recovery_perf0035_canary_03_result_card_v1.csv](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/calcite_hep_120_recovery_perf0035_canary_03_result_card_v1.csv)
 - Calcite HEP proposed method-comparison row:
   - [calcite_hep_method_comparison_proposed_row_v1.csv](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/calcite_hep_method_comparison_proposed_row_v1.csv)
+- SQLGlot route audit:
+  - [sqlglot_paper_route_audit_v1.csv](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/sqlglot_paper_route_audit_v1.csv)
+- SQLGlot transpile_same_dialect_noop result card:
+  - [sqlglot_transpile_same_dialect_noop_result_card_v1.csv](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/sqlglot_transpile_same_dialect_noop_result_card_v1.csv)
+- SQLGlot proposed method-comparison row:
+  - [sqlglot_method_comparison_proposed_row_v1.csv](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/sqlglot_method_comparison_proposed_row_v1.csv)
