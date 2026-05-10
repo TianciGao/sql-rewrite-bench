@@ -1,0 +1,43 @@
+# Paper Table Contract v1
+
+This is a paper-facing contract, not a benchmark protocol change.
+
+This file does not modify the denominator; it records the accepted paper-facing
+Table 1 split.
+
+This file does not create a final ranked leaderboard.
+
+All future generated tables should cite this contract and keep Track A / B / C
+separated.
+
+## Table Contract
+
+| table_id | paper_table_title | track | denominator_id | denominator_description | current_fill_status | current_data_sources | needs_new_experiment | required_next_artifact | claim_boundary | notes |
+|---|---|---|---|---|---|---|---|---|---|---|
+| `Table 1` | `Common-core v0 Composition` | `governance` | `common_core_v0_40` | `40 cases, split 16 PERF / 9 CONS / 9 PORT / 6 LONGTAIL` | `fillable_now` | `case_registry snapshot; freeze-folder contract files` | `no` | `none` | `paper-facing contract only; does not change denominator or benchmark rules` | `records the accepted paper-facing Table 1 composition` |
+| `Table 2` | `Baseline Evaluation Protocol` | `protocol` | `protocol_design_only` | `protocol/design table, no experiment required` | `fillable_now` | `existing protocol and governance docs` | `no` | `aggregation note only` | `protocol/design table, no experiment required` | `should summarize design and execution contract rather than produce new benchmark evidence` |
+| `Table 3` | `Denominator-aware Same-engine Method Evidence` | `Track A` | `common_core_v0_40_same_engine_120` | `Track A, common_core_v0_40_same_engine_120, denominator-aware evidence only, not final leaderboard` | `partially_fillable_existing_evidence` | `method_comparison_summary_v2; retained route cards; freeze-folder method ledger` | `no` | `paper-facing route-admission synthesis` | `same-engine evidence table only; not a final ranked leaderboard` | `must keep PG-only and bounded appendix evidence out of the main 120-row table` |
+| `Table 4` | `Correctness and Guardrail Evidence` | `Track A plus controls` | `common_core_v0_40_same_engine_120_controls_and_routes` | `controls + correctness + hard-negative guardrail; needs route-level controls split and hard-negative rejection summary` | `needs_aggregation` | `controls status summaries; route validity summaries; negative controls artifacts` | `no` | `route-level controls split and hard-negative rejection summary` | `controls + correctness + hard-negative guardrail; needs route-level controls split and hard-negative rejection summary` | `should separate controls from method rows` |
+| `Table 5` | `Observability and Plan Artifact Table` | `Track B` | `track_b_support_selected_cases` | `Track B support; needs plan artifact / node alignment / attribution experiment` | `needs_new_experiment` | `plan preflight notes and support artifacts only` | `yes` | `plan artifact / node alignment / attribution packet` | `Track B support only, not rewrite leaderboard evidence` | `current retained evidence is not enough for a full observability table` |
+| `Table 6` | `Performance on Exact Timed Rows` | `Track A timing` | `exact_timed_subsets_only` | `exact timed subsets only; needs per-case timing aggregation for median, W/T/L, best/worst` | `needs_aggregation` | `retained timing summaries and timing run directories` | `no` | `per-case timing aggregation sheet` | `exact timed subsets only; not full-denominator speedup for rows without timing` | `must preserve denominator and subset labels explicitly` |
+| `Table 7` | `Failure Accounting Matrix` | `governance plus Track A` | `route_specific_failure_buckets` | `failure bucket summary; needs unified failure taxonomy and run_event_long` | `needs_aggregation` | `route validity summaries; rerun failure policies; triage ledgers` | `no` | `unified failure taxonomy and run_event_long synthesis` | `failure accounting matrix only; not a leaderboard metric` | `should align all route packets to one failure vocabulary` |
+| `Table 8` | `PORT9 Cross-engine Translation Table` | `Track C` | `port9_or_explicitly_frozen_selected_port_subset` | `Track C, PORT9 or explicitly frozen selected PORT subset; SQLGlot Transpile and LLM Translate only` | `partially_fillable_existing_evidence` | `bounded portability snapshots; method status ledger; existing portability notes` | `yes` | `explicit PORT9 or selected PORT subset packet` | `Track C only; SQLGlot Transpile and LLM Translate only` | `do not mix same-engine Direct LLM or SQLGlot same-dialect rows into this table` |
+| `Table 9` | `Verifier Support Table` | `Track B support` | `cons9_or_selected_verifier_compatible_pairs` | `support verifier table; SQLSolver / VeriEQL, CONS9 or selected verifier-compatible pairs` | `unsupported_currently` | `support-track ledgers and scratch availability notes` | `yes` | `verifier-compatible pair matrix and bounded support packet` | `support verifier table only; not a rewrite-generator ranking` | `SQLSolver and VeriEQL are support tools, not rewrite generators` |
+| `Table 10` | `Plan Observability Case Study` | `Track B case study` | `selected_case_study_only` | `selected case study, not full-denominator plan attribution` | `needs_new_experiment` | `preflight-only observability notes` | `yes` | `selected case-study packet with stable plan artifacts` | `selected case study only; not full-denominator plan attribution` | `best treated as a focused qualitative/quantitative case study` |
+| `Table 11` | `Appendix: Bounded / Pilot Evidence Reuse` | `appendix` | `mixed_bounded_appendix_denominators` | `appendix, old/bounded evidence reuse; not main leaderboard` | `appendix_only` | `bounded PG-only packets; portability snapshots; historical result cards` | `no` | `appendix curation note` | `appendix only, not main leaderboard` | `should include R-Bot, LearnedRewrite, LLM-R2, and other bounded packets only with explicit scope labels` |
+| `Claim matrix` | `Claim-to-table alignment matrix` | `governance` | `claim_matrix_synthesis_only` | `claim matrix: synthesis only, no new experiment` | `fillable_now` | `paper contract files; method ledger; paper results index` | `no` | `none` | `synthesis only, no new experiment` | `maps allowed claim families to paper tables and track boundaries` |
+
+## Notes
+
+- `Table 1` is now explicitly frozen to:
+  - `PERF = 16`
+  - `CONS = 9`
+  - `PORT = 9`
+  - `LONGTAIL = 6`
+  - `TOTAL = 40`
+- `Table 3` is the denominator-aware same-engine method evidence table.
+- `Table 5`, `Table 9`, and `Table 10` remain support/case-study surfaces and
+  must not be reinterpreted as rewrite leaderboard tables.
+- `Table 8` is the portability / translation table and should keep SQLGlot
+  cross-dialect Transpile and LLM Translate separated from Track A same-engine
+  rewrite rows.
