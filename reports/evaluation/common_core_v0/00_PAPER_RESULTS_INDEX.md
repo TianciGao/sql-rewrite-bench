@@ -42,6 +42,17 @@ from this file rather than left isolated.
 - [direct_llm_same_engine_result_card_v1.md](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/direct_llm_same_engine_result_card_v1.md)
 - [direct_llm_same_engine_proposed_row_v1.md](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/direct_llm_same_engine_proposed_row_v1.md)
 
+### Bounded Prior-Method Appendix
+
+- [prior_methods_pg10_bounded_appendix_v1.md](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/prior_methods_pg10_bounded_appendix_v1.md)
+  packages retained `prior_method_pg10` PG-only appendix evidence for
+  `LearnedRewrite` and `LLM-R2`.
+- This appendix is bounded prior-method evidence only.
+- It is not `common_core_v0_40_same_engine_120` evidence.
+- It does not update `method_comparison_summary_v2`.
+- It does not promote `LearnedRewrite` or `LLM-R2` into the main same-engine
+  method evidence table.
+
 ### Calcite HEP
 
 - [calcite_hep_validity_summary_v1.md](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/calcite_hep_validity_summary_v1.md)
