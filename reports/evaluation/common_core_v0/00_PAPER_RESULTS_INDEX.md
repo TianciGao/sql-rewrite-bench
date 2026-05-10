@@ -132,6 +132,16 @@ from this file rather than left isolated.
 - This LLM-R2 PG3 packet is governance review of a completed local human-run.
 - It is PG3-only and not PG40 or full `120` evidence.
 - It is not MySQL/Spark evidence and not timing/speedup evidence.
+- A reviewable LLM-R2 common-core supported PostgreSQL expansion audit now also
+  exists:
+  - [llm_r2_common_core_supported_pg_expansion_audit_v1.md](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/llm_r2_common_core_supported_pg_expansion_audit_v1.md)
+  - [llm_r2_common_core_supported_pg_expansion_audit_v1.csv](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/llm_r2_common_core_supported_pg_expansion_audit_v1.csv)
+  - [llm_r2_common_core_pg_expansion_candidate_slice_v1.csv](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/llm_r2_common_core_pg_expansion_candidate_slice_v1.csv)
+  - [llm_r2_common_core_pg_expansion_approval_gate_v1.md](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/llm_r2_common_core_pg_expansion_approval_gate_v1.md)
+- This LLM-R2 packet is read-only audit and planning only.
+- It does not authorize PostgreSQL generation, execution, checker, timing, or
+  speedup.
+- It does not create PG40 or full `120` evidence.
 
 ## Method Summary Files
 

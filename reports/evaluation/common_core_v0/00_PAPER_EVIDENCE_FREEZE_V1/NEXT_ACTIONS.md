@@ -2,8 +2,8 @@
 
 ## Highest-Priority Next Action
 
-Human decide whether to expand LLM-R2 from PG3 to a larger PostgreSQL slice,
-or stop and report PG3 bounded evidence.
+Human review LLM-R2 common-core PG expansion audit and decide whether to
+authorize the bounded next PG expansion slice.
 
 ## Explicitly Deferred Actions
 
