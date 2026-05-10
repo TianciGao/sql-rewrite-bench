@@ -142,6 +142,23 @@ from this file rather than left isolated.
 - It does not authorize PostgreSQL generation, execution, checker, timing, or
   speedup.
 - It does not create PG40 or full `120` evidence.
+- A paper-facing LLM-R2 bounded PG9 evidence reconciliation packet now also
+  exists:
+  - [llm_r2_pg9_bounded_evidence_reconciliation_v1.md](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/llm_r2_pg9_bounded_evidence_reconciliation_v1.md)
+  - [llm_r2_pg9_bounded_evidence_reconciliation_v1.csv](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/llm_r2_pg9_bounded_evidence_reconciliation_v1.csv)
+- This LLM-R2 packet is documentation and evidence reconciliation only.
+- It preserves bounded PG-only evidence on 9 supported Common-core rows with
+  `9/9` generation attempts, `3/9` exact generated SQL executions, and `6/9`
+  explicit `execution_failed` generated SQL rows.
+- It is not PG40 evidence, not tri-engine `120` evidence, not timing evidence,
+  and not leaderboard-comparable.
+- A read-only LLM-R2 extraction/wrapper recovery audit now also exists:
+  - [llm_r2_extraction_wrapper_recovery_audit_v1.md](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/llm_r2_extraction_wrapper_recovery_audit_v1.md)
+  - [llm_r2_extraction_wrapper_recovery_audit_v1.csv](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/llm_r2_extraction_wrapper_recovery_audit_v1.csv)
+- This packet is read-only diagnosis only.
+- It does not invalidate the frozen PG9 bounded evidence packet.
+- It only argues that any future patch must create a separate recovered route
+  and preserve original-route evidence unchanged.
 
 ## Method Summary Files
 

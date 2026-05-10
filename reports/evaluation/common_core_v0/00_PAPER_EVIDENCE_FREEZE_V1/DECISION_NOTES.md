@@ -16,6 +16,15 @@
   and timing subset, and explicit MySQL/Spark canary failure.
 - LearnedRewrite and LLM-R2 do not yet have `120` evidence; their Stage-1
   scaffolds show dependency blockers.
+- LLM-R2 now also has a separate paper-facing bounded PG-only reconciliation
+  packet:
+  [llm_r2_pg9_bounded_evidence_reconciliation_v1.md](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/llm_r2_pg9_bounded_evidence_reconciliation_v1.md).
+  The fixed interpretation is bounded PostgreSQL-supported Common-core evidence
+  on 9 PG rows:
+  `9/9` generation attempts, `9/9` generated SQL files, `3/9` generated SQL
+  executions with `3/9` exact matches, and `6/9` explicit
+  `execution_failed` rows due to malformed generated SQL. This is not PG40,
+  not tri-engine `120`, not timing evidence, and not leaderboard-comparable.
 - SQLSolver and VeriEQL are support/verifier, not rewrite methods for the
   current rerun campaign.
 - SQLGlot cross-dialect and LLM Translate are portability routes, not Track A
