@@ -2,8 +2,7 @@
 
 ## Highest-Priority Next Action
 
-Run the static LLM-R2 dry-run validator and review whether runner recovery
-scaffolding is complete enough for a bounded PG overlap dry-run plan.
+Human review of LLM-R2 bounded PG overlap dry-run plan and approval gate.
 
 ## Explicitly Deferred Actions
 
