@@ -158,6 +158,14 @@ from this file rather than left isolated.
 - This packet is read-only diagnosis only.
 - It does not invalidate the frozen PG9 bounded evidence packet.
 - It only argues that any future patch must create a separate recovered route
+- A separate LLM-R2 recovered-extraction route scaffold now also exists:
+  - [llm_r2_recovered_extraction_route_plan_v1.md](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/llm_r2_recovered_extraction_route_plan_v1.md)
+  - [llm_r2_recovered_extraction_route_plan_v1.csv](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/llm_r2_recovered_extraction_route_plan_v1.csv)
+  - [llm_r2_recovered_extraction_patch_audit_v1.md](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/llm_r2_recovered_extraction_patch_audit_v1.md)
+  - [llm_r2_recovered_extraction_patch_audit_v1.csv](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/llm_r2_recovered_extraction_patch_audit_v1.csv)
+- This packet is scaffold and patch-boundary planning only.
+- It introduces a separate route id and artifact family without changing the
+  frozen PG9 original-route evidence packet.
   and preserve original-route evidence unchanged.
 
 ## Method Summary Files

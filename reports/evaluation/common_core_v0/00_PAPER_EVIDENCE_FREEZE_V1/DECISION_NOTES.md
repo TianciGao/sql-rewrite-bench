@@ -25,6 +25,12 @@
   executions with `3/9` exact matches, and `6/9` explicit
   `execution_failed` rows due to malformed generated SQL. This is not PG40,
   not tri-engine `120`, not timing evidence, and not leaderboard-comparable.
+- LLM-R2 now also has a separate recovered-extraction route scaffold:
+  [llm_r2_recovered_extraction_route_plan_v1.md](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/llm_r2_recovered_extraction_route_plan_v1.md).
+  The fixed interpretation is still that the frozen PG9 packet remains the
+  canonical original-route bounded evidence. Any future recovered-extraction
+  output must be emitted as a separate route and must not overwrite or
+  reinterpret the original-route packet.
 - SQLSolver and VeriEQL are support/verifier, not rewrite methods for the
   current rerun campaign.
 - SQLGlot cross-dialect and LLM Translate are portability routes, not Track A

@@ -231,7 +231,9 @@ LLMR2_AUDIT_ROOT = Path("/tmp/rewritebench_llmr2_audit") / "LLM-R2"
 LLMR2_ADAPTER_PREFLIGHT_ROOT = Path("/tmp/rewritebench_llmr2_adapter_preflight")
 LLMR2_SINGLE_CASE_RUNNER_ROOT = Path("/tmp/rewritebench_llmr2_single_case_runner")
 LLMR2_FAST_PATH_ROOT = Path("/tmp/rewritebench_llmr2_fast_path")
+LLMR2_RECOVERED_EXTRACTION_ROUTE_ROOT = Path("/tmp/rewritebench_llmr2_recovered_extraction_route_v1")
 LLMR2_10CASE_PREFLIGHT_ROOT = Path("/tmp/rewritebench_llmr2_10case_preflight")
+LLMR2_RECOVERED_EXTRACTION_ROUTE_ID = "llm_r2_recovered_extraction_route_v1"
 SQLSOLVER_AUDIT_ROOT = Path("/tmp/rewritebench_sqlsolver_audit") / "candidate"
 SQLSOLVER_ADAPTER_PREFLIGHT_ROOT = Path("/tmp/rewritebench_sqlsolver_adapter_preflight")
 SQLSOLVER_RUNNER_DRY_RUN_ROOT = Path("/tmp/rewritebench_sqlsolver_runner_dry_run")
@@ -1724,6 +1726,101 @@ def extract_sql_like_output(raw_output: str) -> tuple[str, str]:
     if ";" in trailing:
         return "needs_manual_review", text
     return "extracted", text
+
+
+def llmr2_patch_rewriter_text_for_recovered_extraction(rewriter_text: str) -> tuple[str, bool]:
+    original = "    queries = output[ind+1:-3]\n    # print(' '.join(queries))\n    output = ' '.join(queries).replace('\"', '')\n"
+    patched = (
+        "    sql_tail = output[ind:-3]\n"
+        "    queries = []\n"
+        "    for line in sql_tail:\n"
+        "        stripped = line.strip()\n"
+        "        if not stripped:\n"
+        "            if queries:\n"
+        "                queries.append(line)\n"
+        "            continue\n"
+        "        if stripped.startswith('--'):\n"
+        "            break\n"
+        "        if '--' in line:\n"
+        "            line = line.split('--', 1)[0].rstrip()\n"
+        "            if line.strip():\n"
+        "                queries.append(line)\n"
+        "            break\n"
+        "        queries.append(line)\n"
+        "    # print(' '.join(queries))\n"
+        "    output = ' '.join(queries).replace('\"', '')\n"
+    )
+    if original not in rewriter_text:
+        return rewriter_text, False
+    return rewriter_text.replace(original, patched, 1), True
+
+
+def llmr2_recovered_extraction_from_raw_field(raw_output: str) -> dict[str, Any]:
+    raw_text = str(raw_output or "")
+    normalized = raw_text.replace("\r\n", "\n").replace("\r", "\n")
+    lines = normalized.split("\n")
+    first_sql_line_index: int | None = None
+    for idx, line in enumerate(lines):
+        if re.match(r"^\s*(SELECT|WITH)\b", line, flags=re.IGNORECASE):
+            first_sql_line_index = idx
+            break
+
+    payload: dict[str, Any] = {
+        "raw_field_non_empty": bool(raw_text.strip()),
+        "first_sql_line_index": first_sql_line_index,
+        "leading_select_or_with_in_raw": first_sql_line_index == 0,
+        "extraction_rule_used": "first_select_or_with_then_strip_trailing_source_comments_v1",
+        "source_comments_detected": False,
+        "source_comments_stripped": False,
+        "candidate_starts_with_select_or_with": False,
+        "generic_sql_like_status": "empty_output" if not raw_text.strip() else "needs_manual_review",
+        "recovered_sql_candidate": "",
+        "write_generated_sql_allowed": False,
+        "sql_generated_by_method_not_manually_repaired": False,
+        "notes": [],
+    }
+    if not raw_text.strip():
+        payload["notes"].append("raw_field_empty")
+        return payload
+    if first_sql_line_index is None:
+        payload["notes"].append("no_select_or_with_start_found_in_raw_field")
+        return payload
+
+    candidate_lines: list[str] = []
+    for idx, line in enumerate(lines[first_sql_line_index:], start=first_sql_line_index):
+        if re.match(r"^\s*```", line):
+            payload["notes"].append(f"markdown_fence_detected_at_line_{idx}")
+            break
+        if re.match(r"^\s*--", line):
+            payload["source_comments_detected"] = True
+            payload["source_comments_stripped"] = True
+            payload["notes"].append(f"full_line_source_comment_stripped_at_line_{idx}")
+            break
+        if "--" in line:
+            prefix, _, suffix = line.partition("--")
+            if suffix.strip():
+                payload["source_comments_detected"] = True
+                payload["source_comments_stripped"] = True
+                payload["notes"].append(f"inline_source_comment_stripped_at_line_{idx}")
+                if prefix.strip():
+                    candidate_lines.append(prefix.rstrip())
+                break
+        candidate_lines.append(line.rstrip())
+
+    candidate = "\n".join(candidate_lines).strip()
+    payload["recovered_sql_candidate"] = candidate
+    payload["candidate_starts_with_select_or_with"] = bool(
+        re.match(r"^\s*(SELECT|WITH)\b", candidate, flags=re.IGNORECASE)
+    )
+    generic_status, normalized_candidate = extract_sql_like_output(candidate)
+    payload["generic_sql_like_status"] = generic_status
+    if generic_status == "extracted":
+        payload["recovered_sql_candidate"] = normalized_candidate
+    payload["write_generated_sql_allowed"] = payload["candidate_starts_with_select_or_with"] and bool(candidate)
+    payload["sql_generated_by_method_not_manually_repaired"] = bool(candidate)
+    if not payload["candidate_starts_with_select_or_with"]:
+        payload["notes"].append("candidate_does_not_start_with_select_or_with_after_recovery")
+    return payload
 
 
 def resolve_llm_endpoint_config(
@@ -35005,6 +35102,217 @@ def simple_distance(a, b):
     return print_and_exit(smoke_payload, 0 if success else 1)
 
 
+def cmd_formal_llmr2_recovered_extraction_route(args: argparse.Namespace) -> int:
+    case_id = str(args.case).strip().upper()
+    case_slug = case_id.lower()
+    db_id = f"rewritebench_{case_slug}"
+    dry_run_only = bool(getattr(args, "dry_run", False) or True)
+    force_cpu = bool(getattr(args, "force_cpu", False))
+    schema_native_contract = bool(getattr(args, "schema_native_contract", False))
+    if case_id not in LLMR2_SUPPORTED_CASE_IDS:
+        payload = {
+            "command": "formal-llmr2-recovered-extraction-route",
+            "ok": False,
+            "ran_at_utc": utc_now(),
+            "case_id": case_id,
+            "route_id": LLMR2_RECOVERED_EXTRACTION_ROUTE_ID,
+            "dry_run_only": True,
+            "blockers": ["unsupported_case_id"],
+            "claim_boundary": "llmr2_recovered_extraction_route_scaffold_only_not_execution",
+        }
+        return print_and_exit(payload, 1)
+
+    adapter_bundle_dir = (
+        LLMR2_ADAPTER_PREFLIGHT_ROOT / case_id
+        if case_id == "PERF_0006"
+        else LLMR2_10CASE_PREFLIGHT_ROOT / case_id
+    )
+    recovered_dir = LLMR2_RECOVERED_EXTRACTION_ROUTE_ROOT / case_id
+    runtime_root = recovered_dir / "runtime_root_recovered_extraction_v1"
+    runtime_rewriter_path = runtime_root / "src" / "rewriter.py"
+    recovered_dir.mkdir(parents=True, exist_ok=True)
+
+    query_csv_source = (
+        adapter_bundle_dir / "perf_0006_queries.csv"
+        if case_id == "PERF_0006"
+        else adapter_bundle_dir / f"{case_slug}_queries.csv"
+    )
+    schema_stub_source = (
+        adapter_bundle_dir / "perf_0006_schema_stub.json"
+        if case_id == "PERF_0006"
+        else adapter_bundle_dir / f"{case_slug}_schema_native.json"
+    )
+
+    repo_path = LLMR2_AUDIT_ROOT
+    rewriter_script_path = repo_path / "src" / "rewriter.py"
+    java_rule_applier_path = repo_path / "src" / "rewriter_java.jar"
+    upstream_pos_pool_path = repo_path / "data" / "data_llmr2" / "pools" / "pos_pool_dsb_updated.csv"
+    upstream_neg_pool_path = repo_path / "data" / "data_llmr2" / "pools" / "neg_pool_dsb_updated.csv"
+    openai_api_key_visible = bool(os.environ.get("OPENAI_API_KEY"))
+
+    run_suffix = "schema_native_recovered_extraction_v1" if schema_native_contract else "recovered_extraction_v1"
+    result_csv_path = recovered_dir / f"gpt_{db_id}_one_promo_queryCL_updated.csv"
+    generated_sql_path = recovered_dir / f"generated_sql_{run_suffix}.sql"
+    checker_candidate_sql_path = recovered_dir / f"checker_candidate_sql_{run_suffix}.sql"
+    raw_field_capture_path = recovered_dir / f"rewritten_sql_gpt_raw_{run_suffix}.txt"
+    recovered_candidate_path = recovered_dir / f"recovered_candidate_{run_suffix}.sql"
+    extraction_audit_path = recovered_dir / f"extraction_audit_{run_suffix}.json"
+    runtime_patch_audit_path = recovered_dir / f"runtime_patch_audit_{run_suffix}.json"
+    prompt_trace_path = recovered_dir / f"prompt_trace_{run_suffix}.md"
+    demo_trace_path = recovered_dir / f"demo_trace_{run_suffix}.json"
+    token_cost_log_path = recovered_dir / f"token_cost_log_{run_suffix}.json"
+    method_stdout_path = recovered_dir / f"method_stdout_{run_suffix}.log"
+    method_stderr_path = recovered_dir / f"method_stderr_{run_suffix}.log"
+    activated_rules_path = recovered_dir / f"activated_rules_{run_suffix}.json"
+    future_execute_command_path = recovered_dir / "future_execute_command_NOT_RUN.txt"
+    artifact_paths_path = recovered_dir / "artifact_paths.json"
+    dry_run_summary_path = recovered_dir / "dry_run_summary.json"
+    do_not_run_yet_path = recovered_dir / "DO_NOT_RUN_YET.txt"
+
+    rewriter_text = rewriter_script_path.read_text(encoding="utf-8") if rewriter_script_path.is_file() else ""
+    patched_rewriter_text, patch_rewriter_rule_present = llmr2_patch_rewriter_text_for_recovered_extraction(rewriter_text)
+    patch_changes_content = patch_rewriter_rule_present and patched_rewriter_text != rewriter_text
+    patch_preview = {
+        "route_id": LLMR2_RECOVERED_EXTRACTION_ROUTE_ID,
+        "staged_runtime_patch_target": str(runtime_rewriter_path),
+        "source_rewriter_path": str(rewriter_script_path),
+        "patch_rewriter_rule_present": patch_rewriter_rule_present,
+        "patch_changes_content": patch_changes_content,
+        "patch_strategy": "preserve_first_matched_select_or_with_and_stop_at_source_comment_boundary_v1",
+        "local_guard_strategy": "first_select_or_with_then_strip_trailing_source_comments_v1",
+        "write_generated_sql_requires_leading_select_or_with": True,
+        "separate_artifact_family_only": True,
+        "original_route_evidence_unchanged": True,
+    }
+    runtime_patch_audit_path.write_text(
+        json.dumps(patch_preview, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+
+    extraction_rule_preview = llmr2_recovered_extraction_from_raw_field(
+        "SELECT 1\n-- provenance comment"
+    )
+    extraction_audit_preview = {
+        "route_id": LLMR2_RECOVERED_EXTRACTION_ROUTE_ID,
+        "preview_input_kind": "synthetic_boundary_preview_only",
+        "preview_recovery": extraction_rule_preview,
+        "note": "scaffold only; no method output was executed or regenerated in this command",
+    }
+    extraction_audit_path.write_text(
+        json.dumps(extraction_audit_preview, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+
+    future_execute_command_text = (
+        "NOT RUN\n\n"
+        "Future recovered-extraction route candidate after separate human approval:\n"
+        "python -m scripts.cli formal-llmr2-recovered-extraction-route \\\n"
+        f"  --case {case_id} \\\n"
+        f"{'  --schema-native-contract \\\n' if schema_native_contract else ''}"
+        f"{'  --force-cpu\n' if force_cpu else ''}\n"
+        "Recovered-route execution boundary:\n"
+        f"- route_id: {LLMR2_RECOVERED_EXTRACTION_ROUTE_ID}\n"
+        f"- stage runtime copy under: {runtime_root}\n"
+        f"- patch staged runtime only at: {runtime_rewriter_path}\n"
+        f"- preserve original raw field at: {raw_field_capture_path}\n"
+        f"- write recovered candidate SQL only to: {generated_sql_path}\n"
+        f"- write checker handoff SQL only to: {checker_candidate_sql_path}\n"
+        f"- write extraction audit only to: {extraction_audit_path}\n"
+        "- do not overwrite original fast-path or PG9 bounded evidence artifacts\n"
+        "- no manual semantic SQL repair is allowed; deterministic assembly or extraction boundaries only\n"
+    )
+    future_execute_command_path.write_text(future_execute_command_text, encoding="utf-8")
+
+    artifact_paths_payload = {
+        "route_id": LLMR2_RECOVERED_EXTRACTION_ROUTE_ID,
+        "result_csv_path": str(result_csv_path),
+        "generated_sql_path": str(generated_sql_path),
+        "checker_candidate_sql_path": str(checker_candidate_sql_path),
+        "raw_field_capture_path": str(raw_field_capture_path),
+        "recovered_candidate_path": str(recovered_candidate_path),
+        "extraction_audit_path": str(extraction_audit_path),
+        "runtime_patch_audit_path": str(runtime_patch_audit_path),
+        "prompt_trace_path": str(prompt_trace_path),
+        "demo_trace_path": str(demo_trace_path),
+        "token_cost_log_path": str(token_cost_log_path),
+        "method_stdout_path": str(method_stdout_path),
+        "method_stderr_path": str(method_stderr_path),
+        "activated_rules_path": str(activated_rules_path),
+        "claim_boundary": "llmr2_recovered_extraction_route_scaffold_only_not_execution",
+    }
+    artifact_paths_path.write_text(
+        json.dumps(artifact_paths_payload, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+
+    do_not_run_yet_path.write_text(
+        "DO NOT RUN YET\n"
+        "- recovered-extraction route scaffold only\n"
+        "- no LLM-R2 execution occurred\n"
+        "- no PostgreSQL, checker, timing, or speedup execution occurred\n"
+        "- any future run must preserve original-route PG9 evidence and emit a separate artifact family\n",
+        encoding="utf-8",
+    )
+
+    adapter_bundle_found = adapter_bundle_dir.is_dir()
+    query_csv_found = query_csv_source.is_file()
+    schema_stub_found = schema_stub_source.is_file()
+    llmr2_repo_found = repo_path.is_dir()
+    rewriter_script_found = rewriter_script_path.is_file()
+    java_rule_applier_found = java_rule_applier_path.is_file()
+    demo_pool_found = upstream_pos_pool_path.is_file() and upstream_neg_pool_path.is_file()
+
+    blockers: list[str] = []
+    if not adapter_bundle_found:
+        blockers.append("missing_adapter_bundle")
+    if not query_csv_found:
+        blockers.append("missing_query_csv")
+    if not schema_stub_found:
+        blockers.append("missing_schema_stub")
+    if not llmr2_repo_found:
+        blockers.append("missing_llmr2_repo")
+    if not rewriter_script_found:
+        blockers.append("missing_rewriter_script")
+    if not java_rule_applier_found:
+        blockers.append("missing_java_rule_applier")
+    if not demo_pool_found:
+        blockers.append("missing_demo_pool")
+    if not openai_api_key_visible:
+        blockers.append("openai_api_key_not_visible")
+    if not patch_rewriter_rule_present:
+        blockers.append("recovered_rewriter_patch_anchor_not_found")
+    blockers.append("execute_mode_not_implemented_in_scaffold")
+
+    payload = {
+        "command": "formal-llmr2-recovered-extraction-route",
+        "ok": False,
+        "ran_at_utc": utc_now(),
+        "route_id": LLMR2_RECOVERED_EXTRACTION_ROUTE_ID,
+        "case_id": case_id,
+        "dry_run_only": True,
+        "force_cpu": force_cpu,
+        "schema_native_contract": schema_native_contract,
+        "adapter_bundle_found": adapter_bundle_found,
+        "query_csv_found": query_csv_found,
+        "schema_stub_found": schema_stub_found,
+        "llmr2_repo_found": llmr2_repo_found,
+        "rewriter_script_found": rewriter_script_found,
+        "java_rule_applier_found": java_rule_applier_found,
+        "demo_pool_found": demo_pool_found,
+        "openai_api_key_visible": openai_api_key_visible,
+        "patch_rewriter_rule_present": patch_rewriter_rule_present,
+        "patch_changes_content": patch_changes_content,
+        "future_command_written": future_execute_command_path.is_file(),
+        "artifact_paths_written": artifact_paths_path.is_file(),
+        "runtime_patch_audit_written": runtime_patch_audit_path.is_file(),
+        "extraction_audit_preview_written": extraction_audit_path.is_file(),
+        "blockers": blockers,
+        "claim_boundary": "llmr2_recovered_extraction_route_scaffold_only_not_execution",
+    }
+    dry_run_summary_path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    return print_and_exit(payload, 0 if len(blockers) == 1 and blockers[0] == "execute_mode_not_implemented_in_scaffold" else 1)
+
+
 def cmd_formal_llmr2_logical_plan_probe(args: argparse.Namespace) -> int:
     case_id = str(args.case).strip().upper()
     case_slug = case_id.lower()
@@ -48951,6 +49259,17 @@ def build_parser() -> argparse.ArgumentParser:
     formal_llmr2_one_row_fast_path_parser.add_argument("--schema-native-contract", action="store_true", default=False)
     formal_llmr2_one_row_fast_path_parser.set_defaults(
         func=cmd_formal_llmr2_one_row_fast_path
+    )
+
+    formal_llmr2_recovered_extraction_route_parser = subparsers.add_parser(
+        "formal-llmr2-recovered-extraction-route"
+    )
+    formal_llmr2_recovered_extraction_route_parser.add_argument("--case", required=True)
+    formal_llmr2_recovered_extraction_route_parser.add_argument("--dry-run", action="store_true", default=False)
+    formal_llmr2_recovered_extraction_route_parser.add_argument("--force-cpu", action="store_true", default=False)
+    formal_llmr2_recovered_extraction_route_parser.add_argument("--schema-native-contract", action="store_true", default=False)
+    formal_llmr2_recovered_extraction_route_parser.set_defaults(
+        func=cmd_formal_llmr2_recovered_extraction_route
     )
 
     formal_llmr2_logical_plan_probe_parser = subparsers.add_parser(
