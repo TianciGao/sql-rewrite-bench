@@ -1,0 +1,11 @@
+Scope attestation:
+- case_id = PERF_0008
+- route = llm_r2_recovered_extraction_route_v1 retained generated SQL
+- PostgreSQL source/generated execution = authorized
+- exact TSV checker = authorized
+- semicolon-normalized execution copy = allowed
+- timing/speedup not run
+- MySQL/Spark not run
+- no PG40/full120 expansion
+- no result card/proposed row
+- no method_comparison_summary_v2 update

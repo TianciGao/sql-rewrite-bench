@@ -1,0 +1,20 @@
+{
+  "candidate_execution_status": "success",
+  "candidate_output_path": "/tmp/rewritebench_llmr2_fast_path/PERF_0008/checker_candidate_v1.tsv",
+  "candidate_row_count": 1,
+  "candidate_sql_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/llm_r2_recovered_extraction_perf0008_pg_execution_checker_canary_01/candidate_input/generated_sql_schema_native_recovered_extraction_v1_semicolon_normalized.sql",
+  "candidate_type": "clean_extracted_candidate",
+  "case_id": "PERF_0008",
+  "checker_status": "consistent",
+  "claim_boundary": "bounded_1_case_LLMR2_checker_smoke_not_speedup_not_leaderboard",
+  "cleanup_status": "rolled_back_transaction",
+  "consistency_status": "consistent",
+  "failure_category": "",
+  "failure_summary": "",
+  "method": "LLM-R2",
+  "normalization_policy": "sort_rows=true,trim_whitespace=true,normalize_numeric_format=true,normalize_null=true",
+  "source_execution_status": "success",
+  "source_output_path": "/tmp/rewritebench_llmr2_fast_path/PERF_0008/checker_source_v1.tsv",
+  "source_row_count": 1,
+  "speedup_status": "not_run"
+}
