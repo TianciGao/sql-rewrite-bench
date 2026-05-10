@@ -15,6 +15,9 @@ coverage.
 - Retained non-PG evidence: `80/80` MySQL/Spark rows have retained route
   artifacts, with `62/80` fail-closed exact matches
 - Combined fail-closed exact-match ledger: `93/120 = 77.50%`
+- Post-93 frontier status: retained audit found `0` low-risk and `0` medium-risk
+  recovery candidates, so `93/120` is the current paper-safe ceiling for this
+  route
 
 ## Denominator-Aware Status
 
@@ -102,9 +105,23 @@ The bounded `PERF_0035` recovery canary lifted the ledger from `90/120` to
 `93/120` with three more recovered exact rows:
 - PERF_0035:pg, PERF_0035:mysql, PERF_0035:spark
 
+The post-93 frontier audit found no additional low-risk or medium-risk
+recovery candidates under the unchanged route, denominator, and checker:
+
+- remaining gaps are dominated by semantic mismatches
+- parser or deep-feature support gaps
+- methodology-boundary `PORT` rows
+
+This establishes `93/120` as the current paper-safe ceiling for this Calcite
+HEP route.
+
 Required paper-safe statement:
 
 `After a bounded PERF_0035 recovery canary targeting a proven internal helper-column projection artifact and numeric-scale rendering defects, the fail-closed exact-match ledger improved from 90/120 to 93/120. Three additional rows recovered exact-match validity evidence. The recovered rows reflect package-local final projection repair under unchanged exact-match semantics, unchanged checker policy, and unchanged denominator scope. This remains bounded execution-validity evidence, not timing, speedup, leaderboard, or full 120-row comparable evidence.`
+
+Post-93 paper-safe ceiling statement:
+
+`Calcite HEP reaches a fail-closed exact-match ledger of 93/120 on the common_core_v0_40_same_engine_120 denominator. A post-93 frontier audit found no additional low-risk or medium-risk recovery candidates under the unchanged route, denominator, and checker. The remaining gaps are dominated by semantic mismatches, parser/deep-feature support gaps, or methodology-boundary PORT rows. Therefore 93/120 is the current paper-safe ceiling for this Calcite HEP route. This is bounded execution-validity evidence, not timing, speedup, leaderboard, or full 120-row comparable evidence.`
 
 ## Fail-Closed Scoring
 
@@ -136,6 +153,8 @@ with:
   evidence without changing denominator policy.
 - Retained artifacts support a `120`-row fail-closed correctness ledger with
   `93/120` exact matches when non-exact outcomes remain in-denominator.
+- The retained post-93 frontier audit supports treating `93/120` as the
+  current paper-safe ceiling for this route.
 
 ## What The Paper Must Not Claim
 
@@ -145,6 +164,8 @@ with:
 - Do not imply that the bounded non-PG expansion or recovery canaries close the
   full tri-engine route for performance comparison.
 - Do not describe the retained ledger as `120`-row completion.
+- Do not imply that `95/120` is currently reachable without route drift,
+  checker relaxation, denominator change, or deeper unsupported feature work.
 
 ## What Remains Missing
 
@@ -153,3 +174,5 @@ with:
 - Any full `120`-row timing packet.
 - Any normalized leaderboard policy that would make this mixed PG + bounded
   non-PG row rank-comparable.
+- Any new retained implementation-level evidence that would justify moving past
+  the current `93/120` ceiling.
