@@ -46,6 +46,21 @@
   generated executions, and `6/6` exact matches. This is not original-route
   PG9 evidence, not recovered PG9 evidence, not PG40 evidence, not tri-engine
   `120` evidence, not timing evidence, and not leaderboard-comparable.
+- A narrow recovered-route PG3 rerun was then attempted for `PERF_0006`,
+  `PERF_0013`, and `PERF_0024`.
+  The fixed interpretation is:
+  `3/3` recovered-route generation successes, `3/3` recovered SQL retention
+  results, and `3/3` static inspection passes, but `0/3` generated PostgreSQL
+  executions completed because all three generated executions failed with a
+  duplicated `SELECT` syntax pattern. Therefore recovered PG9 appendix
+  evidence was not achieved, and recovered-route PG6 remains the current
+  separate recovered-route bounded appendix packet.
+- LLM-R2 should therefore be treated as bounded appendix-only evidence for
+  paper-facing purposes:
+  original-route PG9 remains bounded original-route evidence, recovered-route
+  PG6 remains bounded recovered-route evidence, and the recovered-route PG3
+  rerun is a failed appendix extension rather than a successful recovered PG9
+  packet.
 - SQLSolver and VeriEQL are support/verifier, not rewrite methods for the
   current rerun campaign.
 - SQLGlot cross-dialect and LLM Translate are portability routes, not Track A

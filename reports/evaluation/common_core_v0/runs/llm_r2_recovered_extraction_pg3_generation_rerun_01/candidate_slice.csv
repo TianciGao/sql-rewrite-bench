@@ -1,0 +1,4 @@
+case_id,engine,method_id,route_id,planned_action,notes
+PERF_0006,pg,llm_r2,llm_r2_recovered_extraction_route_v1,recovered_generation_then_pg_checker,PG3 recovered-route rerun only; no timing/MySQL/Spark/full120
+PERF_0013,pg,llm_r2,llm_r2_recovered_extraction_route_v1,recovered_generation_then_pg_checker,PG3 recovered-route rerun only; no timing/MySQL/Spark/full120
+PERF_0024,pg,llm_r2,llm_r2_recovered_extraction_route_v1,recovered_generation_then_pg_checker,PG3 recovered-route rerun only; no timing/MySQL/Spark/full120

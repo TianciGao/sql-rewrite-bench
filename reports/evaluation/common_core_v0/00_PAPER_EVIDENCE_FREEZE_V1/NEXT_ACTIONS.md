@@ -2,9 +2,9 @@
 
 ## Highest-Priority Next Action
 
-Human decide whether to preserve LLM-R2 recovered-extraction PG6 as separate
-bounded appendix evidence, or authorize recovered-route PG3 reruns before any
-broader recovered-route claim.
+Stop the recovered-route PG9 appendix pursuit for now and preserve LLM-R2 as
+bounded appendix-only evidence unless a separate new recovery route is
+explicitly approved.
 
 ## Explicitly Deferred Actions
 
@@ -18,3 +18,7 @@ broader recovered-route claim.
   recovered-extraction execute mode itself.
 - Do not claim recovered PG9 unless `PERF_0006`, `PERF_0013`, and `PERF_0024`
   are separately rerun under the recovered route.
+- Recovered-route PG3 rerun attempted generation and checker, but it did not
+  achieve recovered PG9 appendix evidence.
+- Do not mix future wrapper-repair work into the current original-route or
+  recovered-route frozen packets.

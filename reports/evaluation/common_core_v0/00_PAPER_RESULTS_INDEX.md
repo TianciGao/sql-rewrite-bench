@@ -188,6 +188,24 @@ from this file rather than left isolated.
 - It is not original-route PG9 evidence, not recovered PG9 evidence, not PG40
   evidence, not tri-engine `120` evidence, not timing evidence, and not
   leaderboard-comparable.
+- A narrow LLM-R2 recovered-extraction PG3 rerun directory now also exists:
+  - [runs/llm_r2_recovered_extraction_pg3_generation_rerun_01](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/llm_r2_recovered_extraction_pg3_generation_rerun_01)
+  - [runs/llm_r2_recovered_extraction_pg3_pg_execution_checker_01](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/llm_r2_recovered_extraction_pg3_pg_execution_checker_01)
+- This rerun achieved `3/3` recovered-route generation successes and `3/3`
+  static inspection passes.
+- It did not achieve recovered PG9 appendix evidence because all `3/3`
+  generated PostgreSQL executions failed with a duplicated `SELECT` syntax
+  pattern.
+- Original-route PG9 evidence remains unchanged, and recovered-route PG6
+  remains the current separate recovered-route appendix packet.
+- A formal LLM-R2 recovered-extraction PG3 failed-rerun review packet now also
+  exists:
+  - [llm_r2_recovered_extraction_pg3_failed_rerun_review_v1.md](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/llm_r2_recovered_extraction_pg3_failed_rerun_review_v1.md)
+  - [llm_r2_recovered_extraction_pg3_failed_rerun_review_v1.csv](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/llm_r2_recovered_extraction_pg3_failed_rerun_review_v1.csv)
+- This packet freezes the recovered-route PG3 rerun as a failed appendix
+  extension: `3/3` generated, `3/3` source executed, `0/3` exact, `3/3`
+  generated `execution_failed`.
+- Recovered PG9 appendix evidence was not achieved.
 
 ## Method Summary Files
 
