@@ -110,6 +110,14 @@ from this file rather than left isolated.
 - This LLM-R2 PG3 packet is static inspection only.
 - It does not authorize PostgreSQL execution, checker, timing, or speedup.
 - It does not create paper evidence or `120`-row evidence.
+- A reviewable LLM-R2 supported PG3 PostgreSQL execution/checker planning
+  packet now also exists:
+  - [llm_r2_supported_pg3_pg_execution_checker_plan_v1.md](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/llm_r2_supported_pg3_pg_execution_checker_plan_v1.md)
+  - [llm_r2_supported_pg3_pg_execution_checker_plan_v1.csv](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/llm_r2_supported_pg3_pg_execution_checker_plan_v1.csv)
+  - [llm_r2_supported_pg3_pg_execution_checker_approval_gate_v1.md](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/llm_r2_supported_pg3_pg_execution_checker_approval_gate_v1.md)
+- This LLM-R2 PG3 packet is planning only.
+- It does not authorize PostgreSQL execution, checker, timing, or speedup.
+- It does not create correctness, exact-match, or `120`-row evidence.
 
 ## Method Summary Files
 
