@@ -1,0 +1,1 @@
+run_id,row_key,case_id,pool,engine,method_id,route_id,denominator_id,previous_status,recoverability_bucket,planned_action,execution_status,consistency_status,recovered_exact,failure_category,blocker_reason,claim_boundary
