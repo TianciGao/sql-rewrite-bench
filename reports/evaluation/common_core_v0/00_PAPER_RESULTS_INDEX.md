@@ -22,6 +22,14 @@ from this file rather than left isolated.
 - It does not update `method_comparison_summary_v2`.
 - It does not create a leaderboard.
 - It does not promote any proposed row into canonical status.
+- Reviewable Stage-0 rerun-campaign governance drafts now also exist:
+  - [common_core_v0_40_same_engine_120_route_contract_v1.md](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/common_core_v0_40_same_engine_120_route_contract_v1.md)
+  - [method_role_freeze_for_rerun_v1.md](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/method_role_freeze_for_rerun_v1.md)
+  - [failure_bucket_policy_for_rerun_v1.md](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/failure_bucket_policy_for_rerun_v1.md)
+  - [common_core_v0_40_same_engine_120_rerun_manifest_v1.csv](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/common_core_v0_40_same_engine_120_rerun_manifest_v1.csv)
+- These rerun drafts are planning-only.
+- They do not authorize execution.
+- They do not create result cards or proposed rows.
 
 ## Method Summary Files
 
