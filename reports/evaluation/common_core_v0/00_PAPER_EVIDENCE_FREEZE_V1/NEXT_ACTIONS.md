@@ -2,8 +2,8 @@
 
 ## Highest-Priority Next Action
 
-Create LLM-R2 recovery plan for runner / logical-plan / output-extraction /
-reproducibility.
+Review LLM-R2 recovery plan and decide whether to authorize runner recovery
+scaffolding.
 
 ## Explicitly Deferred Actions
 
