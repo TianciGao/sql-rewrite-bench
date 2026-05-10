@@ -78,10 +78,15 @@ from this file rather than left isolated.
   - [llm_r2_bounded_pg_overlap_human_run_approval_v1.md](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/llm_r2_bounded_pg_overlap_human_run_approval_v1.md)
   - [llm_r2_bounded_pg_overlap_human_run_approval_v1.csv](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/llm_r2_bounded_pg_overlap_human_run_approval_v1.csv)
   - [llm_r2_bounded_pg_overlap_human_run_packet_v1.md](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/llm_r2_bounded_pg_overlap_human_run_packet_v1.md)
+- A reviewable LLM-R2 slice-to-runner compatibility packet now also exists:
+  - [llm_r2_slice_to_runner_compatibility_addendum_v1.md](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/llm_r2_slice_to_runner_compatibility_addendum_v1.md)
+  - [llm_r2_slice_to_runner_compatibility_addendum_v1.csv](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/llm_r2_slice_to_runner_compatibility_addendum_v1.csv)
+  - [llm_r2_supported_pg3_candidate_slice_v1.csv](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/llm_r2_supported_pg3_candidate_slice_v1.csv)
+  - [llm_r2_unsupported_pg5_wrapper_extension_plan_v1.md](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/llm_r2_unsupported_pg5_wrapper_extension_plan_v1.md)
 - This LLM-R2 packet is preflight scaffolding only.
-- It does not claim `120`-row evidence, and the human-run approval is limited
-  to the fixed 8-row PostgreSQL slice with no Codex, checker, timing, or full
-  `120` authorization.
+- It does not claim `120`-row evidence, and the original 8-row approval is now
+  superseded by runner-compatibility review. Only a 3-row PG subset is
+  currently runner-supported, pending separate human reapproval.
 - A reviewable Stage-1 R-Bot preflight scaffold now also exists:
   - [r_bot_120_preflight_v1.md](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/r_bot_120_preflight_v1.md)
   - [r_bot_120_candidate_matrix_v1.csv](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/r_bot_120_candidate_matrix_v1.csv)

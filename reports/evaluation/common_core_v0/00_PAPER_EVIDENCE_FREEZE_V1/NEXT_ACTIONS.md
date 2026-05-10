@@ -2,8 +2,8 @@
 
 ## Highest-Priority Next Action
 
-Human runs the approved LLM-R2 bounded PG overlap generation dry-run locally,
-then reports artifacts for governance review.
+Human review the LLM-R2 slice-to-runner compatibility addendum and decide
+whether to reapprove the 3-row supported PG subset dry-run.
 
 ## Explicitly Deferred Actions
 
