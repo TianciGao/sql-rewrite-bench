@@ -12,6 +12,16 @@ from this file rather than left isolated.
   - [method_comparison_summary_v2.md](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/method_comparison_summary_v2.md)
 - Safety / readiness check for the canonical ledger:
   - [method_comparison_summary_v2_paper_readiness_check_v2.md](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/method_comparison_summary_v2_paper_readiness_check_v2.md)
+- Reviewable draft row-admission policy for future paper-table governance:
+  - [paper_table_row_admission_policy_v1.md](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/paper_table_row_admission_policy_v1.md)
+
+## Governance Boundary
+
+- [paper_table_row_admission_policy_v1.md](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/paper_table_row_admission_policy_v1.md)
+  is a reviewable policy draft only.
+- It does not update `method_comparison_summary_v2`.
+- It does not create a leaderboard.
+- It does not promote any proposed row into canonical status.
 
 ## Method Summary Files
 
