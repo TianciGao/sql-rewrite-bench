@@ -2,7 +2,8 @@
 
 ## Highest-Priority Next Action
 
-Human review of LLM-R2 bounded PG overlap dry-run plan and approval gate.
+Human review of LLM-R2 bounded PG overlap execution runbook and decide whether
+to authorize a future human-run dry-run.
 
 ## Explicitly Deferred Actions
 

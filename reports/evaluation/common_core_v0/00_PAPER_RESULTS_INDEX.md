@@ -69,6 +69,11 @@ from this file rather than left isolated.
   - [llm_r2_bounded_pg_overlap_dry_run_plan_v1.csv](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/llm_r2_bounded_pg_overlap_dry_run_plan_v1.csv)
   - [llm_r2_bounded_pg_overlap_candidate_slice_v1.csv](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/llm_r2_bounded_pg_overlap_candidate_slice_v1.csv)
   - [llm_r2_bounded_pg_overlap_approval_gate_v1.md](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/llm_r2_bounded_pg_overlap_approval_gate_v1.md)
+- A reviewable LLM-R2 bounded PostgreSQL overlap execution runbook now also exists:
+  - [llm_r2_bounded_pg_overlap_execution_runbook_v1.md](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/llm_r2_bounded_pg_overlap_execution_runbook_v1.md)
+  - [llm_r2_bounded_pg_overlap_command_matrix_v1.csv](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/llm_r2_bounded_pg_overlap_command_matrix_v1.csv)
+  - [llm_r2_bounded_pg_overlap_expected_artifacts_v1.csv](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/llm_r2_bounded_pg_overlap_expected_artifacts_v1.csv)
+  - [llm_r2_bounded_pg_overlap_failure_bucket_mapping_v1.csv](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/llm_r2_bounded_pg_overlap_failure_bucket_mapping_v1.csv)
 - This LLM-R2 packet is preflight scaffolding only.
 - It does not claim generation support, execution support, or `120`-row evidence.
 - A reviewable Stage-1 R-Bot preflight scaffold now also exists:

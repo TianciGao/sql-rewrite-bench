@@ -1,0 +1,9 @@
+failure_point,failure_condition,failure_bucket,remains_in_denominator,counts_as_generated,counts_as_executed,counts_as_exact,notes
+runner_unavailable,runner cannot load or wrapper cannot initialize,generation_failed,yes,no,no,no,route attempt failed before usable candidate sql could be produced
+logical_plan_substrate_failure,logical-plan substrate fails before sql extraction,parse_failed,yes,no,no,no,aligns to route or wrapper failure before candidate execution because parsing or ingestion failed
+input_format_missing,required input format contract or row materialization is missing,parse_failed,yes,no,no,no,input or ingestion contract failed before candidate sql production
+output_sql_extraction_failure,raw output exists but executable output_sql cannot be extracted,generation_failed,yes,no,no,no,route attempted generation but did not produce executable candidate sql
+generated_sql_retention_failure,candidate sql may have existed but retained artifact path is missing or incomplete,unknown_not_recovered,yes,no,no,no,required retained evidence is missing and cannot be safely recovered
+unsupported_case_or_engine,row is explicitly unsupported by route or engine scope,unsupported,yes,no,no,no,unsupported rows remain explicit in denominator accounting
+methodology_boundary,row crosses a route or evaluation boundary that must remain explicit,methodology_boundary,yes,no,no,no,boundary rows must not be normalized away
+unknown_unrecovered_failure,required outcome or evidence is missing and cannot be classified safely,unknown_not_recovered,yes,no,no,no,use only when retained evidence is insufficient for safer classification
