@@ -225,6 +225,13 @@ from this file rather than left isolated.
 - [direct_llm_speedup_summary_v1.md](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/direct_llm_speedup_summary_v1.md)
 - [direct_llm_same_engine_result_card_v1.md](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/direct_llm_same_engine_result_card_v1.md)
 - [direct_llm_same_engine_proposed_row_v1.md](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/direct_llm_same_engine_proposed_row_v1.md)
+- [direct_llm_llm_translate_120_readiness_audit_v1.md](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/direct_llm_llm_translate_120_readiness_audit_v1.md)
+
+### LLM Translate
+
+- No retained Common-core v0 same-engine `120` route packet is indexed yet.
+- Current retained bounded portability-only references are summarized in:
+  - [direct_llm_llm_translate_120_readiness_audit_v1.md](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/direct_llm_llm_translate_120_readiness_audit_v1.md)
 
 ### Bounded Prior-Method Appendix
 
@@ -279,6 +286,11 @@ from this file rather than left isolated.
   - It confirms neither same-engine SQLGlot route is suitable for a `120`-row
     main-table row, and that any bounded recovery would be appendix cleanup
     only rather than a route to main-table eligibility.
+- A retained Direct LLM / LLM Translate 120 readiness audit now exists:
+  - [direct_llm_llm_translate_120_readiness_audit_v1.md](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/direct_llm_llm_translate_120_readiness_audit_v1.md)
+  - It confirms Direct LLM already has retained denominator-aware same-engine
+    route evidence, while LLM Translate remains bounded portability-only and
+    not ready for a Common-core v0 same-engine `120` row.
 - SQLGlot retains two same-engine route-level rows:
   - `sqlglot_optimize_same_dialect`
   - `sqlglot_transpile_same_dialect_noop`
