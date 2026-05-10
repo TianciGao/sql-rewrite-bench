@@ -267,6 +267,18 @@ from this file rather than left isolated.
 
 ## SQLGlot Current Paper-Safe Status
 
+- A retained SQLGlot same-engine readiness audit now exists:
+  - [sqlglot_same_engine_120_readiness_audit_v1.md](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/sqlglot_same_engine_120_readiness_audit_v1.md)
+  - It confirms the two retained SQLGlot same-engine rows are distinct routes
+    with distinct route IDs and distinct paper-facing result labels, but still
+    rely on shared batch generation/execution/timing run roots.
+  - It also confirms both routes remain `appendix_only` under the current
+    governance framing.
+- A retained SQLGlot same-engine failure drilldown now exists:
+  - [sqlglot_same_engine_failure_drilldown_v1.md](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/sqlglot_same_engine_failure_drilldown_v1.md)
+  - It confirms neither same-engine SQLGlot route is suitable for a `120`-row
+    main-table row, and that any bounded recovery would be appendix cleanup
+    only rather than a route to main-table eligibility.
 - SQLGlot retains two same-engine route-level rows:
   - `sqlglot_optimize_same_dialect`
   - `sqlglot_transpile_same_dialect_noop`
@@ -418,6 +430,10 @@ Use this SQLGlot optimize-route framing:
   - [calcite_hep_method_comparison_proposed_row_v1.csv](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/calcite_hep_method_comparison_proposed_row_v1.csv)
 - SQLGlot route audit:
   - [sqlglot_paper_route_audit_v1.csv](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/sqlglot_paper_route_audit_v1.csv)
+- SQLGlot same-engine readiness audit:
+  - [sqlglot_same_engine_120_readiness_audit_v1.csv](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/sqlglot_same_engine_120_readiness_audit_v1.csv)
+- SQLGlot same-engine failure drilldown:
+  - [sqlglot_same_engine_failure_drilldown_v1.csv](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/sqlglot_same_engine_failure_drilldown_v1.csv)
 - SQLGlot transpile_same_dialect_noop result card:
   - [sqlglot_transpile_same_dialect_noop_result_card_v1.csv](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/sqlglot_transpile_same_dialect_noop_result_card_v1.csv)
 - SQLGlot proposed method-comparison row:
