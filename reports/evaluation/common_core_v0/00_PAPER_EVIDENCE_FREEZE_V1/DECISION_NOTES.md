@@ -8,6 +8,12 @@
 - Calcite HEP has `93/120` correctness evidence but not full `120` timing.
 - R-Bot must not be described as `not attempted on 120`; it has a formal `120`
   generation attempt and a PG15 execution/timing subset.
+- Previous preflight-only wording for R-Bot is now superseded and caveated by
+  the reconciliation packet:
+  [r_bot_common_core_120_evidence_reconciliation_v1.md](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/r_bot_common_core_120_evidence_reconciliation_v1.md).
+  The fixed interpretation is mixed-scope retained evidence:
+  formal `120` generation attempt, PG40 generation expansion, PG15 execution
+  and timing subset, and explicit MySQL/Spark canary failure.
 - LearnedRewrite and LLM-R2 do not yet have `120` evidence; their Stage-1
   scaffolds show dependency blockers.
 - SQLSolver and VeriEQL are support/verifier, not rewrite methods for the

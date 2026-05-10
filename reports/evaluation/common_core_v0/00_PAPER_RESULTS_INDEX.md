@@ -24,6 +24,9 @@ from this file rather than left isolated.
   - [00_PAPER_EVIDENCE_FREEZE_V1/RERUN_CAMPAIGN_LEDGER.csv](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/00_PAPER_EVIDENCE_FREEZE_V1/RERUN_CAMPAIGN_LEDGER.csv)
   - [00_PAPER_EVIDENCE_FREEZE_V1/DECISION_NOTES.md](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/00_PAPER_EVIDENCE_FREEZE_V1/DECISION_NOTES.md)
   - [00_PAPER_EVIDENCE_FREEZE_V1/NEXT_ACTIONS.md](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/00_PAPER_EVIDENCE_FREEZE_V1/NEXT_ACTIONS.md)
+- R-Bot common-core `120` evidence reconciliation packet now also exists:
+  - [r_bot_common_core_120_evidence_reconciliation_v1.md](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/r_bot_common_core_120_evidence_reconciliation_v1.md)
+  - [r_bot_common_core_120_evidence_reconciliation_v1.csv](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/r_bot_common_core_120_evidence_reconciliation_v1.csv)
 - Future ChatGPT and Codex sessions should read this freeze folder first before
   proposing new Common-core v0 paper-results or `120`-rerun work.
 - [paper_table_row_admission_policy_v1.md](/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/paper_table_row_admission_policy_v1.md)

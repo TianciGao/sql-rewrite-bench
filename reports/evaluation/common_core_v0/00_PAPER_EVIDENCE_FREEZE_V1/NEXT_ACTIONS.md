@@ -2,7 +2,8 @@
 
 ## Highest-Priority Next Action
 
-Create R-Bot common-core `120` evidence reconciliation packet.
+Make a human recovery-priority decision for R-Bot, LearnedRewrite, and LLM-R2
+now that the retained R-Bot common-core `120` evidence is reconciled.
 
 ## Explicitly Deferred Actions
 
