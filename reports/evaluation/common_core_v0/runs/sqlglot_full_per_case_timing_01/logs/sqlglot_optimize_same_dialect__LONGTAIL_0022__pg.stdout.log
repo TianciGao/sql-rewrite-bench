@@ -1,0 +1,3 @@
+timing completed for sqlglot_optimize_same_dialect__LONGTAIL_0022__pg
+source_runtime_ms=[7.754200138151646, 7.709617959335446, 7.679946022108197]
+rewrite_runtime_ms=[7.0685818791389465, 6.843456998467445, 7.5437449850142]

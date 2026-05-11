@@ -1,0 +1,3 @@
+timing completed for sqlglot_optimize_same_dialect__LONGTAIL_0022__spark
+source_runtime_ms=[72.54438917152584, 74.67716815881431, 99.17085897177458]
+rewrite_runtime_ms=[74.19839384965599, 71.91621395759284, 78.63129116594791]

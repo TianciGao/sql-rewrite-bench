@@ -1,0 +1,3 @@
+timing completed for sqlglot_optimize_same_dialect__PORT_0012__pg__port_exec_only
+source_runtime_ms=[3.378021065145731, 3.4900640603154898, 3.208691952750087]
+rewrite_runtime_ms=[3.7177649792283773, 3.3112410455942154, 3.156285034492612]
