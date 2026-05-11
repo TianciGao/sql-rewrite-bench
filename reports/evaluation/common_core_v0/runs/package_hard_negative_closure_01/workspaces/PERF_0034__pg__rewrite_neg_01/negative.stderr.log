@@ -1,0 +1,7 @@
+注意:  串联删除6个其它对象
+DETAIL:  递归删除 表 perf_0034_pg_neg_hn.item
+递归删除 表 perf_0034_pg_neg_hn.date_dim
+递归删除 表 perf_0034_pg_neg_hn.customer_address
+递归删除 表 perf_0034_pg_neg_hn.store_sales
+递归删除 表 perf_0034_pg_neg_hn.catalog_sales
+递归删除 表 perf_0034_pg_neg_hn.web_sales

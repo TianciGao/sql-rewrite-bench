@@ -1,0 +1,6 @@
+-- DRAFT witness data only; backfilled from existing case-local witness_rows.yaml
+INSERT INTO schools (gsoffered, longitude) VALUES
+  ('north-max', 120.0),
+  ('south-mid', -45.0),
+  ('near-origin', 5.0),
+  ('unknown', NULL);

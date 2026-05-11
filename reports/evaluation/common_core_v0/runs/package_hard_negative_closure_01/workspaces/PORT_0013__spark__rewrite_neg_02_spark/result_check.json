@@ -1,0 +1,11 @@
+{
+  "row_id": "PORT_0013__spark__rewrite_neg_02_spark",
+  "case_id": "PORT_0013",
+  "engine": "spark",
+  "negative_rewrite_id": "rewrite_neg_02_spark",
+  "validation_model": "cross_dialect_reference",
+  "source_reference_engine": "mysql",
+  "exact_match": false,
+  "sorted_match": false,
+  "accepted_as_equivalent": false
+}

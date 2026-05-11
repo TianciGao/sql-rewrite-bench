@@ -1,0 +1,17 @@
+{
+  "status": "ok",
+  "expected_negative_rows": 120,
+  "runnable_negative_rows": 111,
+  "tested_negative_rows": 111,
+  "rejected_negative_rows": 111,
+  "false_accept_rows": 0,
+  "blocked_rows": 9,
+  "needs_human_review_rows": 0,
+  "blocked_reasons": {
+    "not_applicable_source_reference_engine": 9
+  },
+  "rejection_category_breakdown": {
+    "mismatch_rejected": 111,
+    "missing_artifact": 9
+  }
+}

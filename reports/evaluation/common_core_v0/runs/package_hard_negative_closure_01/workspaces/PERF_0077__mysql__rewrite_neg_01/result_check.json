@@ -1,0 +1,11 @@
+{
+  "row_id": "PERF_0077__mysql__rewrite_neg_01",
+  "case_id": "PERF_0077",
+  "engine": "mysql",
+  "negative_rewrite_id": "rewrite_neg_01",
+  "validation_model": "same_engine",
+  "source_reference_engine": "mysql",
+  "exact_match": false,
+  "sorted_match": false,
+  "accepted_as_equivalent": false
+}

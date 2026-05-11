@@ -1,0 +1,7 @@
+注意:  串联删除6个其它对象
+DETAIL:  递归删除 表 perf_0062_pg_neg_hn.store_sales
+递归删除 表 perf_0062_pg_neg_hn.store
+递归删除 表 perf_0062_pg_neg_hn.customer_demographics
+递归删除 表 perf_0062_pg_neg_hn.household_demographics
+递归删除 表 perf_0062_pg_neg_hn.customer_address
+递归删除 表 perf_0062_pg_neg_hn.date_dim

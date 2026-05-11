@@ -1,0 +1,7 @@
+注意:  串联删除6个其它对象
+DETAIL:  递归删除 表 perf_0013_pg_src_hn.customer
+递归删除 表 perf_0013_pg_src_hn.orders
+递归删除 表 perf_0013_pg_src_hn.lineitem
+递归删除 表 perf_0013_pg_src_hn.supplier
+递归删除 表 perf_0013_pg_src_hn.nation
+递归删除 表 perf_0013_pg_src_hn.region
