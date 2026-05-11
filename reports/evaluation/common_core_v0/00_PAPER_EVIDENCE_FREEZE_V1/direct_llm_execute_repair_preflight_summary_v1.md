@@ -1,0 +1,13 @@
+# Direct LLM Execute-and-Repair Preflight Summary
+
+This is preflight only. No LLM calls were made. No repaired SQL was generated. No DB or checker runs were performed.
+
+| denominator_id | planned_rows | original_exact_rows | candidate_rows_expected | candidate_rows_identified | repair_ready_rows | blocked_rows | needs_human_review_rows | missing_source_sql_rows | missing_schema_rows | missing_candidate_sql_rows | missing_failure_feedback_rows | preflight_status | recommended_next_step | notes |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| common_core_v0_40_same_engine_120 | 120 | 94 | 26_from_retained_non_exact_frontier | 26 | 21 | 5 | 0 | 0 | 0 | 0 | 5 | blocked_missing_required_artifacts | Freeze model/prompt/temperature policy, then run one repair attempt only for repair_ready rows; keep blocked preflight rows out of the first repair packet. | No LLM calls, no repaired SQL generation, no DB/checker/timing runs. The retained non-exact frontier is 5 mismatch + 16 execution_failed + 5 preflight_blocked. |
+
+## Interpretation notes
+
+- The retained non-exact frontier reconstructs to 26 rows: 5 mismatches, 16 execution failures, and 5 preflight-blocked rows.
+- The current packet is suitable for an actual Execute-and-Repair run only on the `repair_ready` subset.
+- Blocked rows should not be silently dropped from governance; they should either stay blocked or be revisited with a separate package-artifact remediation decision.

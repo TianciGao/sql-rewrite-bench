@@ -1,0 +1,13 @@
+{
+  "repair_row_id": "direct_llm_repair_002",
+  "case_id": "CONS_0024",
+  "engine": "pg",
+  "schema_or_ddl": "CREATE TABLE emp (empno INTEGER, ename VARCHAR(32), job VARCHAR(32), mgr INTEGER, hiredate DATE, sal DECIMAL(10,2), comm DECIMAL(10,2), deptno INTEGER);\nCREATE TABLE dept (deptno INTEGER, dname VARCHAR(32), loc VARCHAR(32));",
+  "source_sql": "SELECT empno\nFROM emp AS e\nLEFT JOIN dept AS d\n  ON d.deptno = e.deptno\n AND EXISTS (\n   SELECT e2.deptno\n   FROM emp AS e2\n   WHERE e2.deptno = d.deptno\n   GROUP BY e2.deptno\n   HAVING SUM(e2.sal) > 1000000\n );",
+  "first_candidate_sql": "SELECT empno\nFROM emp AS e\nLEFT JOIN dept AS d\n  ON d.deptno = e.deptno\nWHERE EXISTS (\n   SELECT e2.deptno\n   FROM emp AS e2\n   WHERE e2.deptno = d.deptno\n   GROUP BY e2.deptno\n   HAVING SUM(e2.sal) > 1000000\n );",
+  "observed_failure": "{\"outcome_class\": \"mismatch\", \"failure_category\": \"result_mismatch\", \"triage_note\": \"exact_match=false; sorted_match=false\", \"result_check\": {\"execution_status_observed\": \"executed\", \"source_output_path\": \"reports/evaluation/common_core_v0/runs/direct_llm_same_engine_execution_01/workspaces/CONS_0024/pg/direct_llm_same_engine_rewrite/source.tsv\", \"generated_output_path\": \"reports/evaluation/common_core_v0/runs/direct_llm_same_engine_execution_01/workspaces/CONS_0024/pg/direct_llm_same_engine_rewrite/generated.tsv\", \"exact_match\": false, \"sorted_match\": false, \"consistency_check_status\": \"mismatch\", \"result_check_path\": \"reports/evaluation/common_core_v0/runs/direct_llm_same_engine_execution_01/workspaces/CONS_0024/pg/direct_llm_same_engine_rewrite/result_check.json\"}}",
+  "checker_or_execution_context": "{\"result_check_artifact\": \"reports/evaluation/common_core_v0/runs/direct_llm_same_engine_execution_01/workspaces/CONS_0024/pg/direct_llm_same_engine_rewrite/result_check.json\", \"execution_error_artifact\": \"NA_not_applicable\", \"checker_feedback_artifact\": \"reports/evaluation/common_core_v0/runs/direct_llm_same_engine_execution_01/workspaces/CONS_0024/pg/direct_llm_same_engine_rewrite/result_check.json\"}",
+  "output_contract": "Return exactly one complete SQL statement. Do not include markdown. Do not include explanation.",
+  "prohibited_outputs": "No markdown, no explanation, no multiple statements, no prose, no surrounding code fences.",
+  "notes": "Preflight-only prompt input assembled from retained Direct LLM first-pass artifacts with execution/checker context sanitized for credential safety."
+}

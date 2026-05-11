@@ -1,0 +1,13 @@
+{
+  "repair_row_id": "direct_llm_repair_005",
+  "case_id": "PORT_0024",
+  "engine": "mysql",
+  "schema_or_ddl": "CREATE TABLE cards (id INT, istextless INT, isstoryspotlight INT);",
+  "source_sql": "SELECT CAST( SUM( CASE WHEN `istextless` = 0 AND `isstoryspotlight` = 1 THEN 1 ELSE 0 END ) AS DOUBLE ) * 100 / COUNT( `id` ) FROM `cards`",
+  "first_candidate_sql": "SELECT SUM( CASE WHEN `istextless` = 0 AND `isstoryspotlight` = 1 THEN 1 ELSE 0 END ) * 100 / COUNT( `id` ) AS percentage FROM `cards`",
+  "observed_failure": "{\"outcome_class\": \"mismatch\", \"failure_category\": \"result_mismatch\", \"triage_note\": \"exact_match=false; sorted_match=false; portability stress row\", \"result_check\": {\"execution_status_observed\": \"executed\", \"source_output_path\": \"reports/evaluation/common_core_v0/runs/direct_llm_same_engine_execution_01/workspaces/PORT_0024/mysql/direct_llm_same_engine_rewrite/source.tsv\", \"generated_output_path\": \"reports/evaluation/common_core_v0/runs/direct_llm_same_engine_execution_01/workspaces/PORT_0024/mysql/direct_llm_same_engine_rewrite/generated.tsv\", \"exact_match\": false, \"sorted_match\": false, \"consistency_check_status\": \"mismatch\", \"result_check_path\": \"reports/evaluation/common_core_v0/runs/direct_llm_same_engine_execution_01/workspaces/PORT_0024/mysql/direct_llm_same_engine_rewrite/result_check.json\"}}",
+  "checker_or_execution_context": "{\"result_check_artifact\": \"reports/evaluation/common_core_v0/runs/direct_llm_same_engine_execution_01/workspaces/PORT_0024/mysql/direct_llm_same_engine_rewrite/result_check.json\", \"execution_error_artifact\": \"NA_not_applicable\", \"checker_feedback_artifact\": \"reports/evaluation/common_core_v0/runs/direct_llm_same_engine_execution_01/workspaces/PORT_0024/mysql/direct_llm_same_engine_rewrite/result_check.json\"}",
+  "output_contract": "Return exactly one complete SQL statement. Do not include markdown. Do not include explanation.",
+  "prohibited_outputs": "No markdown, no explanation, no multiple statements, no prose, no surrounding code fences.",
+  "notes": "Preflight-only prompt input assembled from retained Direct LLM first-pass artifacts with execution/checker context sanitized for credential safety."
+}
