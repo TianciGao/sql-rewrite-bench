@@ -1,0 +1,20 @@
+{
+  "status": "ok",
+  "manifest_rows": 137,
+  "checker_event_rows": 137,
+  "expected_noop_rows": 72,
+  "expected_optimize_reconstructed_rows": 56,
+  "expected_optimize_port_execution_only_rows": 9,
+  "routes_present": [
+    "sqlglot_optimize_same_dialect",
+    "sqlglot_transpile_same_dialect_noop"
+  ],
+  "checker_status_counts": {
+    "exact": 135,
+    "checker_failed": 2
+  },
+  "timing_ready_counts": {
+    "sqlglot_transpile_same_dialect_noop": "72",
+    "sqlglot_optimize_same_dialect": "63"
+  }
+}

@@ -1,0 +1,7 @@
+Traceback (most recent call last):
+  File "<stdin>", line 135, in run_pg
+  File "/home/tianci_gao/code/sql-rewrite-bench/.venv/lib/python3.12/site-packages/psycopg/cursor.py", line 117, in execute
+    raise ex.with_traceback(None)
+psycopg.errors.SyntaxError: 语法错误 在输入的末尾
+LINE 3:   longitude DOUBLE PRECISION -- conservative numeric choice
+                                                                   ^
