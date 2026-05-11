@@ -1,0 +1,17 @@
+{
+  "status": "ok",
+  "selected_rows": 5,
+  "source_plan_success_count": 5,
+  "rewrite_plan_success_count": 5,
+  "plan_parse_success_count": 5,
+  "outcome_types": [
+    "failure",
+    "regression",
+    "speedup",
+    "tie"
+  ],
+  "delta_classes": {
+    "no_major_plan_delta": 4,
+    "node_count_change": 1
+  }
+}
