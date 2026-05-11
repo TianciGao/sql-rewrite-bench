@@ -1,0 +1,32 @@
+You are repairing a SQL rewrite.
+
+Goal:
+Return one complete SQL statement that is semantically equivalent to the source SQL and executable on the target engine.
+
+Target engine:
+spark
+
+Schema:
+CREATE TABLE account (account_id INT, account_date DATE) USING PARQUET;
+CREATE TABLE loan (account_id INT, duration INT, amount INT) USING PARQUET;
+
+Source SQL:
+SELECT `t1`.`account_id` FROM `loan` AS `t1` INNER JOIN `account` AS `t2` ON `t1`.`account_id` = `t2`.`account_id` WHERE DATE_FORMAT( CAST( `t2`.`account_date` AS DATETIME ) , '%Y' ) = '1993' AND `t1`.`duration` > 12 ORDER BY `t1`.`amount` DESC LIMIT 1
+
+Previous candidate SQL:
+SELECT t1.account_id FROM loan AS t1 INNER JOIN account AS t2 ON t1.account_id = t2.account_id WHERE YEAR(t2.account_date) = 1993 AND t1.duration > 12 ORDER BY t1.amount DESC LIMIT 1
+
+Observed failure:
+{"outcome_class": "execution_failed", "failure_category": "llm_generated_sql_dialect_execution_failure", "triage_note": "unsupported Spark datatype DATETIME; portability stress row", "result_check": {"execution_status_observed": "execution_failed", "consistency_check_status": "not_checked_execution_failed", "error_type": "ParseException", "error_message": "\n[UNSUPPORTED_DATATYPE] Unsupported data type \"DATETIME\". SQLSTATE: 0A000\n== SQL (line 1, position 164) ==\n...T( CAST( `t2`.`account_date` AS DATETIME ) , '%Y' ) = '1993' AND `t1`.`d...\n                                   ^^^^^^^^", "result_check_path": "reports/evaluation/common_core_v0/runs/direct_llm_same_engine_execution_01/workspaces/PORT_0025/spark/direct_llm_same_engine_rewrite/result_check.json"}, "execution_log_excerpt": "Traceback (most recent call last):\n  File \"<stdin>\", line 292, in run_spark_row\n  File \"/home/tianci_gao/code/sql-rewrite-bench/.venv/lib/python3.12/site-packages/pyspark/sql/session.py\", line 1816, in sql\n    return DataFrame(self._jsparkSession.sql(sqlQuery, litArgs), self)\n                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/tianci_gao/code/sql-rewrite-bench/.venv/lib/python3.12/site-packages/py4j/java_gateway.py\", line 1362, in __call__\n    return_value = get_return_value(\n                   ^^^^^^^^^^^^^^^^^\n  File \"/home/tianci_gao/code/sql-rewrite-bench/.venv/lib/python3.12/site-packages/pyspark/errors/exceptions/captured.py\", line 269, in deco\n    raise converted from None\npyspark.errors.exceptions.captured.ParseException: \n[UNSUPPORTED_DATATYPE] Unsupported data type \"DATETIME\". SQLSTATE: 0A000\n== SQL (line 1, position 164) ==\n...T( CAST( `t2`.`account_date` AS DATETIME ) , '%Y' ) = '1993' AND `t1`.`d...\n                                   ^^^^^^^^"}
+
+Checker or execution context:
+{"result_check_artifact": "reports/evaluation/common_core_v0/runs/direct_llm_same_engine_execution_01/workspaces/PORT_0025/spark/direct_llm_same_engine_rewrite/result_check.json", "execution_error_artifact": "reports/evaluation/common_core_v0/runs/direct_llm_same_engine_execution_01/logs/port_0025__spark__direct_llm_same_engine_rewrite.stderr.log", "checker_feedback_artifact": "reports/evaluation/common_core_v0/runs/direct_llm_same_engine_execution_01/workspaces/PORT_0025/spark/direct_llm_same_engine_rewrite/result_check.json"}
+
+Rules:
+- Return exactly one complete SQL statement.
+- Do not include markdown.
+- Do not include explanation.
+- Do not include comments unless required by SQL syntax.
+- Preserve source semantics.
+- Use only tables and columns from the schema.
+- Use syntax supported by the target engine.

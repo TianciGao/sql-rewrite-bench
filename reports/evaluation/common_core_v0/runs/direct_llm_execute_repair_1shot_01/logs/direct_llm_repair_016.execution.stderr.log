@@ -1,0 +1,18 @@
+Traceback (most recent call last):
+  File "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_execute_repair_1shot_01/run_direct_llm_execute_repair_1shot.py", line 548, in run_spark_row
+    spark.sql(stmt).collect()
+    ^^^^^^^^^^^^^^^
+  File "/home/tianci_gao/code/sql-rewrite-bench/.venv/lib/python3.12/site-packages/pyspark/sql/session.py", line 1816, in sql
+    return DataFrame(self._jsparkSession.sql(sqlQuery, litArgs), self)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/tianci_gao/code/sql-rewrite-bench/.venv/lib/python3.12/site-packages/py4j/java_gateway.py", line 1362, in __call__
+    return_value = get_return_value(
+                   ^^^^^^^^^^^^^^^^^
+  File "/home/tianci_gao/code/sql-rewrite-bench/.venv/lib/python3.12/site-packages/pyspark/errors/exceptions/captured.py", line 269, in deco
+    raise converted from None
+pyspark.errors.exceptions.captured.ParseException:
+[PARSE_SYNTAX_ERROR] Syntax error at or near end of input. SQLSTATE: 42601 (line 1, pos 17)
+
+== SQL ==
+-- DRAFT DDL only
+-----------------^^^

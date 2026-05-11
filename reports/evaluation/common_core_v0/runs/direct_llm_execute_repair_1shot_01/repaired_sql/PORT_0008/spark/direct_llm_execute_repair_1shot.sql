@@ -1,0 +1,1 @@
+SELECT t2.admemail1, t2.admemail2 FROM frpm t1 INNER JOIN schools t2 ON t1.cdscode = t2.cdscode WHERE t2.county = 'San Bernardino' AND t2.city = 'San Bernardino' AND CAST(t2.doc AS INT) = 54 AND YEAR(t2.opendate) BETWEEN 2009 AND 2010 AND CAST(t2.soc AS INT) = 62

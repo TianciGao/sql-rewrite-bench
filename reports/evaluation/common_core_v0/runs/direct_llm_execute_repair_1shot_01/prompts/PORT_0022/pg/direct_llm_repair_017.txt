@@ -1,0 +1,32 @@
+You are repairing a SQL rewrite.
+
+Goal:
+Return one complete SQL statement that is semantically equivalent to the source SQL and executable on the target engine.
+
+Target engine:
+pg
+
+Schema:
+CREATE TABLE posts (id INTEGER, answercount INTEGER);
+CREATE TABLE postlinks (id INTEGER, postid INTEGER, creationdate TIMESTAMP);
+
+Source SQL:
+SELECT CAST( COUNT( `t1`.`id` ) AS DOUBLE ) / 12 FROM `postlinks` AS `t1` INNER JOIN `posts` AS `t2` ON `t1`.`postid` = `t2`.`id` WHERE `t2`.`answercount` <= 2 AND DATE_FORMAT( CAST( `t1`.`creationdate` AS DATETIME ) , '%Y' ) = '2010'
+
+Previous candidate SQL:
+SELECT CAST( COUNT( t1.id ) AS DOUBLE ) / 12 FROM postlinks AS t1 INNER JOIN posts AS t2 ON t1.postid = t2.id WHERE t2.answercount <= 2 AND TO_CHAR( t1.creationdate, 'YYYY' ) = '2010'
+
+Observed failure:
+{"outcome_class": "execution_failed", "failure_category": "llm_generated_sql_dialect_execution_failure", "triage_note": "MySQL-style backticks and DATE_FORMAT or DATETIME usage in PostgreSQL; portability stress row", "result_check": {"execution_status_observed": "execution_failed", "consistency_check_status": "not_checked_execution_failed", "error_type": "CalledProcessError", "error_message": "Command '['psql', '-v', 'ON_ERROR_STOP=1', '-X', '-q', '-c', 'SET search_path TO ccv0_direct_llm_port_0022_pg;', '-c', \"COPY (SELECT CAST( COUNT( `t1`.`id` ) AS DOUBLE ) / 12 FROM `postlinks` AS `t1` INNER JOIN `posts` AS `t2` ON `t1`.`postid` = `t2`.`id` WHERE `t2`.`answercount` <= 2 AND DATE_FORMAT( CAST( `t1`.`creationdate` AS DATETIME ) , '%Y' ) = '2010') TO STDOUT WITH (FORMAT CSV, DELIMITER E'\\\\t', NULL 'NULL');\"]' returned non-zero exit status 1.", "result_check_path": "reports/evaluation/common_core_v0/runs/direct_llm_same_engine_execution_01/workspaces/PORT_0022/pg/direct_llm_same_engine_rewrite/result_check.json"}, "execution_log_excerpt": "注意:  模式 \"ccv0_direct_llm_port_0022_pg\" 不存在\n错误:  语法错误 在 \".\" 或附近的\nLINE 1: COPY (SELECT CAST( COUNT( `t1`.`id` ) AS DOUBLE ) / 12 FROM ...\n                                      ^\n注意:  串联删除2个其它对象\nDETAIL:  递归删除 表 ccv0_direct_llm_port_0022_pg.posts\n递归删除 表 ccv0_direct_llm_port_0022_pg.postlinks\nTraceback (most recent call last):\n  File \"<stdin>\", line 151, in run_postgres_row\n  File \"/usr/lib/python3.12/subprocess.py\", line 571, in run\n    raise CalledProcessError(retcode, process.args,\nsubprocess.CalledProcessError: Command '['psql', '-v', 'ON_ERROR_STOP=1', '-X', '-q', '-c', 'SET search_path TO ccv0_direct_llm_port_0022_pg;', '-c', \"COPY (SELECT CAST( COUNT( `t1`.`id` ) AS DOUBLE ) / 12 FROM `postlinks` AS `t1` INNER JOIN `posts` AS `t2` ON `t1`.`postid` = `t2`.`id` WHERE `t2`.`answercount` <= 2 AND DATE_FORMAT( CAST( `t1`.`creationdate` AS DATETIME ) , '%Y' ) = '2010') TO STDOUT WITH (FORMAT CSV, DELIMITER E'\\\\t', NULL 'NULL');\"]' returned non-zero exit status 1."}
+
+Checker or execution context:
+{"result_check_artifact": "reports/evaluation/common_core_v0/runs/direct_llm_same_engine_execution_01/workspaces/PORT_0022/pg/direct_llm_same_engine_rewrite/result_check.json", "execution_error_artifact": "reports/evaluation/common_core_v0/runs/direct_llm_same_engine_execution_01/logs/port_0022__pg__direct_llm_same_engine_rewrite.stderr.log", "checker_feedback_artifact": "reports/evaluation/common_core_v0/runs/direct_llm_same_engine_execution_01/workspaces/PORT_0022/pg/direct_llm_same_engine_rewrite/result_check.json"}
+
+Rules:
+- Return exactly one complete SQL statement.
+- Do not include markdown.
+- Do not include explanation.
+- Do not include comments unless required by SQL syntax.
+- Preserve source semantics.
+- Use only tables and columns from the schema.
+- Use syntax supported by the target engine.

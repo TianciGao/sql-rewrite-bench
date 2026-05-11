@@ -1,0 +1,91 @@
+You are repairing a SQL rewrite.
+
+Goal:
+Return one complete SQL statement that is semantically equivalent to the source SQL and executable on the target engine.
+
+Target engine:
+spark
+
+Schema:
+-- Minimal Spark SQL DDL for PERF_0077
+-- Case-local construction only; not yet validated as an official case.
+
+CREATE TABLE keyword (
+  id INT,
+  keyword STRING
+);
+
+CREATE TABLE movie_info (
+  id INT,
+  info STRING,
+  movie_id INT
+);
+
+CREATE TABLE movie_keyword (
+  id INT,
+  keyword_id INT,
+  movie_id INT
+);
+
+CREATE TABLE title (
+  id INT,
+  production_year INT,
+  title STRING
+);
+
+Source SQL:
+-- case_id: PERF_0077
+-- source_family: JOB/IMDB
+-- original JOB query: 3a.sql
+-- draft_origin: JOB_DRAFT_0003
+SELECT min(t.title) AS movie_title
+FROM keyword AS k,
+     movie_info AS mi,
+     movie_keyword AS mk,
+     title AS t
+WHERE k.keyword like '%sequel%'
+  AND mi.info IN ('Sweden',
+                  'Norway',
+                  'Germany',
+                  'Denmark',
+                  'Swedish',
+                  'Denish',
+                  'Norwegian',
+                  'German')
+  AND t.production_year > 2005
+  AND t.id = mi.movie_id
+  AND t.id = mk.movie_id
+  AND mk.movie_id = mi.movie_id
+  AND k.id = mk.keyword_id;
+
+Previous candidate SQL:
+SELECT min(t.title) AS movie_title
+FROM keyword k
+JOIN movie_keyword mk ON k.id = mk.keyword_id
+JOIN movie_info mi ON mk.movie_id = mi.movie_id
+JOIN title t ON t.id = mi.movie_id
+WHERE k.keyword LIKE '%sequel%'
+  AND mi.info IN ('Sweden',
+                  'Norway',
+                  'Germany',
+                  'Denmark',
+                  'Swedish',
+                  'Denish',
+                  'Norwegian',
+                  'German')
+  AND t.production_year > 2005;
+
+Observed failure:
+{"outcome_class": "execution_failed", "failure_category": "draft_ddl_package_limitation", "triage_note": "Spark schema file was draft or comment-only", "result_check": {"execution_status_observed": "execution_failed", "consistency_check_status": "not_checked_execution_failed", "error_type": "ParseException", "error_message": "\n[PARSE_SYNTAX_ERROR] Syntax error at or near end of input. SQLSTATE: 42601 (line 2, pos 31)\n\n== SQL ==\n-- Minimal Spark SQL DDL for PERF_0077\n-- Case-local construction only\n-------------------------------^^^", "result_check_path": "reports/evaluation/common_core_v0/runs/direct_llm_same_engine_execution_01/workspaces/PERF_0077/spark/direct_llm_same_engine_rewrite/result_check.json"}, "execution_log_excerpt": "Traceback (most recent call last):\n  File \"<stdin>\", line 291, in run_spark_row\n  File \"/home/tianci_gao/code/sql-rewrite-bench/.venv/lib/python3.12/site-packages/pyspark/sql/session.py\", line 1816, in sql\n    return DataFrame(self._jsparkSession.sql(sqlQuery, litArgs), self)\n                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/tianci_gao/code/sql-rewrite-bench/.venv/lib/python3.12/site-packages/py4j/java_gateway.py\", line 1362, in __call__\n    return_value = get_return_value(\n                   ^^^^^^^^^^^^^^^^^\n  File \"/home/tianci_gao/code/sql-rewrite-bench/.venv/lib/python3.12/site-packages/pyspark/errors/exceptions/captured.py\", line 269, in deco\n    raise converted from None\npyspark.errors.exceptions.captured.ParseException: \n[PARSE_SYNTAX_ERROR] Syntax error at or near end of input. SQLSTATE: 42601 (line 2, pos 31)\n\n== SQL ==\n-- Minimal Spark SQL DDL for PERF_0077\n-- Case-local construction only\n-------------------------------^^^"}
+
+Checker or execution context:
+{"result_check_artifact": "reports/evaluation/common_core_v0/runs/direct_llm_same_engine_execution_01/workspaces/PERF_0077/spark/direct_llm_same_engine_rewrite/result_check.json", "execution_error_artifact": "reports/evaluation/common_core_v0/runs/direct_llm_same_engine_execution_01/logs/perf_0077__spark__direct_llm_same_engine_rewrite.stderr.log", "checker_feedback_artifact": "reports/evaluation/common_core_v0/runs/direct_llm_same_engine_execution_01/workspaces/PERF_0077/spark/direct_llm_same_engine_rewrite/result_check.json"}
+
+Rules:
+- Return exactly one complete SQL statement.
+- Do not include markdown.
+- Do not include explanation.
+- Do not include comments unless required by SQL syntax.
+- Preserve source semantics.
+- Use only tables and columns from the schema.
+- Use syntax supported by the target engine.

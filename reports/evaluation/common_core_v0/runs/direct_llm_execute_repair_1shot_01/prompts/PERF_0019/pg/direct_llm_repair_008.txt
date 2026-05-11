@@ -1,0 +1,96 @@
+You are repairing a SQL rewrite.
+
+Goal:
+Return one complete SQL statement that is semantically equivalent to the source SQL and executable on the target engine.
+
+Target engine:
+pg
+
+Schema:
+-- PERF_0019 minimal PostgreSQL schema.
+-- Covers only tables and columns referenced by source.sql and rewrite candidates.
+-- No data rows, load path, execution success, or validation result is implied.
+
+create table customer
+(
+    c_custkey integer not null,
+    primary key (c_custkey)
+);
+
+create table orders
+(
+    o_orderkey integer not null,
+    o_custkey integer,
+    o_comment varchar(79),
+    primary key (o_orderkey)
+);
+
+Source SQL:
+-- PERF_0019 source layer
+-- Source registry row: SRC_001 (TPC-H)
+-- Raw source file: datasets/raw/tpch/TPC-H V3.0.1/dbgen/queries/13.sql
+-- Seed: TPC-H Query 13, Customer Distribution Query
+-- Freeze method: manual freeze because local qgen executable was not used for this batch.
+-- Reference substitution file: datasets/raw/tpch/TPC-H V3.0.1/ref_data/1/subparam_13
+-- Substitutions: :1 = express; :2 = deposits; :n -1 = no row limit.
+-- No execution, equivalence, rewrite, or validation claim is made by this file.
+
+-- TPC-H/TPC-R Customer Distribution Query (Q13)
+select
+    c_count,
+    count(*) as custdist
+from
+    (
+        select
+            c_custkey,
+            count(o_orderkey)
+        from
+            customer left outer join orders on
+                c_custkey = o_custkey
+                and o_comment not like '%express%deposits%'
+        group by
+            c_custkey
+    ) as c_orders (c_custkey, c_count)
+group by
+    c_count
+order by
+    custdist desc,
+    c_count desc;
+
+Previous candidate SQL:
+select
+    c_count,
+    count(*) as custdist
+from
+    (
+        select
+            c_custkey,
+            count(o_orderkey)
+        from
+            customer
+            left join orders on
+                c_custkey = o_custkey
+                and o_comment not like '%express%deposits%'
+        group by
+            c_custkey
+    ) as c_orders
+group by
+    c_count
+order by
+    custdist desc,
+    c_count desc;
+
+Observed failure:
+{"outcome_class": "execution_failed", "failure_category": "llm_generated_sql_dialect_execution_failure", "triage_note": "column alias c_count missing in subquery output", "result_check": {"execution_status_observed": "execution_failed", "consistency_check_status": "not_checked_execution_failed", "error_type": "CalledProcessError", "error_message": "Command '['psql', '-v', 'ON_ERROR_STOP=1', '-X', '-q', '-c', 'SET search_path TO ccv0_direct_llm_perf_0019_pg;', '-c', \"COPY (select\\n    c_count,\\n    count(*) as custdist\\nfrom\\n    (\\n        select\\n            c_custkey,\\n            count(o_orderkey)\\n        from\\n            customer\\n            left join orders on\\n                c_custkey = o_custkey\\n                and o_comment not like '%express%deposits%'\\n        group by\\n            c_custkey\\n    ) as c_orders\\ngroup by\\n    c_count\\norder by\\n    custdist desc,\\n    c_count desc) TO STDOUT WITH (FORMAT CSV, DELIMITER E'\\\\t', NULL 'NULL');\"]' returned non-zero exit status 1.", "result_check_path": "reports/evaluation/common_core_v0/runs/direct_llm_same_engine_execution_01/workspaces/PERF_0019/pg/direct_llm_same_engine_rewrite/result_check.json"}, "execution_log_excerpt": "注意:  模式 \"ccv0_direct_llm_perf_0019_pg\" 不存在\n错误:  字段 \"c_count\" 不存在\nLINE 2:     c_count,\n            ^\nHINT:  也许您想要引用列\"c_orders.count\"。\n注意:  串联删除2个其它对象\nDETAIL:  递归删除 表 ccv0_direct_llm_perf_0019_pg.customer\n递归删除 表 ccv0_direct_llm_perf_0019_pg.orders\nTraceback (most recent call last):\n  File \"<stdin>\", line 153, in run_postgres_row\n  File \"/usr/lib/python3.12/subprocess.py\", line 571, in run\n    raise CalledProcessError(retcode, process.args,\nsubprocess.CalledProcessError: Command '['psql', '-v', 'ON_ERROR_STOP=1', '-X', '-q', '-c', 'SET search_path TO ccv0_direct_llm_perf_0019_pg;', '-c', \"COPY (select\\n    c_count,\\n    count(*) as custdist\\nfrom\\n    (\\n        select\\n            c_custkey,\\n            count(o_orderkey)\\n        from\\n            customer\\n            left join orders on\\n                c_custkey = o_custkey\\n                and o_comment not like '%express%deposits%'\\n        group by\\n            c_custkey\\n    ) as c_orders\\ngroup by\\n    c_count\\norder by\\n    custdist desc,\\n    c_count desc) TO STDOUT WITH (FORMAT CSV, DELIMITER E'\\\\t', NULL 'NULL');\"]' returned non-zero exit status 1."}
+
+Checker or execution context:
+{"result_check_artifact": "reports/evaluation/common_core_v0/runs/direct_llm_same_engine_execution_01/workspaces/PERF_0019/pg/direct_llm_same_engine_rewrite/result_check.json", "execution_error_artifact": "reports/evaluation/common_core_v0/runs/direct_llm_same_engine_execution_01/logs/perf_0019__pg__direct_llm_same_engine_rewrite.stderr.log", "checker_feedback_artifact": "reports/evaluation/common_core_v0/runs/direct_llm_same_engine_execution_01/workspaces/PERF_0019/pg/direct_llm_same_engine_rewrite/result_check.json"}
+
+Rules:
+- Return exactly one complete SQL statement.
+- Do not include markdown.
+- Do not include explanation.
+- Do not include comments unless required by SQL syntax.
+- Preserve source semantics.
+- Use only tables and columns from the schema.
+- Use syntax supported by the target engine.

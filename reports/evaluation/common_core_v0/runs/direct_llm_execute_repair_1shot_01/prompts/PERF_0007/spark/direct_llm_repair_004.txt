@@ -1,0 +1,67 @@
+You are repairing a SQL rewrite.
+
+Goal:
+Return one complete SQL statement that is semantically equivalent to the source SQL and executable on the target engine.
+
+Target engine:
+spark
+
+Schema:
+-- PERF_0007 minimal Spark SQL schema.
+-- Covers only tables and columns referenced by source.sql and rewrite candidates.
+-- No data rows, load path, execution success, or validation result is implied.
+
+create table lineitem
+(
+    l_shipdate DATE,
+    l_discount DECIMAL(15,2),
+    l_quantity DECIMAL(15,2),
+    l_extendedprice DECIMAL(15,2)
+);
+
+Source SQL:
+-- PERF_0007 source layer
+-- Source registry row: SRC_001 (TPC-H)
+-- Raw source file: datasets/raw/tpch/TPC-H V3.0.1/dbgen/queries/6.sql
+-- Seed: TPC-H Query 6, Forecasting Revenue Change Query
+-- Freeze method: manual freeze because local qgen executable was not present.
+-- Reference substitution file: datasets/raw/tpch/TPC-H V3.0.1/ref_data/1/subparam_6
+-- Substitutions: :1 = 1995-01-01, :2 = 0.09, :3 = 25.
+-- Row limit directive: :n -1 means no row limit.
+
+-- TPC-H/TPC-R Forecasting Revenue Change Query (Q6)
+select
+	sum(l_extendedprice * l_discount) as revenue
+from
+	lineitem
+where
+	l_shipdate >= date '1995-01-01'
+	and l_shipdate < date '1995-01-01' + interval '1' year
+	and l_discount between 0.09 - 0.01 and 0.09 + 0.01
+	and l_quantity < 25;
+
+Previous candidate SQL:
+select
+	sum(l_extendedprice * l_discount) as revenue
+from
+	lineitem
+where
+	l_shipdate >= '1995-01-01'
+	and l_shipdate < date_add('1995-01-01', 1)
+	and l_discount between 0.08 and 0.10
+	and l_quantity < 25;
+
+Observed failure:
+{"outcome_class": "mismatch", "failure_category": "result_mismatch", "triage_note": "exact_match=false; sorted_match=false", "result_check": {"execution_status_observed": "executed", "source_output_path": "reports/evaluation/common_core_v0/runs/direct_llm_same_engine_execution_01/workspaces/PERF_0007/spark/direct_llm_same_engine_rewrite/source.tsv", "generated_output_path": "reports/evaluation/common_core_v0/runs/direct_llm_same_engine_execution_01/workspaces/PERF_0007/spark/direct_llm_same_engine_rewrite/generated.tsv", "exact_match": false, "sorted_match": false, "consistency_check_status": "mismatch", "result_check_path": "reports/evaluation/common_core_v0/runs/direct_llm_same_engine_execution_01/workspaces/PERF_0007/spark/direct_llm_same_engine_rewrite/result_check.json"}}
+
+Checker or execution context:
+{"result_check_artifact": "reports/evaluation/common_core_v0/runs/direct_llm_same_engine_execution_01/workspaces/PERF_0007/spark/direct_llm_same_engine_rewrite/result_check.json", "execution_error_artifact": "NA_not_applicable", "checker_feedback_artifact": "reports/evaluation/common_core_v0/runs/direct_llm_same_engine_execution_01/workspaces/PERF_0007/spark/direct_llm_same_engine_rewrite/result_check.json"}
+
+Rules:
+- Return exactly one complete SQL statement.
+- Do not include markdown.
+- Do not include explanation.
+- Do not include comments unless required by SQL syntax.
+- Preserve source semantics.
+- Use only tables and columns from the schema.
+- Use syntax supported by the target engine.
