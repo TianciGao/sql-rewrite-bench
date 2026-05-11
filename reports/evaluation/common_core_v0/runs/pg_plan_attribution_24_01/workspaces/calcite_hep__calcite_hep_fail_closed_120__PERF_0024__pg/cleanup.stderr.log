@@ -1,0 +1,6 @@
+注意:  串联删除5个其它对象
+DETAIL:  递归删除 表 attr24_calcite_hep__calcite_hep_fail_closed_120__perf_0024__.supplier
+递归删除 表 attr24_calcite_hep__calcite_hep_fail_closed_120__perf_0024__.nation
+递归删除 表 attr24_calcite_hep__calcite_hep_fail_closed_120__perf_0024__.partsupp
+递归删除 表 attr24_calcite_hep__calcite_hep_fail_closed_120__perf_0024__.part
+递归删除 表 attr24_calcite_hep__calcite_hep_fail_closed_120__perf_0024__.lineitem

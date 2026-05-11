@@ -1,0 +1,5 @@
+注意:  串联删除4个其它对象
+DETAIL:  递归删除 表 attr24_sqlglot__sqlglot_transpile_same_dialect_noop__perf_00.item
+递归删除 表 attr24_sqlglot__sqlglot_transpile_same_dialect_noop__perf_00.catalog_sales
+递归删除 表 attr24_sqlglot__sqlglot_transpile_same_dialect_noop__perf_00.date_dim
+递归删除 表 attr24_sqlglot__sqlglot_transpile_same_dialect_noop__perf_00.call_center
