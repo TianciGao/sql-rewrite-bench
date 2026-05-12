@@ -1,0 +1,18 @@
+set search_path to attr113_calcite_hep_calcite_hep_fail_closed_120_longtail_001;
+begin read only;
+set local statement_timeout = '60s';
+explain (analyze, buffers, format json)
+SELECT "t0"."title", "t0"."creationdate", "t0"."score", "t0"."viewcount", "t0"."ownerdisplayname"
+FROM (SELECT "posts"."id", "posts"."title", "posts"."creationdate", "posts"."score", "posts"."viewcount", "users"."displayname" AS "ownerdisplayname", DENSE_RANK() OVER (PARTITION BY "posts"."owneruserid" ORDER BY "posts"."score" DESC) AS "postrank"
+FROM "posts"
+INNER JOIN "users" ON "posts"."owneruserid" = "users"."id"
+WHERE "posts"."posttypeid" = 1 AND "posts"."creationdate" >= '2022-01-01') AS "t0"
+INNER JOIN (SELECT "t2"."ownerdisplayname", MAX("t2"."postrank") AS "maxpostrank"
+FROM (SELECT "users0"."displayname" AS "ownerdisplayname", DENSE_RANK() OVER (PARTITION BY "posts0"."owneruserid" ORDER BY "posts0"."score" DESC) AS "postrank"
+FROM "posts" AS "posts0"
+INNER JOIN "users" AS "users0" ON "posts0"."owneruserid" = "users0"."id"
+WHERE "posts0"."posttypeid" = 1 AND "posts0"."creationdate" >= '2022-01-01') AS "t2"
+GROUP BY "t2"."ownerdisplayname") AS "t3" ON "t0"."ownerdisplayname" = "t3"."ownerdisplayname"
+WHERE "t0"."postrank" = "t3"."maxpostrank"
+ORDER BY "t0"."score" DESC, "t0"."viewcount" DESC;
+rollback;

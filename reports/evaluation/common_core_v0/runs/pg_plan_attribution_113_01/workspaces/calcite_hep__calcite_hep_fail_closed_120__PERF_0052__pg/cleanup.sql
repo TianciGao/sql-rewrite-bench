@@ -1,0 +1,1 @@
+drop schema if exists attr113_calcite_hep_calcite_hep_fail_closed_120_perf_0052_pg cascade;

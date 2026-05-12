@@ -1,0 +1,36 @@
+set search_path to attr113_sqlglot_sqlglot_transpile_same_dialect_noop_longtail;
+begin read only;
+set local statement_timeout = '60s';
+explain (analyze, buffers, format json)
+WITH OutboundLinks AS (
+  SELECT
+    pl.PostId,
+    COUNT(*) AS outbound_count
+  FROM PostLinks AS pl
+  GROUP BY
+    pl.PostId
+), InboundLinks AS (
+  SELECT
+    pl.RelatedPostId AS PostId,
+    COUNT(*) AS inbound_count
+  FROM PostLinks AS pl
+  GROUP BY
+    pl.RelatedPostId
+)
+SELECT
+  p.Id AS PostId,
+  p.Title,
+  COALESCE(o.outbound_count, 0) AS outbound_count,
+  COALESCE(i.inbound_count, 0) AS inbound_count,
+  COALESCE(o.outbound_count, 0) + COALESCE(i.inbound_count, 0) AS total_links
+FROM Posts AS p
+LEFT JOIN OutboundLinks AS o
+  ON o.PostId = p.Id
+LEFT JOIN InboundLinks AS i
+  ON i.PostId = p.Id
+WHERE
+  COALESCE(o.outbound_count, 0) + COALESCE(i.inbound_count, 0) > 0
+ORDER BY
+  total_links DESC,
+  p.Id;
+rollback;

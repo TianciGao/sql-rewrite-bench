@@ -1,0 +1,4 @@
+psql:/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/pg_plan_attribution_113_01/workspaces/direct_llm__direct_llm_same_engine_rewrite__CONS_0011__pg/cleanup.sql:1: 注意:  串联删除3个其它对象
+DETAIL:  递归删除 表 attr113_direct_llm_direct_llm_same_engine_rewrite_cons_0011_.emp
+递归删除 表 attr113_direct_llm_direct_llm_same_engine_rewrite_cons_0011_.dept
+递归删除 表 attr113_direct_llm_direct_llm_same_engine_rewrite_cons_0011_.bonus

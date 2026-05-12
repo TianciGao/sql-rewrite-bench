@@ -1,0 +1,1 @@
+drop schema if exists attr113_sqlglot_sqlglot_transpile_same_dialect_noop_perf_007 cascade;
