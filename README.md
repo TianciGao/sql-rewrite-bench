@@ -1,8 +1,8 @@
 # SQL-RewriteBench
 
-SQL-RewriteBench 是一个面向 **语句级 SQL 重写（statement-level SQL rewrite）** 的 benchmark 与 artifact 工作区。它的目标不是提出新的 SQL 改写算法，也不是只做一个“谁更快”的排行榜，而是建立一套能被复验、能解释失败、能区分任务角色的 SQL rewrite 评测协议。
+SQL-RewriteBench 是一个面向 **语句级 SQL 重写（statement-level SQL rewrite）** 的 benchmark 与 artifact 工作区。它的目标是建立一套能被复验、能解释失败、能区分任务角色的 SQL rewrite 评测协议。
 
-一句话概括：
+概括：
 
 > 传统 workload benchmark 多问“SQL 跑得快不快”；SQL-RewriteBench 先问“这次 SQL 改写是否可执行、是否语义一致、是否真的发生了有意义的改写、失败能否被诊断、跨引擎是否仍然成立”，然后才解释速度。
 
