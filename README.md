@@ -34,15 +34,15 @@ SQL-RewriteBench 提供一套可复验的 SQL rewrite 评测协议：在统一�
 ## 1. 先行版内容
 
 | 模块 | 内容 |
-|---|---|
+| :---: | :---: |
 | Common-core v0 | 40 个 case packages |
 | Track A 同引擎展开 | PostgreSQL / MySQL / Spark，共 120 个 same-engine rows |
 | 非主分母 case 索引 | 150 个 Common-core 之外的 case packages，按 staged、backlog/deferred/not-assessed、admitted/frozen/anchor reference 分类记录 |
 | Case-package 契约 | source SQL、positive rewrite、hard negative、schema/data context、checker path、plan/failure artifacts、provenance、taxonomy tags |
 | 角色感知结果 | control、same-engine rewrite、portability transfer、observability support、verifier support 分开记录 |
 | 分母感知指标 | planned、generated/ready、executed、exact、timed 分开统计 |
-| 主要结果表 | Common-core v0 method evidence ledger |
-| 复现入口 | 静态再生成脚本、speedup summary 再生成脚本、reviewer artifact-mode smoke 脚本 |
+| 主要结果表 | Table 12：Common-core v0 method evidence ledger |
+| 复现入口 | Table 12 静态再生成脚本、speedup summary 再生成脚本、reviewer artifact-mode smoke 脚本 |
 
 本先行版聚焦 Common-core v0 的可复验发布，不覆盖全部未来扩展集。SpeedupTransferRate、完整 PORT9 迁移速度评估、完整 denominator-wide NodeAlignmentCoverage 和跨引擎计划归因保留为后续扩展。
 
@@ -60,7 +60,7 @@ engines = PostgreSQL / MySQL / Spark
 ### 2.1 Pool 组成
 
 | Pool | Cases | Same-engine rows | 主要压力 | 作用 |
-|---|---:|---:|---|---|
+| :---: | :---: | :---: | :---: | :---: |
 | PERF | 16 | 48 | 分析型 SQL、性能敏感 rewrite、predicate / aggregation / join pressure | correctness-gated speedup、性能退化、方法对照 |
 | CONS | 9 | 27 | NULL、聚合、重复、多重性、hard negative、semantic boundary | correctness、false accept risk、checker guard |
 | PORT | 9 | 27 | 方言差异、函数/类型/日期/引用风险 | cross-engine execution / consistency |
@@ -121,7 +121,7 @@ LONGTAIL_0022, LONGTAIL_0023, LONGTAIL_0024
 ### 3.1 分类汇总
 
 | 状态 | 数量 | 说明 |
-|---|---:|---|
+| :---: | :---: | :---: |
 | staged / not-yet-admitted drafts | 66 | 已有不同程度的 case package 或证据，但未进入 Common-core v0 主分母 |
 | backlog / deferred / not-assessed | 78 | 保留为后续覆盖、补证据或重新审查材料 |
 | admitted / frozen / anchor references outside CC-v0 | 6 | 历史锚点或已接纳参考包，但不属于当前 Common-core v0 40-case denominator |
@@ -131,7 +131,7 @@ LONGTAIL_0022, LONGTAIL_0023, LONGTAIL_0024
 ### 3.2 按 pool 汇总
 
 | Pool | staged | backlog / deferred / not-assessed | admitted / frozen / anchor | total outside CC-v0 |
-|---|---:|---:|---:|---:|
+| :---: | :---: | :---: | :---: | :---: |
 | PERF | 38 | 45 | 2 | 85 |
 | CONS | 11 | 19 | 1 | 31 |
 | PORT | 16 | 0 | 2 | 18 |
@@ -276,7 +276,7 @@ SQL-RewriteBench 的评测单位是 case package，而不是单条 SQL 字符串
 ### 4.1 结果角色
 
 | 角色 | 说明 | 典型内容 |
-|---|---|---|
+| :---: | :---: | :---: |
 | Control | 校准 source、positive、negative 和 checker | Native / Human positive / Hard negative |
 | Same-engine rewrite | 同一引擎内生成候选 SQL 并检查正确性和性能 | Direct LLM、SQLGlot、Calcite HEP 等 |
 | Portability transfer | 跨方言 / 跨引擎适配 | SQLGlot Transpile、LLM Translate |
@@ -300,7 +300,7 @@ planned → generated / ready → executed → exact → timed
 Table 12 是 Common-core v0 的主要结果表。它汇总当前保留的 same-engine、bounded prior-method 和 route-level evidence，并保留每一行的 scope、分母和 timing 资格。
 
 | 方法 / route | Scope | Planned | Generated / Ready | Executed | Exact | Timed | GM | Regression@20 | Placement |
-|---|---|---:|---|---:|---:|---:|---:|---:|---|
+| :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | Direct LLM original | tri-engine same-engine | 120 | 120 generated；115 ready | 99 | 94 | 94 | 1.0436 | 3.19% | main same-engine evidence |
 | Direct LLM + Repair-1 | tri-engine feedback route | 120 | 120 generated；5 preflight-blocked | 97 | 96 | 96 | 1.0431 | 4.17% | route-level evidence；mixed-source timing |
 | SQLGlot optimize | tri-engine route | 120 | 120 attempted；75 generated | 65 | 63 | 63 | 0.9907 | 1.59% | revised exact63 route |
@@ -697,7 +697,7 @@ legacy case 可能尚未完全符合该结构。具体状态以 case-local artif
 Common-core v0 使用 4 个 coverage axes 加 1 个 rewrite-opportunity 横切层：
 
 | 层 | 作用 |
-|---|---|
+| :---: | :---: |
 | SQL feature | SQL 结构与语义构造，例如 CTE、correlated subquery、outer join、window、date/time function |
 | Plan operator | 执行计划中的 canonical operator family，例如 scan、filter、join、aggregate、sort、limit |
 | Workload realism | 来源和查询风格，例如 benchmark-derived analytical SQL、realistic query style、long-tail structure |
