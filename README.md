@@ -14,6 +14,7 @@ SQL-RewriteBench 是一个面向 **语句级 SQL 重写（statement-level SQL re
 
 - Common-core v0：40 个 case package；
 - Track A 同引擎展开：PostgreSQL / MySQL / Spark，共 120 个 same-engine rows；
+- Common-core 之外的 case package 索引：150 个非主分母 case packages，按 staged、backlog/deferred/not-assessed、admitted/frozen/anchor reference 分类记录；
 - case-package 契约：source SQL、positive rewrite、hard negative、schema/data context、checker path、plan/failure artifacts、provenance、taxonomy tags；
 - 角色感知结果：control、same-engine rewrite、portability transfer、observability support、verifier support 分开记录；
 - 分母感知指标：planned、generated/ready、executed、exact、timed 分开统计；
@@ -68,7 +69,131 @@ LONGTAIL:
 
 ---
 
-## 3. 评测协议
+## 3. Common-core 之外的 case packages
+
+除 Common-core v0 的 40 个主分母 case 外，仓库当前还记录了 150 个非 Common-core v0 主分母 case packages。这些 case 用于后续覆盖扩展、证据补全、失败分析、审查材料和未来版本演进；它们不默认进入 Table 12 的 120-row same-engine 主分母。
+
+当前 registry-derived 分类如下：
+
+| 状态 | 数量 | 说明 |
+|---|---:|---|
+| staged / not-yet-admitted drafts | 66 | 已有不同程度的 case package 或证据，但未进入 Common-core v0 主分母 |
+| backlog / deferred / not-assessed | 78 | 保留为后续覆盖、补证据或重新审查材料 |
+| admitted / frozen / anchor references outside CC-v0 | 6 | 历史锚点或已接纳参考包，但不属于当前 Common-core v0 40-case denominator |
+| registry-marked extended | 0 | 当前 registry 没有额外标记为 extended 的非主分母 case |
+| active candidate | 0 | 当前 registry 没有额外标记为 active Common-core candidate 的非主分母 case |
+
+按 pool 汇总：
+
+| Pool | staged | backlog / deferred / not-assessed | admitted / frozen / anchor | total outside CC-v0 |
+|---|---:|---:|---:|---:|
+| PERF | 38 | 45 | 2 | 85 |
+| CONS | 11 | 19 | 1 | 31 |
+| PORT | 16 | 0 | 2 | 18 |
+| LONGTAIL | 1 | 14 | 1 | 16 |
+| Total | 66 | 78 | 6 | 150 |
+
+### 3.1 Staged / not-yet-admitted drafts
+
+这些 case 已有不同程度的 case package、验证材料或工程证据，但当前不属于 Common-core v0 主分母。
+
+**PERF，38 个**
+
+```text
+PERF_0003, PERF_0004, PERF_0005, PERF_0009, PERF_0010, PERF_0011,
+PERF_0012, PERF_0014, PERF_0015, PERF_0016, PERF_0018, PERF_0020,
+PERF_0021, PERF_0022, PERF_0023, PERF_0025, PERF_0026, PERF_0036,
+PERF_0038, PERF_0043, PERF_0044, PERF_0047, PERF_0050, PERF_0053,
+PERF_0063, PERF_0065, PERF_0066, PERF_0076, PERF_0084, PERF_0086,
+PERF_0090, PERF_0091, PERF_0095, PERF_0096, PERF_0101, PERF_0103,
+PERF_0104, PERF_0106
+```
+
+**CONS，11 个**
+
+```text
+CONS_0002, CONS_0003, CONS_0004, CONS_0006, CONS_0017, CONS_0023,
+CONS_0029, CONS_0031, CONS_0032, CONS_0034, CONS_0040
+```
+
+**PORT，16 个**
+
+```text
+PORT_0006, PORT_0009, PORT_0010, PORT_0011, PORT_0014, PORT_0015,
+PORT_0016, PORT_0017, PORT_0018, PORT_0019, PORT_0020, PORT_0021,
+PORT_0023, PORT_0026, PORT_0027, PORT_0028
+```
+
+**LONGTAIL，1 个**
+
+```text
+LONGTAIL_0002
+```
+
+### 3.2 Backlog / deferred / not-assessed packages
+
+这些 case 保留为后续覆盖、补证据或重新审查材料。它们当前不进入 Common-core v0 主分母。
+
+**PERF，45 个**
+
+```text
+PERF_0027, PERF_0028, PERF_0029, PERF_0030, PERF_0031, PERF_0032,
+PERF_0037, PERF_0039, PERF_0040, PERF_0041, PERF_0042, PERF_0045,
+PERF_0046, PERF_0048, PERF_0049, PERF_0051, PERF_0055, PERF_0057,
+PERF_0058, PERF_0059, PERF_0060, PERF_0061, PERF_0064, PERF_0067,
+PERF_0068, PERF_0069, PERF_0070, PERF_0071, PERF_0072, PERF_0073,
+PERF_0074, PERF_0075, PERF_0078, PERF_0080, PERF_0081, PERF_0083,
+PERF_0085, PERF_0093, PERF_0094, PERF_0097, PERF_0102, PERF_0105,
+PERF_0107, PERF_0108, PERF_0109
+```
+
+**CONS，19 个**
+
+```text
+CONS_0008, CONS_0013, CONS_0014, CONS_0015, CONS_0016, CONS_0018,
+CONS_0019, CONS_0020, CONS_0021, CONS_0022, CONS_0025, CONS_0026,
+CONS_0027, CONS_0028, CONS_0030, CONS_0033, CONS_0035, CONS_0038,
+CONS_0039
+```
+
+**LONGTAIL，14 个**
+
+```text
+LONGTAIL_0003, LONGTAIL_0004, LONGTAIL_0005, LONGTAIL_0007,
+LONGTAIL_0008, LONGTAIL_0009, LONGTAIL_0010, LONGTAIL_0014,
+LONGTAIL_0015, LONGTAIL_0016, LONGTAIL_0018, LONGTAIL_0019,
+LONGTAIL_0020, LONGTAIL_0021
+```
+
+**PORT，0 个**
+
+```text
+none
+```
+
+### 3.3 Admitted / frozen / anchor references outside Common-core v0
+
+这些是历史锚点或已接纳参考包，但不属于当前 Common-core v0 40-case denominator。
+
+```text
+PERF_0001, PERF_0002, CONS_0001, PORT_0001, PORT_0002, LONGTAIL_0001
+```
+
+### 3.4 当前没有额外标记的 extended / candidate
+
+当前 registry 中没有额外标记为 extended 的非主分母 case，也没有额外标记为 active Common-core candidate 的非主分母 case。
+
+```text
+extended: none
+candidate: none
+unclear: none
+```
+
+本节是对 `inventory/case_registry.csv` 的发布版索引整理。若本节与后续 registry 更新出现差异，以 `inventory/case_registry.csv` 为 live case fact source。Common-core / extended 的具体划分规则由 `benchmark_spec/common_core_extended_rules_v0.md` 维护，批次级审查记录见 `benchmark_spec/reviews/`。
+
+---
+
+## 4. 评测协议
 
 SQL-RewriteBench 的评测单位是 case package，而不是单条 SQL 字符串。一个 case package 至少应能回答：
 
@@ -99,7 +224,7 @@ planned → generated / ready → executed → exact → timed
 
 ---
 
-## 4. 主要结果：Table 12
+## 5. 主要结果：Table 12
 
 Table 12 是 Common-core v0 的主要结果表。它汇总当前保留的 same-engine、bounded prior-method 和 route-level evidence，并保留每一行的 scope、分母和 timing 资格。
 
@@ -142,7 +267,7 @@ sed -n '1,120p' \
 
 ---
 
-## 5. 当前实验结论
+## 6. 当前实验结论
 
 当前 Common-core v0 evidence packet 支撑以下结论：
 
@@ -155,7 +280,7 @@ sed -n '1,120p' \
 
 ---
 
-## 6. 仓库结构
+## 7. 仓库结构
 
 推荐从以下目录理解仓库：
 
@@ -179,7 +304,7 @@ reports/evaluation/common_core_v0/scripts/render_table12_method_evidence_ledger_
 
 ---
 
-## 7. 快速复现：artifact smoke
+## 8. 快速复现：artifact smoke
 
 审稿人或新用户可以先运行 artifact mode。该模式只检查保留的 evidence 目录和静态表格再生成，不运行数据库、不发起 LLM 调用、不运行 verifier，也不采集新的 EXPLAIN 或 timing。
 
@@ -198,7 +323,7 @@ Reviewer reproduction artifact-mode passed.
 
 ---
 
-## 8. 完整复现通道
+## 9. 完整复现通道
 
 完整复现通道分为三层：
 
@@ -206,7 +331,7 @@ Reviewer reproduction artifact-mode passed.
 2. 重新用公式计算 speedup summary；
 3. 重新生成 Table 12。
 
-### 8.1 deterministic preflight
+### 9.1 deterministic preflight
 
 先检查 runner 注册和本地工具是否存在：
 
@@ -228,7 +353,7 @@ bash scripts/reproduce_common_core_v0.sh --mode deterministic --preflight --step
 preflight_pass table12: runner and required local tools found
 ```
 
-### 8.2 重跑 deterministic runners
+### 9.2 重跑 deterministic runners
 
 这些命令会根据 step 运行本地 deterministic pipeline。部分 step 可能访问数据库、执行 EXPLAIN 或读取 retained timing inputs。运行前请确认 PostgreSQL / MySQL / Spark、本地数据和环境变量已配置。
 
@@ -262,7 +387,7 @@ bash scripts/reproduce_common_core_v0.sh \
   --steps hard-negative,sqlglot,calcite,pg-plan,direct-llm-timing-retained,rbot-pg15-timing
 ```
 
-### 8.3 speedup summary 数据流
+### 9.3 speedup summary 数据流
 
 Table 12 中的 `Timed / GM / Regression@20` 通过公式脚本再生成。数据流如下：
 
@@ -299,7 +424,7 @@ reports/evaluation/common_core_v0/19_SPEEDUP_SUMMARY_REGENERATION_V1/speedup_sli
 reports/evaluation/common_core_v0/19_SPEEDUP_SUMMARY_REGENERATION_V1/speedup_slice_summary_regeneration_readme_v1.md
 ```
 
-### 8.4 重新生成 Table 12
+### 9.4 重新生成 Table 12
 
 ```bash
 python -B reports/evaluation/common_core_v0/scripts/render_table12_method_evidence_ledger_v1.py --check
@@ -312,7 +437,7 @@ sed -n '1,120p' \
   reports/evaluation/common_core_v0/18_TABLE12_REGENERATION_V1/table12_method_evidence_ledger_regenerated_v1.md
 ```
 
-### 8.5 推荐顺序
+### 9.5 推荐顺序
 
 ```bash
 # 0. artifact smoke，不跑 DB/LLM/verifier/EXPLAIN/new timing
@@ -342,7 +467,7 @@ sed -n '1,120p' \
 
 ---
 
-## 9. 复现验收标准
+## 10. 复现验收标准
 
 ### Table 12 renderer
 
@@ -391,9 +516,9 @@ preflight_pass table12: runner and required local tools found
 
 ---
 
-## 10. 关键文件
+## 11. 关键文件
 
-### 10.1 Table 12 provenance 与 regeneration
+### 11.1 Table 12 provenance 与 regeneration
 
 ```text
 reports/evaluation/common_core_v0/17_TABLE12_ULTIMATE_PROVENANCE_V1/
@@ -411,7 +536,7 @@ reports/evaluation/common_core_v0/18_TABLE12_REGENERATION_V1/
   table12_regeneration_readme_v1.md
 ```
 
-### 10.2 Speedup summary regeneration
+### 11.2 Speedup summary regeneration
 
 ```text
 reports/evaluation/common_core_v0/11_TIMING_OBSERVABILITY_V1/
@@ -424,7 +549,7 @@ reports/evaluation/common_core_v0/19_SPEEDUP_SUMMARY_REGENERATION_V1/
   speedup_slice_summary_regeneration_readme_v1.md
 ```
 
-### 10.3 Static recompute audit
+### 11.3 Static recompute audit
 
 ```text
 reports/evaluation/common_core_v0/16_STATIC_RECOMPUTE_AUDIT_V1/
@@ -435,7 +560,7 @@ reports/evaluation/common_core_v0/16_STATIC_RECOMPUTE_AUDIT_V1/
   static_recompute_readme_v1.md
 ```
 
-### 10.4 Reviewer reproduction outputs
+### 11.4 Reviewer reproduction outputs
 
 ```text
 reports/evaluation/common_core_v0/REVIEWER_REPRODUCTION_V1/
@@ -452,7 +577,7 @@ reports/evaluation/common_core_v0/REVIEWER_REPRODUCTION_V1/
 
 ---
 
-## 11. Case package 契约
+## 12. Case package 契约
 
 一个较完整的 case package 通常包含：
 
@@ -496,7 +621,7 @@ legacy case 可能尚未完全符合该结构。具体状态以 case-local artif
 
 ---
 
-## 12. 4+1 taxonomy
+## 13. 4+1 taxonomy
 
 Common-core v0 使用 4 个 coverage axes 加 1 个 rewrite-opportunity 横切层：
 
@@ -512,7 +637,7 @@ taxonomy 用于 benchmark characterization 和 failure slicing，不用于方法
 
 ---
 
-## 13. 先行版范围
+## 14. 先行版范围
 
 当前先行版的范围如下：
 
@@ -530,7 +655,7 @@ taxonomy 用于 benchmark characterization 和 failure slicing，不用于方法
 
 ---
 
-## 14. 新用户阅读顺序
+## 15. 新用户阅读顺序
 
 第一次接触本仓库，建议阅读：
 
@@ -560,7 +685,7 @@ reports/evaluation/common_core_v0/19_SPEEDUP_SUMMARY_REGENERATION_V1/
 
 ---
 
-## 15. 维护规则
+## 16. 维护规则
 
 更新 artifact 或复现包时，请遵守以下规则：
 
@@ -597,7 +722,7 @@ git diff --cached --name-only | grep -E '^(inventory/|benchmark_spec/|docs/EXECU
 
 ---
 
-## 16. 摘要
+## 17. 摘要
 
 SQL-RewriteBench 以 case package 为最小单位，以 correctness 为门槛，以 failure visibility 和 denominator-aware evidence ledger 为核心，提供一个可复验、可诊断、可扩展的 SQL rewrite benchmark。
 
