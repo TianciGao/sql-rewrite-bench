@@ -6,8 +6,6 @@ SQL-RewriteBench 是一个面向 **语句级 SQL 重写（statement-level SQL re
 
 > 传统 workload benchmark 多问“SQL 跑得快不快”；SQL-RewriteBench 先问“这次 SQL 改写是否可执行、是否语义一致、是否真的发生了有意义的改写、失败能否被诊断、跨引擎是否仍然成立”，然后才解释速度。
 
-当前分支的重点是 **Common-core v0 40-case paper artifact / reproduction bundle**。它面向论文第 8–10 节和附录的结果复现，尤其是：Common-core v0 分母、taxonomy 覆盖、hard-negative guardrail、candidate failure accounting、correctness-gated speedup slices、Table 12 denominator-aware method evidence ledger，以及 reviewer-facing artifact reproduction path。
-
 ---
 
 ## 1. 项目当前定位
