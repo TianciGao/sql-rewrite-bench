@@ -1,0 +1,21 @@
+Common-core v0 deterministic reproduction
+timestamp_utc=2026-05-12T20:41:52Z
+repo_root=/home/tianci_gao/code/sql-rewrite-bench
+boundary=no LLM/API, no verifier, no PORT9; DB/timing only with --execute
+
+Deterministic mode action: execute
+Selected steps: rbot-pg15-timing
+Boundary: no LLM/API calls, no verifier tools, no PORT9.
+executing rbot-pg15-timing: bash reports/evaluation/common_core_v0/runs/r_bot_pg15_timing_expansion_02/run_manual_r_bot_pg15_timing.sh
+Human-run only.
+Codex must not execute this script.
+This timing package targets the 15 R-Bot PG rows that already passed match_exact execution validity in the PG40 expansion path.
+It does not create any leaderboard or method-comparison summary.
+PostgreSQL env loaded:
+  PGHOST=172.17.160.1
+  PGPORT=5432
+  PGDATABASE=postgres
+  PGUSER=postgres
+wrote /home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/r_bot_pg15_timing_expansion_02/run_results.json
+executed_pass rbot-pg15-timing: exit_code=0
+Output directory: reports/evaluation/common_core_v0/REVIEWER_REPRODUCTION_V1/deterministic
