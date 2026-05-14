@@ -41,8 +41,8 @@ SQL-RewriteBench 提供一套可复验的 SQL rewrite 评测协议：在统一�
 | Case-package 契约 | source SQL、positive rewrite、hard negative、schema/data context、checker path、plan/failure artifacts、provenance、taxonomy tags |
 | 角色感知结果 | control、same-engine rewrite、portability transfer、observability support、verifier support 分开记录 |
 | 分母感知指标 | planned、generated/ready、executed、exact、timed 分开统计 |
-| 主要结果表 | Table 12：Common-core v0 method evidence ledger |
-| 复现入口 | Table 12 静态再生成脚本、speedup summary 再生成脚本、reviewer artifact-mode smoke 脚本 |
+| 主要结果表 | Common-core v0 method evidence ledger |
+| 复现入口 | 静态再生成脚本、speedup summary 再生成脚本、reviewer artifact-mode smoke 脚本 |
 
 本先行版聚焦 Common-core v0 的可复验发布，不覆盖全部未来扩展集。SpeedupTransferRate、完整 PORT9 迁移速度评估、完整 denominator-wide NodeAlignmentCoverage 和跨引擎计划归因保留为后续扩展。
 
