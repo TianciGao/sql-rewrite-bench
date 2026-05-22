@@ -1,0 +1,6 @@
+注意:  串联删除5个其它对象
+DETAIL:  递归删除 表 perf_0082_validation.company_type
+递归删除 表 perf_0082_validation.info_type
+递归删除 表 perf_0082_validation.movie_companies
+递归删除 表 perf_0082_validation.movie_info
+递归删除 表 perf_0082_validation.title

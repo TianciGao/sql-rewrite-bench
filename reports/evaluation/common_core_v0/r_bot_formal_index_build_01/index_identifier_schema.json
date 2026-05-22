@@ -1,0 +1,120 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "R-Bot Formal Chroma Index Identifier v1",
+  "type": "object",
+  "required": [
+    "index_id",
+    "build_timestamp",
+    "corpus_artifact_uri",
+    "corpus_sha256",
+    "expected_zip_filename",
+    "extraction_contract_version",
+    "embedding_model",
+    "embedding_provider_base_url_family",
+    "rule_vector_width",
+    "total_dimension",
+    "retrieval_top_k",
+    "reranking_mode",
+    "rrf_k",
+    "similarity_threshold_policy",
+    "chroma_collection_name",
+    "index_directory",
+    "index_file_hashes",
+    "build_script_command",
+    "status"
+  ],
+  "properties": {
+    "index_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "build_timestamp": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "corpus_artifact_uri": {
+      "type": "string"
+    },
+    "corpus_sha256": {
+      "type": "string"
+    },
+    "expected_zip_filename": {
+      "type": "string"
+    },
+    "extraction_contract_version": {
+      "type": "string"
+    },
+    "embedding_model": {
+      "type": "string"
+    },
+    "embedding_provider_base_url_family": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "rule_vector_width": {
+      "type": "integer"
+    },
+    "total_dimension": {
+      "type": "integer"
+    },
+    "retrieval_top_k": {
+      "type": "integer"
+    },
+    "reranking_mode": {
+      "type": "string"
+    },
+    "rrf_k": {
+      "type": "integer"
+    },
+    "similarity_threshold": {},
+    "similarity_threshold_policy": {
+      "type": "string"
+    },
+    "chroma_collection_name": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "index_directory": {
+      "type": "string"
+    },
+    "index_file_hashes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "path",
+          "sha256",
+          "size_bytes"
+        ],
+        "properties": {
+          "path": {
+            "type": "string"
+          },
+          "sha256": {
+            "type": "string"
+          },
+          "size_bytes": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "build_script_command": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "status": {
+      "type": "string"
+    }
+  }
+}

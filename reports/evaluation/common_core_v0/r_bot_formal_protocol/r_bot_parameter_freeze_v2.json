@@ -1,0 +1,188 @@
+{
+  "denominator_id": "common_core_v0_40_same_engine_120",
+  "method_id": "r_bot",
+  "route_id": "r_bot_same_engine_rewrite",
+  "freeze_status": "dual_config_freeze_with_explicit_gate_blockers",
+  "current_benchmark_ready": false,
+  "historical_prior_method_pg10_reuse_allowed": false,
+  "paper_parameter_source": {
+    "source_type": "task_supplied_paper_facts",
+    "facts_used": [
+      "R-Bot(GPT-4) uses gpt-4o",
+      "R-Bot(GPT-3.5) uses gpt-3.5-turbo-0125",
+      "default temperature = 0.1",
+      "retrieval top-k = 10",
+      "RRF parameter default = 60",
+      "embedding candidate = text-embedding-3-small",
+      "paper timing uses five executions and averages after excluding highest and lowest"
+    ]
+  },
+  "paper_faithful_config": {
+    "status": "paper_parameters_extracted_not_yet_runtime_attested",
+    "model_config": {
+      "model_variants": {
+        "r_bot_gpt4": "gpt-4o",
+        "r_bot_gpt35": "gpt-3.5-turbo-0125"
+      },
+      "temperature": 0.1,
+      "top_p": null,
+      "top_p_status": "not_stated_in_supplied_paper_facts",
+      "max_tokens": null,
+      "max_tokens_status": "not_stated_in_supplied_paper_facts",
+      "candidate_count": null,
+      "candidate_count_status": "not_stated_in_supplied_paper_facts",
+      "feedback_rounds": null,
+      "feedback_rounds_status": "not_stated_in_supplied_paper_facts",
+      "provider_policy": {
+        "provider_family": "openai_compatible_or_paper_runtime_equivalent",
+        "provider_name": null,
+        "provider_name_status": "not_stated_in_supplied_paper_facts",
+        "base_url": null,
+        "base_url_status": "not_stated_in_supplied_paper_facts"
+      }
+    },
+    "retrieval_parameters": {
+      "retrieval_backend": "paper_r_bot_retrieval",
+      "top_k": 10,
+      "top_k_status": "frozen_from_supplied_paper_facts",
+      "reranking_mode": "rrf",
+      "reranking_mode_status": "frozen_from_supplied_paper_facts",
+      "rrf_k": 60,
+      "rrf_k_status": "frozen_from_supplied_paper_facts",
+      "similarity_threshold": null,
+      "similarity_threshold_status": "not_stated_in_supplied_paper_facts",
+      "embedding_model_candidate": {
+        "value": "text-embedding-3-small",
+        "status": "consistent_with_repo_extraction"
+      }
+    },
+    "timing_note": {
+      "paper_timing_recipe": "five executions and average after excluding highest and lowest",
+      "changes_current_benchmark_protocol": false
+    }
+  },
+  "benchmark_common_config": {
+    "status": "benchmark_policy_proposed_not_gate_opening",
+    "policy_basis": "align external LLM generation settings to Direct LLM same-engine generation unless a documented method exception is approved; retain paper retrieval top_k unless justified otherwise",
+    "denominator_id": "common_core_v0_40_same_engine_120",
+    "route_id": "r_bot_same_engine_rewrite",
+    "model_config": {
+      "model_name": "gpt-4o-mini",
+      "model_policy_basis": "align_to_current_direct_llm_same_engine_generation_01_unless_documented_method_exception_is_approved",
+      "provider_policy": {
+        "provider_family": "openai_compatible",
+        "provider_name": "api.gptsapi.net",
+        "base_url": "https://api.gptsapi.net/v1",
+        "exact_provider_requirement": "provider name must be logged in retained run artifacts without secrets",
+        "base_url_policy": "exact base_url or endpoint family must be logged in retained run artifacts without secrets",
+        "exception_rule": "any provider/model/base_url deviation requires a documented benchmark-side exception before the run"
+      },
+      "temperature": 0,
+      "top_p": 1,
+      "max_tokens": 2048,
+      "candidate_count": 1,
+      "feedback_rounds": 0,
+      "seed_policy": "record if available; otherwise leave explicit null"
+    },
+    "retrieval_parameters": {
+      "retrieval_backend": "chroma_backed_retrieval",
+      "retrieval_corpus_family": [
+        "LLM4Rewrite knowledge/rule assets",
+        "stackoverflow-rewrite-embed.zip"
+      ],
+      "top_k": 10,
+      "top_k_status": "frozen_from_paper_default_retained_for_benchmark_common",
+      "top_k_change_rule": "do not change away from paper value without a documented benchmark-side justification",
+      "reranking_mode": "rrf",
+      "reranking_mode_status": "frozen_from_paper_default_retained_for_benchmark_common",
+      "rrf_k": 60,
+      "rrf_k_status": "frozen_from_paper_default_retained_for_benchmark_common",
+      "similarity_threshold": null,
+      "similarity_threshold_status": "still_blocked_not_recovered_from_paper_or_repo_extraction",
+      "embedding_model_candidate": {
+        "value": "text-embedding-3-small",
+        "status": "consistent_with_repo_extraction_but_rebuild_time_attestation_still_required"
+      },
+      "selection_rule": "actual run must log retrieval mode, top_k, rrf_k if used, threshold if any, selected rules, and retrieval trace"
+    },
+    "timing_policy": {
+      "policy_source": "COMMON_CORE_V0_EVALUATION_PROTOCOL remains controlling unless explicitly changed",
+      "paper_timing_recipe_recorded_only": true
+    }
+  },
+  "retry_policy": {
+    "allowed_retry_class": "infrastructure_only",
+    "allowed_examples": [
+      "transient network failure",
+      "provider timeout",
+      "rate limit backoff"
+    ],
+    "forbidden": [
+      "manual semantic fixes",
+      "manual prompt rewriting after row inspection",
+      "manual SQL editing",
+      "manual retrieved-demo swapping",
+      "case-specific rule injection"
+    ]
+  },
+  "prompt_demo_policy": {
+    "status": "policy_shape_defined_but_not_benchmark_frozen",
+    "prompt_contract": {
+      "sql_only_output": true,
+      "single_statement_only": true,
+      "same_engine_only": true,
+      "forbid_markdown_fences": true,
+      "forbid_explanations": true,
+      "forbid_ddl_dml": true,
+      "preserve_semantics": true
+    },
+    "demo_constraints": [
+      "no ad hoc corpus change after target inspection",
+      "no case-specific manual demo injection",
+      "no manual override of retrieved examples after inspection",
+      "no reuse of benchmark-produced generated SQL as retrieval demos"
+    ]
+  },
+  "rule_vector_alignment_policy": {
+    "expected_rule_vector_dimension": 100,
+    "current_status": "formal_policy_frozen_implementation_still_blocked",
+    "freeze_rule": "embedding dimension, rule-vector dimension, and retrieval index dimension must match under a deterministic documented policy",
+    "forbidden": "no exploratory patching in a benchmark-facing run",
+    "failure_rule": "dimension mismatch blocks the row; it must not be silently patched during benchmark evidence generation"
+  },
+  "generated_sql_extraction_policy": {
+    "extract_single_sql_statement_only": true,
+    "prefer_single_select_statement": true,
+    "strip_markdown_fences_if_present": true,
+    "fail_if_multiple_statements": true,
+    "fail_if_non_sql_or_empty": true,
+    "fail_if_ddl_or_data_changing_statement": true,
+    "retain_raw_response_separately": true
+  },
+  "blockers_closed_by_v2": [
+    "paper-faithful model identities are now explicit",
+    "paper-faithful temperature is now explicit",
+    "retrieval top_k is now explicit as 10",
+    "retrieval reranking mode is now explicit as rrf",
+    "retrieval rrf_k is now explicit as 60",
+    "embedding model candidate is now explicit as text-embedding-3-small and is consistent with repo extraction",
+    "benchmark-common versus paper-faithful parameter separation is now explicit"
+  ],
+  "blocked_items_before_current_evidence": [
+    "exact similarity threshold or explicit none remains unresolved",
+    "exact rebuild-time embedding provider/base_url identity must still be attested in retained run artifacts",
+    "rule-vector alignment must be realized through a retained rebuilt formal index rather than exploratory patch behavior",
+    "contamination guard must be attested in run artifacts",
+    "artifact contract must be satisfied on a formal denominator-aware run",
+    "current_benchmark_gate_ready must become true"
+  ],
+  "sources": [
+    "reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_01/run_results.json",
+    "reports/evaluation/common_core_v0/runs/r_bot_pg1_recovery_canary_01/run_results.json",
+    "reports/evaluation/common_core_v0/r_bot_formal_substrate_freeze_01/formal_retrieval_config_extracted_v1.json",
+    "reports/evaluation/common_core_v0/r_bot_formal_substrate_freeze_01/formal_retrieval_config_v2.json",
+    "reports/evaluation/common_core_v0/r_bot_formal_substrate_freeze_01/formal_gate_status_v3.md",
+    "benchmark_spec/COMMON_CORE_V0_EVALUATION_PROTOCOL.md",
+    "task-supplied-paper-derived-facts"
+  ]
+}

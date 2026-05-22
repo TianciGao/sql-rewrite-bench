@@ -1,0 +1,16 @@
+{
+  "run_id": "controls_v0_fresh_source_positive_01",
+  "method_id": "controls",
+  "method_role": "controls",
+  "is_leaderboard_method": false,
+  "git_commit": "6fbe5d8a41367692c2f6ce2cf5c0296d5ec8e009",
+  "denominator_id": "common_core_v0_40",
+  "attempted_cases": 40,
+  "artifact_mode": "fresh_execution_partial_controls",
+  "route_scope": "native_source_and_human_positive_only",
+  "artifact_paths": {
+    "run_event_long": "reports/evaluation/common_core_v0/runs/controls_v0_fresh_source_positive_01/run_event_long.csv",
+    "controls_summary": "reports/evaluation/common_core_v0/runs/controls_v0_fresh_source_positive_01/controls_summary.csv",
+    "validation_report": "reports/evaluation/common_core_v0/runs/controls_v0_fresh_source_positive_01/validation_report.json"
+  }
+}

@@ -1,0 +1,49 @@
+Error parsing SQL query.
+Error parsing SQL query.
+Error parsing SQL query: Expecting ). Line 1, Col: 21.
+  SELECT CAST( SUM( `[4mt2[0m`.`gender` = 'F' ) AS DOUBLE ) * 100 / COUNT( `t2`.`client_id` ) FROM `district` AS `t1` INNER JOIN 
+Error parsing SQL query: Expecting ). Line 1, Col: 21.
+  SELECT CAST( SUM( `[4mt2[0m`.`gender` = 'F' ) AS DOUBLE ) * 100 / COUNT( `t2`.`client_id` ) FROM `district` AS `t1` INNER JOIN 
+Error parsing SQL query.
+Error parsing SQL query.
+Error while parsing SQL query: Expecting ). Line 1, Col: 21.
+  SELECT CAST( SUM( `[4mt2[0m`.`gender` = 'F' ) AS DOUBLE ) * 100 / COUNT( `t2`.`client_id` ) FROM `district` AS `t1` INNER JOIN 
+Error parsing SQL query.
+Error parsing SQL query: Expecting ). Line 1, Col: 21.
+  SELECT CAST( SUM( `[4mt2[0m`.`gender` = 'F' ) AS DOUBLE ) * 100 / COUNT( `t2`.`client_id` ) FROM `district` AS `t1` INNER JOIN 
+Error parsing SQL query.
+Error parsing SQL query: Expecting ). Line 1, Col: 21.
+  SELECT CAST( SUM( `[4mt2[0m`.`gender` = 'F' ) AS DOUBLE ) * 100 / COUNT( `t2`.`client_id` ) FROM `district` AS `t1` INNER JOIN 
+Error parsing SQL query: Expecting ). Line 1, Col: 21.
+  SELECT CAST( SUM( `[4mt2[0m`.`gender` = 'F' ) AS DOUBLE ) * 100 / COUNT( `t2`.`client_id` ) FROM `district` AS `t1` INNER JOIN 
+Error parsing SQL query: Expecting ). Line 1, Col: 21.
+  SELECT CAST( SUM( `[4mt2[0m`.`gender` = 'F' ) AS DOUBLE ) * 100 / COUNT( `t2`.`client_id` ) FROM `district` AS `t1` INNER JOIN 
+Error parsing SQL query.
+Error parsing SQL query: Expecting ). Line 1, Col: 21.
+  SELECT CAST( SUM( `[4mt2[0m`.`gender` = 'F' ) AS DOUBLE ) * 100 / COUNT( `t2`.`client_id` ) FROM `district` AS `t1` INNER JOIN 
+Error parsing SQL query: Expecting ). Line 1, Col: 21.
+  SELECT CAST( SUM( `[4mt2[0m`.`gender` = 'F' ) AS DOUBLE ) * 100 / COUNT( `t2`.`client_id` ) FROM `district` AS `t1` INNER JOIN 
+Error parsing SQL query: Expecting ). Line 1, Col: 21.
+  SELECT CAST( SUM( `[4mt2[0m`.`gender` = 'F' ) AS DOUBLE ) * 100 / COUNT( `t2`.`client_id` ) FROM `district` AS `t1` INNER JOIN 
+Error parsing SQL query: Expecting ). Line 1, Col: 21.
+  SELECT CAST( SUM( `[4mt2[0m`.`gender` = 'F' ) AS DOUBLE ) * 100 / COUNT( `t2`.`client_id` ) FROM `district` AS `t1` INNER JOIN 
+Error parsing SQL query: Expecting ). Line 1, Col: 21.
+  SELECT CAST( SUM( `[4mt2[0m`.`gender` = 'F' ) AS DOUBLE ) * 100 / COUNT( `t2`.`client_id` ) FROM `district` AS `t1` INNER JOIN 
+Error parsing SQL query: Expecting ). Line 1, Col: 21.
+  SELECT CAST( SUM( `[4mt2[0m`.`gender` = 'F' ) AS DOUBLE ) * 100 / COUNT( `t2`.`client_id` ) FROM `district` AS `t1` INNER JOIN 
+Error parsing SQL query.
+Error parsing SQL query.
+Error parsing SQL query: Expecting ). Line 1, Col: 21.
+  SELECT CAST( SUM( `[4mt2[0m`.`gender` = 'F' ) AS DOUBLE ) * 100 / COUNT( `t2`.`client_id` ) FROM `district` AS `t1` INNER JOIN 
+Error parsing SQL query: Expecting ). Line 1, Col: 21.
+  SELECT CAST( SUM( `[4mt2[0m`.`gender` = 'F' ) AS DOUBLE ) * 100 / COUNT( `t2`.`client_id` ) FROM `district` AS `t1` INNER JOIN 
+Error parsing SQL query: Expecting ). Line 1, Col: 21.
+  SELECT CAST( SUM( `[4mt2[0m`.`gender` = 'F' ) AS DOUBLE ) * 100 / COUNT( `t2`.`client_id` ) FROM `district` AS `t1` INNER JOIN 
+Error parsing SQL query.
+Error parsing SQL query: Expecting ). Line 1, Col: 21.
+  SELECT CAST( SUM( `[4mt2[0m`.`gender` = 'F' ) AS DOUBLE ) * 100 / COUNT( `t2`.`client_id` ) FROM `district` AS `t1` INNER JOIN 
+Error parsing SQL query.
+Error parsing SQL query: Expecting ). Line 1, Col: 21.
+  SELECT CAST( SUM( `[4mt2[0m`.`gender` = 'F' ) AS DOUBLE ) * 100 / COUNT( `t2`.`client_id` ) FROM `district` AS `t1` INNER JOIN 
+Error parsing SQL query: Expecting ). Line 1, Col: 21.
+  SELECT CAST( SUM( `[4mt2[0m`.`gender` = 'F' ) AS DOUBLE ) * 100 / COUNT( `t2`.`client_id` ) FROM `district` AS `t1` INNER JOIN 

@@ -1,0 +1,19 @@
+{
+  "command": "pg-check",
+  "cwd": "/home/tianci_gao/code/sql-rewrite-bench",
+  "ok": true,
+  "ran_at_utc": "2026-05-08T10:40:11+00:00",
+  "report_path": "reports/cli/pg-check.json",
+  "returncode": 0,
+  "stderr": "",
+  "stdout": "PostgreSQL env loaded:\n  PGHOST=172.17.160.1\n  PGPORT=5432\n  PGDATABASE=postgres\n  PGUSER=postgres\n ?column? \n----------\n        1\n(1 row)\n\n",
+  "subprocess_argv": [
+    "bash",
+    "scripts/check_postgres.sh"
+  ],
+  "visible": {
+    "MYSQL_HOST": false,
+    "PGHOST": true,
+    "SPARK_LOCAL_IP": false
+  }
+}

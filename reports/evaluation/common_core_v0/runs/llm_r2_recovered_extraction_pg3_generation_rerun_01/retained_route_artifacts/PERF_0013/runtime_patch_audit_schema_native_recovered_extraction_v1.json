@@ -1,0 +1,15 @@
+{
+  "execution_mode_enabled": true,
+  "local_guard_strategy": "first_select_or_with_then_strip_trailing_source_comments_v1",
+  "original_route_evidence_unchanged": true,
+  "patch_changes_content": true,
+  "patch_rewriter_rule_present": true,
+  "patch_strategy": "preserve_first_matched_select_or_with_and_stop_at_source_comment_boundary_v1",
+  "preserved_first_sql_line_patch_applied": true,
+  "rewriter_patch_changed_content": true,
+  "route_id": "llm_r2_recovered_extraction_route_v1",
+  "separate_artifact_family_only": true,
+  "source_rewriter_path": "/tmp/rewritebench_llmr2_audit/LLM-R2/src/rewriter.py",
+  "staged_runtime_patch_target": "/tmp/rewritebench_llmr2_recovered_extraction_route_v1/PERF_0013/runtime_root_recovered_extraction_v1/src/rewriter.py",
+  "write_generated_sql_requires_leading_select_or_with": true
+}

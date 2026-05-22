@@ -1,0 +1,27 @@
+DROP SCHEMA
+CREATE SCHEMA
+SET
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+SET
+INSERT 0 2
+INSERT 0 2
+INSERT 0 2
+INSERT 0 2
+INSERT 0 2
+SET
+   s_name    |   s_address    
+-------------+----------------
+ Supplier#10 | Brazil address
+(1 row)
+
+SET
+   s_name    |   s_address    
+-------------+----------------
+ Supplier#10 | Brazil address
+(1 row)
+
+DROP SCHEMA

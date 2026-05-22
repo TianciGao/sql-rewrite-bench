@@ -1,0 +1,19 @@
+# SQLGlot Full Per-Case Timing Gap Summary v1
+
+This is preflight only. No DB/checker/timing/LLM/verifier/EXPLAIN run was performed.
+
+SQLGlot routes remain route-separated. `sqlglot_combined_same_engine_240` is appendix/diagnostic only and not a main timing denominator.
+
+## Table
+
+| gap_id | route_id | affected_rows | gap_type | current_status | required_next_artifact_or_action | can_be_fixed_by_aggregation_only | requires_new_execution | paper_risk_if_not_fixed | notes |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| noop_missing_result_check_exact_evidence | sqlglot_transpile_same_dialect_noop | 72 | missing result_check | row identities reconstructed but exact-match artifact not retained at row level | Recover retained row-level result_check or equivalent exact-match evidence for the 72 noop exact rows. | no | no | Cannot claim full per-case timing denominator even though aggregate timing exists. | execution_triage executed_success rows exist, but no row-level result_check.json was retained in the current packet. |
+| optimize_exact_count_mismatch_vs_expected_65 | sqlglot_optimize_same_dialect | 9 | exact count mismatch vs expected 72 / 65 | expected 65 exact rows from paper table; only 56 exact-proof rows reconstructable from retained row-level artifacts | Recover row-level exact-match evidence for the 9 PORT optimize success rows or revise the retained aggregate denominator basis. | no | no | Cannot form the full 65-row optimize timing denominator. | The 9 PORT optimize success rows are execution-only witnesses with result_match_status=not_checked and is_valid_result=false. |
+| optimize_missing_result_check_exact_evidence | sqlglot_optimize_same_dialect | 56 | missing result_check | 56 nonport exact-proof rows reconstructed, but row-level result_check artifact is not retained | Recover retained row-level result_check or equivalent exact-match evidence for the 56 reconstructed optimize rows. | no | no | Even the reconstructable optimize subset remains blocked for paper-safe timing preflight. | execution_triage executed_success rows exist, but no row-level result_check.json was retained in the current packet. |
+| aggregate_timing_only_not_full_per_case | sqlglot_transpile_same_dialect_noop\|sqlglot_optimize_same_dialect | 137 | existing timing packet not full per-case | Route-level GM speedup and Regression@20 are retained, but per-case timing export is not currently materialized for the full exact denominators. | After exact-row denominator recovery, run route-separated per-case timing and export timing_event_long. | no | yes | Median/W-T-L/best/worst remain unavailable for main Table 6 SQLGlot rows. | sqlglot_combined_same_engine_240 remains appendix/diagnostic only and must not substitute for route-specific timing. |
+
+## Interpretation Notes
+
+- 中文说明：当前主要缺口是“逐行 exact 证据”而不是“SQL 文件不存在”。
+- 如果这些缺口不补，Table 6 中 SQLGlot 仍然只能保留 aggregate-only timing 说法，不能安全刷新 median / W-T-L / best / worst。

@@ -1,0 +1,12 @@
+{
+  "activated_rules_path": "/tmp/rewritebench_llmr2_fast_path/PERF_0006/activated_rules_schema_native_v1.json",
+  "checker_candidate_sql_path": "/tmp/rewritebench_llmr2_fast_path/PERF_0006/checker_candidate_sql_schema_native_v1.sql",
+  "claim_boundary": "llmr2_one_row_fast_path_dry_run_only_not_execution",
+  "demo_trace_path": "/tmp/rewritebench_llmr2_fast_path/PERF_0006/demo_trace_schema_native_v1.json",
+  "generated_sql_path": "/tmp/rewritebench_llmr2_fast_path/PERF_0006/generated_sql_schema_native_v1.sql",
+  "method_stderr_path": "/tmp/rewritebench_llmr2_fast_path/PERF_0006/method_stderr_schema_native_v1.log",
+  "method_stdout_path": "/tmp/rewritebench_llmr2_fast_path/PERF_0006/method_stdout_schema_native_v1.log",
+  "prompt_trace_path": "/tmp/rewritebench_llmr2_fast_path/PERF_0006/prompt_trace_schema_native_v1.md",
+  "result_csv_path": "/tmp/rewritebench_llmr2_fast_path/PERF_0006/gpt_rewritebench_perf_0006_one_promo_queryCL_updated.csv",
+  "token_cost_log_path": "/tmp/rewritebench_llmr2_fast_path/PERF_0006/token_cost_log_schema_native_v1.json"
+}

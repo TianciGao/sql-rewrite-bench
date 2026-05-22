@@ -1,0 +1,90 @@
+{
+  "blocker_reason": "subprocess exited with code 1",
+  "case_id": "PERF_0077",
+  "claim_boundary": "formal_pg_generation_expansion_only_not_execution_timing_speedup_or_leaderboard_evidence",
+  "engine": "pg",
+  "failure_category": "subprocess_nonzero_exit",
+  "formal_index_dir": "/tmp/rewritebench_rbot_formal_chroma_index_01",
+  "formal_index_identifier_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/r_bot_formal_index_build_01/formal_chroma_index_identifier_v1.json",
+  "formal_runtime_snapshot_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/r_bot_formal_runtime_lock_01/runtime_environment_snapshot_v1.json",
+  "generation_status": "method_execution_failed",
+  "generation_status_planned": "human_run_pg40_generation_attempt",
+  "method_id": "r_bot",
+  "method_stderr_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/r_bot_pg40_generation_expansion_02/logs/PERF_0077/pg/generation.stderr.log",
+  "method_stdout_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/r_bot_pg40_generation_expansion_02/logs/PERF_0077/pg/generation.stdout.log",
+  "notes": [
+    "PG-only expansion attempt",
+    "generation-only route",
+    "no database or SQL execution in this package runner",
+    "does not replace existing PG7 retained evidence"
+  ],
+  "openai_api_key_visible": true,
+  "output_sql_extracted": false,
+  "parameter_freeze_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/r_bot_formal_protocol/r_bot_parameter_freeze_v2.json",
+  "pg_expansion_denominator_id": "common_core_v0_40_pg40",
+  "pool": "performance",
+  "previous_generation_status_class": "previously_blocked_pg31",
+  "provider_metadata_path": "reports/evaluation/common_core_v0/runs/r_bot_pg40_generation_expansion_02/metadata/PERF_0077/pg/provider_metadata.json",
+  "response_record_count": 0,
+  "route_id": "r_bot_same_engine_rewrite",
+  "row_status": "failed",
+  "run_id": "r_bot_pg40_generation_expansion_02",
+  "runtime_patch_info": {
+    "chroma_link_mode": "symlink",
+    "formal_index_dir_visible": true,
+    "rag_jsonl_info": {
+      "missing_files": [],
+      "provisioned_files": [
+        {
+          "filename": "stackoverflow-rewrite-query-optimization.jsonl",
+          "provision_mode": "extracted_from_upstream_zip",
+          "runtime_path": "/tmp/rewritebench_rbot_llm4rewrite_pg40_expansion_runner/PERF_0077/runtime_patch_v4/rag/stackoverflow-rewrite-query-optimization.jsonl",
+          "source_path": "/tmp/rewritebench_prior_method_audit/LLM4Rewrite/rag/stackoverflow-rewrite-embed.zip"
+        },
+        {
+          "filename": "stackoverflow-rewrite-rules-query-optimization.jsonl",
+          "provision_mode": "extracted_from_upstream_zip",
+          "runtime_path": "/tmp/rewritebench_rbot_llm4rewrite_pg40_expansion_runner/PERF_0077/runtime_patch_v4/rag/stackoverflow-rewrite-rules-query-optimization.jsonl",
+          "source_path": "/tmp/rewritebench_prior_method_audit/LLM4Rewrite/rag/stackoverflow-rewrite-embed.zip"
+        },
+        {
+          "filename": "stackoverflow-rewrite-sql-templates-query-optimization.jsonl",
+          "provision_mode": "extracted_from_upstream_zip",
+          "runtime_path": "/tmp/rewritebench_rbot_llm4rewrite_pg40_expansion_runner/PERF_0077/runtime_patch_v4/rag/stackoverflow-rewrite-sql-templates-query-optimization.jsonl",
+          "source_path": "/tmp/rewritebench_prior_method_audit/LLM4Rewrite/rag/stackoverflow-rewrite-embed.zip"
+        },
+        {
+          "filename": "stackoverflow-rewrite-sql-templates-embed-query-optimization.jsonl",
+          "provision_mode": "extracted_from_upstream_zip",
+          "runtime_path": "/tmp/rewritebench_rbot_llm4rewrite_pg40_expansion_runner/PERF_0077/runtime_patch_v4/rag/stackoverflow-rewrite-sql-templates-embed-query-optimization.jsonl",
+          "source_path": "/tmp/rewritebench_prior_method_audit/LLM4Rewrite/rag/stackoverflow-rewrite-embed.zip"
+        }
+      ],
+      "required_files": [
+        "stackoverflow-rewrite-query-optimization.jsonl",
+        "stackoverflow-rewrite-rules-query-optimization.jsonl",
+        "stackoverflow-rewrite-sql-templates-query-optimization.jsonl",
+        "stackoverflow-rewrite-sql-templates-embed-query-optimization.jsonl"
+      ],
+      "runtime_rag_dir": "/tmp/rewritebench_rbot_llm4rewrite_pg40_expansion_runner/PERF_0077/runtime_patch_v4/rag",
+      "upstream_rag_dir": "/tmp/rewritebench_prior_method_audit/LLM4Rewrite/rag",
+      "upstream_rag_zip": "/tmp/rewritebench_prior_method_audit/LLM4Rewrite/rag/stackoverflow-rewrite-embed.zip"
+    },
+    "removed_signature_entries": [
+      "META-INF/DUMMY.SF",
+      "META-INF/DUMMY.DSA"
+    ],
+    "rule_vector_patch_applied": true,
+    "runtime_chroma_dir": "/tmp/rewritebench_rbot_llm4rewrite_pg40_expansion_runner/PERF_0077/runtime_patch_v4/rag/chroma_db",
+    "runtime_root": "/tmp/rewritebench_rbot_llm4rewrite_pg40_expansion_runner/PERF_0077/runtime_patch_v4",
+    "unsigned_runtime_jar": "/tmp/rewritebench_rbot_llm4rewrite_pg40_expansion_runner/PERF_0077/runtime_patch_v4/my_rewriter/CalciteRewrite/out/artifacts/LearnedRewrite_jar/LearnedRewrite.jar"
+  },
+  "runtime_patch_root": "/tmp/rewritebench_rbot_llm4rewrite_pg40_expansion_runner/PERF_0077/runtime_patch_v4",
+  "runtime_python": "/tmp/rewritebench_rbot_llm4rewrite_venv_smoke/bin/python",
+  "schema_path": "cases/PERF/PERF_0077/schema/ddl_pg.sql",
+  "source_generation_denominator_id": "common_core_v0_40_same_engine_120",
+  "source_sql_path": "cases/PERF/PERF_0077/source.sql",
+  "temp_runner_dir": "/tmp/rewritebench_rbot_llm4rewrite_pg40_expansion_runner/PERF_0077",
+  "upstream_log_path": "/tmp/rewritebench_rbot_llm4rewrite_pg40_expansion_runner/PERF_0077/rbot_perf_0077_1778320592882.log",
+  "witness_data_path": "cases/PERF/PERF_0077/validation/pg_witness_data.sql"
+}

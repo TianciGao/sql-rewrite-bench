@@ -1,0 +1,12 @@
+{
+  "plan_format": "pg_json",
+  "top_operator": "Sort",
+  "scan_summary": "Seq Scan, Subquery Scan",
+  "join_summary": "Merge Join, Nested Loop",
+  "aggregate_summary": "Aggregate",
+  "sort_limit_summary": "Sort",
+  "filter_summary": "Filter, Join Filter, Merge Cond",
+  "node_count": "32",
+  "parse_confidence": "medium",
+  "notes": "parsed_from_pg_json"
+}

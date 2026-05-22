@@ -1,0 +1,7 @@
+run_id,method_id,route_id,engine,denominator_cases,generation_success_rows,generation_failed_rows,unsupported_or_skipped_rows,noop_rows,notes
+sqlglot_same_engine_generation_01,sqlglot,sqlglot_optimize_same_dialect,pg,40,26,14,0,0,"Generation-only summary; no execution, timing, consistency, or leaderboard claims"
+sqlglot_same_engine_generation_01,sqlglot,sqlglot_optimize_same_dialect,mysql,40,31,9,0,0,"Generation-only summary; no execution, timing, consistency, or leaderboard claims"
+sqlglot_same_engine_generation_01,sqlglot,sqlglot_optimize_same_dialect,spark,40,31,9,0,0,"Generation-only summary; no execution, timing, consistency, or leaderboard claims"
+sqlglot_same_engine_generation_01,sqlglot,sqlglot_transpile_same_dialect_noop,pg,40,35,5,0,9,"Generation-only summary; no execution, timing, consistency, or leaderboard claims"
+sqlglot_same_engine_generation_01,sqlglot,sqlglot_transpile_same_dialect_noop,mysql,40,40,0,0,14,"Generation-only summary; no execution, timing, consistency, or leaderboard claims"
+sqlglot_same_engine_generation_01,sqlglot,sqlglot_transpile_same_dialect_noop,spark,40,40,0,0,14,"Generation-only summary; no execution, timing, consistency, or leaderboard claims"

@@ -1,0 +1,46 @@
+{
+  "canary_denominator_id": "r_bot_mysql_spark_generation_canary_01",
+  "claim_boundary": "mysql_spark_generation_canary_only_not_execution_timing_speedup_or_leaderboard_evidence",
+  "current_benchmark_metric_evidence": false,
+  "engine_preflight": {
+    "mysql": {
+      "category": "ok",
+      "ok": true,
+      "reason": "{\"actual_cwd\": \"/tmp/rewritebench_rbot_mysql_spark_canary_01_runtime/preflight_mysql/my_rewriter\", \"expected_calcite_jar_dir\": \"/tmp/rewritebench_rbot_mysql_spark_canary_01_runtime/preflight_mysql/my_rewriter/CalciteRewrite/out/artifacts/LearnedRewrite_jar\", \"learned_rewrite_jar_exists\": true, \"runtime_info\": {\"calcite_layout\": {\"calcite_root\": \"/tmp/rewritebench_rbot_mysql_spark_canary_01_runtime/preflight_mysql/CalciteRewrite\", \"expected_from_cwd\": \"/tmp/rewritebench_rbot_mysql_spark_canary_01_runtime/preflight_mysql/my_rewriter/CalciteRewrite\", \"expected_jar_dir\": \"/tmp/rewritebench_rbot_mysql_spark_canary_01_runtime/preflight_mysql/my_rewriter/CalciteRewrite/out/artifacts/LearnedRewrite_jar\", \"expected_jar_exists\": true, \"layout_mode\": \"symlinked_relative_into_my_rewriter\"}, \"chroma_mode\": \"symlink\", \"jar_patch\": {\"jar_path\": \"/tmp/rewritebench_rbot_mysql_spark_canary_01_runtime/preflight_mysql/CalciteRewrite/out/artifacts/LearnedRewrite_jar/LearnedRewrite.jar\", \"removed_signature_entries\": [\"META-INF/DUMMY.SF\", \"META-INF/DUMMY.DSA\"]}, \"rag_jsonl\": {\"mode_by_file\": {\"stackoverflow-rewrite-query-optimization.jsonl\": \"extracted_from_zip:stackoverflow-rewrite-query-optimization.jsonl\", \"stackoverflow-rewrite-rules-query-optimization.jsonl\": \"extracted_from_zip:stackoverflow-rewrite-rules-query-optimization.jsonl\", \"stackoverflow-rewrite-sql-templates-embed-query-optimization.jsonl\": \"extracted_from_zip:stackoverflow-rewrite-sql-templates-embed-query-optimization.jsonl\", \"stackoverflow-rewrite-sql-templates-query-optimization.jsonl\": \"extracted_from_zip:stackoverflow-rewrite-sql-templates-query-optimization.jsonl\"}}}, \"runtime_root\": \"/tmp/rewritebench_rbot_mysql_spark_canary_01_runtime/preflight_mysql\", \"stdout\": \"preflight_ok\"}"
+    },
+    "spark": {
+      "category": "ok",
+      "ok": true,
+      "reason": "{\"actual_cwd\": \"/tmp/rewritebench_rbot_mysql_spark_canary_01_runtime/preflight_spark/my_rewriter\", \"expected_calcite_jar_dir\": \"/tmp/rewritebench_rbot_mysql_spark_canary_01_runtime/preflight_spark/my_rewriter/CalciteRewrite/out/artifacts/LearnedRewrite_jar\", \"learned_rewrite_jar_exists\": true, \"runtime_info\": {\"calcite_layout\": {\"calcite_root\": \"/tmp/rewritebench_rbot_mysql_spark_canary_01_runtime/preflight_spark/CalciteRewrite\", \"expected_from_cwd\": \"/tmp/rewritebench_rbot_mysql_spark_canary_01_runtime/preflight_spark/my_rewriter/CalciteRewrite\", \"expected_jar_dir\": \"/tmp/rewritebench_rbot_mysql_spark_canary_01_runtime/preflight_spark/my_rewriter/CalciteRewrite/out/artifacts/LearnedRewrite_jar\", \"expected_jar_exists\": true, \"layout_mode\": \"symlinked_relative_into_my_rewriter\"}, \"chroma_mode\": \"symlink\", \"jar_patch\": {\"jar_path\": \"/tmp/rewritebench_rbot_mysql_spark_canary_01_runtime/preflight_spark/CalciteRewrite/out/artifacts/LearnedRewrite_jar/LearnedRewrite.jar\", \"removed_signature_entries\": [\"META-INF/DUMMY.SF\", \"META-INF/DUMMY.DSA\"]}, \"rag_jsonl\": {\"mode_by_file\": {\"stackoverflow-rewrite-query-optimization.jsonl\": \"extracted_from_zip:stackoverflow-rewrite-query-optimization.jsonl\", \"stackoverflow-rewrite-rules-query-optimization.jsonl\": \"extracted_from_zip:stackoverflow-rewrite-rules-query-optimization.jsonl\", \"stackoverflow-rewrite-sql-templates-embed-query-optimization.jsonl\": \"extracted_from_zip:stackoverflow-rewrite-sql-templates-embed-query-optimization.jsonl\", \"stackoverflow-rewrite-sql-templates-query-optimization.jsonl\": \"extracted_from_zip:stackoverflow-rewrite-sql-templates-query-optimization.jsonl\"}}}, \"runtime_root\": \"/tmp/rewritebench_rbot_mysql_spark_canary_01_runtime/preflight_spark\", \"stdout\": \"preflight_ok\"}"
+    }
+  },
+  "engine_scope": "mysql_and_spark_canary_only",
+  "failed_rows": [
+    "PERF_0006:mysql",
+    "PERF_0006:spark",
+    "PERF_0007:mysql",
+    "PERF_0007:spark",
+    "CONS_0005:mysql",
+    "CONS_0005:spark"
+  ],
+  "generated_rows": [],
+  "method_id": "r_bot",
+  "notes": [
+    "human-run only package",
+    "generation-only canary",
+    "uses non-PostgreSQL generation-only adapter recovery in temp runtime",
+    "does not execute SQL or witness data",
+    "does not produce timing or speedup evidence"
+  ],
+  "planned_rows": 6,
+  "preflight_blocked_rows": [],
+  "route_id": "r_bot_same_engine_rewrite",
+  "run_id": "r_bot_mysql_spark_generation_canary_01",
+  "source_denominator_id": "common_core_v0_40_same_engine_120",
+  "status": "completed_with_failures",
+  "status_counts": {
+    "failed": 6,
+    "generated": 0,
+    "preflight_blocked": 0
+  }
+}

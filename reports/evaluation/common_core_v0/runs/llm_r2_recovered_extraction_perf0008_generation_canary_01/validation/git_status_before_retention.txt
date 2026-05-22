@@ -1,0 +1,13 @@
+## evaluation/common-core-v0-40-leaderboard...origin/evaluation/common-core-v0-40-leaderboard
+ M reports/evaluation/common_core_v0/00_PAPER_EVIDENCE_FREEZE_V1/ARTIFACT_INDEX.csv
+ M reports/evaluation/common_core_v0/00_PAPER_EVIDENCE_FREEZE_V1/DECISION_NOTES.md
+ M reports/evaluation/common_core_v0/00_PAPER_EVIDENCE_FREEZE_V1/NEXT_ACTIONS.md
+ M reports/evaluation/common_core_v0/00_PAPER_EVIDENCE_FREEZE_V1/RERUN_CAMPAIGN_LEDGER.csv
+ M reports/evaluation/common_core_v0/00_PAPER_RESULTS_INDEX.csv
+ M reports/evaluation/common_core_v0/00_PAPER_RESULTS_INDEX.md
+ M scripts/cli.py
+?? TAXONOMY_CALIBRATION_NOTE_CONS_0001_0040.md
+?? TAXONOMY_CALIBRATION_NOTE_LONGTAIL_0001_0024.md
+?? TAXONOMY_CALIBRATION_NOTE_PORT_0001_0028.md
+?? docs/_scratch/CASE_LATEST_STATUS_CANDIDATES_SUMMARY_v1.md
+?? docs/_scratch/CASE_LATEST_STATUS_CANDIDATES_v1.csv

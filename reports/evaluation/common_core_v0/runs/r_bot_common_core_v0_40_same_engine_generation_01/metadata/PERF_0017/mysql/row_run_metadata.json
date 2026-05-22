@@ -1,0 +1,22 @@
+{
+  "blocker_reason": "",
+  "case_id": "PERF_0017",
+  "claim_boundary": "formal_same_engine_generation_only_not_execution_timing_speedup_or_leaderboard_evidence",
+  "denominator_id": "common_core_v0_40_same_engine_120",
+  "engine": "mysql",
+  "environment_snapshot_path": "reports/evaluation/common_core_v0/runs/r_bot_common_core_v0_40_same_engine_generation_01/metadata/PERF_0017/mysql/environment_snapshot.json",
+  "failure_category": "",
+  "failure_summary": "",
+  "generated_sql_path": "reports/evaluation/common_core_v0/runs/r_bot_common_core_v0_40_same_engine_generation_01/generated/PERF_0017/mysql/r_bot_same_engine_rewrite.sql",
+  "method_id": "r_bot",
+  "pool": "performance",
+  "prompt_path": "reports/evaluation/common_core_v0/runs/r_bot_common_core_v0_40_same_engine_generation_01/prompts/PERF_0017/mysql/prompt.txt",
+  "raw_response_path": "reports/evaluation/common_core_v0/runs/r_bot_common_core_v0_40_same_engine_generation_01/raw_responses/PERF_0017/mysql/response.txt",
+  "retrieval_trace_path": "reports/evaluation/common_core_v0/runs/r_bot_common_core_v0_40_same_engine_generation_01/traces/PERF_0017/mysql/retrieval_trace.json",
+  "route_id": "r_bot_same_engine_rewrite",
+  "row_status": "unsupported",
+  "run_id": "r_bot_same_engine_generation_01",
+  "selected_rules_path": "reports/evaluation/common_core_v0/runs/r_bot_common_core_v0_40_same_engine_generation_01/traces/PERF_0017/mysql/selected_rules.json",
+  "token_cost_provider_path": "reports/evaluation/common_core_v0/runs/r_bot_common_core_v0_40_same_engine_generation_01/metadata/PERF_0017/mysql/token_cost_provider.json",
+  "unsupported_reason": "Recovered committed R-Bot runner path is PG-only; same-engine mysql/spark generation path is not recovered in committed CLI and must remain explicit, not dropped."
+}

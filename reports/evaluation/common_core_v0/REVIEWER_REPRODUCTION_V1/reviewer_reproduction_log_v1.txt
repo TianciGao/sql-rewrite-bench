@@ -1,0 +1,39 @@
+Common-core v0 reviewer reproduction artifact-mode
+timestamp_utc=2026-05-13T03:54:23Z
+repo_root=/home/tianci_gao/code/sql-rewrite-bench
+mode=artifact
+boundary=no DB/LLM/verifier/PORT9/EXPLAIN/timing collection
+
+Artifact mode does not run DB engines, LLM/model calls, verifier tools, PORT9, EXPLAIN collection, or new timing collection.
+PASS required_dir_08_SECTION8_EVIDENCE_FREEZE_V1: found reports/evaluation/common_core_v0/08_SECTION8_EVIDENCE_FREEZE_V1
+PASS required_dir_09_TAXONOMY_COVERAGE_V1: found reports/evaluation/common_core_v0/09_TAXONOMY_COVERAGE_V1
+PASS required_dir_10_HARD_NEGATIVE_FAILURE_ACCOUNTING_V1: found reports/evaluation/common_core_v0/10_HARD_NEGATIVE_FAILURE_ACCOUNTING_V1
+PASS required_dir_11_TIMING_OBSERVABILITY_V1: found reports/evaluation/common_core_v0/11_TIMING_OBSERVABILITY_V1
+PASS required_dir_12_PORT_VERIFIER_ARTIFACT_MAP_V1: found reports/evaluation/common_core_v0/12_PORT_VERIFIER_ARTIFACT_MAP_V1
+PASS required_dir_14_REPRODUCIBILITY_MANIFEST_V1: found reports/evaluation/common_core_v0/14_REPRODUCIBILITY_MANIFEST_V1
+PASS required_dir_15_PROGRAMMATIC_METRIC_AUDIT_V1: found reports/evaluation/common_core_v0/15_PROGRAMMATIC_METRIC_AUDIT_V1
+PASS required_dir_16_STATIC_RECOMPUTE_AUDIT_V1: found reports/evaluation/common_core_v0/16_STATIC_RECOMPUTE_AUDIT_V1
+PASS required_dir_17_TABLE12_ULTIMATE_PROVENANCE_V1: found reports/evaluation/common_core_v0/17_TABLE12_ULTIMATE_PROVENANCE_V1
+PASS table12_renderer_exists: found reports/evaluation/common_core_v0/scripts/render_table12_method_evidence_ledger_v1.py
+Running Table 12 static renderer with --check.
+rows rendered: 9
+cells compared: 90
+exact matches: 55
+rounded matches: 0
+expected NA matches: 8
+artifact boundary matches: 27
+conflicts: 0
+output directory: reports/evaluation/common_core_v0/18_TABLE12_REGENERATION_V1
+PASS table12_renderer_check: Table 12 regenerated successfully
+PASS required_dir_18_TABLE12_REGENERATION_V1: found reports/evaluation/common_core_v0/18_TABLE12_REGENERATION_V1
+PASS static_recompute_file_exists: found reports/evaluation/common_core_v0/16_STATIC_RECOMPUTE_AUDIT_V1/static_recompute_summary_v1.md
+PASS static_recompute_file_exists: found reports/evaluation/common_core_v0/16_STATIC_RECOMPUTE_AUDIT_V1/static_recompute_results_v1.csv
+PASS static_recompute_file_exists: found reports/evaluation/common_core_v0/16_STATIC_RECOMPUTE_AUDIT_V1/static_recompute_mismatches_v1.csv
+Checking static recompute mismatch CSV for conflict or missing-input rows.
+mismatch rows: 0
+PASS static_recompute_mismatches_empty: 0 conflict or missing-input rows
+PASS expected_na_boundaries_present: all expected-NA and scope boundaries present
+PASS table12_diff_summary: cells_compared=90; exact_match=55; rounded_match=0; expected_NA_match=8; artifact_boundary_match=27; conflicts=0; missing_input=0
+PASS reviewer_summary_written: wrote reports/evaluation/common_core_v0/REVIEWER_REPRODUCTION_V1/reviewer_reproduction_summary_v1.md
+Reviewer reproduction artifact-mode passed.
+Output directory: reports/evaluation/common_core_v0/REVIEWER_REPRODUCTION_V1

@@ -1,0 +1,460 @@
+{
+  "run_id": "sqlglot_same_engine_timing_canary_01",
+  "mode": "manual_human_timing_canary",
+  "denominator_id": "common_core_v0_40",
+  "method_id": "sqlglot",
+  "method_role": "same_engine_timing_canary",
+  "canary_scope": "perf_0006_cons_0010_longtail_0011_tri_engine_two_route",
+  "warmup_count": 1,
+  "repeat_count": 3,
+  "records": [
+    {
+      "key": "env_check",
+      "row_status": "executed",
+      "command": "python -m scripts.cli env-check",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_timing_canary_01/logs/env_check.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_timing_canary_01/logs/env_check.stderr.log",
+      "timing_json_path": "",
+      "speedup_exclusion_reason": "not_applicable_env_check",
+      "source_runtime_ms": [],
+      "generated_runtime_ms": [],
+      "median_source_ms": null,
+      "median_generated_ms": null,
+      "speedup_ratio": null,
+      "notes": ""
+    },
+    {
+      "key": "perf_0006__pg__sqlglot_optimize_same_dialect",
+      "row_status": "executed",
+      "command": "python - <<'PY' <postgres timing runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_timing_canary_01/logs/perf_0006__pg__sqlglot_optimize_same_dialect.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_timing_canary_01/logs/perf_0006__pg__sqlglot_optimize_same_dialect.stderr.log",
+      "timing_json_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_timing_canary_01/timings/PERF_0006/pg/sqlglot_optimize_same_dialect.json",
+      "speedup_exclusion_reason": "",
+      "source_runtime_ms": [
+        295.20613490603864,
+        293.6519520590082,
+        299.20071898959577
+      ],
+      "generated_runtime_ms": [
+        293.313886038959,
+        580.7228810153902,
+        412.2549840249121
+      ],
+      "median_source_ms": 295.20613490603864,
+      "median_generated_ms": 412.2549840249121,
+      "speedup_ratio": 0.7160765699516677,
+      "notes": ""
+    },
+    {
+      "key": "perf_0006__pg__sqlglot_transpile_same_dialect_noop",
+      "row_status": "executed",
+      "command": "python - <<'PY' <postgres timing runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_timing_canary_01/logs/perf_0006__pg__sqlglot_transpile_same_dialect_noop.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_timing_canary_01/logs/perf_0006__pg__sqlglot_transpile_same_dialect_noop.stderr.log",
+      "timing_json_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_timing_canary_01/timings/PERF_0006/pg/sqlglot_transpile_same_dialect_noop.json",
+      "speedup_exclusion_reason": "",
+      "source_runtime_ms": [
+        409.3396160751581,
+        292.0602660160512,
+        402.89076906628907
+      ],
+      "generated_runtime_ms": [
+        401.4217109652236,
+        527.6114690350369,
+        424.1254209773615
+      ],
+      "median_source_ms": 402.89076906628907,
+      "median_generated_ms": 424.1254209773615,
+      "speedup_ratio": 0.949933083798328,
+      "notes": ""
+    },
+    {
+      "key": "perf_0006__mysql__sqlglot_optimize_same_dialect",
+      "row_status": "executed",
+      "command": "python - <<'PY' <mysql timing runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_timing_canary_01/logs/perf_0006__mysql__sqlglot_optimize_same_dialect.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_timing_canary_01/logs/perf_0006__mysql__sqlglot_optimize_same_dialect.stderr.log",
+      "timing_json_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_timing_canary_01/timings/PERF_0006/mysql/sqlglot_optimize_same_dialect.json",
+      "speedup_exclusion_reason": "",
+      "source_runtime_ms": [
+        122.3973399028182,
+        118.22762398514897,
+        117.96686600428075
+      ],
+      "generated_runtime_ms": [
+        131.38264103326946,
+        121.20168202091008,
+        118.37041389662772
+      ],
+      "median_source_ms": 118.22762398514897,
+      "median_generated_ms": 121.20168202091008,
+      "speedup_ratio": 0.975461907902829,
+      "notes": ""
+    },
+    {
+      "key": "perf_0006__mysql__sqlglot_transpile_same_dialect_noop",
+      "row_status": "executed",
+      "command": "python - <<'PY' <mysql timing runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_timing_canary_01/logs/perf_0006__mysql__sqlglot_transpile_same_dialect_noop.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_timing_canary_01/logs/perf_0006__mysql__sqlglot_transpile_same_dialect_noop.stderr.log",
+      "timing_json_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_timing_canary_01/timings/PERF_0006/mysql/sqlglot_transpile_same_dialect_noop.json",
+      "speedup_exclusion_reason": "",
+      "source_runtime_ms": [
+        116.59651005174965,
+        120.47299707774073,
+        118.25735599268228
+      ],
+      "generated_runtime_ms": [
+        120.81909296102822,
+        121.84847902972251,
+        117.4608200090006
+      ],
+      "median_source_ms": 118.25735599268228,
+      "median_generated_ms": 120.81909296102822,
+      "speedup_ratio": 0.9787969193811754,
+      "notes": ""
+    },
+    {
+      "key": "perf_0006__spark__sqlglot_optimize_same_dialect",
+      "row_status": "executed",
+      "command": "python - <<'PY' <spark timing runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_timing_canary_01/logs/perf_0006__spark__sqlglot_optimize_same_dialect.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_timing_canary_01/logs/perf_0006__spark__sqlglot_optimize_same_dialect.stderr.log",
+      "timing_json_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_timing_canary_01/timings/PERF_0006/spark/sqlglot_optimize_same_dialect.json",
+      "speedup_exclusion_reason": "",
+      "source_runtime_ms": [
+        292.6175119355321,
+        231.3244219403714,
+        213.8943219324574
+      ],
+      "generated_runtime_ms": [
+        267.6587150199339,
+        225.56212404742837,
+        199.5349390199408
+      ],
+      "median_source_ms": 231.3244219403714,
+      "median_generated_ms": 225.56212404742837,
+      "speedup_ratio": 1.0255463895690724,
+      "notes": ""
+    },
+    {
+      "key": "perf_0006__spark__sqlglot_transpile_same_dialect_noop",
+      "row_status": "executed",
+      "command": "python - <<'PY' <spark timing runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_timing_canary_01/logs/perf_0006__spark__sqlglot_transpile_same_dialect_noop.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_timing_canary_01/logs/perf_0006__spark__sqlglot_transpile_same_dialect_noop.stderr.log",
+      "timing_json_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_timing_canary_01/timings/PERF_0006/spark/sqlglot_transpile_same_dialect_noop.json",
+      "speedup_exclusion_reason": "",
+      "source_runtime_ms": [
+        293.83640096057206,
+        245.81658700481057,
+        206.92024403251708
+      ],
+      "generated_runtime_ms": [
+        239.71346800681204,
+        237.92957793921232,
+        210.2587940171361
+      ],
+      "median_source_ms": 245.81658700481057,
+      "median_generated_ms": 237.92957793921232,
+      "speedup_ratio": 1.0331485018966968,
+      "notes": ""
+    },
+    {
+      "key": "cons_0010__pg__sqlglot_optimize_same_dialect",
+      "row_status": "executed",
+      "command": "python - <<'PY' <postgres timing runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_timing_canary_01/logs/cons_0010__pg__sqlglot_optimize_same_dialect.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_timing_canary_01/logs/cons_0010__pg__sqlglot_optimize_same_dialect.stderr.log",
+      "timing_json_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_timing_canary_01/timings/CONS_0010/pg/sqlglot_optimize_same_dialect.json",
+      "speedup_exclusion_reason": "",
+      "source_runtime_ms": [
+        292.4400140764192,
+        352.73523698560894,
+        294.3145410390571
+      ],
+      "generated_runtime_ms": [
+        589.7985720075667,
+        399.89593904465437,
+        507.36004498321563
+      ],
+      "median_source_ms": 294.3145410390571,
+      "median_generated_ms": 507.36004498321563,
+      "speedup_ratio": 0.5800901035650009,
+      "notes": ""
+    },
+    {
+      "key": "cons_0010__pg__sqlglot_transpile_same_dialect_noop",
+      "row_status": "executed",
+      "command": "python - <<'PY' <postgres timing runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_timing_canary_01/logs/cons_0010__pg__sqlglot_transpile_same_dialect_noop.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_timing_canary_01/logs/cons_0010__pg__sqlglot_transpile_same_dialect_noop.stderr.log",
+      "timing_json_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_timing_canary_01/timings/CONS_0010/pg/sqlglot_transpile_same_dialect_noop.json",
+      "speedup_exclusion_reason": "",
+      "source_runtime_ms": [
+        508.3168160635978,
+        293.6101299710572,
+        508.51648894604295
+      ],
+      "generated_runtime_ms": [
+        412.58459200616926,
+        293.67634700611234,
+        299.046847037971
+      ],
+      "median_source_ms": 508.3168160635978,
+      "median_generated_ms": 299.046847037971,
+      "speedup_ratio": 1.6997899195340958,
+      "notes": ""
+    },
+    {
+      "key": "cons_0010__mysql__sqlglot_optimize_same_dialect",
+      "row_status": "executed",
+      "command": "python - <<'PY' <mysql timing runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_timing_canary_01/logs/cons_0010__mysql__sqlglot_optimize_same_dialect.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_timing_canary_01/logs/cons_0010__mysql__sqlglot_optimize_same_dialect.stderr.log",
+      "timing_json_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_timing_canary_01/timings/CONS_0010/mysql/sqlglot_optimize_same_dialect.json",
+      "speedup_exclusion_reason": "",
+      "source_runtime_ms": [
+        138.39047506917268,
+        145.95829299651086,
+        135.00329398084432
+      ],
+      "generated_runtime_ms": [
+        150.86622606031597,
+        134.98134107794613,
+        133.89274897053838
+      ],
+      "median_source_ms": 138.39047506917268,
+      "median_generated_ms": 134.98134107794613,
+      "speedup_ratio": 1.0252563351645612,
+      "notes": ""
+    },
+    {
+      "key": "cons_0010__mysql__sqlglot_transpile_same_dialect_noop",
+      "row_status": "executed",
+      "command": "python - <<'PY' <mysql timing runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_timing_canary_01/logs/cons_0010__mysql__sqlglot_transpile_same_dialect_noop.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_timing_canary_01/logs/cons_0010__mysql__sqlglot_transpile_same_dialect_noop.stderr.log",
+      "timing_json_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_timing_canary_01/timings/CONS_0010/mysql/sqlglot_transpile_same_dialect_noop.json",
+      "speedup_exclusion_reason": "",
+      "source_runtime_ms": [
+        134.59525490179658,
+        136.38108305167407,
+        139.0662440098822
+      ],
+      "generated_runtime_ms": [
+        135.10506006423384,
+        137.10051402449608,
+        137.10449391510338
+      ],
+      "median_source_ms": 136.38108305167407,
+      "median_generated_ms": 137.10051402449608,
+      "speedup_ratio": 0.9947525289898368,
+      "notes": ""
+    },
+    {
+      "key": "cons_0010__spark__sqlglot_optimize_same_dialect",
+      "row_status": "executed",
+      "command": "python - <<'PY' <spark timing runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_timing_canary_01/logs/cons_0010__spark__sqlglot_optimize_same_dialect.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_timing_canary_01/logs/cons_0010__spark__sqlglot_optimize_same_dialect.stderr.log",
+      "timing_json_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_timing_canary_01/timings/CONS_0010/spark/sqlglot_optimize_same_dialect.json",
+      "speedup_exclusion_reason": "",
+      "source_runtime_ms": [
+        305.5140880169347,
+        261.1821929458529,
+        249.15342999156564
+      ],
+      "generated_runtime_ms": [
+        297.5302980048582,
+        251.39847304672003,
+        277.7995909564197
+      ],
+      "median_source_ms": 261.1821929458529,
+      "median_generated_ms": 277.7995909564197,
+      "speedup_ratio": 0.9401820645114854,
+      "notes": ""
+    },
+    {
+      "key": "cons_0010__spark__sqlglot_transpile_same_dialect_noop",
+      "row_status": "executed",
+      "command": "python - <<'PY' <spark timing runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_timing_canary_01/logs/cons_0010__spark__sqlglot_transpile_same_dialect_noop.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_timing_canary_01/logs/cons_0010__spark__sqlglot_transpile_same_dialect_noop.stderr.log",
+      "timing_json_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_timing_canary_01/timings/CONS_0010/spark/sqlglot_transpile_same_dialect_noop.json",
+      "speedup_exclusion_reason": "",
+      "source_runtime_ms": [
+        338.1437479984015,
+        269.35470604803413,
+        274.47772107552737
+      ],
+      "generated_runtime_ms": [
+        268.9751860452816,
+        272.8084350237623,
+        250.4925320390612
+      ],
+      "median_source_ms": 274.47772107552737,
+      "median_generated_ms": 268.9751860452816,
+      "speedup_ratio": 1.0204574076558848,
+      "notes": ""
+    },
+    {
+      "key": "longtail_0011__pg__sqlglot_optimize_same_dialect",
+      "row_status": "executed",
+      "command": "python - <<'PY' <postgres timing runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_timing_canary_01/logs/longtail_0011__pg__sqlglot_optimize_same_dialect.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_timing_canary_01/logs/longtail_0011__pg__sqlglot_optimize_same_dialect.stderr.log",
+      "timing_json_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_timing_canary_01/timings/LONGTAIL_0011/pg/sqlglot_optimize_same_dialect.json",
+      "speedup_exclusion_reason": "",
+      "source_runtime_ms": [
+        459.6685660071671,
+        500.2838330110535,
+        412.14280505664647
+      ],
+      "generated_runtime_ms": [
+        468.4957939898595,
+        400.5460280459374,
+        501.85744499322027
+      ],
+      "median_source_ms": 459.6685660071671,
+      "median_generated_ms": 468.4957939898595,
+      "speedup_ratio": 0.9811583623675317,
+      "notes": ""
+    },
+    {
+      "key": "longtail_0011__pg__sqlglot_transpile_same_dialect_noop",
+      "row_status": "executed",
+      "command": "python - <<'PY' <postgres timing runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_timing_canary_01/logs/longtail_0011__pg__sqlglot_transpile_same_dialect_noop.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_timing_canary_01/logs/longtail_0011__pg__sqlglot_transpile_same_dialect_noop.stderr.log",
+      "timing_json_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_timing_canary_01/timings/LONGTAIL_0011/pg/sqlglot_transpile_same_dialect_noop.json",
+      "speedup_exclusion_reason": "",
+      "source_runtime_ms": [
+        296.1223570164293,
+        400.59334598481655,
+        504.5231659896672
+      ],
+      "generated_runtime_ms": [
+        294.870508951135,
+        297.16965195257217,
+        521.9040958909318
+      ],
+      "median_source_ms": 400.59334598481655,
+      "median_generated_ms": 297.16965195257217,
+      "speedup_ratio": 1.3480291252915377,
+      "notes": ""
+    },
+    {
+      "key": "longtail_0011__mysql__sqlglot_optimize_same_dialect",
+      "row_status": "executed",
+      "command": "python - <<'PY' <mysql timing runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_timing_canary_01/logs/longtail_0011__mysql__sqlglot_optimize_same_dialect.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_timing_canary_01/logs/longtail_0011__mysql__sqlglot_optimize_same_dialect.stderr.log",
+      "timing_json_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_timing_canary_01/timings/LONGTAIL_0011/mysql/sqlglot_optimize_same_dialect.json",
+      "speedup_exclusion_reason": "",
+      "source_runtime_ms": [
+        134.88597504328936,
+        142.49638200271875,
+        133.7869920535013
+      ],
+      "generated_runtime_ms": [
+        140.88556508067995,
+        137.37085601314902,
+        135.90423797722906
+      ],
+      "median_source_ms": 134.88597504328936,
+      "median_generated_ms": 137.37085601314902,
+      "speedup_ratio": 0.9819111488275082,
+      "notes": ""
+    },
+    {
+      "key": "longtail_0011__mysql__sqlglot_transpile_same_dialect_noop",
+      "row_status": "executed",
+      "command": "python - <<'PY' <mysql timing runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_timing_canary_01/logs/longtail_0011__mysql__sqlglot_transpile_same_dialect_noop.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_timing_canary_01/logs/longtail_0011__mysql__sqlglot_transpile_same_dialect_noop.stderr.log",
+      "timing_json_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_timing_canary_01/timings/LONGTAIL_0011/mysql/sqlglot_transpile_same_dialect_noop.json",
+      "speedup_exclusion_reason": "",
+      "source_runtime_ms": [
+        134.60910809226334,
+        135.93400502577424,
+        141.25305996276438
+      ],
+      "generated_runtime_ms": [
+        138.88959703035653,
+        145.45959304086864,
+        136.37515099253505
+      ],
+      "median_source_ms": 135.93400502577424,
+      "median_generated_ms": 138.88959703035653,
+      "speedup_ratio": 0.9787198460663955,
+      "notes": ""
+    },
+    {
+      "key": "longtail_0011__spark__sqlglot_optimize_same_dialect",
+      "row_status": "executed",
+      "command": "python - <<'PY' <spark timing runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_timing_canary_01/logs/longtail_0011__spark__sqlglot_optimize_same_dialect.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_timing_canary_01/logs/longtail_0011__spark__sqlglot_optimize_same_dialect.stderr.log",
+      "timing_json_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_timing_canary_01/timings/LONGTAIL_0011/spark/sqlglot_optimize_same_dialect.json",
+      "speedup_exclusion_reason": "",
+      "source_runtime_ms": [
+        433.39181295596063,
+        395.29412996489555,
+        334.54002090729773
+      ],
+      "generated_runtime_ms": [
+        402.79846196062863,
+        399.4164450559765,
+        335.17074794508517
+      ],
+      "median_source_ms": 395.29412996489555,
+      "median_generated_ms": 399.4164450559765,
+      "speedup_ratio": 0.9896791553224524,
+      "notes": ""
+    },
+    {
+      "key": "longtail_0011__spark__sqlglot_transpile_same_dialect_noop",
+      "row_status": "executed",
+      "command": "python - <<'PY' <spark timing runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_timing_canary_01/logs/longtail_0011__spark__sqlglot_transpile_same_dialect_noop.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_timing_canary_01/logs/longtail_0011__spark__sqlglot_transpile_same_dialect_noop.stderr.log",
+      "timing_json_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_timing_canary_01/timings/LONGTAIL_0011/spark/sqlglot_transpile_same_dialect_noop.json",
+      "speedup_exclusion_reason": "",
+      "source_runtime_ms": [
+        431.4827090129256,
+        415.5536360340193,
+        343.2296720566228
+      ],
+      "generated_runtime_ms": [
+        405.7863929774612,
+        363.5539209935814,
+        374.7239370131865
+      ],
+      "median_source_ms": 415.5536360340193,
+      "median_generated_ms": 374.7239370131865,
+      "speedup_ratio": 1.1089594098158613,
+      "notes": ""
+    }
+  ]
+}

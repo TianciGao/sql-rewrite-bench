@@ -1,0 +1,7 @@
+注意:  串联删除6个其它对象
+DETAIL:  递归删除 表 ccv0_calcite_hep_r4_perf_0062_pg.store_sales
+递归删除 表 ccv0_calcite_hep_r4_perf_0062_pg.store
+递归删除 表 ccv0_calcite_hep_r4_perf_0062_pg.customer_demographics
+递归删除 表 ccv0_calcite_hep_r4_perf_0062_pg.household_demographics
+递归删除 表 ccv0_calcite_hep_r4_perf_0062_pg.customer_address
+递归删除 表 ccv0_calcite_hep_r4_perf_0062_pg.date_dim

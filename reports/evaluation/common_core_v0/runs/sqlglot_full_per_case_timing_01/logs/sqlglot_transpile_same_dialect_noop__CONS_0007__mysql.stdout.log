@@ -1,0 +1,3 @@
+timing completed for sqlglot_transpile_same_dialect_noop__CONS_0007__mysql
+source_runtime_ms=[0.367593951523304, 0.42380508966743946, 0.381760997697711]
+rewrite_runtime_ms=[0.40660309605300426, 0.38949702866375446, 0.3875531256198883]

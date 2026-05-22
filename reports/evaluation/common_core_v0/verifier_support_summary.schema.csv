@@ -1,0 +1,11 @@
+column_name,data_type,required,example_or_allowed_values,description
+run_id,string,yes,<fill_me>,Run identifier.
+method_id,string,yes,<fill_me>,Method identifier.
+pool_scope,string,yes,all|performance|consistency|portability|longtail,Pool slice summarized for verifier support.
+denominator_cases,integer,yes,40,Coverage-aware denominator used for the summary.
+cases_with_verifier_support,integer,yes,0,Number of denominator cases with method-side verifier support or explicit checkability.
+cases_without_verifier_support,integer,yes,0,Number of denominator cases lacking verifier support.
+verifier_support_rate,number,yes,0.0,Support coverage over the stated denominator.
+verifier_mode,string,yes,engine_local_witness|engine_local_plan_artifacts|mixed|external|manual,Verifier family summarized by the row.
+result_check_coverage_rate,number,yes,0.0,Share of denominator cases with successful result checking.
+notes,string,no,<fill_me>,Short explanation of verifier coverage boundaries.

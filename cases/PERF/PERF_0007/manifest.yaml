@@ -84,6 +84,11 @@ validation:
   witness_dataset: validation/witness_dataset.yaml
   pg_witness_data: validation/pg_witness_data.sql
   pg_result_check: runs/pg/result_check.json
+  spark_witness_data: validation/spark_witness_data.sql
+  spark_runner: validation/run_spark_validation.sh
+  spark_results:
+    positive_rewrite: runs/spark/rewrite_pos_01.tsv
+    negative_rewrite: runs/spark/rewrite_neg_01.tsv
 plans:
   pg:
     collector: validation/run_pg_plan_collection.sh
@@ -91,6 +96,11 @@ plans:
     positive_rewrite: runs/pg/plans/rewrite_pos_01.json
     negative_rewrite: runs/pg/plans/rewrite_neg_01.json
     summary: runs/pg/plans/plan_check.json
+  spark:
+    collection_script: null
+    collection_script_note: Retained Spark plan artifacts exist, but validation/run_spark_plan_collection.sh and validation/collect_spark_plans.sh are absent in this release cleanup batch.
+    positive_rewrite: runs/spark/plans/rewrite_pos_01.txt
+    negative_rewrite: runs/spark/plans/rewrite_neg_01.txt
 notes:
   - Source/provenance layer populated from TPC-H Query 6 raw qgen template.
   - Source was manually frozen from the checked TPC-H SF1 reference substitution file with :1 = 1995-01-01, :2 = 0.09, and :3 = 25.

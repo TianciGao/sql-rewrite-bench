@@ -1,0 +1,11 @@
+{
+  "artifacts_checked": [
+    "run_event_long",
+    "controls_summary"
+  ],
+  "denominator_case_count": 40,
+  "denominator_id_expected": "common_core_v0_40",
+  "issue_count": 0,
+  "issues": [],
+  "ok": true
+}

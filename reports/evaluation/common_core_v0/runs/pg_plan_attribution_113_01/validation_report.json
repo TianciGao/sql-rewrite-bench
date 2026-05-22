@@ -1,0 +1,12 @@
+{
+  "status": "ok",
+  "expected_candidates": 113,
+  "loaded_candidates": 113,
+  "event_rows": 113,
+  "failure_rows": 0,
+  "source_plan_success_count": 113,
+  "rewrite_plan_success_count": 113,
+  "both_plan_success_count": 113,
+  "feature_parse_success_count": 113,
+  "node_delta_success_count": 113
+}

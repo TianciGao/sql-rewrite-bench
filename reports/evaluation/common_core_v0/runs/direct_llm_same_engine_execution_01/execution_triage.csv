@@ -1,0 +1,75 @@
+row_type,case_id,engine,pool,planned_rows,ready_to_execute_rows,blocked_rows,executed_rows,execution_failed_rows,match_exact_rows,mismatch_rows,not_checked_execution_failed_rows,not_checked_preflight_blocked_rows,execution_status_observed,consistency_check_status,category,failure_pattern,artifact_path,log_path,note
+summary,,,,120,115,5,99,16,94,5,16,5,,,,,,,execution-validity-only-not-timing-or-speedup
+pool,,,consistency,27,,,27,,24,3,,,,,,,,,pool breakdown
+pool,,,longtail,18,,,16,2,16,,2,,,,,,,,pool breakdown
+pool,,,performance,48,,,46,2,45,1,2,,,,,,,,pool breakdown
+pool,,,portability,27,,5,10,12,9,1,12,5,,,,,,,pool breakdown
+engine,,mysql,,40,,2,36,2,34,2,2,2,,,,,,,engine breakdown
+engine,,pg,,40,,1,33,6,32,1,6,1,,,,,,,engine breakdown
+engine,,spark,,40,,2,30,8,28,2,8,2,,,,,,,engine breakdown
+case,CONS_0005,,consistency,3,,,3,,3,,,,,,,,,,case breakdown
+case,CONS_0007,,consistency,3,,,3,,3,,,,,,,,,,case breakdown
+case,CONS_0009,,consistency,3,,,3,,3,,,,,,,,,,case breakdown
+case,CONS_0010,,consistency,3,,,3,,3,,,,,,,,,,case breakdown
+case,CONS_0011,,consistency,3,,,3,,3,,,,,,,,,,case breakdown
+case,CONS_0012,,consistency,3,,,3,,3,,,,,,,,,,case breakdown
+case,CONS_0024,,consistency,3,,,3,,,3,,,,,,,,,case breakdown
+case,CONS_0036,,consistency,3,,,3,,3,,,,,,,,,,case breakdown
+case,CONS_0037,,consistency,3,,,3,,3,,,,,,,,,,case breakdown
+case,LONGTAIL_0011,,longtail,3,,,3,,3,,,,,,,,,,case breakdown
+case,LONGTAIL_0012,,longtail,3,,,3,,3,,,,,,,,,,case breakdown
+case,LONGTAIL_0013,,longtail,3,,,3,,3,,,,,,,,,,case breakdown
+case,LONGTAIL_0022,,longtail,3,,,3,,3,,,,,,,,,,case breakdown
+case,LONGTAIL_0023,,longtail,3,,,1,2,1,,2,,,,,,,,case breakdown
+case,LONGTAIL_0024,,longtail,3,,,3,,3,,,,,,,,,,case breakdown
+case,PERF_0006,,performance,3,,,3,,3,,,,,,,,,,case breakdown
+case,PERF_0007,,performance,3,,,3,,2,1,,,,,,,,,case breakdown
+case,PERF_0008,,performance,3,,,3,,3,,,,,,,,,,case breakdown
+case,PERF_0013,,performance,3,,,3,,3,,,,,,,,,,case breakdown
+case,PERF_0017,,performance,3,,,3,,3,,,,,,,,,,case breakdown
+case,PERF_0019,,performance,3,,,2,1,2,,1,,,,,,,,case breakdown
+case,PERF_0024,,performance,3,,,3,,3,,,,,,,,,,case breakdown
+case,PERF_0033,,performance,3,,,3,,3,,,,,,,,,,case breakdown
+case,PERF_0034,,performance,3,,,3,,3,,,,,,,,,,case breakdown
+case,PERF_0035,,performance,3,,,3,,3,,,,,,,,,,case breakdown
+case,PERF_0052,,performance,3,,,3,,3,,,,,,,,,,case breakdown
+case,PERF_0054,,performance,3,,,3,,3,,,,,,,,,,case breakdown
+case,PERF_0056,,performance,3,,,3,,3,,,,,,,,,,case breakdown
+case,PERF_0062,,performance,3,,,3,,3,,,,,,,,,,case breakdown
+case,PERF_0077,,performance,3,,,2,1,2,,1,,,,,,,,case breakdown
+case,PERF_0082,,performance,3,,,3,,3,,,,,,,,,,case breakdown
+case,PORT_0003,,portability,3,,2,1,,1,,,2,,,,,,,case breakdown
+case,PORT_0004,,portability,3,,1,1,1,1,,1,1,,,,,,,case breakdown
+case,PORT_0005,,portability,3,,2,1,,1,,,2,,,,,,,case breakdown
+case,PORT_0008,,portability,3,,,1,2,1,,2,,,,,,,,case breakdown
+case,PORT_0012,,portability,3,,,1,2,1,,2,,,,,,,,case breakdown
+case,PORT_0013,,portability,3,,,1,2,1,,2,,,,,,,,case breakdown
+case,PORT_0022,,portability,3,,,1,2,1,,2,,,,,,,,case breakdown
+case,PORT_0024,,portability,3,,,2,1,1,1,1,,,,,,,,case breakdown
+case,PORT_0025,,portability,3,,,1,2,1,,2,,,,,,,,case breakdown
+mismatch,CONS_0024,mysql,consistency,,,,1,,,1,,,executed,mismatch,result_mismatch,,reports/evaluation/common_core_v0/runs/direct_llm_same_engine_execution_01/workspaces/CONS_0024/mysql/direct_llm_same_engine_rewrite/result_check.json,reports/evaluation/common_core_v0/runs/direct_llm_same_engine_execution_01/logs/cons_0024__mysql__direct_llm_same_engine_rewrite.stderr.log,exact_match=false; sorted_match=false
+mismatch,CONS_0024,pg,consistency,,,,1,,,1,,,executed,mismatch,result_mismatch,,reports/evaluation/common_core_v0/runs/direct_llm_same_engine_execution_01/workspaces/CONS_0024/pg/direct_llm_same_engine_rewrite/result_check.json,reports/evaluation/common_core_v0/runs/direct_llm_same_engine_execution_01/logs/cons_0024__pg__direct_llm_same_engine_rewrite.stderr.log,exact_match=false; sorted_match=false
+mismatch,CONS_0024,spark,consistency,,,,1,,,1,,,executed,mismatch,result_mismatch,,reports/evaluation/common_core_v0/runs/direct_llm_same_engine_execution_01/workspaces/CONS_0024/spark/direct_llm_same_engine_rewrite/result_check.json,reports/evaluation/common_core_v0/runs/direct_llm_same_engine_execution_01/logs/cons_0024__spark__direct_llm_same_engine_rewrite.stderr.log,exact_match=false; sorted_match=false
+mismatch,PERF_0007,spark,performance,,,,1,,,1,,,executed,mismatch,result_mismatch,,reports/evaluation/common_core_v0/runs/direct_llm_same_engine_execution_01/workspaces/PERF_0007/spark/direct_llm_same_engine_rewrite/result_check.json,reports/evaluation/common_core_v0/runs/direct_llm_same_engine_execution_01/logs/perf_0007__spark__direct_llm_same_engine_rewrite.stderr.log,exact_match=false; sorted_match=false
+mismatch,PORT_0024,mysql,portability,,,,1,,,1,,,executed,mismatch,result_mismatch,,reports/evaluation/common_core_v0/runs/direct_llm_same_engine_execution_01/workspaces/PORT_0024/mysql/direct_llm_same_engine_rewrite/result_check.json,reports/evaluation/common_core_v0/runs/direct_llm_same_engine_execution_01/logs/port_0024__mysql__direct_llm_same_engine_rewrite.stderr.log,exact_match=false; sorted_match=false; portability stress row
+execution_failed,LONGTAIL_0023,pg,longtail,,,,,1,,,1,,execution_failed,not_checked_execution_failed,llm_generated_sql_dialect_execution_failure,other_execution_failure,reports/evaluation/common_core_v0/runs/direct_llm_same_engine_execution_01/workspaces/LONGTAIL_0023/pg/direct_llm_same_engine_rewrite/result_check.json,reports/evaluation/common_core_v0/runs/direct_llm_same_engine_execution_01/logs/longtail_0023__pg__direct_llm_same_engine_rewrite.stderr.log,alias total_links referenced in WHERE
+execution_failed,LONGTAIL_0023,spark,longtail,,,,,1,,,1,,execution_failed,not_checked_execution_failed,llm_generated_sql_dialect_execution_failure,spark_analysis_exception,reports/evaluation/common_core_v0/runs/direct_llm_same_engine_execution_01/workspaces/LONGTAIL_0023/spark/direct_llm_same_engine_rewrite/result_check.json,reports/evaluation/common_core_v0/runs/direct_llm_same_engine_execution_01/logs/longtail_0023__spark__direct_llm_same_engine_rewrite.stderr.log,unresolved alias total_links
+execution_failed,PERF_0019,pg,performance,,,,,1,,,1,,execution_failed,not_checked_execution_failed,llm_generated_sql_dialect_execution_failure,other_execution_failure,reports/evaluation/common_core_v0/runs/direct_llm_same_engine_execution_01/workspaces/PERF_0019/pg/direct_llm_same_engine_rewrite/result_check.json,reports/evaluation/common_core_v0/runs/direct_llm_same_engine_execution_01/logs/perf_0019__pg__direct_llm_same_engine_rewrite.stderr.log,column alias c_count missing in subquery output
+execution_failed,PERF_0077,spark,performance,,,,,1,,,1,,execution_failed,not_checked_execution_failed,draft_ddl_package_limitation,parse_error,reports/evaluation/common_core_v0/runs/direct_llm_same_engine_execution_01/workspaces/PERF_0077/spark/direct_llm_same_engine_rewrite/result_check.json,reports/evaluation/common_core_v0/runs/direct_llm_same_engine_execution_01/logs/perf_0077__spark__direct_llm_same_engine_rewrite.stderr.log,Spark schema file was draft or comment-only
+execution_failed,PORT_0004,spark,portability,,,,,1,,,1,,execution_failed,not_checked_execution_failed,draft_ddl_package_limitation,parse_error,reports/evaluation/common_core_v0/runs/direct_llm_same_engine_execution_01/workspaces/PORT_0004/spark/direct_llm_same_engine_rewrite/result_check.json,reports/evaluation/common_core_v0/runs/direct_llm_same_engine_execution_01/logs/port_0004__spark__direct_llm_same_engine_rewrite.stderr.log,Spark schema file was draft or comment-only; portability stress row
+execution_failed,PORT_0008,mysql,portability,,,,,1,,,1,,execution_failed,not_checked_execution_failed,llm_generated_sql_dialect_execution_failure,other_execution_failure,reports/evaluation/common_core_v0/runs/direct_llm_same_engine_execution_01/workspaces/PORT_0008/mysql/direct_llm_same_engine_rewrite/result_check.json,reports/evaluation/common_core_v0/runs/direct_llm_same_engine_execution_01/logs/port_0008__mysql__direct_llm_same_engine_rewrite.stderr.log,PostgreSQL-style quoting and casts sent to MySQL; portability stress row
+execution_failed,PORT_0008,spark,portability,,,,,1,,,1,,execution_failed,not_checked_execution_failed,llm_generated_sql_dialect_execution_failure,parse_error,reports/evaluation/common_core_v0/runs/direct_llm_same_engine_execution_01/workspaces/PORT_0008/spark/direct_llm_same_engine_rewrite/result_check.json,reports/evaluation/common_core_v0/runs/direct_llm_same_engine_execution_01/logs/port_0008__spark__direct_llm_same_engine_rewrite.stderr.log,Spark ParseException; portability stress row
+execution_failed,PORT_0012,mysql,portability,,,,,1,,,1,,execution_failed,not_checked_execution_failed,llm_generated_sql_dialect_execution_failure,other_execution_failure,reports/evaluation/common_core_v0/runs/direct_llm_same_engine_execution_01/workspaces/PORT_0012/mysql/direct_llm_same_engine_rewrite/result_check.json,reports/evaluation/common_core_v0/runs/direct_llm_same_engine_execution_01/logs/port_0012__mysql__direct_llm_same_engine_rewrite.stderr.log,PostgreSQL-style quoting and casts sent to MySQL; portability stress row
+execution_failed,PORT_0012,spark,portability,,,,,1,,,1,,execution_failed,not_checked_execution_failed,llm_generated_sql_dialect_execution_failure,parse_error,reports/evaluation/common_core_v0/runs/direct_llm_same_engine_execution_01/workspaces/PORT_0012/spark/direct_llm_same_engine_rewrite/result_check.json,reports/evaluation/common_core_v0/runs/direct_llm_same_engine_execution_01/logs/port_0012__spark__direct_llm_same_engine_rewrite.stderr.log,Spark ParseException; portability stress row
+execution_failed,PORT_0013,pg,portability,,,,,1,,,1,,execution_failed,not_checked_execution_failed,llm_generated_sql_dialect_execution_failure,other_execution_failure,reports/evaluation/common_core_v0/runs/direct_llm_same_engine_execution_01/workspaces/PORT_0013/pg/direct_llm_same_engine_rewrite/result_check.json,reports/evaluation/common_core_v0/runs/direct_llm_same_engine_execution_01/logs/port_0013__pg__direct_llm_same_engine_rewrite.stderr.log,MySQL-style backticks and DATE_FORMAT or DATETIME usage in PostgreSQL; portability stress row
+execution_failed,PORT_0013,spark,portability,,,,,1,,,1,,execution_failed,not_checked_execution_failed,llm_generated_sql_dialect_execution_failure,parse_error,reports/evaluation/common_core_v0/runs/direct_llm_same_engine_execution_01/workspaces/PORT_0013/spark/direct_llm_same_engine_rewrite/result_check.json,reports/evaluation/common_core_v0/runs/direct_llm_same_engine_execution_01/logs/port_0013__spark__direct_llm_same_engine_rewrite.stderr.log,Spark ParseException; generation watchlist row; portability stress row
+execution_failed,PORT_0022,pg,portability,,,,,1,,,1,,execution_failed,not_checked_execution_failed,llm_generated_sql_dialect_execution_failure,other_execution_failure,reports/evaluation/common_core_v0/runs/direct_llm_same_engine_execution_01/workspaces/PORT_0022/pg/direct_llm_same_engine_rewrite/result_check.json,reports/evaluation/common_core_v0/runs/direct_llm_same_engine_execution_01/logs/port_0022__pg__direct_llm_same_engine_rewrite.stderr.log,MySQL-style backticks and DATE_FORMAT or DATETIME usage in PostgreSQL; portability stress row
+execution_failed,PORT_0022,spark,portability,,,,,1,,,1,,execution_failed,not_checked_execution_failed,llm_generated_sql_dialect_execution_failure,parse_error,reports/evaluation/common_core_v0/runs/direct_llm_same_engine_execution_01/workspaces/PORT_0022/spark/direct_llm_same_engine_rewrite/result_check.json,reports/evaluation/common_core_v0/runs/direct_llm_same_engine_execution_01/logs/port_0022__spark__direct_llm_same_engine_rewrite.stderr.log,Spark ParseException; portability stress row
+execution_failed,PORT_0024,pg,portability,,,,,1,,,1,,execution_failed,not_checked_execution_failed,llm_generated_sql_dialect_execution_failure,other_execution_failure,reports/evaluation/common_core_v0/runs/direct_llm_same_engine_execution_01/workspaces/PORT_0024/pg/direct_llm_same_engine_rewrite/result_check.json,reports/evaluation/common_core_v0/runs/direct_llm_same_engine_execution_01/logs/port_0024__pg__direct_llm_same_engine_rewrite.stderr.log,MySQL-style backticks in PostgreSQL; portability stress row
+execution_failed,PORT_0025,pg,portability,,,,,1,,,1,,execution_failed,not_checked_execution_failed,llm_generated_sql_dialect_execution_failure,other_execution_failure,reports/evaluation/common_core_v0/runs/direct_llm_same_engine_execution_01/workspaces/PORT_0025/pg/direct_llm_same_engine_rewrite/result_check.json,reports/evaluation/common_core_v0/runs/direct_llm_same_engine_execution_01/logs/port_0025__pg__direct_llm_same_engine_rewrite.stderr.log,dialect-incompatible syntax in PostgreSQL; portability stress row
+execution_failed,PORT_0025,spark,portability,,,,,1,,,1,,execution_failed,not_checked_execution_failed,llm_generated_sql_dialect_execution_failure,parse_error,reports/evaluation/common_core_v0/runs/direct_llm_same_engine_execution_01/workspaces/PORT_0025/spark/direct_llm_same_engine_rewrite/result_check.json,reports/evaluation/common_core_v0/runs/direct_llm_same_engine_execution_01/logs/port_0025__spark__direct_llm_same_engine_rewrite.stderr.log,unsupported Spark datatype DATETIME; portability stress row
+preflight_blocked,PORT_0003,mysql,portability,,,1,,,,,,1,not_executed_preflight_blocked,not_checked_preflight_blocked,package_preflight_artifact_gap,,cases/PORT/PORT_0003/validation/mysql_witness_data.sql,,missing witness data
+preflight_blocked,PORT_0003,spark,portability,,,1,,,,,,1,not_executed_preflight_blocked,not_checked_preflight_blocked,package_preflight_artifact_gap,,cases/PORT/PORT_0003/validation/spark_witness_data.sql,,missing witness data
+preflight_blocked,PORT_0004,pg,portability,,,1,,,,,,1,not_executed_preflight_blocked,not_checked_preflight_blocked,package_preflight_artifact_gap,,cases/PORT/PORT_0004/validation/pg_witness_data.sql,,missing witness data
+preflight_blocked,PORT_0005,mysql,portability,,,1,,,,,,1,not_executed_preflight_blocked,not_checked_preflight_blocked,package_preflight_artifact_gap,,cases/PORT/PORT_0005/validation/mysql_witness_data.sql,,missing witness data
+preflight_blocked,PORT_0005,spark,portability,,,1,,,,,,1,not_executed_preflight_blocked,not_checked_preflight_blocked,package_preflight_artifact_gap,,cases/PORT/PORT_0005/validation/spark_witness_data.sql,,missing witness data

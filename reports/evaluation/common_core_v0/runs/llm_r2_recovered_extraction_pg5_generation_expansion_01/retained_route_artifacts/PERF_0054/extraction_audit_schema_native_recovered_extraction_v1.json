@@ -1,0 +1,23 @@
+{
+  "candidate_begins_with_select_or_with": true,
+  "candidate_starts_with_select_or_with": true,
+  "candidate_written": true,
+  "case_id": "PERF_0054",
+  "extraction_rule_used": "first_select_or_with_then_strip_trailing_source_comments_v1",
+  "failure_category": "",
+  "failure_summary": "",
+  "first_sql_line_index": 0,
+  "generic_sql_like_status": "extracted",
+  "leading_select_or_with_in_raw": true,
+  "notes": [],
+  "raw_field_non_empty": true,
+  "raw_field_present": true,
+  "raw_field_source_column": "rewritten_sql_gpt",
+  "recovered_sql_candidate": "select     dt.d_year,     item.i_brand_id brand_id,     item.i_brand brand,     sum(ss_ext_sales_price) sum_agg from date_dim dt, store_sales, item where dt.d_date_sk = store_sales.ss_sold_date_sk   and store_sales.ss_item_sk = item.i_item_sk   and item.i_manufact_id = 436   and dt.d_moy = 12 group by dt.d_year, item.i_brand, item.i_brand_id order by dt.d_year, sum_agg desc, brand_id limit 100",
+  "route_id": "llm_r2_recovered_extraction_route_v1",
+  "source_comments_detected": false,
+  "source_comments_stripped": false,
+  "source_comments_stripped_or_rejected": false,
+  "sql_generated_by_method_not_manually_repaired": true,
+  "write_generated_sql_allowed": true
+}

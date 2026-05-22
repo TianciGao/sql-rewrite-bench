@@ -1,0 +1,5 @@
+drop schema if exists attr24_sqlglot__sqlglot_optimize_same_dialect__cons_0010__pg cascade;
+create schema attr24_sqlglot__sqlglot_optimize_same_dialect__cons_0010__pg;
+set search_path to attr24_sqlglot__sqlglot_optimize_same_dialect__cons_0010__pg;
+\i /home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/workspaces/CONS_0010/pg/sqlglot_optimize_same_dialect/ddl_pg.sql
+\i /home/tianci_gao/code/sql-rewrite-bench/cases/CONS/CONS_0010/validation/pg_witness_data.sql

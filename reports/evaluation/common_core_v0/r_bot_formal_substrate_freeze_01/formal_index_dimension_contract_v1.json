@@ -1,0 +1,37 @@
+{
+  "contract_id": "r_bot_formal_index_dimension_contract_v1",
+  "denominator_id": "common_core_v0_40_same_engine_120",
+  "method_id": "r_bot",
+  "route_id": "r_bot_same_engine_rewrite",
+  "status": "policy_frozen_implementation_blocked",
+  "current_benchmark_gate_ready": false,
+  "formal_generation_may_start": false,
+  "total_dimension": 3172,
+  "dimension_decomposition": {
+    "query_embedding_width": 1536,
+    "rule_vector_width": 100,
+    "template_embedding_width": 1536
+  },
+  "rule_vector_policy": {
+    "status": "formal_deterministic_policy",
+    "exploratory_pg1_patch_acceptable_as_formal_evidence": false,
+    "notes": "rule_vector_width=100 is now formal policy; the exploratory PG1 compatibility patch remains non-evidence"
+  },
+  "formalization_answer": {
+    "total_dimension_3172_can_be_formalized": true,
+    "rule_vector_width_100_is_still_exploratory": false,
+    "rule_vector_width_100_is_formal_deterministic_policy": true
+  },
+  "implementation_blockers": [
+    "formal rebuilt chroma_db package does not yet exist",
+    "formal rebuilt index identifier is still null",
+    "formal rebuilt index anchor hashes are not yet retained",
+    "corpus manifest is not inventory-complete",
+    "retrieval archive retained external provenance handle is missing",
+    "retrieval top_k remains null",
+    "retrieval reranking mode remains null",
+    "retrieval similarity threshold remains null"
+  ],
+  "gate_rule": "policy freeze alone does not open the formal @120 generation gate"
+}
+

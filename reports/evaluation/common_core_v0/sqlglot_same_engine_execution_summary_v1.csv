@@ -1,0 +1,26 @@
+summary_group,summary_key,count,note
+totals,total_cases,40,frozen Common-core v0 denominator cases
+totals,total_planned_rows,240,40 cases x 3 engines x 2 routes
+totals,nonport_rows,186,performance + consistency + longtail
+totals,port_rows,54,portability only
+status,success,137,executed success rows
+status,failure,16,executed failure rows
+status,skipped,87,explicit non-executed rows preserved
+route,sqlglot_optimize_same_dialect,120,full denominator route coverage
+route,sqlglot_transpile_same_dialect_noop,120,full denominator route coverage
+engine,pg,80,full denominator engine coverage
+engine,mysql,80,full denominator engine coverage
+engine,spark,80,full denominator engine coverage
+pool,performance,96,16 cases x 3 engines x 2 routes
+pool,consistency,54,9 cases x 3 engines x 2 routes
+pool,longtail,36,6 cases x 3 engines x 2 routes
+pool,portability,54,9 cases x 3 engines x 2 routes
+special,generation_failed,27,preserved as explicit non-executed rows
+special,noop_generated,24,preserved as explicit no-op rows
+special,skipped_unsupported,36,preserved as explicit unsupported PORT rows
+special,executed_success,137,execution evidence only
+special,executed_failure,16,execution failures remain explicit
+validator,sqlglot_same_engine_nonport_execution_01_ok,1,issue_count=0
+validator,sqlglot_same_engine_port_execution_resolved_01_ok,1,issue_count=0
+validator,sqlglot_same_engine_nonport_execution_01_issue_count,0,validator report
+validator,sqlglot_same_engine_port_execution_resolved_01_issue_count,0,validator report

@@ -1,0 +1,22 @@
+{
+  "case_id": "LONGTAIL_0022",
+  "engine": "pg",
+  "route_id": "sqlglot_transpile_same_dialect_noop",
+  "warmup_count": 1,
+  "repeat_count": 3,
+  "source_runtime_ms": [
+    308.64061298780143,
+    505.17871999181807,
+    301.96702701505274
+  ],
+  "generated_runtime_ms": [
+    296.9122820068151,
+    300.56262109428644,
+    303.2211259705946
+  ],
+  "median_source_ms": 308.64061298780143,
+  "median_generated_ms": 300.56262109428644,
+  "speedup_ratio": 1.0268762358542944,
+  "status": "success",
+  "notes": ""
+}

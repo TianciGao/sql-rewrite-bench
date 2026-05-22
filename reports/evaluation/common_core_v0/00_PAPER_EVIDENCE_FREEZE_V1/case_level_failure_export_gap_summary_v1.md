@@ -1,0 +1,20 @@
+# Case-level Failure Export Gap Summary v1
+
+这是基于已保留工件的 paper-facing 综合导出。
+
+- 未进行任何新的执行。
+- 未运行数据库、checker、timing、LLM 或 verifier。
+- 这不是最终排行榜。
+
+| gap_id | method_id | route_id | current_status | missing_artifact_or_reason | affected_table | required_next_artifact_or_action | can_be_fixed_by_aggregation_only | requires_new_execution | notes |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| gap_rbot_case_level_failures_01 | r_bot | r_bot_same_engine_rewrite | summary_only | full mixed-scope failure frontier is retained only through reconciliation cards, not a full 120 row-level failure ledger | case_level_failure_export | retained row-level generation frontier export for formal120 and pg40 generation failures | no | no | pg15 execution subset is exact-only and does not expose broader failure rows |
+| gap_learnedrewrite_case_level_01 | learnedrewrite | UNKNOWN_NOT_RECOVERED | summary_only | bounded appendix note has no retained case-level failure packet | case_level_failure_export | retain case-level prior-method execution or generation failure export if future appendix wants concrete rows | no | no | current retained evidence is narrative/bounded only |
+| gap_sqlglot_candidate_artifacts_01 | sqlglot | sqlglot_optimize_same_dialect_and_sqlglot_transpile_same_dialect_noop | partial_row_level | triage packets expose row-level statuses and logs but not a unified retained candidate-sql manifest per row in the freeze folder | common_core_v0_run_event_long | retain or surface per-row generated sql manifest for sqlglot routes | yes | no | failure rows are still concrete via stderr and triage evidence |
+| gap_calcite_nonpg_exact_recovery_01 | calcite_hep | calcite_hep_fail_closed_120 | partial_row_level | non-PG recovered exact rows depend on multiple retained packets rather than one single run_event_long source | common_core_v0_run_event_long | optional normalized merged calcite fail-closed row-event ledger | yes | no | failure export is still concrete for nonexact rows after exact93 filtering |
+
+## Interpretation Notes
+
+- 该表解释哪些方法仍然只有 summary-level 或 bounded evidence。
+- 能靠 aggregation 修复的缺口与需要新执行的缺口被分开标注。
+- 当前没有进行任何新的 DB/checker/timing/LLM 运行。

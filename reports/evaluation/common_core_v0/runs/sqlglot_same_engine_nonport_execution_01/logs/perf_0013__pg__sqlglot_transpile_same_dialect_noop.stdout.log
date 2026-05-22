@@ -1,0 +1,29 @@
+DROP SCHEMA
+CREATE SCHEMA
+SET
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+SET
+INSERT 0 2
+INSERT 0 2
+INSERT 0 2
+INSERT 0 2
+INSERT 0 3
+INSERT 0 3
+SET
+ n_name | revenue 
+--------+---------
+ EGYPT  | 90.0000
+(1 row)
+
+SET
+ n_name | revenue 
+--------+---------
+ EGYPT  | 90.0000
+(1 row)
+
+DROP SCHEMA

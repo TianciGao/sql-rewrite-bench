@@ -1,0 +1,12 @@
+{
+  "plan_format": "spark_text",
+  "top_operator": "HashAggregate",
+  "scan_summary": "Scan",
+  "join_summary": "none_visible",
+  "aggregate_summary": "Aggregate, HashAggregate",
+  "sort_limit_summary": "none_visible",
+  "filter_summary": "Filter, Condition",
+  "node_count": "12",
+  "parse_confidence": "low",
+  "notes": "parsed_from_spark_formatted_text"
+}

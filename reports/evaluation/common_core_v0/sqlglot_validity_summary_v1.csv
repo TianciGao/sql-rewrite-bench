@@ -1,0 +1,66 @@
+section,scope,key,count_or_value,rate,note
+route_overall_metrics,overall,planned_rows,240,,
+route_overall_metrics,overall,executed_rows,153,,
+route_overall_metrics,overall,executable_success_count,137,,
+route_overall_metrics,overall,executable_failure_count,16,,
+route_overall_metrics,overall,executable_rate_full_planned,0.570833,0.570833,
+route_overall_metrics,overall,executable_rate_attempted,0.895425,0.895425,
+route_overall_metrics,overall,generation_failed_count,27,,
+route_overall_metrics,overall,generation_failed_rate,0.112500,0.112500,
+route_overall_metrics,overall,noop_generated_count,24,24,
+route_overall_metrics,overall,noop_generated_rate,0.100000,0.100000,
+route_overall_metrics,overall,skipped_unsupported_count,36,,
+route_overall_metrics,overall,skipped_unsupported_rate,0.150000,0.150000,
+failure_bucket_counts,overall,method_error,36,0.150000,rate over planned rows in scope
+failure_bucket_counts,overall,parse_error,7,0.029167,rate over planned rows in scope
+failure_bucket_counts,overall,unsupported,60,0.250000,rate over planned rows in scope
+pool_counts,overall,consistency,54,0.225000,planned-row composition
+pool_counts,overall,longtail,36,0.150000,planned-row composition
+pool_counts,overall,performance,96,0.400000,planned-row composition
+pool_counts,overall,portability,54,0.225000,planned-row composition
+engine_counts,overall,mysql,80,0.333333,planned-row composition
+engine_counts,overall,pg,80,0.333333,planned-row composition
+engine_counts,overall,spark,80,0.333333,planned-row composition
+route_overall_metrics,sqlglot_optimize_same_dialect,planned_rows,120,,
+route_overall_metrics,sqlglot_optimize_same_dialect,executed_rows,75,,
+route_overall_metrics,sqlglot_optimize_same_dialect,executable_success_count,65,,
+route_overall_metrics,sqlglot_optimize_same_dialect,executable_failure_count,10,,
+route_overall_metrics,sqlglot_optimize_same_dialect,executable_rate_full_planned,0.541667,0.541667,
+route_overall_metrics,sqlglot_optimize_same_dialect,executable_rate_attempted,0.866667,0.866667,
+route_overall_metrics,sqlglot_optimize_same_dialect,generation_failed_count,27,,
+route_overall_metrics,sqlglot_optimize_same_dialect,generation_failed_rate,0.225000,0.225000,
+route_overall_metrics,sqlglot_optimize_same_dialect,noop_generated_count,0,0,
+route_overall_metrics,sqlglot_optimize_same_dialect,noop_generated_rate,0.000000,0.000000,
+route_overall_metrics,sqlglot_optimize_same_dialect,skipped_unsupported_count,18,,
+route_overall_metrics,sqlglot_optimize_same_dialect,skipped_unsupported_rate,0.150000,0.150000,
+failure_bucket_counts,sqlglot_optimize_same_dialect,method_error,36,0.300000,rate over planned rows in scope
+failure_bucket_counts,sqlglot_optimize_same_dialect,parse_error,1,0.008333,rate over planned rows in scope
+failure_bucket_counts,sqlglot_optimize_same_dialect,unsupported,18,0.150000,rate over planned rows in scope
+pool_counts,sqlglot_optimize_same_dialect,consistency,27,0.225000,planned-row composition
+pool_counts,sqlglot_optimize_same_dialect,longtail,18,0.150000,planned-row composition
+pool_counts,sqlglot_optimize_same_dialect,performance,48,0.400000,planned-row composition
+pool_counts,sqlglot_optimize_same_dialect,portability,27,0.225000,planned-row composition
+engine_counts,sqlglot_optimize_same_dialect,mysql,40,0.333333,planned-row composition
+engine_counts,sqlglot_optimize_same_dialect,pg,40,0.333333,planned-row composition
+engine_counts,sqlglot_optimize_same_dialect,spark,40,0.333333,planned-row composition
+route_overall_metrics,sqlglot_transpile_same_dialect_noop,planned_rows,120,,
+route_overall_metrics,sqlglot_transpile_same_dialect_noop,executed_rows,78,,
+route_overall_metrics,sqlglot_transpile_same_dialect_noop,executable_success_count,72,,
+route_overall_metrics,sqlglot_transpile_same_dialect_noop,executable_failure_count,6,,
+route_overall_metrics,sqlglot_transpile_same_dialect_noop,executable_rate_full_planned,0.600000,0.600000,
+route_overall_metrics,sqlglot_transpile_same_dialect_noop,executable_rate_attempted,0.923077,0.923077,
+route_overall_metrics,sqlglot_transpile_same_dialect_noop,generation_failed_count,0,,
+route_overall_metrics,sqlglot_transpile_same_dialect_noop,generation_failed_rate,0.000000,0.000000,
+route_overall_metrics,sqlglot_transpile_same_dialect_noop,noop_generated_count,24,24,
+route_overall_metrics,sqlglot_transpile_same_dialect_noop,noop_generated_rate,0.200000,0.200000,
+route_overall_metrics,sqlglot_transpile_same_dialect_noop,skipped_unsupported_count,18,,
+route_overall_metrics,sqlglot_transpile_same_dialect_noop,skipped_unsupported_rate,0.150000,0.150000,
+failure_bucket_counts,sqlglot_transpile_same_dialect_noop,parse_error,6,0.050000,rate over planned rows in scope
+failure_bucket_counts,sqlglot_transpile_same_dialect_noop,unsupported,42,0.350000,rate over planned rows in scope
+pool_counts,sqlglot_transpile_same_dialect_noop,consistency,27,0.225000,planned-row composition
+pool_counts,sqlglot_transpile_same_dialect_noop,longtail,18,0.150000,planned-row composition
+pool_counts,sqlglot_transpile_same_dialect_noop,performance,48,0.400000,planned-row composition
+pool_counts,sqlglot_transpile_same_dialect_noop,portability,27,0.225000,planned-row composition
+engine_counts,sqlglot_transpile_same_dialect_noop,mysql,40,0.333333,planned-row composition
+engine_counts,sqlglot_transpile_same_dialect_noop,pg,40,0.333333,planned-row composition
+engine_counts,sqlglot_transpile_same_dialect_noop,spark,40,0.333333,planned-row composition

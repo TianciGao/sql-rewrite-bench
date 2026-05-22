@@ -1,0 +1,6 @@
+注意:  模式 "ccv0_direct_llm_perf_0077_pg" 不存在
+注意:  串联删除4个其它对象
+DETAIL:  递归删除 表 ccv0_direct_llm_perf_0077_pg.keyword
+递归删除 表 ccv0_direct_llm_perf_0077_pg.movie_info
+递归删除 表 ccv0_direct_llm_perf_0077_pg.movie_keyword
+递归删除 表 ccv0_direct_llm_perf_0077_pg.title

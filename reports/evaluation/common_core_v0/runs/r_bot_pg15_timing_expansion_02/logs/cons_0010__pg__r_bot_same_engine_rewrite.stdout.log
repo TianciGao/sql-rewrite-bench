@@ -1,0 +1,50 @@
+ empno | ename |   job   | mgr |  hiredate  |   sal   | comm | deptno 
+-------+-------+---------+-----+------------+---------+------+--------
+     3 | CAROL | MANAGER |     | 2020-01-03 | 2000.00 |      |     10
+     4 | DAVE  | ANALYST |     | 2020-01-04 | 3000.00 |      |     20
+(2 rows)
+
+ empno | ename |   job   | mgr |  hiredate  |   sal   | comm | deptno 
+-------+-------+---------+-----+------------+---------+------+--------
+     3 | CAROL | MANAGER |     | 2020-01-03 | 2000.00 |      |     10
+     4 | DAVE  | ANALYST |     | 2020-01-04 | 3000.00 |      |     20
+(2 rows)
+
+ empno | ename |   job   | mgr |  hiredate  |   sal   | comm | deptno 
+-------+-------+---------+-----+------------+---------+------+--------
+     3 | CAROL | MANAGER |     | 2020-01-03 | 2000.00 |      |     10
+     4 | DAVE  | ANALYST |     | 2020-01-04 | 3000.00 |      |     20
+(2 rows)
+
+ empno | ename |   job   | mgr |  hiredate  |   sal   | comm | deptno 
+-------+-------+---------+-----+------------+---------+------+--------
+     3 | CAROL | MANAGER |     | 2020-01-03 | 2000.00 |      |     10
+     4 | DAVE  | ANALYST |     | 2020-01-04 | 3000.00 |      |     20
+(2 rows)
+
+ empno | ename |   job   | mgr |  hiredate  |   sal   | comm | deptno 
+-------+-------+---------+-----+------------+---------+------+--------
+     3 | CAROL | MANAGER |     | 2020-01-03 | 2000.00 |      |     10
+     4 | DAVE  | ANALYST |     | 2020-01-04 | 3000.00 |      |     20
+(2 rows)
+
+ empno | ename |   job   | mgr |  hiredate  |   sal   | comm | deptno 
+-------+-------+---------+-----+------------+---------+------+--------
+     3 | CAROL | MANAGER |     | 2020-01-03 | 2000.00 |      |     10
+     4 | DAVE  | ANALYST |     | 2020-01-04 | 3000.00 |      |     20
+(2 rows)
+
+ empno | ename |   job   | mgr |  hiredate  |   sal   | comm | deptno 
+-------+-------+---------+-----+------------+---------+------+--------
+     3 | CAROL | MANAGER |     | 2020-01-03 | 2000.00 |      |     10
+     4 | DAVE  | ANALYST |     | 2020-01-04 | 3000.00 |      |     20
+(2 rows)
+
+ empno | ename |   job   | mgr |  hiredate  |   sal   | comm | deptno 
+-------+-------+---------+-----+------------+---------+------+--------
+     3 | CAROL | MANAGER |     | 2020-01-03 | 2000.00 |      |     10
+     4 | DAVE  | ANALYST |     | 2020-01-04 | 3000.00 |      |     20
+(2 rows)
+
+case_id=CONS_0010 pool=consistency engine=pg route_id=r_bot_same_engine_rewrite
+warmup_count=1 repeat_count=3

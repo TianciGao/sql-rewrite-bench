@@ -1,0 +1,282 @@
+{
+  "spec_version": "formal_artifact_expected_paths_v1",
+  "contract": {
+    "denominator_id": "common_core_v0_40_same_engine_120",
+    "case_count": 40,
+    "engines": [
+      "pg",
+      "mysql",
+      "spark"
+    ],
+    "planned_rows": 120,
+    "method_id": "r_bot",
+    "route_id": "r_bot_same_engine_rewrite",
+    "planned_run_root": "reports/evaluation/common_core_v0/runs/r_bot_common_core_v0_40_same_engine_generation_01",
+    "current_benchmark_gate_ready": false,
+    "formal_generation_may_start_only_if_this_contract_validates_and_prior_gates_remain_green": true,
+    "formal_chroma_index_identifier_path": "reports/evaluation/common_core_v0/r_bot_formal_index_build_01/formal_chroma_index_identifier_v1.json",
+    "runtime_lock_status_path": "reports/evaluation/common_core_v0/r_bot_formal_runtime_lock_01/runtime_lock_status_v1.md",
+    "substrate_gate_status_path": "reports/evaluation/common_core_v0/r_bot_formal_substrate_freeze_01/formal_gate_status_v12.md"
+  },
+  "row_statuses": {
+    "required_enumeration": [
+      "generated",
+      "failed",
+      "blocked",
+      "unsupported",
+      "skipped"
+    ],
+    "rows_must_remain_visible_in_run_event_long_for_all_statuses": true
+  },
+  "row_artifacts": {
+    "generated_sql": {
+      "path_template": "generated/{case_id}/{engine}/r_bot_same_engine_rewrite.sql",
+      "required_for_statuses": [
+        "generated"
+      ],
+      "content_type": "sql"
+    },
+    "selected_rules": {
+      "path_template": "traces/{case_id}/{engine}/selected_rules.json",
+      "required_for_statuses": [
+        "generated",
+        "failed"
+      ],
+      "required_schema_keys": [
+        "case_id",
+        "engine",
+        "method_id",
+        "route_id",
+        "rule_selection_status",
+        "selected_rules",
+        "rule_vector_width",
+        "rule_catalog_path"
+      ]
+    },
+    "retrieval_trace": {
+      "path_template": "traces/{case_id}/{engine}/retrieval_trace.json",
+      "required_for_statuses": [
+        "generated",
+        "failed"
+      ],
+      "required_schema_keys": [
+        "case_id",
+        "engine",
+        "method_id",
+        "route_id",
+        "retrieval_status",
+        "index_id",
+        "collection_name",
+        "retrieved_examples"
+      ]
+    },
+    "prompt_text": {
+      "path_template": "prompts/{case_id}/{engine}/prompt.txt",
+      "required_for_statuses": [
+        "generated",
+        "failed"
+      ],
+      "content_type": "text"
+    },
+    "raw_response": {
+      "path_template": "raw_responses/{case_id}/{engine}/response.txt",
+      "required_for_statuses": [
+        "generated",
+        "failed"
+      ],
+      "content_type": "text"
+    },
+    "token_cost_provider": {
+      "path_template": "metadata/{case_id}/{engine}/token_cost_provider.json",
+      "required_for_statuses": [
+        "generated",
+        "failed"
+      ],
+      "required_schema_keys": [
+        "case_id",
+        "engine",
+        "method_id",
+        "route_id",
+        "provider_name",
+        "provider_family",
+        "embedding_provider_family",
+        "model_name",
+        "base_url_family",
+        "prompt_tokens",
+        "completion_tokens",
+        "total_tokens",
+        "cost_fields",
+        "retry_count"
+      ]
+    },
+    "environment_snapshot": {
+      "path_template": "metadata/{case_id}/{engine}/environment_snapshot.json",
+      "required_for_statuses": [
+        "generated",
+        "failed",
+        "blocked",
+        "unsupported",
+        "skipped"
+      ],
+      "required_schema_keys": [
+        "case_id",
+        "engine",
+        "method_id",
+        "route_id",
+        "python_version",
+        "platform",
+        "python_executable",
+        "requirements_lock_path",
+        "runtime_snapshot_path",
+        "formal_chroma_index_identifier_path",
+        "openai_api_key_visible",
+        "provider_family",
+        "base_url_family"
+      ]
+    },
+    "row_run_metadata": {
+      "path_template": "metadata/{case_id}/{engine}/row_run_metadata.json",
+      "required_for_statuses": [
+        "generated",
+        "failed",
+        "blocked",
+        "unsupported",
+        "skipped"
+      ],
+      "required_schema_keys": [
+        "run_id",
+        "case_id",
+        "pool",
+        "engine",
+        "method_id",
+        "route_id",
+        "denominator_id",
+        "row_status",
+        "claim_boundary",
+        "generated_sql_path",
+        "selected_rules_path",
+        "retrieval_trace_path",
+        "prompt_path",
+        "raw_response_path",
+        "token_cost_provider_path",
+        "environment_snapshot_path",
+        "failure_category",
+        "failure_summary",
+        "blocker_reason",
+        "unsupported_reason"
+      ]
+    }
+  },
+  "package_artifacts": {
+    "run_results": {
+      "relative_path": "run_results.json",
+      "required_schema_keys": [
+        "run_id",
+        "method_id",
+        "route_id",
+        "denominator_id",
+        "planned_rows",
+        "git_commit",
+        "claim_boundary",
+        "current_benchmark_gate_ready",
+        "counts_by_status",
+        "run_event_long_path"
+      ]
+    },
+    "run_event_long": {
+      "relative_path": "run_event_long.csv",
+      "required_columns": [
+        "run_id",
+        "case_id",
+        "pool",
+        "engine",
+        "method_id",
+        "route_id",
+        "git_commit",
+        "denominator_id",
+        "row_status",
+        "claim_boundary",
+        "generated_sql_path",
+        "selected_rules_path",
+        "retrieval_trace_path",
+        "prompt_path",
+        "raw_response_path",
+        "token_cost_provider_path",
+        "environment_snapshot_path",
+        "row_run_metadata_path",
+        "failure_category",
+        "blocker_reason",
+        "unsupported_reason",
+        "speedup_exclusion_reason"
+      ]
+    },
+    "generation_summary": {
+      "relative_path": "generation_summary.csv",
+      "recommended": true,
+      "required_columns": [
+        "run_id",
+        "method_id",
+        "route_id",
+        "denominator_id",
+        "planned_rows",
+        "rows_generated",
+        "rows_failed",
+        "rows_blocked",
+        "rows_unsupported",
+        "rows_skipped",
+        "claim_boundary"
+      ]
+    }
+  },
+  "secret_hygiene": {
+    "forbidden_env_var_assignments": [
+      {
+        "env_var_name": "OPENAI_API_KEY",
+        "forbidden_context": "assignment_value_present",
+        "token_type": "provider_api_key"
+      },
+      {
+        "env_var_name": "PGPASSWORD",
+        "forbidden_context": "assignment_value_present",
+        "token_type": "database_password"
+      },
+      {
+        "env_var_name": "MYSQL_PWD",
+        "forbidden_context": "assignment_value_present",
+        "token_type": "database_password"
+      }
+    ],
+    "forbidden_http_authorization_patterns": [
+      {
+        "header_name": "Authorization",
+        "token_scheme": "Bearer",
+        "forbidden_context": "credential_value_present",
+        "token_type": "authorization_header_secret"
+      }
+    ],
+    "forbidden_json_value_keys": [
+      {
+        "field_name": "api_key",
+        "forbidden_context": "json_value_present",
+        "token_type": "provider_api_key"
+      },
+      {
+        "field_name": "password",
+        "forbidden_context": "json_value_present",
+        "token_type": "password_secret"
+      }
+    ],
+    "forbidden_value_prefixes": [
+      {
+        "value_prefix": "sk-",
+        "token_type": "provider_api_key_prefix"
+      }
+    ],
+    "allowed_visibility_flags": [
+      "OPENAI_API_KEY visible",
+      "openai_api_key_visible",
+      "provider_family",
+      "base_url_family"
+    ]
+  }
+}

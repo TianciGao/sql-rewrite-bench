@@ -1,0 +1,11 @@
+check_id,scope,status,evidence,notes
+mysql_schema_coverage,common_core_v0_40,pass,40/40 ddl_mysql.sql present,not a blocker for canary
+spark_schema_coverage,common_core_v0_40,pass,40/40 ddl_spark.sql present,not a blocker for canary
+mysql_witness_coverage,common_core_v0_40,warning,38/40 mysql_witness_data.sql present,missing only PORT_0003 and PORT_0005
+spark_witness_coverage,common_core_v0_40,warning,38/40 spark_witness_data.sql present,missing only PORT_0003 and PORT_0005
+canary_case_artifacts,PERF_0006+PERF_0007+CONS_0005,pass,all six requested mysql/spark rows have schema and witness files,canary rows are not blocked by missing artifacts
+current_harness_route,recovered_formal_runner,warning,pg_only route assumptions still present,needs engine parameterization
+upstream_db_adapter,visible_LLM4Rewrite_runtime,fail,my_rewriter/database.py accepts only postgresql and otherwise raises NotImplementedError,primary blocker for safe mysql/spark route
+unsupported_row_classification,prior_formal_120,warning,80 mysql/spark rows were unsupported due to harness route and adapter limits rather than proven method impossibility,do not overclaim unsupported as inherent method scope
+canary_justified,r_bot_mysql_spark_generation_canary_01,pass,bounded 6-row generation canary is justified,use fail-closed preflight until adapter blocker is removed
+recommended_next_action,r_bot_mysql_spark_generation_canary_01,pass,create fail-closed human-run canary package,do not claim mysql/spark support without later generation and execution evidence

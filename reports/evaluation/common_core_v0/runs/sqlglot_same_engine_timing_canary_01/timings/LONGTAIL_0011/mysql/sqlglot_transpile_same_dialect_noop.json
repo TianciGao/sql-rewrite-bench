@@ -1,0 +1,22 @@
+{
+  "case_id": "LONGTAIL_0011",
+  "engine": "mysql",
+  "route_id": "sqlglot_transpile_same_dialect_noop",
+  "warmup_count": 1,
+  "repeat_count": 3,
+  "source_runtime_ms": [
+    134.60910809226334,
+    135.93400502577424,
+    141.25305996276438
+  ],
+  "generated_runtime_ms": [
+    138.88959703035653,
+    145.45959304086864,
+    136.37515099253505
+  ],
+  "median_source_ms": 135.93400502577424,
+  "median_generated_ms": 138.88959703035653,
+  "speedup_ratio": 0.9787198460663955,
+  "status": "success",
+  "notes": ""
+}

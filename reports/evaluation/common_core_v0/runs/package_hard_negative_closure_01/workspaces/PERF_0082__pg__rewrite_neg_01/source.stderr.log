@@ -1,0 +1,6 @@
+注意:  串联删除5个其它对象
+DETAIL:  递归删除 表 perf_0082_pg_src_hn.company_type
+递归删除 表 perf_0082_pg_src_hn.info_type
+递归删除 表 perf_0082_pg_src_hn.movie_companies
+递归删除 表 perf_0082_pg_src_hn.movie_info
+递归删除 表 perf_0082_pg_src_hn.title

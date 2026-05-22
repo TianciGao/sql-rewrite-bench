@@ -1,0 +1,93 @@
+SYSTEM / OPERATOR INSTRUCTION
+Produce exactly one semantics-preserving SQL rewrite of the input query in the same target dialect.
+
+REQUIREMENTS
+- Output SQL only.
+- Do not use markdown fences.
+- Do not add explanations.
+- Do not add comments unless comments already exist in the input SQL.
+- Do not output DDL.
+- Do not output INSERT, UPDATE, DELETE, MERGE, COPY, or any data-changing statement.
+- Preserve result semantics exactly.
+- Keep the rewrite in the same target engine / dialect.
+- Avoid engine-specific functions unless they are compatible with the target engine.
+- If the original query is already near-minimal, you may return an equivalent no-op rewrite, but still output SQL only.
+
+TARGET ENGINE
+pg
+
+SCHEMA
+-- PERF_0024 minimal PostgreSQL schema for referenced columns only.
+
+create table supplier (
+    s_suppkey integer primary key,
+    s_name varchar(25),
+    s_address varchar(40),
+    s_nationkey integer
+);
+
+create table nation (
+    n_nationkey integer primary key,
+    n_name varchar(25)
+);
+
+create table partsupp (
+    ps_partkey integer,
+    ps_suppkey integer,
+    ps_availqty integer
+);
+
+create table part (
+    p_partkey integer primary key,
+    p_name varchar(55)
+);
+
+create table lineitem (
+    l_partkey integer,
+    l_suppkey integer,
+    l_quantity numeric(15, 2),
+    l_shipdate date
+);
+
+SOURCE SQL
+-- PERF_0024 source query.
+-- TPC-H Q20 frozen from ref_data/1/subparam_20.
+-- Substitutions: :1 = 'pale'; :2 = DATE '1997-01-01'; :3 = 'BRAZIL'; :n = -1.
+
+select
+    s_name,
+    s_address
+from
+    supplier,
+    nation
+where
+    s_suppkey in (
+        select
+            ps_suppkey
+        from
+            partsupp
+        where
+            ps_partkey in (
+                select
+                    p_partkey
+                from
+                    part
+                where
+                    p_name like 'pale%'
+            )
+            and ps_availqty > (
+                select
+                    0.5 * sum(l_quantity)
+                from
+                    lineitem
+                where
+                    l_partkey = ps_partkey
+                    and l_suppkey = ps_suppkey
+                    and l_shipdate >= date '1997-01-01'
+                    and l_shipdate < date '1997-01-01' + interval '1' year
+            )
+    )
+    and s_nationkey = n_nationkey
+    and n_name = 'BRAZIL'
+order by
+    s_name;

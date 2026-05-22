@@ -1,0 +1,16 @@
+case_id,engine,pool,execution_status_observed,consistency_check_status,result_check_exists,source_tsv_exists,generated_tsv_exists,timing_eligible_next,comparison_to_pg7
+PERF_0006,pg,performance,executed,match_exact,yes,yes,yes,yes,already_in_pg7_subset
+PERF_0007,pg,performance,executed,match_exact,yes,yes,yes,yes,new_vs_pg7_expansion
+PERF_0008,pg,performance,executed,match_exact,yes,yes,yes,yes,already_in_pg7_subset
+PERF_0013,pg,performance,executed,match_exact,yes,yes,yes,yes,already_in_pg7_subset
+PERF_0017,pg,performance,executed,match_exact,yes,yes,yes,yes,already_in_pg7_subset
+PERF_0024,pg,performance,executed,match_exact,yes,yes,yes,yes,already_in_pg7_subset
+PERF_0052,pg,performance,executed,match_exact,yes,yes,yes,yes,already_in_pg7_subset
+PERF_0054,pg,performance,executed,match_exact,yes,yes,yes,yes,already_in_pg7_subset
+PERF_0062,pg,performance,executed,match_exact,yes,yes,yes,yes,new_vs_pg7_expansion
+CONS_0005,pg,consistency,executed,match_exact,yes,yes,yes,yes,new_vs_pg7_expansion
+CONS_0007,pg,consistency,executed,match_exact,yes,yes,yes,yes,new_vs_pg7_expansion
+CONS_0009,pg,consistency,executed,match_exact,yes,yes,yes,yes,new_vs_pg7_expansion
+CONS_0010,pg,consistency,executed,match_exact,yes,yes,yes,yes,new_vs_pg7_expansion
+CONS_0012,pg,consistency,executed,match_exact,yes,yes,yes,yes,new_vs_pg7_expansion
+CONS_0036,pg,consistency,executed,match_exact,yes,yes,yes,yes,new_vs_pg7_expansion

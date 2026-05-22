@@ -1,0 +1,9 @@
+{
+  "available": true,
+  "collection_name": "r_bot_formal_stackoverflow",
+  "index_id": "r_bot_formal_chroma_index_01",
+  "reranking_mode": "rrf",
+  "retrieval_top_k": 10,
+  "retrieved_cases_log_excerpt": "[]",
+  "rrf_k": 60
+}

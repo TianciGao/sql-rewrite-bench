@@ -1,0 +1,20 @@
+{
+  "run_id": "calcite_hep_120_recovery_autopilot_01",
+  "method_id": "calcite_hep",
+  "route_id": "calcite_hep_same_engine_rewrite",
+  "denominator_id": "common_core_v0_40_same_engine_120",
+  "previous_fail_closed_exact_ledger": "90/120",
+  "planned_rows": 0,
+  "recovered_exact_count": 0,
+  "new_fail_closed_exact_ledger": "90/120",
+  "maximum_possible_ledger_after_this_autopilot": "90/120",
+  "current_benchmark_metric_evidence": false,
+  "timing_denominator_id": "NA_not_computed",
+  "leaderboard_comparable": "no",
+  "claim_boundary": "calcite_hep_120_recovery_autopilot_only_not_timing_speedup_or_leaderboard_evidence",
+  "autopilot_decision": "frontier_closed_no_safe_rows",
+  "blocked_row_classes": [
+    "semantic_or_output_shape_mismatch",
+    "methodology_boundary_do_not_recover"
+  ]
+}

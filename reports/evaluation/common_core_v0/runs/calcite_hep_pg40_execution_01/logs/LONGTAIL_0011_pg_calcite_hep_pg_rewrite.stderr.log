@@ -1,0 +1,12 @@
+注意:  模式 "ccv0_calcite_hep_longtail_0011" 不存在
+错误:  关系 "Posts" 不存在
+LINE 3: FROM "Posts"
+             ^
+注意:  串联删除2个其它对象
+DETAIL:  递归删除 表 ccv0_calcite_hep_longtail_0011.users
+递归删除 表 ccv0_calcite_hep_longtail_0011.posts
+Traceback (most recent call last):
+  File "<stdin>", line 138, in run_pg_row
+  File "/usr/lib/python3.12/subprocess.py", line 571, in run
+    raise CalledProcessError(retcode, process.args,
+subprocess.CalledProcessError: Command '['psql', '-v', 'ON_ERROR_STOP=1', '-X', '-q', '-c', 'SET search_path TO ccv0_calcite_hep_longtail_0011;', '-c', 'COPY (SELECT "t0"."Title", "t0"."CreationDate", "t0"."Score", "t0"."ViewCount", "t0"."OwnerDisplayName"\nFROM (SELECT "Posts"."Id", "Posts"."Title", "Posts"."CreationDate", "Posts"."Score", "Posts"."ViewCount", "Users"."DisplayName" AS "OwnerDisplayName", DENSE_RANK() OVER (PARTITION BY "Posts"."OwnerUserId" ORDER BY "Posts"."Score" DESC) AS "PostRank"\nFROM "Posts"\nINNER JOIN "Users" ON "Posts"."OwnerUserId" = "Users"."Id"\nWHERE "Posts"."PostTypeId" = 1 AND CAST("Posts"."CreationDate" AS VARCHAR(10)) >= \'2022-01-01\') AS "t0"\nINNER JOIN (SELECT "t2"."OwnerDisplayName", MAX("t2"."PostRank") AS "MaxPostRank"\nFROM (SELECT "Users0"."DisplayName" AS "OwnerDisplayName", DENSE_RANK() OVER (PARTITION BY "Posts0"."OwnerUserId" ORDER BY "Posts0"."Score" DESC) AS "PostRank"\nFROM "Posts" AS "Posts0"\nINNER JOIN "Users" AS "Users0" ON "Posts0"."OwnerUserId" = "Users0"."Id"\nWHERE "Posts0"."PostTypeId" = 1 AND CAST("Posts0"."CreationDate" AS VARCHAR(10)) >= \'2022-01-01\') AS "t2"\nGROUP BY "t2"."OwnerDisplayName") AS "t3" ON "t0"."OwnerDisplayName" = "t3"."OwnerDisplayName"\nWHERE "t0"."PostRank" = "t3"."MaxPostRank"\nORDER BY "t0"."Score" DESC, "t0"."ViewCount" DESC) TO STDOUT WITH (FORMAT CSV, DELIMITER E\'\\t\', NULL \'NULL\');']' returned non-zero exit status 1.

@@ -1,0 +1,73 @@
+{
+  "method_id": "llm_r2",
+  "route_id": "llm_r2_same_engine_120_preflight",
+  "denominator_id": "common_core_v0_40_same_engine_120",
+  "manifest_path": "reports/evaluation/common_core_v0/common_core_v0_40_same_engine_120_rerun_manifest_v1.csv",
+  "candidate_matrix_path": "reports/evaluation/common_core_v0/llm_r2_120_candidate_matrix_v1.csv",
+  "run_plan_path": "reports/evaluation/common_core_v0/llm_r2_120_run_plan_v1.json",
+  "planned_rows": 120,
+  "recovery_layers": [
+    "runner_interface_inventory",
+    "logical_plan_substrate_inventory",
+    "output_sql_extraction_contract",
+    "reproducibility_contract",
+    "generated_sql_retention_path_contract",
+    "bounded_pg_overlap_dry_run_validator",
+    "human_approval_gate_before_generation"
+  ],
+  "required_dependencies": [
+    {
+      "dependency": "runner",
+      "current_status": "missing"
+    },
+    {
+      "dependency": "logical_plan_substrate",
+      "current_status": "incomplete_probe_blocker_retained"
+    },
+    {
+      "dependency": "output_sql_extraction",
+      "current_status": "partial_one_case_cleanup_only"
+    },
+    {
+      "dependency": "input_format_contract",
+      "current_status": "partially_recovered_from_substrate_audit"
+    },
+    {
+      "dependency": "per_engine_sql_dialect_support",
+      "current_status": "pg_bounded_only_mysql_spark_not_recovered"
+    },
+    {
+      "dependency": "generated_sql_retention_path",
+      "current_status": "missing_for_common_core_120"
+    },
+    {
+      "dependency": "checker_handoff",
+      "current_status": "bounded_pg_only_historical_evidence"
+    },
+    {
+      "dependency": "timing_policy",
+      "current_status": "bounded_pg_only_historical_subset"
+    },
+    {
+      "dependency": "failure_bucket_policy",
+      "current_status": "available_stage0_draft"
+    },
+    {
+      "dependency": "reproducibility_contract",
+      "current_status": "missing"
+    }
+  ],
+  "forbidden_actions": [
+    "run_llm_r2_inference",
+    "generate_sql_outputs",
+    "execute_postgresql_queries",
+    "execute_mysql_queries",
+    "execute_spark_queries",
+    "run_timing_or_speedup_measurements",
+    "create_result_cards_or_proposed_rows",
+    "authorize_generation"
+  ],
+  "human_approval_required": true,
+  "safety_boundary": "runner_recovery_scaffold_only_static_dry_run_no_generation_no_db_execution_no_timing",
+  "current_status": "runner_recovery_scaffold_created_pending_static_validation_and_human_review"
+}

@@ -1,0 +1,20 @@
+{
+  "run_id": "calcite_hep_mysql_spark_execution_canary_02",
+  "row_key": "CONS_0005:mysql",
+  "case_id": "CONS_0005",
+  "pool": "consistency",
+  "engine": "mysql",
+  "method_id": "calcite_hep",
+  "route_id": "calcite_hep_same_engine_rewrite",
+  "source_rewrite_run_id": "calcite_hep_mysql_spark_canary_02",
+  "execution_denominator_id": "calcite_hep_mysql_spark_canary_02_rewrite_success_6",
+  "source_sql_path": "cases/CONS/CONS_0005/source.sql",
+  "schema_path": "cases/CONS/CONS_0005/schema/ddl_mysql.sql",
+  "witness_data_path": "cases/CONS/CONS_0005/validation/mysql_witness_data.sql",
+  "generated_sql_path": "reports/evaluation/common_core_v0/runs/calcite_hep_mysql_spark_canary_02/generated/CONS_0005/mysql/calcite_hep_rewrite.sql",
+  "row_metadata_path": "reports/evaluation/common_core_v0/runs/calcite_hep_mysql_spark_execution_canary_02/metadata/CONS_0005/mysql/row_metadata.json",
+  "claim_boundary": "mysql_spark_execution_validity_canary_only_not_timing_speedup_or_leaderboard_evidence",
+  "execution_status": "executed",
+  "exact_match": true,
+  "consistency_status": "match_exact"
+}

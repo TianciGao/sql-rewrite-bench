@@ -1,0 +1,11 @@
+# Direct LLM + Execute-and-Repair-1 Result Card
+
+| method_id | route_id | denominator_id | planned_rows | original_exact_rows | repair_ready_rows | repair_blocked_rows | repair_exact_rows | final_exact_rows | timing_scope | gm_speedup | median_speedup | regression_rate_20pct | notes |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| direct_llm | direct_llm_execute_repair_1shot | common_core_v0_40_same_engine_120 | 120 | 94 | 21 | 5 | 2 | 96 | mixed_source_timing_full_final_exact_rows | 1.0430582867389244 | 1.009402551073825 | 0.041666666666666664 | Feedback-aware protocol baseline. Extends Direct LLM, does not replace it. Uses gpt-4o-mini, temperature 0, top_p 1, max_tokens 2048. Repairs only the 21 repair-ready rows. The 5 blocked rows remain visible and unrepaired. Not a final ranked leaderboard. |
+
+- Direct LLM + Execute-and-Repair-1 is a feedback-aware protocol baseline.
+- It extends Direct LLM and does not replace it.
+- It uses the same retained model family, `gpt-4o-mini`, with `temperature=0`, `top_p=1`, `max_tokens=2048`.
+- It is separately versioned because the prompt task changes.
+- Timing claims, if any, depend on the actual `timing_scope`.

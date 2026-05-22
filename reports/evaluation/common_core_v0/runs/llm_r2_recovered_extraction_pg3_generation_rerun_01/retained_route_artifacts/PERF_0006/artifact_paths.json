@@ -1,0 +1,17 @@
+{
+  "activated_rules_path": "/tmp/rewritebench_llmr2_recovered_extraction_route_v1/PERF_0006/activated_rules_schema_native_recovered_extraction_v1.json",
+  "checker_candidate_sql_path": "/tmp/rewritebench_llmr2_recovered_extraction_route_v1/PERF_0006/checker_candidate_sql_schema_native_recovered_extraction_v1.sql",
+  "claim_boundary": "llmr2_recovered_extraction_route_scaffold_only_not_execution",
+  "demo_trace_path": "/tmp/rewritebench_llmr2_recovered_extraction_route_v1/PERF_0006/demo_trace_schema_native_recovered_extraction_v1.json",
+  "extraction_audit_path": "/tmp/rewritebench_llmr2_recovered_extraction_route_v1/PERF_0006/extraction_audit_schema_native_recovered_extraction_v1.json",
+  "generated_sql_path": "/tmp/rewritebench_llmr2_recovered_extraction_route_v1/PERF_0006/generated_sql_schema_native_recovered_extraction_v1.sql",
+  "method_stderr_path": "/tmp/rewritebench_llmr2_recovered_extraction_route_v1/PERF_0006/method_stderr_schema_native_recovered_extraction_v1.log",
+  "method_stdout_path": "/tmp/rewritebench_llmr2_recovered_extraction_route_v1/PERF_0006/method_stdout_schema_native_recovered_extraction_v1.log",
+  "prompt_trace_path": "/tmp/rewritebench_llmr2_recovered_extraction_route_v1/PERF_0006/prompt_trace_schema_native_recovered_extraction_v1.md",
+  "raw_field_capture_path": "/tmp/rewritebench_llmr2_recovered_extraction_route_v1/PERF_0006/rewritten_sql_gpt_raw_schema_native_recovered_extraction_v1.txt",
+  "recovered_candidate_path": "/tmp/rewritebench_llmr2_recovered_extraction_route_v1/PERF_0006/recovered_candidate_schema_native_recovered_extraction_v1.sql",
+  "result_csv_path": "/tmp/rewritebench_llmr2_recovered_extraction_route_v1/PERF_0006/gpt_rewritebench_perf_0006_one_promo_queryCL_updated.csv",
+  "route_id": "llm_r2_recovered_extraction_route_v1",
+  "runtime_patch_audit_path": "/tmp/rewritebench_llmr2_recovered_extraction_route_v1/PERF_0006/runtime_patch_audit_schema_native_recovered_extraction_v1.json",
+  "token_cost_log_path": "/tmp/rewritebench_llmr2_recovered_extraction_route_v1/PERF_0006/token_cost_log_schema_native_recovered_extraction_v1.json"
+}

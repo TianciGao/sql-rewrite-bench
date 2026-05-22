@@ -1,0 +1,12 @@
+注意:  模式 "ccv0_calcite_hep_cons_0037" 不存在
+错误:  关系 "EMP" 不存在
+LINE 2: FROM "EMP"
+             ^
+注意:  串联删除2个其它对象
+DETAIL:  递归删除 表 ccv0_calcite_hep_cons_0037.emp
+递归删除 表 ccv0_calcite_hep_cons_0037.dept
+Traceback (most recent call last):
+  File "<stdin>", line 138, in run_pg_row
+  File "/usr/lib/python3.12/subprocess.py", line 571, in run
+    raise CalledProcessError(retcode, process.args,
+subprocess.CalledProcessError: Command '['psql', '-v', 'ON_ERROR_STOP=1', '-X', '-q', '-c', 'SET search_path TO ccv0_calcite_hep_cons_0037;', '-c', 'COPY (SELECT "EMP"."DEPTNO", COUNT(DISTINCT "DEPT"."NAME")\nFROM "EMP"\nLEFT JOIN "DEPT" ON "EMP"."DEPTNO" = "DEPT"."DEPTNO"\nGROUP BY "EMP"."DEPTNO") TO STDOUT WITH (FORMAT CSV, DELIMITER E\'\\t\', NULL \'NULL\');']' returned non-zero exit status 1.

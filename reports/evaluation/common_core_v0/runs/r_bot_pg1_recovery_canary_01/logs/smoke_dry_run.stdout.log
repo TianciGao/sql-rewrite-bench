@@ -1,0 +1,29 @@
+{
+  "artifact_paths_written": true,
+  "blockers": [],
+  "can_execute_smoke_next": true,
+  "case_id": "PERF_0006",
+  "claim_boundary": "single_case_runner_dry_run_only_not_rbot_result",
+  "command": "formal-rbot-llm4rewrite-single-case-smoke-run",
+  "dry_run_only": true,
+  "fresh_run_name_requested": true,
+  "future_execute_command_written": true,
+  "llm4rewrite_clone_found": true,
+  "ok": true,
+  "openai_api_key_visible": true,
+  "pg_env_fields": {
+    "PGDATABASE": true,
+    "PGHOST": true,
+    "PGPASSWORD": true,
+    "PGPORT": true,
+    "PGUSER": true
+  },
+  "pg_env_visible": true,
+  "pg_schema_found": true,
+  "pool": "performance",
+  "rag_index_found": true,
+  "ran_at_utc": "2026-05-08T10:16:39+00:00",
+  "single_case_harness_found": true,
+  "smoke_venv_found": true,
+  "source_sql_found": true
+}

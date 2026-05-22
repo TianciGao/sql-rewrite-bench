@@ -1,0 +1,26 @@
+{
+  "run_id": "sqlglot_same_engine_generation_01",
+  "method_id": "sqlglot",
+  "method_family": "sqlglot",
+  "method_version": "sqlglot_30.2.1",
+  "git_commit": "1777e035b83ee2a4aeea6fec16d62ebb32107eab",
+  "denominator_id": "common_core_v0_40",
+  "attempted_cases": 40,
+  "is_leaderboard_method": false,
+  "method_role": "same_engine_generation_only",
+  "artifact_mode": "generation_only_no_execution",
+  "route_scope": [
+    "sqlglot_optimize_same_dialect",
+    "sqlglot_transpile_same_dialect_noop"
+  ],
+  "engine_scope": [
+    "pg",
+    "mysql",
+    "spark"
+  ],
+  "planned_from": "reports/evaluation/common_core_v0/sqlglot_preflight/sqlglot_same_engine_run_plan.json",
+  "artifact_paths": {
+    "generation_event_long": "reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generation_event_long.csv",
+    "generation_summary": "reports/evaluation/common_core_v0/runs/sqlglot_same_engine_generation_01/generation_summary.csv"
+  }
+}

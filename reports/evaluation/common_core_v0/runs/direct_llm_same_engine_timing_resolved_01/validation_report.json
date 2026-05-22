@@ -1,0 +1,15 @@
+{
+  "denominator_id": "common_core_v0_40",
+  "method_id": "direct_llm",
+  "route_id": "direct_llm_same_engine_rewrite",
+  "timing_event_long_row_count": 94,
+  "distinct_timing_eligible_rows": 94,
+  "missing_timing_rows": 0,
+  "duplicate_timing_rows": 0,
+  "expected_timing_eligible_rows": 94,
+  "timing_success_rows": 94,
+  "replacement_retry_rows": 5,
+  "issue_count": 0,
+  "issues": [],
+  "ok": true
+}

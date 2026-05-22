@@ -1,0 +1,10 @@
+注意:  模式 "ccv0_direct_llm_port_0024_pg" 不存在
+错误:  语法错误 在 "=" 或附近的
+LINE 1: COPY (SELECT CAST( SUM( CASE WHEN `istextless` = 0 AND `isst...
+                                                       ^
+注意:  递归删除 表 ccv0_direct_llm_port_0024_pg.cards
+Traceback (most recent call last):
+  File "<stdin>", line 151, in run_postgres_row
+  File "/usr/lib/python3.12/subprocess.py", line 571, in run
+    raise CalledProcessError(retcode, process.args,
+subprocess.CalledProcessError: Command '['psql', '-v', 'ON_ERROR_STOP=1', '-X', '-q', '-c', 'SET search_path TO ccv0_direct_llm_port_0024_pg;', '-c', "COPY (SELECT CAST( SUM( CASE WHEN `istextless` = 0 AND `isstoryspotlight` = 1 THEN 1 ELSE 0 END ) AS DOUBLE ) * 100 / COUNT( `id` ) FROM `cards`) TO STDOUT WITH (FORMAT CSV, DELIMITER E'\\t', NULL 'NULL');"]' returned non-zero exit status 1.

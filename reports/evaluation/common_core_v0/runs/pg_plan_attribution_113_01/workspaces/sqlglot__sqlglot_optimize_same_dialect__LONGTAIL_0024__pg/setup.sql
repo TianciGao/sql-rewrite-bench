@@ -1,0 +1,5 @@
+drop schema if exists attr113_sqlglot_sqlglot_optimize_same_dialect_longtail_0024_ cascade;
+create schema attr113_sqlglot_sqlglot_optimize_same_dialect_longtail_0024_;
+set search_path to attr113_sqlglot_sqlglot_optimize_same_dialect_longtail_0024_;
+\i /home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/workspaces/LONGTAIL_0024/pg/sqlglot_optimize_same_dialect/ddl_pg.sql
+\i /home/tianci_gao/code/sql-rewrite-bench/cases/LONGTAIL/LONGTAIL_0024/validation/pg_witness_data.sql

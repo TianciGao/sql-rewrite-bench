@@ -1,0 +1,96 @@
+org.apache.calcite.sql.parser.SqlParseException: Lexical error at line 1, column 8.  Encountered: "`" (96), after : ""
+	at org.apache.calcite.sql.parser.impl.SqlParserImpl.convertException(SqlParserImpl.java:413)
+	at org.apache.calcite.sql.parser.impl.SqlParserImpl.normalizeException(SqlParserImpl.java:159)
+	at org.apache.calcite.sql.parser.SqlParser.handleException(SqlParser.java:159)
+	at org.apache.calcite.sql.parser.SqlParser.parseQuery(SqlParser.java:174)
+	at org.apache.calcite.sql.test.AbstractSqlTester.parseQuery(AbstractSqlTester.java:168)
+	at org.apache.calcite.sql.test.AbstractSqlTester.convertSqlToRel2(AbstractSqlTester.java:534)
+	at org.apache.calcite.sql.test.SqlTester.convertSqlToRel(SqlTester.java:291)
+	at org.apache.calcite.test.RelSupplier$SqlRelSupplier.apply(RelSupplier.java:98)
+	at org.apache.calcite.test.RelOptFixture.toRel(RelOptFixture.java:305)
+	at rewriter.Rewriter.matchRules(Rewriter.java:63)
+	at rewriter.Rewriter.matchNormalRules(Rewriter.java:117)
+	at rewriter.Rewriter.matchAllRules(Rewriter.java:121)
+Caused by: org.apache.calcite.sql.parser.impl.TokenMgrError: Lexical error at line 1, column 8.  Encountered: "`" (96), after : ""
+	at org.apache.calcite.sql.parser.impl.SqlParserImplTokenManager.getNextToken(SqlParserImplTokenManager.java:26551)
+	at org.apache.calcite.sql.parser.impl.SqlParserImpl.jj_ntk(SqlParserImpl.java:42844)
+	at org.apache.calcite.sql.parser.impl.SqlParserImpl.SqlSelect(SqlParserImpl.java:4665)
+	at org.apache.calcite.sql.parser.impl.SqlParserImpl.LeafQuery(SqlParserImpl.java:795)
+	at org.apache.calcite.sql.parser.impl.SqlParserImpl.LeafQueryOrExpr(SqlParserImpl.java:17168)
+	at org.apache.calcite.sql.parser.impl.SqlParserImpl.QueryOrExpr(SqlParserImpl.java:17002)
+	at org.apache.calcite.sql.parser.impl.SqlParserImpl.OrderedQueryOrExpr(SqlParserImpl.java:583)
+	at org.apache.calcite.sql.parser.impl.SqlParserImpl.SqlStmt(SqlParserImpl.java:4092)
+	at org.apache.calcite.sql.parser.impl.SqlParserImpl.SqlStmtEof(SqlParserImpl.java:4130)
+	at org.apache.calcite.sql.parser.impl.SqlParserImpl.parseSqlStmtEof(SqlParserImpl.java:207)
+	at org.apache.calcite.sql.parser.SqlParser.parseQuery(SqlParser.java:172)
+	... 8 more
+org.apache.calcite.sql.parser.SqlParseException: Lexical error at line 1, column 8.  Encountered: "`" (96), after : ""
+	at org.apache.calcite.sql.parser.impl.SqlParserImpl.convertException(SqlParserImpl.java:413)
+	at org.apache.calcite.sql.parser.impl.SqlParserImpl.normalizeException(SqlParserImpl.java:159)
+	at org.apache.calcite.sql.parser.SqlParser.handleException(SqlParser.java:159)
+	at org.apache.calcite.sql.parser.SqlParser.parseQuery(SqlParser.java:174)
+	at org.apache.calcite.sql.test.AbstractSqlTester.parseQuery(AbstractSqlTester.java:168)
+	at org.apache.calcite.sql.test.AbstractSqlTester.convertSqlToRel2(AbstractSqlTester.java:534)
+	at org.apache.calcite.sql.test.SqlTester.convertSqlToRel(SqlTester.java:291)
+	at org.apache.calcite.test.RelSupplier$SqlRelSupplier.apply(RelSupplier.java:98)
+	at org.apache.calcite.test.RelOptFixture.toRel(RelOptFixture.java:305)
+	at rewriter.Rewriter.matchRules(Rewriter.java:63)
+	at rewriter.Rewriter.matchExploreRules(Rewriter.java:113)
+	at rewriter.Rewriter.matchAllRules(Rewriter.java:125)
+Caused by: org.apache.calcite.sql.parser.impl.TokenMgrError: Lexical error at line 1, column 8.  Encountered: "`" (96), after : ""
+	at org.apache.calcite.sql.parser.impl.SqlParserImplTokenManager.getNextToken(SqlParserImplTokenManager.java:26551)
+	at org.apache.calcite.sql.parser.impl.SqlParserImpl.jj_ntk(SqlParserImpl.java:42844)
+	at org.apache.calcite.sql.parser.impl.SqlParserImpl.SqlSelect(SqlParserImpl.java:4665)
+	at org.apache.calcite.sql.parser.impl.SqlParserImpl.LeafQuery(SqlParserImpl.java:795)
+	at org.apache.calcite.sql.parser.impl.SqlParserImpl.LeafQueryOrExpr(SqlParserImpl.java:17168)
+	at org.apache.calcite.sql.parser.impl.SqlParserImpl.QueryOrExpr(SqlParserImpl.java:17002)
+	at org.apache.calcite.sql.parser.impl.SqlParserImpl.OrderedQueryOrExpr(SqlParserImpl.java:583)
+	at org.apache.calcite.sql.parser.impl.SqlParserImpl.SqlStmt(SqlParserImpl.java:4092)
+	at org.apache.calcite.sql.parser.impl.SqlParserImpl.SqlStmtEof(SqlParserImpl.java:4130)
+	at org.apache.calcite.sql.parser.impl.SqlParserImpl.parseSqlStmtEof(SqlParserImpl.java:207)
+	at org.apache.calcite.sql.parser.SqlParser.parseQuery(SqlParser.java:172)
+	... 8 more
+Traceback (most recent call last):
+  File "<string>", line 50, in <module>
+  File "/tmp/rewritebench_rbot_llm4rewrite_pg40_expansion_runner/PORT_0025/runtime_patch_v4/my_rewriter/test_utils.py", line 25, in test
+    res = rag_retrieve(query, schema, docstore, embed_dim=model_args['EMBED_DIM'], RETRIEVER_TOP_K=RETRIEVER_TOP_K)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/rewritebench_rbot_llm4rewrite_pg40_expansion_runner/PORT_0025/runtime_patch_v4/my_rewriter/rag_retrieve.py", line 69, in rag_retrieve
+    retriever_res = retriever.retrieve(query)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/rewritebench_rbot_llm4rewrite_venv_smoke/lib/python3.12/site-packages/llama_index_instrumentation/dispatcher.py", line 413, in wrapper
+    result = func(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/rewritebench_rbot_llm4rewrite_venv_smoke/lib/python3.12/site-packages/llama_index/core/base/base_retriever.py", line 216, in retrieve
+    nodes = self._retrieve(query_bundle)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/rewritebench_rbot_llm4rewrite_venv_smoke/lib/python3.12/site-packages/llama_index_instrumentation/dispatcher.py", line 413, in wrapper
+    result = func(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/rewritebench_rbot_llm4rewrite_pg40_expansion_runner/PORT_0025/runtime_patch_v4/rag/my_query_fusion_retriver.py", line 311, in _retrieve
+    synthesized_queries = self._get_queries(query_bundle.query_str)
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/rewritebench_rbot_llm4rewrite_pg40_expansion_runner/PORT_0025/runtime_patch_v4/rag/my_query_fusion_retriver.py", line 116, in _get_queries
+    sql_templates = list(gen_sql_templates(original_query).keys())
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/rewritebench_rbot_llm4rewrite_pg40_expansion_runner/PORT_0025/runtime_patch_v4/rag/gen_sql_templates.py", line 377, in gen_sql_templates
+    expr_tree = sqlglot.parse_one(sql, dialect=dialect)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/rewritebench_rbot_llm4rewrite_venv_smoke/lib/python3.12/site-packages/sqlglot/__init__.py", line 160, in parse_one
+    result = dialect.parse(sql, **opts)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/rewritebench_rbot_llm4rewrite_venv_smoke/lib/python3.12/site-packages/sqlglot/dialects/dialect.py", line 1119, in parse
+    return self.parser(**opts).parse(self.tokenize(sql), sql)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/rewritebench_rbot_llm4rewrite_venv_smoke/lib/python3.12/site-packages/sqlglot/parser.py", line 2034, in parse
+    return self._parse(
+           ^^^^^^^^^^^^
+  File "/tmp/rewritebench_rbot_llm4rewrite_venv_smoke/lib/python3.12/site-packages/sqlglot/parser.py", line 2154, in _parse
+    return self._parse_batch_statements(parse_method=parse_method, sep_first_statement=False)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/rewritebench_rbot_llm4rewrite_venv_smoke/lib/python3.12/site-packages/sqlglot/parser.py", line 2124, in _parse_batch_statements
+    self.raise_error("Invalid expression / Unexpected token")
+  File "/tmp/rewritebench_rbot_llm4rewrite_venv_smoke/lib/python3.12/site-packages/sqlglot/parser.py", line 1991, in raise_error
+    raise error
+sqlglot.errors.ParseError: Invalid expression / Unexpected token. Line 1, Col: 11.
+  SELECT `t1[4m`[0m.`account_id` FROM `loan` AS `t1` INNER JOIN `account` AS `t2` ON `t1`.`account_id` = `t2`.`account_

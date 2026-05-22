@@ -1,0 +1,50 @@
+ c_count | custdist 
+---------+----------
+       1 |        2
+       0 |        1
+(2 rows)
+
+ c_count | custdist 
+---------+----------
+       1 |        2
+       0 |        1
+(2 rows)
+
+ c_count | custdist 
+---------+----------
+       1 |        2
+       0 |        1
+(2 rows)
+
+ c_count | custdist 
+---------+----------
+       1 |        2
+       0 |        1
+(2 rows)
+
+ c_count | custdist 
+---------+----------
+       1 |        2
+       0 |        1
+(2 rows)
+
+ c_count | custdist 
+---------+----------
+       1 |        2
+       0 |        1
+(2 rows)
+
+ c_count | custdist 
+---------+----------
+       1 |        2
+       0 |        1
+(2 rows)
+
+ c_count | custdist 
+---------+----------
+       1 |        2
+       0 |        1
+(2 rows)
+
+case_id=PERF_0019 pool=performance engine=pg route_id=calcite_hep_pg_rewrite
+warmup_count=1 repeat_count=3

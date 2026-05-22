@@ -1,0 +1,55 @@
+{
+  "all_required_imports_ok": true,
+  "claim_boundary": "smoke_environment_verification_only_not_rbot_result",
+  "env_visibility": {
+    "OPENAI_API_BASE": true,
+    "OPENAI_API_KEY": true,
+    "OPENAI_BASE_URL": true
+  },
+  "package_snapshot_exists": true,
+  "probe": "r_bot_smoke_env_verify",
+  "python_executable": "/tmp/rewritebench_rbot_llm4rewrite_venv_smoke/bin/python",
+  "required_imports": {
+    "chromadb": {
+      "error": null,
+      "import_ok": true,
+      "version": "1.5.9"
+    },
+    "jpype": {
+      "error": null,
+      "import_ok": true,
+      "version": "1.7.0"
+    },
+    "jsonlines": {
+      "error": null,
+      "import_ok": true,
+      "version": null
+    },
+    "llama_index": {
+      "error": null,
+      "import_ok": true,
+      "version": null
+    },
+    "openai": {
+      "error": null,
+      "import_ok": true,
+      "version": "2.34.0"
+    },
+    "psycopg": {
+      "error": null,
+      "import_ok": true,
+      "version": "3.3.4"
+    },
+    "psycopg2": {
+      "error": null,
+      "import_ok": true,
+      "version": "2.9.12 (dt dec pq3 ext lo64)"
+    },
+    "sqlglot": {
+      "error": null,
+      "import_ok": true,
+      "version": "30.7.0"
+    }
+  },
+  "smoke_venv_path": "/tmp/rewritebench_rbot_llm4rewrite_venv_smoke"
+}

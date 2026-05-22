@@ -1,0 +1,39 @@
+{
+  "gate_status_id": "r_bot_formal_gate_status_v12",
+  "denominator_id": "common_core_v0_40_same_engine_120",
+  "method_id": "r_bot",
+  "route_id": "r_bot_same_engine_rewrite",
+  "status_date": "2026-05-08",
+  "formal_chroma_index_blocker_closed": true,
+  "runtime_dependency_lock_blocker_closed": true,
+  "runtime_verification_passed": true,
+  "runtime_verification_status": "runtime_verify_passed_gate_still_closed",
+  "required_package_versions_pinned_and_importable": true,
+  "python_platform_metadata_captured": true,
+  "provider_metadata_without_secrets": true,
+  "formal_index_visible_during_runtime_verify": true,
+  "formal_index_identifier_checks": {
+    "index_id": "r_bot_formal_chroma_index_01",
+    "rule_vector_width": 100,
+    "total_dimension": 3172
+  },
+  "current_benchmark_gate_ready": false,
+  "formal_generation_may_start": false,
+  "remaining_blockers": [
+    "retained run-path artifact-contract validation remains open",
+    "denominator-aware formal run evidence has not yet been retained",
+    "generation-side runtime attestation remains incomplete until a formal denominator-aware run satisfies the retained artifact contract"
+  ],
+  "blockers_closed_by_v12": [
+    "runtime/dependency lock blocker"
+  ],
+  "source_documents": [
+    "reports/evaluation/common_core_v0/r_bot_formal_runtime_lock_01/runtime_lock_status_v1.md",
+    "reports/evaluation/common_core_v0/r_bot_formal_runtime_lock_01/runtime_lock_status_v1.json",
+    "reports/evaluation/common_core_v0/r_bot_formal_runtime_lock_01/runtime_environment_snapshot_v1.json",
+    "reports/evaluation/common_core_v0/r_bot_formal_runtime_lock_01/runtime_verify_report_v1.md",
+    "reports/evaluation/common_core_v0/r_bot_formal_substrate_freeze_01/formal_gate_status_v11.md",
+    "reports/evaluation/common_core_v0/r_bot_formal_index_build_01/formal_chroma_index_identifier_v1.json",
+    "reports/evaluation/common_core_v0/r_bot_formal_protocol/r_bot_parameter_freeze_v2.json"
+  ]
+}

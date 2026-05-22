@@ -1,0 +1,52 @@
+You are repairing a SQL rewrite.
+
+Goal:
+Return one complete SQL statement that is semantically equivalent to the source SQL and executable on the target engine.
+
+Target engine:
+spark
+
+Schema:
+CREATE TABLE emp (empno INT, ename STRING, job STRING, mgr INT, hiredate DATE, sal DECIMAL(10,2), comm DECIMAL(10,2), deptno INT) USING parquet;
+CREATE TABLE dept (deptno INT, dname STRING, loc STRING) USING parquet;
+
+Source SQL:
+SELECT empno
+FROM emp AS e
+LEFT JOIN dept AS d
+  ON d.deptno = e.deptno
+ AND EXISTS (
+   SELECT e2.deptno
+   FROM emp AS e2
+   WHERE e2.deptno = d.deptno
+   GROUP BY e2.deptno
+   HAVING SUM(e2.sal) > 1000000
+ );
+
+Previous candidate SQL:
+SELECT empno
+FROM emp AS e
+LEFT JOIN dept AS d
+  ON d.deptno = e.deptno
+WHERE EXISTS (
+   SELECT e2.deptno
+   FROM emp AS e2
+   WHERE e2.deptno = d.deptno
+   GROUP BY e2.deptno
+   HAVING SUM(e2.sal) > 1000000
+ );
+
+Observed failure:
+{"outcome_class": "mismatch", "failure_category": "result_mismatch", "triage_note": "exact_match=false; sorted_match=false", "result_check": {"execution_status_observed": "executed", "source_output_path": "reports/evaluation/common_core_v0/runs/direct_llm_same_engine_execution_01/workspaces/CONS_0024/spark/direct_llm_same_engine_rewrite/source.tsv", "generated_output_path": "reports/evaluation/common_core_v0/runs/direct_llm_same_engine_execution_01/workspaces/CONS_0024/spark/direct_llm_same_engine_rewrite/generated.tsv", "exact_match": false, "sorted_match": false, "consistency_check_status": "mismatch", "result_check_path": "reports/evaluation/common_core_v0/runs/direct_llm_same_engine_execution_01/workspaces/CONS_0024/spark/direct_llm_same_engine_rewrite/result_check.json"}}
+
+Checker or execution context:
+{"result_check_artifact": "reports/evaluation/common_core_v0/runs/direct_llm_same_engine_execution_01/workspaces/CONS_0024/spark/direct_llm_same_engine_rewrite/result_check.json", "execution_error_artifact": "NA_not_applicable", "checker_feedback_artifact": "reports/evaluation/common_core_v0/runs/direct_llm_same_engine_execution_01/workspaces/CONS_0024/spark/direct_llm_same_engine_rewrite/result_check.json"}
+
+Rules:
+- Return exactly one complete SQL statement.
+- Do not include markdown.
+- Do not include explanation.
+- Do not include comments unless required by SQL syntax.
+- Preserve source semantics.
+- Use only tables and columns from the schema.
+- Use syntax supported by the target engine.

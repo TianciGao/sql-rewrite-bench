@@ -1,0 +1,33 @@
+{
+  "run_id": "sqlglot_same_engine_01",
+  "denominator_id": "common_core_v0_40",
+  "method_family": "sqlglot",
+  "method_id": "sqlglot",
+  "method_role": "same_engine",
+  "planned_routes": [
+    "sqlglot_optimize_same_dialect",
+    "sqlglot_transpile_same_dialect_noop"
+  ],
+  "attempted_cases": 40,
+  "engines": [
+    "pg",
+    "mysql",
+    "spark"
+  ],
+  "engine_eligibility_basis": "controls status v2 fresh validation or explicit skipped evidence",
+  "planned_output_directory": "reports/evaluation/common_core_v0/runs/sqlglot_same_engine_01/",
+  "planned_outputs": {
+    "run_manifest": "reports/evaluation/common_core_v0/runs/sqlglot_same_engine_01/run_manifest.json",
+    "run_event_long": "reports/evaluation/common_core_v0/runs/sqlglot_same_engine_01/run_event_long.csv",
+    "method_case_summary": "reports/evaluation/common_core_v0/runs/sqlglot_same_engine_01/method_case_summary.csv",
+    "same_engine_leaderboard": "reports/evaluation/common_core_v0/runs/sqlglot_same_engine_01/same_engine_leaderboard.csv",
+    "validation_report": "reports/evaluation/common_core_v0/runs/sqlglot_same_engine_01/validation_report.json"
+  },
+  "validator_command": "python scripts/common_core_v0_validation.py --manifest reports/evaluation/common_core_v0/runs/sqlglot_same_engine_01/run_manifest.json --run-event-long reports/evaluation/common_core_v0/runs/sqlglot_same_engine_01/run_event_long.csv --method-case-summary reports/evaluation/common_core_v0/runs/sqlglot_same_engine_01/method_case_summary.csv --same-engine-leaderboard reports/evaluation/common_core_v0/runs/sqlglot_same_engine_01/same_engine_leaderboard.csv --json > reports/evaluation/common_core_v0/runs/sqlglot_same_engine_01/validation_report.json",
+  "notes": [
+    "Do not execute during preflight.",
+    "Controls status v2 supports denominator-complete validity scaffolding, not method success claims.",
+    "PORT cases need explicit same-engine route review because native_source support is uneven across engines.",
+    "Performance metrics remain blocked until runtime-bearing SQLGlot rows exist."
+  ]
+}

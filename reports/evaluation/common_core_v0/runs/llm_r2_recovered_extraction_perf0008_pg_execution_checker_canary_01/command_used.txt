@@ -1,0 +1,3 @@
+FUTURE / ACTUAL CANARY COMMANDS FOR THIS RUN
+1. source scripts/env_postgres.sh
+2. python -m scripts.cli formal-llmr2-checker-handoff --case PERF_0008 --candidate reports/evaluation/common_core_v0/runs/llm_r2_recovered_extraction_perf0008_pg_execution_checker_canary_01/candidate_input/generated_sql_schema_native_recovered_extraction_v1_semicolon_normalized.sql

@@ -1,0 +1,29 @@
+{
+  "case_id": "PERF_0052",
+  "pool": "performance",
+  "engine": "pg",
+  "route_id": "calcite_hep_pg_rewrite",
+  "method_id": "calcite_hep",
+  "denominator_id": "common_core_v0_40_pg40",
+  "warmup_count": 1,
+  "repeat_count": 3,
+  "source_runtime_ms": [
+    484.74936198908836,
+    372.90366797242314,
+    375.5167389754206
+  ],
+  "generated_runtime_ms": [
+    473.09487604070455,
+    476.303034927696,
+    372.403752990067
+  ],
+  "median_source_ms": 375.5167389754206,
+  "median_generated_ms": 473.09487604070455,
+  "speedup_ratio": 0.7937450984844562,
+  "timing_status": "timing_success",
+  "timing_json_path": "reports/evaluation/common_core_v0/runs/calcite_hep_pg40_timing_01/timings/PERF_0052/pg/calcite_hep_pg_rewrite.json",
+  "stdout_log": "reports/evaluation/common_core_v0/runs/calcite_hep_pg40_timing_01/logs/PERF_0052_pg_calcite_hep_pg_rewrite.stdout.log",
+  "stderr_log": "reports/evaluation/common_core_v0/runs/calcite_hep_pg40_timing_01/logs/PERF_0052_pg_calcite_hep_pg_rewrite.stderr.log",
+  "notes": "",
+  "caveat": "manual_case_validation_materialized; common_core_v0_candidate retained in review packet; keep as tri-engine template-backed PERF candidate; PostgreSQL-only witness validation"
+}

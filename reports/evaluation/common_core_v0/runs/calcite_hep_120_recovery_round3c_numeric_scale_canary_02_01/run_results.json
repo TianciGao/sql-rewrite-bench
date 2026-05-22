@@ -1,0 +1,29 @@
+{
+  "run_id": "calcite_hep_120_recovery_round3c_numeric_scale_canary_02_01",
+  "method_id": "calcite_hep",
+  "route_id": "calcite_hep_same_engine_rewrite",
+  "denominator_id": "common_core_v0_40_same_engine_120",
+  "previous_fail_closed_exact_ledger": "84/120",
+  "planned_rows": 2,
+  "recovered_exact_count": 2,
+  "new_fail_closed_exact_ledger": "86/120",
+  "maximum_possible_ledger_after_this_canary": "86/120",
+  "counts_by_execution_status": {
+    "executed": 2
+  },
+  "counts_by_consistency_status": {
+    "match_exact": 2
+  },
+  "counts_by_engine": {
+    "mysql": {
+      "planned": 2,
+      "executed": 2,
+      "match_exact": 2,
+      "recovered_exact": 2
+    }
+  },
+  "current_benchmark_metric_evidence": false,
+  "timing_denominator_id": "NA_not_computed",
+  "leaderboard_comparable": "no",
+  "claim_boundary": "calcite_hep_120_recovery_round3c_numeric_scale_canary_only_not_timing_speedup_or_leaderboard_evidence"
+}

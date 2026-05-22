@@ -1,0 +1,7 @@
+注意:  模式 "ccv0_sqlglot_perf_0024_sqlglot_transpile_same_dialect_n" 不存在
+注意:  串联删除5个其它对象
+DETAIL:  递归删除 表 ccv0_sqlglot_perf_0024_sqlglot_transpile_same_dialect_n.supplier
+递归删除 表 ccv0_sqlglot_perf_0024_sqlglot_transpile_same_dialect_n.nation
+递归删除 表 ccv0_sqlglot_perf_0024_sqlglot_transpile_same_dialect_n.partsupp
+递归删除 表 ccv0_sqlglot_perf_0024_sqlglot_transpile_same_dialect_n.part
+递归删除 表 ccv0_sqlglot_perf_0024_sqlglot_transpile_same_dialect_n.lineitem

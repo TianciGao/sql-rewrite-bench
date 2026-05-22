@@ -1,0 +1,22 @@
+{
+  "case_id": "LONGTAIL_0011",
+  "engine": "spark",
+  "route_id": "sqlglot_transpile_same_dialect_noop",
+  "warmup_count": 1,
+  "repeat_count": 3,
+  "source_runtime_ms": [
+    431.4827090129256,
+    415.5536360340193,
+    343.2296720566228
+  ],
+  "generated_runtime_ms": [
+    405.7863929774612,
+    363.5539209935814,
+    374.7239370131865
+  ],
+  "median_source_ms": 415.5536360340193,
+  "median_generated_ms": 374.7239370131865,
+  "speedup_ratio": 1.1089594098158613,
+  "status": "success",
+  "notes": ""
+}

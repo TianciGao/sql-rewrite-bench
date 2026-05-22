@@ -1,0 +1,20 @@
+{
+  "packet_id": "pg_plan_attribution_24",
+  "reviewed_candidate_count": 24,
+  "manifest_rows": 24,
+  "event_rows": 24,
+  "source_plan_success_count": 24,
+  "rewrite_plan_success_count": 24,
+  "plan_parse_success_count": 24,
+  "delta_class_distribution": {
+    "buffer_or_runtime_delta_without_operator_change": 21,
+    "scan_strategy_change": 1,
+    "join_strategy_change": 1,
+    "node_count_change": 1
+  },
+  "attribution_confidence_distribution": {
+    "low": 22,
+    "medium": 2
+  },
+  "failed_candidates": []
+}

@@ -1,0 +1,14 @@
+{
+  "artifact_kind": "selected_rules",
+  "available": false,
+  "case_id": "LONGTAIL_0023",
+  "engine": "pg",
+  "method_id": "r_bot",
+  "reason": "Recovered committed PG runner currently hard-codes a supported-case subset in scripts/cli.py formal-rbot-llm4rewrite-single-case-smoke-run; keep row explicit and blocked until runner support expands.",
+  "route_id": "r_bot_same_engine_rewrite",
+  "row_status": "blocked",
+  "rule_catalog_path": "reports/evaluation/common_core_v0/r_bot_formal_index_build_01/formal_rule_vector_catalog_v1.json",
+  "rule_selection_status": "blocked",
+  "rule_vector_width": 100,
+  "selected_rules": []
+}

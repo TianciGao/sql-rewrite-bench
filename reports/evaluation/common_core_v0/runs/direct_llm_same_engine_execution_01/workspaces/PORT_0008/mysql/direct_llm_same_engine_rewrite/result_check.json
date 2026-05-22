@@ -1,0 +1,7 @@
+{
+  "execution_status_observed": "execution_failed",
+  "consistency_check_status": "not_checked_execution_failed",
+  "error_type": "CalledProcessError",
+  "error_message": "Command '['mysql', '--host', '127.0.0.1', '--port', '3306', '--user', 'bench', '--password=benchpass', 'bench', '--batch', '--raw', '--skip-column-names', '-e', 'SELECT \"t2\".\"admemail1\" , \"t2\".\"admemail2\" FROM \"frpm\" AS \"t1\" INNER JOIN \"schools\" AS \"t2\" ON \"t1\".\"cdscode\" = \"t2\".\"cdscode\" WHERE \"t2\".\"county\" = \\'San Bernardino\\' AND \"t2\".\"city\" = \\'San Bernardino\\' AND \"t2\".\"doc\" :: integer = 54 AND EXTRACT( YEAR FROM \"t2\".\"opendate\" ) BETWEEN 2009 AND 2010 AND \"t2\".\"soc\" :: integer = 62']' returned non-zero exit status 1.",
+  "result_check_path": "reports/evaluation/common_core_v0/runs/direct_llm_same_engine_execution_01/workspaces/PORT_0008/mysql/direct_llm_same_engine_rewrite/result_check.json"
+}

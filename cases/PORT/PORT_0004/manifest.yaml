@@ -49,5 +49,25 @@ artifacts:
   taxonomy_trial: taxonomy_trial_v0.3.yaml
   result_check: runs/result_check.json
   plan_check: runs/plan_check.json
+positive_rewrites:
+  - id: rewrite_pos_01
+    path: rewrite_pos_01.sql
+    role: positive_rewrite
+    target_engine: pg
+  - id: rewrite_pos_02_spark
+    path: rewrite_pos_02_spark.sql
+    role: positive_rewrite
+    target_engine: spark
+hard_negatives:
+  - id: rewrite_neg_01
+    path: rewrite_neg_01.sql
+    role: hard_negative
+    target_engine: pg
+    expected_failure_mode: result_divergence_from_mysql_source_reference
+  - id: rewrite_neg_02_spark
+    path: rewrite_neg_02_spark.sql
+    role: hard_negative
+    target_engine: spark
+    expected_failure_mode: result_divergence_from_mysql_source_reference
 next_gap: human review, portability review-prep packet / later formal review, later admission decision, and plan semantics not formally reviewed
 artifact_warning: registry updated conservatively for tracked draft cross-dialect result evidence and tracked draft plan evidence only; this package is not admitted, not release-hardened, and not formal-review-finished

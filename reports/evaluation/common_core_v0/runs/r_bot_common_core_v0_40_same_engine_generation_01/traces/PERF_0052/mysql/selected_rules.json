@@ -1,0 +1,14 @@
+{
+  "artifact_kind": "selected_rules",
+  "available": false,
+  "case_id": "PERF_0052",
+  "engine": "mysql",
+  "method_id": "r_bot",
+  "reason": "Recovered committed R-Bot runner path is PG-only; same-engine mysql/spark generation path is not recovered in committed CLI and must remain explicit, not dropped.",
+  "route_id": "r_bot_same_engine_rewrite",
+  "row_status": "unsupported",
+  "rule_catalog_path": "reports/evaluation/common_core_v0/r_bot_formal_index_build_01/formal_rule_vector_catalog_v1.json",
+  "rule_selection_status": "unsupported",
+  "rule_vector_width": 100,
+  "selected_rules": []
+}

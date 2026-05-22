@@ -1,0 +1,8 @@
+PostId	Title	Score	comment_count	distinct_commenters	OwnerDisplayName
+101	Disk cleanup tips	10	4	3	Alice
+104	Backup strategy	7	3	3	Dan
+102	Network latency issue	8	3	2	Bob
+PostId	Title	Score	comment_count	distinct_commenters	OwnerDisplayName
+101	Disk cleanup tips	10	4	3	Alice
+104	Backup strategy	7	3	3	Dan
+102	Network latency issue	8	3	2	Bob

@@ -1,0 +1,42 @@
+ n_name | revenue 
+--------+---------
+ EGYPT  | 90.0000
+(1 row)
+
+ n_name | revenue 
+--------+---------
+ EGYPT  | 90.0000
+(1 row)
+
+ n_name | revenue 
+--------+---------
+ EGYPT  | 90.0000
+(1 row)
+
+ n_name | revenue 
+--------+---------
+ EGYPT  | 90.0000
+(1 row)
+
+ n_name | revenue 
+--------+---------
+ EGYPT  | 90.0000
+(1 row)
+
+ n_name | revenue 
+--------+---------
+ EGYPT  | 90.0000
+(1 row)
+
+ n_name | revenue 
+--------+---------
+ EGYPT  | 90.0000
+(1 row)
+
+ n_name | revenue 
+--------+---------
+ EGYPT  | 90.0000
+(1 row)
+
+case_id=PERF_0013 pool=performance engine=pg route_id=r_bot_same_engine_rewrite
+warmup_count=1 repeat_count=3

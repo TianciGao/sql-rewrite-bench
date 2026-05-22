@@ -1,0 +1,25 @@
+{
+  "run_id": "sqlglot_same_engine_nonport_execution_01",
+  "method_id": "sqlglot",
+  "git_commit": "a7d5be6252c8e08ce16d76a851ac9357601841b3",
+  "denominator_id": "common_core_v0_40",
+  "attempted_cases": 31,
+  "is_leaderboard_method": false,
+  "method_role": "same_engine_method_nonport_execution",
+  "run_scope": "nonport_sqlglot_same_engine_execution",
+  "engine_scope": [
+    "pg",
+    "mysql",
+    "spark"
+  ],
+  "route_scope": [
+    "sqlglot_optimize_same_dialect",
+    "sqlglot_transpile_same_dialect_noop"
+  ],
+  "planned_rows": 186,
+  "artifact_paths": {
+    "run_event_long": "reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/run_event_long.csv",
+    "method_case_summary": "reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/method_case_summary.csv"
+  },
+  "notes": "Non-PORT same-engine SQLGlot execution-only materialization. No result validation, no timing, no leaderboard metrics."
+}

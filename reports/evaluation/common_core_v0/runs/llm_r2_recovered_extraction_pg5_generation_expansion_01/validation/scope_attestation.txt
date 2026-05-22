@@ -1,0 +1,17 @@
+This run is authorized only for LLM-R2 recovered-extraction PG5 generation expansion.
+
+Scope:
+- recovered-extraction route only
+- generation / extraction only
+- rows: PERF_0017, PERF_0019, PERF_0033, PERF_0052, PERF_0054
+- no PostgreSQL execution
+- no checker
+- no timing
+- no speedup
+- no MySQL
+- no Spark
+- no PG40/full120
+- no result card or proposed row
+
+The original PG9 bounded evidence remains unchanged.
+PERF_0008 recovered-extraction canary remains separate and is not rerun here.

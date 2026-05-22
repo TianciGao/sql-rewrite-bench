@@ -1,0 +1,3 @@
+注意:  模式 "ccv0_direct_llm_port_0005_pg" 不存在
+psql:/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_execution_01/workspaces/PORT_0005/pg/direct_llm_same_engine_rewrite/ddl_pg.sql:2: 注意:  表 "drivers" 不存在
+注意:  递归删除 表 ccv0_direct_llm_port_0005_pg.drivers

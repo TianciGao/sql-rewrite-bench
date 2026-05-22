@@ -1,0 +1,22 @@
+{
+  "run_id": "calcite_hep_120_recovery_round3c_numeric_scale_canary_02_01",
+  "row_key": "PERF_0062:mysql",
+  "case_id": "PERF_0062",
+  "engine": "mysql",
+  "previous_ledger": "84/120",
+  "attempted_recovery_family": "mysql_numeric_scale_sql_projection_repair",
+  "retained_generated_sql_path": "reports/evaluation/common_core_v0/runs/calcite_hep_120_recovery_round3_canary_10_01/generated/PERF_0062/mysql/calcite_hep_recovery_round3_rewrite.sql",
+  "repaired_generated_sql_path": "reports/evaluation/common_core_v0/runs/calcite_hep_120_recovery_round3c_numeric_scale_canary_02_01/generated/PERF_0062/mysql/calcite_hep_recovery_round3c_rewrite.sql",
+  "mysql_database_used": "bench",
+  "cleanup_table_names": [
+    "store_sales",
+    "store",
+    "customer_demographics",
+    "household_demographics",
+    "customer_address",
+    "date_dim"
+  ],
+  "execution_status": "executed",
+  "exact_match": true,
+  "consistency_status": "match_exact"
+}

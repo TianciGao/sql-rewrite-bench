@@ -1,0 +1,3 @@
+timing completed for sqlglot_optimize_same_dialect__LONGTAIL_0024__mysql
+source_runtime_ms=[0.4391130059957504, 0.46424916945397854, 0.44563994742929935]
+rewrite_runtime_ms=[0.4449218977242708, 0.46289898455142975, 0.5421880632638931]

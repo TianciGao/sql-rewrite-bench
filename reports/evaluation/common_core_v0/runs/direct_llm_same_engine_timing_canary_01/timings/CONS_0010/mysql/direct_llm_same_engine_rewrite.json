@@ -1,0 +1,22 @@
+{
+  "case_id": "CONS_0010",
+  "engine": "mysql",
+  "route_id": "direct_llm_same_engine_rewrite",
+  "warmup_count": 1,
+  "repeat_count": 3,
+  "source_runtime_ms": [
+    139.11492901388556,
+    135.79664600547403,
+    138.69027304463089
+  ],
+  "generated_runtime_ms": [
+    132.0200349437073,
+    133.9391670189798,
+    144.27147596143186
+  ],
+  "median_source_ms": 138.69027304463089,
+  "median_generated_ms": 133.9391670189798,
+  "speedup_ratio": 1.0354721186594944,
+  "status": "success",
+  "notes": ""
+}

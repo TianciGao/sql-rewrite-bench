@@ -231,7 +231,9 @@ LLMR2_AUDIT_ROOT = Path("/tmp/rewritebench_llmr2_audit") / "LLM-R2"
 LLMR2_ADAPTER_PREFLIGHT_ROOT = Path("/tmp/rewritebench_llmr2_adapter_preflight")
 LLMR2_SINGLE_CASE_RUNNER_ROOT = Path("/tmp/rewritebench_llmr2_single_case_runner")
 LLMR2_FAST_PATH_ROOT = Path("/tmp/rewritebench_llmr2_fast_path")
+LLMR2_RECOVERED_EXTRACTION_ROUTE_ROOT = Path("/tmp/rewritebench_llmr2_recovered_extraction_route_v1")
 LLMR2_10CASE_PREFLIGHT_ROOT = Path("/tmp/rewritebench_llmr2_10case_preflight")
+LLMR2_RECOVERED_EXTRACTION_ROUTE_ID = "llm_r2_recovered_extraction_route_v1"
 SQLSOLVER_AUDIT_ROOT = Path("/tmp/rewritebench_sqlsolver_audit") / "candidate"
 SQLSOLVER_ADAPTER_PREFLIGHT_ROOT = Path("/tmp/rewritebench_sqlsolver_adapter_preflight")
 SQLSOLVER_RUNNER_DRY_RUN_ROOT = Path("/tmp/rewritebench_sqlsolver_runner_dry_run")
@@ -1724,6 +1726,101 @@ def extract_sql_like_output(raw_output: str) -> tuple[str, str]:
     if ";" in trailing:
         return "needs_manual_review", text
     return "extracted", text
+
+
+def llmr2_patch_rewriter_text_for_recovered_extraction(rewriter_text: str) -> tuple[str, bool]:
+    original = "    queries = output[ind+1:-3]\n    # print(' '.join(queries))\n    output = ' '.join(queries).replace('\"', '')\n"
+    patched = (
+        "    sql_tail = output[ind:-3]\n"
+        "    queries = []\n"
+        "    for line in sql_tail:\n"
+        "        stripped = line.strip()\n"
+        "        if not stripped:\n"
+        "            if queries:\n"
+        "                queries.append(line)\n"
+        "            continue\n"
+        "        if stripped.startswith('--'):\n"
+        "            break\n"
+        "        if '--' in line:\n"
+        "            line = line.split('--', 1)[0].rstrip()\n"
+        "            if line.strip():\n"
+        "                queries.append(line)\n"
+        "            break\n"
+        "        queries.append(line)\n"
+        "    # print(' '.join(queries))\n"
+        "    output = ' '.join(queries).replace('\"', '')\n"
+    )
+    if original not in rewriter_text:
+        return rewriter_text, False
+    return rewriter_text.replace(original, patched, 1), True
+
+
+def llmr2_recovered_extraction_from_raw_field(raw_output: str) -> dict[str, Any]:
+    raw_text = str(raw_output or "")
+    normalized = raw_text.replace("\r\n", "\n").replace("\r", "\n")
+    lines = normalized.split("\n")
+    first_sql_line_index: int | None = None
+    for idx, line in enumerate(lines):
+        if re.match(r"^\s*(SELECT|WITH)\b", line, flags=re.IGNORECASE):
+            first_sql_line_index = idx
+            break
+
+    payload: dict[str, Any] = {
+        "raw_field_non_empty": bool(raw_text.strip()),
+        "first_sql_line_index": first_sql_line_index,
+        "leading_select_or_with_in_raw": first_sql_line_index == 0,
+        "extraction_rule_used": "first_select_or_with_then_strip_trailing_source_comments_v1",
+        "source_comments_detected": False,
+        "source_comments_stripped": False,
+        "candidate_starts_with_select_or_with": False,
+        "generic_sql_like_status": "empty_output" if not raw_text.strip() else "needs_manual_review",
+        "recovered_sql_candidate": "",
+        "write_generated_sql_allowed": False,
+        "sql_generated_by_method_not_manually_repaired": False,
+        "notes": [],
+    }
+    if not raw_text.strip():
+        payload["notes"].append("raw_field_empty")
+        return payload
+    if first_sql_line_index is None:
+        payload["notes"].append("no_select_or_with_start_found_in_raw_field")
+        return payload
+
+    candidate_lines: list[str] = []
+    for idx, line in enumerate(lines[first_sql_line_index:], start=first_sql_line_index):
+        if re.match(r"^\s*```", line):
+            payload["notes"].append(f"markdown_fence_detected_at_line_{idx}")
+            break
+        if re.match(r"^\s*--", line):
+            payload["source_comments_detected"] = True
+            payload["source_comments_stripped"] = True
+            payload["notes"].append(f"full_line_source_comment_stripped_at_line_{idx}")
+            break
+        if "--" in line:
+            prefix, _, suffix = line.partition("--")
+            if suffix.strip():
+                payload["source_comments_detected"] = True
+                payload["source_comments_stripped"] = True
+                payload["notes"].append(f"inline_source_comment_stripped_at_line_{idx}")
+                if prefix.strip():
+                    candidate_lines.append(prefix.rstrip())
+                break
+        candidate_lines.append(line.rstrip())
+
+    candidate = "\n".join(candidate_lines).strip()
+    payload["recovered_sql_candidate"] = candidate
+    payload["candidate_starts_with_select_or_with"] = bool(
+        re.match(r"^\s*(SELECT|WITH)\b", candidate, flags=re.IGNORECASE)
+    )
+    generic_status, normalized_candidate = extract_sql_like_output(candidate)
+    payload["generic_sql_like_status"] = generic_status
+    if generic_status == "extracted":
+        payload["recovered_sql_candidate"] = normalized_candidate
+    payload["write_generated_sql_allowed"] = payload["candidate_starts_with_select_or_with"] and bool(candidate)
+    payload["sql_generated_by_method_not_manually_repaired"] = bool(candidate)
+    if not payload["candidate_starts_with_select_or_with"]:
+        payload["notes"].append("candidate_does_not_start_with_select_or_with_after_recovery")
+    return payload
 
 
 def resolve_llm_endpoint_config(
@@ -35005,6 +35102,824 @@ def simple_distance(a, b):
     return print_and_exit(smoke_payload, 0 if success else 1)
 
 
+def cmd_formal_llmr2_recovered_extraction_route(args: argparse.Namespace) -> int:
+    case_id = str(args.case).strip().upper()
+    case_slug = case_id.lower()
+    db_id = f"rewritebench_{case_slug}"
+    dry_run_only = bool(getattr(args, "dry_run", False))
+    force_cpu = bool(getattr(args, "force_cpu", False))
+    schema_native_contract = bool(getattr(args, "schema_native_contract", False))
+    if case_id not in LLMR2_SUPPORTED_CASE_IDS:
+        payload = {
+            "command": "formal-llmr2-recovered-extraction-route",
+            "ok": False,
+            "ran_at_utc": utc_now(),
+            "case_id": case_id,
+            "route_id": LLMR2_RECOVERED_EXTRACTION_ROUTE_ID,
+            "dry_run_only": True,
+            "blockers": ["unsupported_case_id"],
+            "claim_boundary": "llmr2_recovered_extraction_route_scaffold_only_not_execution",
+        }
+        return print_and_exit(payload, 1)
+
+    adapter_bundle_dir = (
+        LLMR2_ADAPTER_PREFLIGHT_ROOT / case_id
+        if case_id == "PERF_0006"
+        else LLMR2_10CASE_PREFLIGHT_ROOT / case_id
+    )
+    recovered_dir = LLMR2_RECOVERED_EXTRACTION_ROUTE_ROOT / case_id
+    runtime_root = recovered_dir / "runtime_root_recovered_extraction_v1"
+    runtime_rewriter_path = runtime_root / "src" / "rewriter.py"
+    recovered_dir.mkdir(parents=True, exist_ok=True)
+
+    query_csv_source = (
+        adapter_bundle_dir / "perf_0006_queries.csv"
+        if case_id == "PERF_0006"
+        else adapter_bundle_dir / f"{case_slug}_queries.csv"
+    )
+    schema_stub_source = (
+        adapter_bundle_dir / "perf_0006_schema_stub.json"
+        if case_id == "PERF_0006"
+        else adapter_bundle_dir / f"{case_slug}_schema_native.json"
+    )
+
+    repo_path = LLMR2_AUDIT_ROOT
+    rewriter_script_path = repo_path / "src" / "rewriter.py"
+    llm_r2_script_path = repo_path / "src" / "LLM_R2.py"
+    java_rule_applier_path = repo_path / "src" / "rewriter_java.jar"
+    upstream_pos_pool_path = repo_path / "data" / "data_llmr2" / "pools" / "pos_pool_dsb_updated.csv"
+    upstream_neg_pool_path = repo_path / "data" / "data_llmr2" / "pools" / "neg_pool_dsb_updated.csv"
+    openai_api_key_visible = bool(os.environ.get("OPENAI_API_KEY"))
+    runtime_data_root = runtime_root / "data" / "data_llmr2"
+    runtime_queries_dir = runtime_data_root / "queries"
+    runtime_schemas_dir = runtime_data_root / "schemas"
+    runtime_pools_dir = runtime_data_root / "pools"
+
+    run_suffix = "schema_native_recovered_extraction_v1" if schema_native_contract else "recovered_extraction_v1"
+    result_csv_path = recovered_dir / f"gpt_{db_id}_one_promo_queryCL_updated.csv"
+    generated_sql_path = recovered_dir / f"generated_sql_{run_suffix}.sql"
+    checker_candidate_sql_path = recovered_dir / f"checker_candidate_sql_{run_suffix}.sql"
+    raw_field_capture_path = recovered_dir / f"rewritten_sql_gpt_raw_{run_suffix}.txt"
+    recovered_candidate_path = recovered_dir / f"recovered_candidate_{run_suffix}.sql"
+    extraction_audit_path = recovered_dir / f"extraction_audit_{run_suffix}.json"
+    runtime_patch_audit_path = recovered_dir / f"runtime_patch_audit_{run_suffix}.json"
+    prompt_trace_path = recovered_dir / f"prompt_trace_{run_suffix}.md"
+    demo_trace_path = recovered_dir / f"demo_trace_{run_suffix}.json"
+    token_cost_log_path = recovered_dir / f"token_cost_log_{run_suffix}.json"
+    method_stdout_path = recovered_dir / f"method_stdout_{run_suffix}.log"
+    method_stderr_path = recovered_dir / f"method_stderr_{run_suffix}.log"
+    activated_rules_path = recovered_dir / f"activated_rules_{run_suffix}.json"
+    future_execute_command_path = recovered_dir / "future_execute_command_NOT_RUN.txt"
+    artifact_paths_path = recovered_dir / "artifact_paths.json"
+    dry_run_summary_path = recovered_dir / "dry_run_summary.json"
+    do_not_run_yet_path = recovered_dir / "DO_NOT_RUN_YET.txt"
+    smoke_result_path = recovered_dir / f"smoke_result_{run_suffix}.json"
+    openai_marker_path = recovered_dir / f"openai_api_used_{run_suffix}.marker"
+    java_marker_path = recovered_dir / f"java_rule_applier_used_{run_suffix}.marker"
+    one_row_query_marker_path = recovered_dir / f"one_row_query_used_{run_suffix}.marker"
+    tiny_pool_marker_path = recovered_dir / f"tiny_demo_pools_used_{run_suffix}.marker"
+    staged_schema_native_backup_path = runtime_schemas_dir / f"{db_id}.before_schema_native_contract_v1.json"
+    staged_query_csv_path = runtime_queries_dir / f"queries_{db_id}_test.csv"
+    staged_schema_json_path = runtime_schemas_dir / f"{db_id}.json"
+    staged_pos_pool_path = runtime_pools_dir / f"pos_pool_{db_id}_updated.csv"
+    staged_neg_pool_path = runtime_pools_dir / f"neg_pool_{db_id}_updated.csv"
+
+    rewriter_text = rewriter_script_path.read_text(encoding="utf-8") if rewriter_script_path.is_file() else ""
+    patched_rewriter_text, patch_rewriter_rule_present = llmr2_patch_rewriter_text_for_recovered_extraction(rewriter_text)
+    patch_changes_content = patch_rewriter_rule_present and patched_rewriter_text != rewriter_text
+    patch_preview = {
+        "route_id": LLMR2_RECOVERED_EXTRACTION_ROUTE_ID,
+        "staged_runtime_patch_target": str(runtime_rewriter_path),
+        "source_rewriter_path": str(rewriter_script_path),
+        "patch_rewriter_rule_present": patch_rewriter_rule_present,
+        "patch_changes_content": patch_changes_content,
+        "patch_strategy": "preserve_first_matched_select_or_with_and_stop_at_source_comment_boundary_v1",
+        "local_guard_strategy": "first_select_or_with_then_strip_trailing_source_comments_v1",
+        "write_generated_sql_requires_leading_select_or_with": True,
+        "separate_artifact_family_only": True,
+        "original_route_evidence_unchanged": True,
+        "execution_mode_enabled": True,
+    }
+    runtime_patch_audit_path.write_text(
+        json.dumps(patch_preview, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+
+    extraction_rule_preview = llmr2_recovered_extraction_from_raw_field(
+        "SELECT 1\n-- provenance comment"
+    )
+    extraction_audit_preview = {
+        "route_id": LLMR2_RECOVERED_EXTRACTION_ROUTE_ID,
+        "preview_input_kind": "synthetic_boundary_preview_only",
+        "preview_recovery": extraction_rule_preview,
+        "note": "scaffold only; no method output was executed or regenerated in this command",
+    }
+    extraction_audit_path.write_text(
+        json.dumps(extraction_audit_preview, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+
+    future_execute_command_text = (
+        "NOT RUN\n\n"
+        "Future recovered-extraction route candidate after separate human approval:\n"
+        "python -m scripts.cli formal-llmr2-recovered-extraction-route \\\n"
+        f"  --case {case_id} \\\n"
+        f"{'  --schema-native-contract \\\n' if schema_native_contract else ''}"
+        f"{'  --force-cpu\n' if force_cpu else ''}\n"
+        "Recovered-route execution boundary:\n"
+        f"- route_id: {LLMR2_RECOVERED_EXTRACTION_ROUTE_ID}\n"
+        f"- stage runtime copy under: {runtime_root}\n"
+        f"- patch staged runtime only at: {runtime_rewriter_path}\n"
+        f"- preserve original raw field at: {raw_field_capture_path}\n"
+        f"- write recovered candidate SQL only to: {generated_sql_path}\n"
+        f"- write checker handoff SQL only to: {checker_candidate_sql_path}\n"
+        f"- write extraction audit only to: {extraction_audit_path}\n"
+        "- do not overwrite original fast-path or PG9 bounded evidence artifacts\n"
+        "- no manual semantic SQL repair is allowed; deterministic assembly or extraction boundaries only\n"
+    )
+    future_execute_command_path.write_text(future_execute_command_text, encoding="utf-8")
+
+    artifact_paths_payload = {
+        "route_id": LLMR2_RECOVERED_EXTRACTION_ROUTE_ID,
+        "result_csv_path": str(result_csv_path),
+        "generated_sql_path": str(generated_sql_path),
+        "checker_candidate_sql_path": str(checker_candidate_sql_path),
+        "raw_field_capture_path": str(raw_field_capture_path),
+        "recovered_candidate_path": str(recovered_candidate_path),
+        "extraction_audit_path": str(extraction_audit_path),
+        "runtime_patch_audit_path": str(runtime_patch_audit_path),
+        "prompt_trace_path": str(prompt_trace_path),
+        "demo_trace_path": str(demo_trace_path),
+        "token_cost_log_path": str(token_cost_log_path),
+        "method_stdout_path": str(method_stdout_path),
+        "method_stderr_path": str(method_stderr_path),
+        "activated_rules_path": str(activated_rules_path),
+        "claim_boundary": "llmr2_recovered_extraction_route_scaffold_only_not_execution",
+    }
+    artifact_paths_path.write_text(
+        json.dumps(artifact_paths_payload, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+
+    do_not_run_yet_path.write_text(
+        "DO NOT RUN YET\n"
+        "- recovered-extraction route scaffold only\n"
+        "- no LLM-R2 execution occurred\n"
+        "- no PostgreSQL, checker, timing, or speedup execution occurred\n"
+        "- any future run must preserve original-route PG9 evidence and emit a separate artifact family\n",
+        encoding="utf-8",
+    )
+
+    adapter_bundle_found = adapter_bundle_dir.is_dir()
+    query_csv_found = query_csv_source.is_file()
+    schema_stub_found = schema_stub_source.is_file()
+    llmr2_repo_found = repo_path.is_dir()
+    llm_r2_script_found = llm_r2_script_path.is_file()
+    rewriter_script_found = rewriter_script_path.is_file()
+    java_rule_applier_found = java_rule_applier_path.is_file()
+    demo_pool_found = upstream_pos_pool_path.is_file() and upstream_neg_pool_path.is_file()
+    runtime_root_created = False
+    one_row_query_csv_created = False
+    tiny_pos_pool_created = False
+    tiny_neg_pool_created = False
+    schema_stub_staged = False
+    schema_native_contract_applied = False
+    schema_table_count = 0
+    schema_column_count = 0
+    upstream_pool_bypass_planned = False
+    full_pool_preprocessing_avoided_by_staging = False
+
+    def _copy_single_row_csv(src: Path, dst: Path) -> bool:
+        if not src.is_file():
+            return False
+        with src.open("r", encoding="utf-8", newline="") as handle:
+            reader = csv.DictReader(handle)
+            fieldnames = list(reader.fieldnames or [])
+            first_row = next(reader, None)
+        if not fieldnames or first_row is None:
+            return False
+        dst.parent.mkdir(parents=True, exist_ok=True)
+        with dst.open("w", encoding="utf-8", newline="") as handle:
+            writer = csv.DictWriter(handle, fieldnames=fieldnames)
+            writer.writeheader()
+            writer.writerow(first_row)
+        return True
+
+    def _normalize_native_type(type_name: str) -> str:
+        low = str(type_name).strip().lower()
+        if low.startswith("char") or low.startswith("character"):
+            return "character"
+        if low.startswith("varchar") or "varying" in low:
+            return "character varying"
+        if low.startswith("numeric") or low.startswith("decimal"):
+            return "numeric"
+        if low.startswith("int"):
+            return "integer"
+        return low
+
+    def _apply_schema_native_contract(schema_path: Path, backup_path: Path) -> tuple[bool, int, int]:
+        if not schema_path.is_file():
+            return False, 0, 0
+        raw_text = schema_path.read_text(encoding="utf-8")
+        parsed = json.loads(raw_text)
+        if isinstance(parsed, dict) and isinstance(parsed.get("tables"), list):
+            parsed = parsed.get("tables", [])
+        if not isinstance(parsed, list):
+            return False, 0, 0
+        backup_path.write_text(raw_text, encoding="utf-8")
+        patched_tables = []
+        for table in parsed:
+            if not isinstance(table, dict):
+                continue
+            patched_columns = []
+            for column in table.get("columns", []):
+                if not isinstance(column, dict):
+                    continue
+                patched_columns.append(
+                    {
+                        "name": str(column.get("name", "")),
+                        "type": _normalize_native_type(column.get("type", "")),
+                    }
+                )
+            patched_tables.append(
+                {
+                    "table": str(table.get("table", "")),
+                    "rows": 4,
+                    "columns": patched_columns,
+                }
+            )
+        schema_path.write_text(json.dumps(patched_tables, indent=2) + "\n", encoding="utf-8")
+        table_count = len(patched_tables)
+        column_count = sum(len(item.get("columns", [])) for item in patched_tables if isinstance(item, dict))
+        return True, table_count, column_count
+
+    def _write_runtime_stub_modules(runtime_src_dir: Path) -> None:
+        pandas_stub = """import csv
+
+class Series(list):
+    def tolist(self):
+        return list(self)
+
+
+class DataFrame:
+    def __init__(self, data=None):
+        self._rows = []
+        self._columns = []
+        if isinstance(data, DataFrame):
+            self._rows = [dict(row) for row in data._rows]
+            self._columns = list(data._columns)
+        elif isinstance(data, dict):
+            self._columns = list(data.keys())
+            max_len = max((len(v) for v in data.values()), default=0)
+            for idx in range(max_len):
+                row = {}
+                for key, values in data.items():
+                    row[key] = values[idx] if idx < len(values) else ""
+                self._rows.append(row)
+        elif isinstance(data, list):
+            self._rows = [dict(row) for row in data]
+            if self._rows:
+                self._columns = list(self._rows[0].keys())
+
+    def fillna(self, value):
+        for row in self._rows:
+            for key, current in list(row.items()):
+                if current is None or current == "":
+                    row[key] = value
+        return self
+
+    def iterrows(self):
+        for idx, row in enumerate(self._rows):
+            yield idx, row
+
+    def __getitem__(self, key):
+        return Series([row.get(key, "") for row in self._rows])
+
+    def __setitem__(self, key, values):
+        if key not in self._columns:
+            self._columns.append(key)
+        if not isinstance(values, list):
+            values = [values] * len(self._rows)
+        while len(self._rows) < len(values):
+            self._rows.append({})
+        for idx, row in enumerate(self._rows):
+            row[key] = values[idx] if idx < len(values) else ""
+
+    def to_csv(self, path):
+        columns = list(self._columns)
+        if not columns and self._rows:
+            columns = list(self._rows[0].keys())
+        with open(path, "w", encoding="utf-8", newline="") as handle:
+            writer = csv.DictWriter(handle, fieldnames=columns)
+            writer.writeheader()
+            for row in self._rows:
+                writer.writerow({col: row.get(col, "") for col in columns})
+
+
+def read_csv(path):
+    with open(path, "r", encoding="utf-8", newline="") as handle:
+        reader = csv.DictReader(handle)
+        rows = [dict(row) for row in reader]
+    return DataFrame(rows)
+"""
+        zss_stub = """class Node:
+    def __init__(self, label):
+        self.label = label
+        self.children = []
+
+    def addkid(self, node):
+        self.children.append(node)
+        return self
+
+
+def simple_distance(a, b):
+    return 0 if getattr(a, "label", None) == getattr(b, "label", None) else 1
+"""
+        (runtime_src_dir / "pandas.py").write_text(pandas_stub, encoding="utf-8")
+        (runtime_src_dir / "zss.py").write_text(zss_stub, encoding="utf-8")
+
+    def _patch_runtime_sources(runtime_src_dir: Path) -> dict[str, Any]:
+        llm_r2_path = runtime_src_dir / "LLM_R2.py"
+        rewriter_path = runtime_src_dir / "rewriter.py"
+        llm_text = llm_r2_path.read_text(encoding="utf-8")
+        if "import os" not in llm_text:
+            llm_text = llm_text.replace("import random\n", "import os\nimport random\n", 1)
+        llm_text = llm_text.replace(
+            'api_key="your_openai_api_key"',
+            'api_key=os.environ.get("OPENAI_API_KEY", "")',
+        )
+        if "LLMR2_TOKEN_COST_LOG" not in llm_text:
+            llm_text = llm_text.replace(
+                'client = OpenAI(\n    # This is the default and can be omitted\n    api_key=os.environ.get("OPENAI_API_KEY", "")\n)\n',
+                'client = OpenAI(\n    # This is the default and can be omitted\n    api_key=os.environ.get("OPENAI_API_KEY", "")\n)\n'
+                'LLMR2_TOKEN_COST_LOG = os.environ.get("LLMR2_TOKEN_COST_LOG", "")\n'
+                'LLMR2_OPENAI_USED_MARKER = os.environ.get("LLMR2_OPENAI_USED_MARKER", "")\n'
+                'LLMR2_PROMPT_TRACE = os.environ.get("LLMR2_PROMPT_TRACE", "")\n'
+                'LLMR2_ONE_ROW_QUERY_MARKER = os.environ.get("LLMR2_ONE_ROW_QUERY_MARKER", "")\n'
+                'LLMR2_TINY_POOL_MARKER = os.environ.get("LLMR2_TINY_POOL_MARKER", "")\n',
+            )
+            llm_text = llm_text.replace(
+                'def query_turbo_model(prompt):\n'
+                '    chat_completion = client.chat.completions.create(\n'
+                '        messages=prompt,\n'
+                '        model="gpt-3.5-turbo",\n'
+                '        temperature=0,\n'
+                '    )\n'
+                '    # print(chat_completion)\n'
+                '    return chat_completion.choices[0].message.content\n',
+                'def query_turbo_model(prompt):\n'
+                '    if LLMR2_PROMPT_TRACE:\n'
+                '        with open(LLMR2_PROMPT_TRACE, "w", encoding="utf-8") as fh:\n'
+                '            fh.write("# LLM-R2 Prompt Trace\\n\\n```json\\n")\n'
+                '            fh.write(json.dumps(prompt, indent=2))\n'
+                '            fh.write("\\n```\\n")\n'
+                '    chat_completion = client.chat.completions.create(\n'
+                '        messages=prompt,\n'
+                '        model="gpt-3.5-turbo",\n'
+                '        temperature=0,\n'
+                '    )\n'
+                '    if LLMR2_OPENAI_USED_MARKER:\n'
+                '        with open(LLMR2_OPENAI_USED_MARKER, "a", encoding="utf-8") as fh:\n'
+                '            fh.write("openai_api_call\\n")\n'
+                '    usage = getattr(chat_completion, "usage", None)\n'
+                '    if LLMR2_TOKEN_COST_LOG and usage is not None:\n'
+                '        with open(LLMR2_TOKEN_COST_LOG, "a", encoding="utf-8") as fh:\n'
+                '            fh.write(json.dumps({\n'
+                '                "prompt_tokens": getattr(usage, "prompt_tokens", None),\n'
+                '                "completion_tokens": getattr(usage, "completion_tokens", None),\n'
+                '                "total_tokens": getattr(usage, "total_tokens", None),\n'
+                '                "model": getattr(chat_completion, "model", "gpt-3.5-turbo"),\n'
+                '            }) + "\\n")\n'
+                '    return chat_completion.choices[0].message.content\n',
+            )
+            llm_text = llm_text.replace(
+                "    df_test = pd.read_csv('../data/data_llmr2/queries/queries_' + dataset + '_test.csv').fillna('NA')\n"
+                "    promo_pool_pos = get_pool('../data/data_llmr2/pools/pos_pool_' + dataset + '_updated.csv', method)\n"
+                "    promo_pool_neg = get_pool('../data/data_llmr2/pools/neg_pool_' + dataset + '_updated.csv', method)\n",
+                "    query_csv_path = '../data/data_llmr2/queries/queries_' + dataset + '_test.csv'\n"
+                "    pos_pool_path = '../data/data_llmr2/pools/pos_pool_' + dataset + '_updated.csv'\n"
+                "    neg_pool_path = '../data/data_llmr2/pools/neg_pool_' + dataset + '_updated.csv'\n"
+                "    if LLMR2_ONE_ROW_QUERY_MARKER:\n"
+                "        with open(LLMR2_ONE_ROW_QUERY_MARKER, 'w', encoding='utf-8') as fh:\n"
+                "            fh.write(query_csv_path + '\\n')\n"
+                "    if LLMR2_TINY_POOL_MARKER:\n"
+                "        with open(LLMR2_TINY_POOL_MARKER, 'w', encoding='utf-8') as fh:\n"
+                "            fh.write(json.dumps({'pos_pool_path': pos_pool_path, 'neg_pool_path': neg_pool_path}))\n"
+                "    df_test = pd.read_csv(query_csv_path).fillna('NA')\n"
+                "    promo_pool_pos = get_pool(pos_pool_path, method)\n"
+                "    promo_pool_neg = get_pool(neg_pool_path, method)\n",
+            )
+            llm_text = re.sub(
+                r"method = 'queryCL'\ndataset = 'dsb'\nnum_promos = 1\nLLM_R2\(dataset, method, num_promos\)\n",
+                f"method = 'queryCL'\ndataset = '{db_id}'\nnum_promos = 1\nLLM_R2(dataset, method, num_promos)\n",
+                llm_text,
+            )
+        llm_r2_path.write_text(llm_text, encoding="utf-8")
+
+        rewriter_original = rewriter_path.read_text(encoding="utf-8")
+        rewriter_candidate, preserved_first_sql_line = llmr2_patch_rewriter_text_for_recovered_extraction(
+            rewriter_original
+        )
+        if "LLMR2_JAVA_RULE_APPLIER_MARKER" not in rewriter_candidate:
+            rewriter_candidate = rewriter_candidate.replace(
+                "import subprocess\nimport json\nimport numpy as np\n",
+                "import os\nimport subprocess\nimport json\nimport numpy as np\n",
+            )
+            rewriter_candidate = rewriter_candidate.replace(
+                "def call_rewriter(db_id, sql_input, rule_input):\n",
+                "def call_rewriter(db_id, sql_input, rule_input):\n"
+                "    marker_path = os.environ.get('LLMR2_JAVA_RULE_APPLIER_MARKER', '')\n"
+                "    if marker_path:\n"
+                "        with open(marker_path, 'a', encoding='utf-8') as fh:\n"
+                "            fh.write(json.dumps({'db_id': db_id, 'rule_input': rule_input}) + '\\n')\n",
+            )
+        rewriter_path.write_text(rewriter_candidate, encoding="utf-8")
+        return {
+            "preserved_first_sql_line_patch_applied": preserved_first_sql_line and rewriter_candidate != rewriter_original,
+            "rewriter_patch_changed_content": rewriter_candidate != rewriter_original,
+        }
+
+    try:
+        if runtime_root.exists():
+            shutil.rmtree(runtime_root)
+        if llmr2_repo_found:
+            shutil.copytree(repo_path, runtime_root)
+            runtime_root_created = True
+        if runtime_root_created:
+            runtime_queries_dir.mkdir(parents=True, exist_ok=True)
+            runtime_schemas_dir.mkdir(parents=True, exist_ok=True)
+            runtime_pools_dir.mkdir(parents=True, exist_ok=True)
+        if runtime_root_created and query_csv_found:
+            staged_query_csv_path.write_text(query_csv_source.read_text(encoding="utf-8"), encoding="utf-8")
+            with staged_query_csv_path.open("r", encoding="utf-8", newline="") as handle:
+                row_count = sum(1 for _ in csv.DictReader(handle))
+            one_row_query_csv_created = row_count == 1
+        if runtime_root_created and schema_stub_found:
+            staged_schema_json_path.write_text(schema_stub_source.read_text(encoding="utf-8"), encoding="utf-8")
+            schema_stub_staged = True
+        if runtime_root_created and schema_stub_staged and schema_native_contract:
+            (
+                schema_native_contract_applied,
+                schema_table_count,
+                schema_column_count,
+            ) = _apply_schema_native_contract(staged_schema_json_path, staged_schema_native_backup_path)
+        if runtime_root_created:
+            tiny_pos_pool_created = _copy_single_row_csv(upstream_pos_pool_path, staged_pos_pool_path)
+            tiny_neg_pool_created = _copy_single_row_csv(upstream_neg_pool_path, staged_neg_pool_path)
+        if runtime_root_created and one_row_query_csv_created and tiny_pos_pool_created and tiny_neg_pool_created:
+            upstream_pool_bypass_planned = True
+            full_pool_preprocessing_avoided_by_staging = True
+    except Exception:
+        runtime_root_created = runtime_root.is_dir()
+
+    blockers: list[str] = []
+    if not adapter_bundle_found:
+        blockers.append("missing_adapter_bundle")
+    if not query_csv_found:
+        blockers.append("missing_query_csv")
+    if not schema_stub_found:
+        blockers.append("missing_schema_stub")
+    if not llmr2_repo_found:
+        blockers.append("missing_llmr2_repo")
+    if not llm_r2_script_found:
+        blockers.append("missing_main_script")
+    if not rewriter_script_found:
+        blockers.append("missing_rewriter_script")
+    if not java_rule_applier_found:
+        blockers.append("missing_java_rule_applier")
+    if not demo_pool_found:
+        blockers.append("missing_demo_pool")
+    if not openai_api_key_visible:
+        blockers.append("openai_api_key_not_visible")
+    if not patch_rewriter_rule_present:
+        blockers.append("recovered_rewriter_patch_anchor_not_found")
+    if not runtime_root_created:
+        blockers.append("runtime_root_not_created")
+    if not one_row_query_csv_created:
+        blockers.append("one_row_query_csv_not_created")
+    if not tiny_pos_pool_created:
+        blockers.append("tiny_pos_pool_not_created")
+    if not tiny_neg_pool_created:
+        blockers.append("tiny_neg_pool_not_created")
+    if not schema_stub_staged:
+        blockers.append("schema_stub_not_staged")
+    if schema_native_contract and not schema_native_contract_applied:
+        blockers.append("schema_native_contract_not_applied")
+    if not upstream_pool_bypass_planned:
+        blockers.append("upstream_pool_bypass_not_planned")
+    if not full_pool_preprocessing_avoided_by_staging:
+        blockers.append("full_pool_preprocessing_not_avoided_by_staging")
+
+    payload = {
+        "command": "formal-llmr2-recovered-extraction-route",
+        "ok": not blockers,
+        "ran_at_utc": utc_now(),
+        "route_id": LLMR2_RECOVERED_EXTRACTION_ROUTE_ID,
+        "case_id": case_id,
+        "dry_run_only": dry_run_only,
+        "force_cpu": force_cpu,
+        "schema_native_contract": schema_native_contract,
+        "adapter_bundle_found": adapter_bundle_found,
+        "query_csv_found": query_csv_found,
+        "schema_stub_found": schema_stub_found,
+        "llmr2_repo_found": llmr2_repo_found,
+        "llm_r2_script_found": llm_r2_script_found,
+        "rewriter_script_found": rewriter_script_found,
+        "java_rule_applier_found": java_rule_applier_found,
+        "demo_pool_found": demo_pool_found,
+        "openai_api_key_visible": openai_api_key_visible,
+        "runtime_root_created": runtime_root_created,
+        "one_row_query_csv_created": one_row_query_csv_created,
+        "tiny_pos_pool_created": tiny_pos_pool_created,
+        "tiny_neg_pool_created": tiny_neg_pool_created,
+        "schema_stub_staged": schema_stub_staged,
+        "schema_native_contract_applied": schema_native_contract_applied,
+        "schema_table_count": schema_table_count,
+        "schema_column_count": schema_column_count,
+        "upstream_pool_bypass_planned": upstream_pool_bypass_planned,
+        "full_pool_preprocessing_avoided_by_staging": full_pool_preprocessing_avoided_by_staging,
+        "patch_rewriter_rule_present": patch_rewriter_rule_present,
+        "patch_changes_content": patch_changes_content,
+        "future_command_written": future_execute_command_path.is_file(),
+        "artifact_paths_written": artifact_paths_path.is_file(),
+        "runtime_patch_audit_written": runtime_patch_audit_path.is_file(),
+        "extraction_audit_preview_written": extraction_audit_path.is_file(),
+        "blockers": blockers,
+        "claim_boundary": "llmr2_recovered_extraction_route_scaffold_only_not_execution",
+    }
+    dry_run_summary_path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    if dry_run_only:
+        return print_and_exit(payload, 0 if not blockers else 1)
+
+    smoke_payload = {
+        "case_id": case_id,
+        "route_id": LLMR2_RECOVERED_EXTRACTION_ROUTE_ID,
+        "method": "LLM-R2 recovered extraction route",
+        "dry_run_passed": not blockers,
+        "method_executed": False,
+        "fast_path_runtime_used": False,
+        "openai_api_used": "unknown",
+        "java_rule_applier_used": "unknown",
+        "one_row_query_used": "unknown",
+        "tiny_demo_pools_used": "unknown",
+        "force_cpu": force_cpu,
+        "schema_native_contract": schema_native_contract,
+        "generation_status": "dry_run_failed",
+        "output_sql_extracted": False,
+        "recovered_sql_retained": False,
+        "generated_sql_path": str(generated_sql_path),
+        "checker_candidate_sql_path": str(checker_candidate_sql_path),
+        "result_csv_path": str(result_csv_path),
+        "raw_field_capture_path": str(raw_field_capture_path),
+        "recovered_candidate_path": str(recovered_candidate_path),
+        "runtime_patch_audit_path": str(runtime_patch_audit_path),
+        "extraction_audit_path": str(extraction_audit_path),
+        "activated_rules_path": str(activated_rules_path),
+        "prompt_trace_path": str(prompt_trace_path),
+        "demo_trace_path": str(demo_trace_path),
+        "token_cost_log_path": str(token_cost_log_path),
+        "method_stdout_path": str(method_stdout_path),
+        "method_stderr_path": str(method_stderr_path),
+        "checker_status": "not_run",
+        "consistency_status": "not_checked",
+        "speedup_status": "not_run",
+        "failure_category": "",
+        "failure_summary": "",
+        "claim_boundary": "bounded_1_case_LLMR2_recovered_extraction_generation_only_not_execution_not_leaderboard",
+    }
+    if blockers:
+        smoke_payload["failure_category"] = "dry_run_failed"
+        smoke_payload["failure_summary"] = "recovered-route dry-run prerequisites did not pass"
+        smoke_result_path.write_text(json.dumps(smoke_payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+        return print_and_exit(smoke_payload, 1)
+
+    llmr2_python = Path("/tmp/rewritebench_rbot_llm4rewrite_venv_smoke/bin/python")
+    if not llmr2_python.is_file():
+        smoke_payload["failure_category"] = "missing_runtime_python"
+        smoke_payload["failure_summary"] = f"expected runtime python not found: {llmr2_python}"
+        smoke_result_path.write_text(json.dumps(smoke_payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+        return print_and_exit(smoke_payload, 1)
+
+    patch_runtime_result: dict[str, Any] = {
+        "preserved_first_sql_line_patch_applied": False,
+        "rewriter_patch_changed_content": False,
+    }
+    extraction_audit: dict[str, Any] = {
+        "route_id": LLMR2_RECOVERED_EXTRACTION_ROUTE_ID,
+        "case_id": case_id,
+        "raw_field_present": False,
+        "raw_field_source_column": "",
+        "extraction_rule_used": "first_select_or_with_then_strip_trailing_source_comments_v1",
+        "candidate_written": False,
+        "candidate_begins_with_select_or_with": False,
+        "source_comments_stripped_or_rejected": False,
+        "sql_generated_by_method_not_manually_repaired": False,
+        "failure_category": "",
+        "failure_summary": "",
+    }
+
+    try:
+        runtime_src_dir = runtime_root / "src"
+        (runtime_root / "results").mkdir(parents=True, exist_ok=True)
+        _write_runtime_stub_modules(runtime_src_dir)
+        patch_runtime_result = _patch_runtime_sources(runtime_src_dir)
+
+        updated_patch_preview = dict(patch_preview)
+        updated_patch_preview.update(patch_runtime_result)
+        runtime_patch_audit_path.write_text(
+            json.dumps(updated_patch_preview, indent=2, sort_keys=True) + "\n",
+            encoding="utf-8",
+        )
+
+        for marker in [
+            openai_marker_path,
+            java_marker_path,
+            one_row_query_marker_path,
+            tiny_pool_marker_path,
+            token_cost_log_path,
+            prompt_trace_path,
+            demo_trace_path,
+            activated_rules_path,
+            generated_sql_path,
+            checker_candidate_sql_path,
+            raw_field_capture_path,
+            recovered_candidate_path,
+            result_csv_path,
+            method_stdout_path,
+            method_stderr_path,
+        ]:
+            if marker.exists():
+                marker.unlink()
+
+        env = os.environ.copy()
+        env["PYTHONPATH"] = str(runtime_src_dir)
+        env["LLMR2_TOKEN_COST_LOG"] = str(token_cost_log_path)
+        env["LLMR2_OPENAI_USED_MARKER"] = str(openai_marker_path)
+        env["LLMR2_JAVA_RULE_APPLIER_MARKER"] = str(java_marker_path)
+        env["LLMR2_PROMPT_TRACE"] = str(prompt_trace_path)
+        env["LLMR2_ONE_ROW_QUERY_MARKER"] = str(one_row_query_marker_path)
+        env["LLMR2_TINY_POOL_MARKER"] = str(tiny_pool_marker_path)
+        if force_cpu:
+            env["CUDA_VISIBLE_DEVICES"] = ""
+            env["TOKENIZERS_PARALLELISM"] = "false"
+
+        with method_stdout_path.open("w", encoding="utf-8") as stdout_fh, method_stderr_path.open("w", encoding="utf-8") as stderr_fh:
+            proc = subprocess.run(
+                [str(llmr2_python), "LLM_R2.py"],
+                cwd=runtime_src_dir,
+                env=env,
+                stdout=stdout_fh,
+                stderr=stderr_fh,
+                text=True,
+                check=False,
+                timeout=900,
+            )
+
+        smoke_payload["method_executed"] = True
+        smoke_payload["fast_path_runtime_used"] = True
+        smoke_payload["one_row_query_used"] = one_row_query_marker_path.exists()
+        smoke_payload["tiny_demo_pools_used"] = tiny_pool_marker_path.exists()
+        smoke_payload["openai_api_used"] = openai_marker_path.exists()
+        smoke_payload["java_rule_applier_used"] = java_marker_path.exists()
+
+        runtime_result_csv_path = runtime_root / "results" / f"gpt_{db_id}_one_promo_queryCL_updated.csv"
+        runtime_time_csv_path = runtime_root / "results" / f"time_gpt_{db_id}_one_promo_queryCL_cleaned.csv"
+        if runtime_result_csv_path.is_file():
+            shutil.copy2(runtime_result_csv_path, result_csv_path)
+        if runtime_time_csv_path.is_file() and not token_cost_log_path.exists():
+            token_cost_log_path.write_text(
+                json.dumps({"timing_csv_path": str(runtime_time_csv_path), "usage_tokens_not_captured": True}, indent=2, sort_keys=True) + "\n",
+                encoding="utf-8",
+            )
+
+        if proc.returncode != 0:
+            smoke_payload["generation_status"] = "method_execution_failed"
+            smoke_payload["failure_category"] = "subprocess_nonzero_exit"
+            smoke_payload["failure_summary"] = f"LLM-R2 subprocess exited with code {proc.returncode}"
+        else:
+            smoke_payload["generation_status"] = "method_executed_output_sql_missing"
+
+        if result_csv_path.is_file():
+            with result_csv_path.open("r", encoding="utf-8", newline="") as handle:
+                rows = [dict(row) for row in csv.DictReader(handle)]
+            if rows:
+                row = rows[-1]
+                raw_field_value = str(row.get("rewritten_sql_gpt") or row.get("rewrite_query") or "").strip()
+                raw_field_source_column = "rewritten_sql_gpt" if str(row.get("rewritten_sql_gpt") or "").strip() else ("rewrite_query" if str(row.get("rewrite_query") or "").strip() else "")
+                activated_rules_raw = str(row.get("activated_rules_gpt") or row.get("activated_rules") or "").strip()
+                prompt_sql_raw = str(row.get("prompt_sql_similar") or "").strip()
+                prompt_rules_raw = str(row.get("prompt_rules_similar") or "").strip()
+                extraction_audit["raw_field_present"] = bool(raw_field_value and raw_field_value != "NA")
+                extraction_audit["raw_field_source_column"] = raw_field_source_column
+                if extraction_audit["raw_field_present"]:
+                    raw_field_capture_path.write_text(raw_field_value.rstrip() + "\n", encoding="utf-8")
+                    recovered = llmr2_recovered_extraction_from_raw_field(raw_field_value)
+                    extraction_audit.update(recovered)
+                    extraction_audit["source_comments_stripped_or_rejected"] = bool(
+                        recovered.get("source_comments_detected") or recovered.get("source_comments_stripped")
+                    )
+                    candidate_sql = str(recovered.get("recovered_sql_candidate") or "").strip()
+                    if candidate_sql:
+                        recovered_candidate_path.write_text(candidate_sql.rstrip() + "\n", encoding="utf-8")
+                    if recovered.get("write_generated_sql_allowed") and recovered.get("generic_sql_like_status") == "extracted":
+                        generated_sql_path.write_text(candidate_sql.rstrip() + "\n", encoding="utf-8")
+                        checker_candidate_sql_path.write_text(candidate_sql.rstrip() + "\n", encoding="utf-8")
+                        smoke_payload["output_sql_extracted"] = True
+                        smoke_payload["recovered_sql_retained"] = True
+                        smoke_payload["generation_status"] = "generation_success_with_recovered_output_sql"
+                        extraction_audit["candidate_written"] = True
+                        extraction_audit["candidate_begins_with_select_or_with"] = True
+                        extraction_audit["sql_generated_by_method_not_manually_repaired"] = bool(
+                            recovered.get("sql_generated_by_method_not_manually_repaired")
+                        )
+                    else:
+                        smoke_payload["failure_category"] = "recovered_output_sql_invalid"
+                        smoke_payload["failure_summary"] = "raw field was captured but recovered SQL did not satisfy SELECT/WITH and contamination guards"
+                        extraction_audit["failure_category"] = "recovered_output_sql_invalid"
+                        extraction_audit["failure_summary"] = smoke_payload["failure_summary"]
+                else:
+                    smoke_payload["failure_category"] = "output_sql_missing"
+                    smoke_payload["failure_summary"] = "result CSV was produced but rewritten_sql_gpt and rewrite_query were empty or NA"
+                    extraction_audit["failure_category"] = "output_sql_missing"
+                    extraction_audit["failure_summary"] = smoke_payload["failure_summary"]
+
+                try:
+                    activated_rules = ast.literal_eval(activated_rules_raw) if activated_rules_raw else []
+                except Exception:
+                    activated_rules = activated_rules_raw
+                activated_rules_path.write_text(
+                    json.dumps({"activated_rules_gpt": activated_rules}, indent=2, sort_keys=True) + "\n",
+                    encoding="utf-8",
+                )
+                demo_trace_path.write_text(
+                    json.dumps(
+                        {
+                            "prompt_sql_similar": prompt_sql_raw,
+                            "prompt_rules_similar": prompt_rules_raw,
+                        },
+                        indent=2,
+                        sort_keys=True,
+                    ) + "\n",
+                    encoding="utf-8",
+                )
+            elif not smoke_payload["failure_category"]:
+                smoke_payload["failure_category"] = "empty_result_csv"
+                smoke_payload["failure_summary"] = "result CSV was produced but contained no rows"
+                extraction_audit["failure_category"] = "empty_result_csv"
+                extraction_audit["failure_summary"] = smoke_payload["failure_summary"]
+        elif not smoke_payload["failure_category"]:
+            smoke_payload["failure_category"] = "missing_result_csv"
+            smoke_payload["failure_summary"] = "expected result CSV was not created"
+            extraction_audit["failure_category"] = "missing_result_csv"
+            extraction_audit["failure_summary"] = smoke_payload["failure_summary"]
+
+        if not token_cost_log_path.exists():
+            token_cost_log_path.write_text(
+                json.dumps({"usage_tokens_not_captured": True, "reason": "upstream did not expose token usage in the captured path"}, indent=2, sort_keys=True) + "\n",
+                encoding="utf-8",
+            )
+    except subprocess.TimeoutExpired as exc:
+        smoke_payload["method_executed"] = True
+        smoke_payload["fast_path_runtime_used"] = True
+        smoke_payload["one_row_query_used"] = one_row_query_marker_path.exists()
+        smoke_payload["tiny_demo_pools_used"] = tiny_pool_marker_path.exists()
+        smoke_payload["openai_api_used"] = openai_marker_path.exists()
+        smoke_payload["java_rule_applier_used"] = java_marker_path.exists()
+        smoke_payload["generation_status"] = "method_execution_failed"
+        smoke_payload["failure_category"] = "runtime_timeout"
+        smoke_payload["failure_summary"] = f"LLM-R2 subprocess exceeded timeout after {exc.timeout} seconds"
+        extraction_audit["failure_category"] = "runtime_timeout"
+        extraction_audit["failure_summary"] = smoke_payload["failure_summary"]
+        if not token_cost_log_path.exists():
+            token_cost_log_path.write_text(
+                json.dumps({"usage_tokens_not_captured": True, "reason": "runtime timed out before captured completion"}, indent=2, sort_keys=True) + "\n",
+                encoding="utf-8",
+            )
+    except Exception as exc:
+        smoke_payload["method_executed"] = smoke_payload["method_executed"] or False
+        smoke_payload["generation_status"] = "method_execution_failed"
+        smoke_payload["failure_category"] = type(exc).__name__
+        smoke_payload["failure_summary"] = str(exc)
+        extraction_audit["failure_category"] = type(exc).__name__
+        extraction_audit["failure_summary"] = str(exc)
+
+    if smoke_payload["recovered_sql_retained"]:
+        smoke_payload["failure_category"] = ""
+        smoke_payload["failure_summary"] = ""
+    elif not smoke_payload["failure_category"]:
+        smoke_payload["failure_category"] = "recovered_output_sql_not_retained"
+        smoke_payload["failure_summary"] = "recovered SQL candidate was not retained under the recovered route"
+        extraction_audit["failure_category"] = "recovered_output_sql_not_retained"
+        extraction_audit["failure_summary"] = smoke_payload["failure_summary"]
+
+    extraction_audit_path.write_text(
+        json.dumps(extraction_audit, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    smoke_result_path.write_text(json.dumps(smoke_payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    return print_and_exit(smoke_payload, 0 if smoke_payload["recovered_sql_retained"] else 1)
+
+
 def cmd_formal_llmr2_logical_plan_probe(args: argparse.Namespace) -> int:
     case_id = str(args.case).strip().upper()
     case_slug = case_id.lower()
@@ -48951,6 +49866,17 @@ def build_parser() -> argparse.ArgumentParser:
     formal_llmr2_one_row_fast_path_parser.add_argument("--schema-native-contract", action="store_true", default=False)
     formal_llmr2_one_row_fast_path_parser.set_defaults(
         func=cmd_formal_llmr2_one_row_fast_path
+    )
+
+    formal_llmr2_recovered_extraction_route_parser = subparsers.add_parser(
+        "formal-llmr2-recovered-extraction-route"
+    )
+    formal_llmr2_recovered_extraction_route_parser.add_argument("--case", required=True)
+    formal_llmr2_recovered_extraction_route_parser.add_argument("--dry-run", action="store_true", default=False)
+    formal_llmr2_recovered_extraction_route_parser.add_argument("--force-cpu", action="store_true", default=False)
+    formal_llmr2_recovered_extraction_route_parser.add_argument("--schema-native-contract", action="store_true", default=False)
+    formal_llmr2_recovered_extraction_route_parser.set_defaults(
+        func=cmd_formal_llmr2_recovered_extraction_route
     )
 
     formal_llmr2_logical_plan_probe_parser = subparsers.add_parser(

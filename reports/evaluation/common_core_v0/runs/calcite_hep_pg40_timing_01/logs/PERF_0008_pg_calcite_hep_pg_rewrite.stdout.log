@@ -1,0 +1,42 @@
+ l_orderkey | revenue | o_orderdate | o_shippriority 
+------------+---------+-------------+----------------
+        100 | 90.0000 | 1995-03-01  |              0
+(1 row)
+
+ l_orderkey | revenue | o_orderdate | o_shippriority 
+------------+---------+-------------+----------------
+        100 | 90.0000 | 1995-03-01  |              0
+(1 row)
+
+ l_orderkey | revenue | o_orderdate | o_shippriority 
+------------+---------+-------------+----------------
+        100 | 90.0000 | 1995-03-01  |              0
+(1 row)
+
+ l_orderkey | revenue | o_orderdate | o_shippriority 
+------------+---------+-------------+----------------
+        100 | 90.0000 | 1995-03-01  |              0
+(1 row)
+
+ l_orderkey | revenue | o_orderdate | o_shippriority 
+------------+---------+-------------+----------------
+        100 | 90.0000 | 1995-03-01  |              0
+(1 row)
+
+ l_orderkey | revenue | o_orderdate | o_shippriority 
+------------+---------+-------------+----------------
+        100 | 90.0000 | 1995-03-01  |              0
+(1 row)
+
+ l_orderkey | revenue | o_orderdate | o_shippriority 
+------------+---------+-------------+----------------
+        100 | 90.0000 | 1995-03-01  |              0
+(1 row)
+
+ l_orderkey | revenue | o_orderdate | o_shippriority 
+------------+---------+-------------+----------------
+        100 | 90.0000 | 1995-03-01  |              0
+(1 row)
+
+case_id=PERF_0008 pool=performance engine=pg route_id=calcite_hep_pg_rewrite
+warmup_count=1 repeat_count=3

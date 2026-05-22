@@ -1,0 +1,18 @@
+NOT RUN
+
+Future recovered-extraction route candidate after separate human approval:
+python -m scripts.cli formal-llmr2-recovered-extraction-route \
+  --case PERF_0006 \
+  --schema-native-contract \
+  --force-cpu
+
+Recovered-route execution boundary:
+- route_id: llm_r2_recovered_extraction_route_v1
+- stage runtime copy under: /tmp/rewritebench_llmr2_recovered_extraction_route_v1/PERF_0006/runtime_root_recovered_extraction_v1
+- patch staged runtime only at: /tmp/rewritebench_llmr2_recovered_extraction_route_v1/PERF_0006/runtime_root_recovered_extraction_v1/src/rewriter.py
+- preserve original raw field at: /tmp/rewritebench_llmr2_recovered_extraction_route_v1/PERF_0006/rewritten_sql_gpt_raw_schema_native_recovered_extraction_v1.txt
+- write recovered candidate SQL only to: /tmp/rewritebench_llmr2_recovered_extraction_route_v1/PERF_0006/generated_sql_schema_native_recovered_extraction_v1.sql
+- write checker handoff SQL only to: /tmp/rewritebench_llmr2_recovered_extraction_route_v1/PERF_0006/checker_candidate_sql_schema_native_recovered_extraction_v1.sql
+- write extraction audit only to: /tmp/rewritebench_llmr2_recovered_extraction_route_v1/PERF_0006/extraction_audit_schema_native_recovered_extraction_v1.json
+- do not overwrite original fast-path or PG9 bounded evidence artifacts
+- no manual semantic SQL repair is allowed; deterministic assembly or extraction boundaries only

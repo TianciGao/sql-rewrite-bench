@@ -1,0 +1,244 @@
+{
+  "run_id": "direct_llm_same_engine_timing_canary_01",
+  "mode": "manual_human_timing_canary",
+  "denominator_id": "common_core_v0_40",
+  "method_id": "direct_llm",
+  "method_role": "same_engine_timing_canary",
+  "canary_scope": "perf_0006_cons_0010_longtail_0011_tri_engine_same_engine_rewrite",
+  "warmup_count": 1,
+  "repeat_count": 3,
+  "records": [
+    {
+      "key": "env_check",
+      "row_status": "executed",
+      "command": "python -m scripts.cli env-check",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_timing_canary_01/logs/env_check.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_timing_canary_01/logs/env_check.stderr.log",
+      "timing_json_path": "",
+      "speedup_exclusion_reason": "not_applicable_env_check",
+      "source_runtime_ms": [],
+      "generated_runtime_ms": [],
+      "median_source_ms": null,
+      "median_generated_ms": null,
+      "speedup_ratio": null,
+      "notes": ""
+    },
+    {
+      "key": "perf_0006__pg__direct_llm_same_engine_rewrite",
+      "row_status": "executed",
+      "command": "python - <<'PY' <postgres timing runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_timing_canary_01/logs/perf_0006__pg__direct_llm_same_engine_rewrite.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_timing_canary_01/logs/perf_0006__pg__direct_llm_same_engine_rewrite.stderr.log",
+      "timing_json_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_timing_canary_01/timings/PERF_0006/pg/direct_llm_same_engine_rewrite.json",
+      "speedup_exclusion_reason": "",
+      "source_runtime_ms": [
+        293.70667203329504,
+        292.71999502088875,
+        367.3482539597899
+      ],
+      "generated_runtime_ms": [
+        393.1349039776251,
+        421.9828799832612,
+        403.64608098752797
+      ],
+      "median_source_ms": 293.70667203329504,
+      "median_generated_ms": 403.64608098752797,
+      "speedup_ratio": 0.7276341475054978,
+      "notes": ""
+    },
+    {
+      "key": "perf_0006__mysql__direct_llm_same_engine_rewrite",
+      "row_status": "executed",
+      "command": "python - <<'PY' <mysql timing runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_timing_canary_01/logs/perf_0006__mysql__direct_llm_same_engine_rewrite.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_timing_canary_01/logs/perf_0006__mysql__direct_llm_same_engine_rewrite.stderr.log",
+      "timing_json_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_timing_canary_01/timings/PERF_0006/mysql/direct_llm_same_engine_rewrite.json",
+      "speedup_exclusion_reason": "",
+      "source_runtime_ms": [
+        114.8533079540357,
+        116.03875702712685,
+        116.27037299331278
+      ],
+      "generated_runtime_ms": [
+        117.45310295373201,
+        127.64036899898201,
+        119.97844593133777
+      ],
+      "median_source_ms": 116.03875702712685,
+      "median_generated_ms": 119.97844593133777,
+      "speedup_ratio": 0.9671633611051642,
+      "notes": ""
+    },
+    {
+      "key": "perf_0006__spark__direct_llm_same_engine_rewrite",
+      "row_status": "executed",
+      "command": "python - <<'PY' <spark timing runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_timing_canary_01/logs/perf_0006__spark__direct_llm_same_engine_rewrite.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_timing_canary_01/logs/perf_0006__spark__direct_llm_same_engine_rewrite.stderr.log",
+      "timing_json_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_timing_canary_01/timings/PERF_0006/spark/direct_llm_same_engine_rewrite.json",
+      "speedup_exclusion_reason": "",
+      "source_runtime_ms": [
+        337.32635399792343,
+        244.20056899543852,
+        207.1094879647717
+      ],
+      "generated_runtime_ms": [
+        269.7146609425545,
+        216.87226206995547,
+        203.1057879794389
+      ],
+      "median_source_ms": 244.20056899543852,
+      "median_generated_ms": 216.87226206995547,
+      "speedup_ratio": 1.126011075204573,
+      "notes": ""
+    },
+    {
+      "key": "cons_0010__pg__direct_llm_same_engine_rewrite",
+      "row_status": "executed",
+      "command": "python - <<'PY' <postgres timing runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_timing_canary_01/logs/cons_0010__pg__direct_llm_same_engine_rewrite.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_timing_canary_01/logs/cons_0010__pg__direct_llm_same_engine_rewrite.stderr.log",
+      "timing_json_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_timing_canary_01/timings/CONS_0010/pg/direct_llm_same_engine_rewrite.json",
+      "speedup_exclusion_reason": "",
+      "source_runtime_ms": [
+        296.7956369975582,
+        298.1932789552957,
+        296.3958920445293
+      ],
+      "generated_runtime_ms": [
+        295.33223900943995,
+        301.44677497446537,
+        295.7027020165697
+      ],
+      "median_source_ms": 296.7956369975582,
+      "median_generated_ms": 295.7027020165697,
+      "speedup_ratio": 1.0036960601764378,
+      "notes": ""
+    },
+    {
+      "key": "cons_0010__mysql__direct_llm_same_engine_rewrite",
+      "row_status": "executed",
+      "command": "python - <<'PY' <mysql timing runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_timing_canary_01/logs/cons_0010__mysql__direct_llm_same_engine_rewrite.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_timing_canary_01/logs/cons_0010__mysql__direct_llm_same_engine_rewrite.stderr.log",
+      "timing_json_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_timing_canary_01/timings/CONS_0010/mysql/direct_llm_same_engine_rewrite.json",
+      "speedup_exclusion_reason": "",
+      "source_runtime_ms": [
+        139.11492901388556,
+        135.79664600547403,
+        138.69027304463089
+      ],
+      "generated_runtime_ms": [
+        132.0200349437073,
+        133.9391670189798,
+        144.27147596143186
+      ],
+      "median_source_ms": 138.69027304463089,
+      "median_generated_ms": 133.9391670189798,
+      "speedup_ratio": 1.0354721186594944,
+      "notes": ""
+    },
+    {
+      "key": "cons_0010__spark__direct_llm_same_engine_rewrite",
+      "row_status": "executed",
+      "command": "python - <<'PY' <spark timing runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_timing_canary_01/logs/cons_0010__spark__direct_llm_same_engine_rewrite.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_timing_canary_01/logs/cons_0010__spark__direct_llm_same_engine_rewrite.stderr.log",
+      "timing_json_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_timing_canary_01/timings/CONS_0010/spark/direct_llm_same_engine_rewrite.json",
+      "speedup_exclusion_reason": "",
+      "source_runtime_ms": [
+        312.97529104631394,
+        269.3450211081654,
+        246.829116018489
+      ],
+      "generated_runtime_ms": [
+        319.21513203997165,
+        265.14009793754667,
+        265.22554992698133
+      ],
+      "median_source_ms": 269.3450211081654,
+      "median_generated_ms": 265.22554992698133,
+      "speedup_ratio": 1.015531954528205,
+      "notes": ""
+    },
+    {
+      "key": "longtail_0011__pg__direct_llm_same_engine_rewrite",
+      "row_status": "executed",
+      "command": "python - <<'PY' <postgres timing runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_timing_canary_01/logs/longtail_0011__pg__direct_llm_same_engine_rewrite.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_timing_canary_01/logs/longtail_0011__pg__direct_llm_same_engine_rewrite.stderr.log",
+      "timing_json_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_timing_canary_01/timings/LONGTAIL_0011/pg/direct_llm_same_engine_rewrite.json",
+      "speedup_exclusion_reason": "",
+      "source_runtime_ms": [
+        301.41814693342894,
+        440.84630999714136,
+        366.8528590351343
+      ],
+      "generated_runtime_ms": [
+        407.36677194945514,
+        407.11878100410104,
+        298.8670440390706
+      ],
+      "median_source_ms": 366.8528590351343,
+      "median_generated_ms": 407.11878100410104,
+      "speedup_ratio": 0.9010953956246958,
+      "notes": ""
+    },
+    {
+      "key": "longtail_0011__mysql__direct_llm_same_engine_rewrite",
+      "row_status": "executed",
+      "command": "python - <<'PY' <mysql timing runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_timing_canary_01/logs/longtail_0011__mysql__direct_llm_same_engine_rewrite.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_timing_canary_01/logs/longtail_0011__mysql__direct_llm_same_engine_rewrite.stderr.log",
+      "timing_json_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_timing_canary_01/timings/LONGTAIL_0011/mysql/direct_llm_same_engine_rewrite.json",
+      "speedup_exclusion_reason": "",
+      "source_runtime_ms": [
+        134.05802997294813,
+        136.0991750843823,
+        131.24565896578133
+      ],
+      "generated_runtime_ms": [
+        137.43174902629107,
+        135.2947480045259,
+        140.66309994086623
+      ],
+      "median_source_ms": 134.05802997294813,
+      "median_generated_ms": 137.43174902629107,
+      "speedup_ratio": 0.9754516763612058,
+      "notes": ""
+    },
+    {
+      "key": "longtail_0011__spark__direct_llm_same_engine_rewrite",
+      "row_status": "executed",
+      "command": "python - <<'PY' <spark timing runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_timing_canary_01/logs/longtail_0011__spark__direct_llm_same_engine_rewrite.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_timing_canary_01/logs/longtail_0011__spark__direct_llm_same_engine_rewrite.stderr.log",
+      "timing_json_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_timing_canary_01/timings/LONGTAIL_0011/spark/direct_llm_same_engine_rewrite.json",
+      "speedup_exclusion_reason": "",
+      "source_runtime_ms": [
+        484.8139819223434,
+        368.3075859444216,
+        333.105462952517
+      ],
+      "generated_runtime_ms": [
+        398.2118230778724,
+        346.89187293406576,
+        353.7971880286932
+      ],
+      "median_source_ms": 368.3075859444216,
+      "median_generated_ms": 353.7971880286932,
+      "speedup_ratio": 1.0410133217750492,
+      "notes": ""
+    }
+  ]
+}

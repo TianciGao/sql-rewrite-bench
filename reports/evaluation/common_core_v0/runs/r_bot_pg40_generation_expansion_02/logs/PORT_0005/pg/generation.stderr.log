@@ -1,0 +1,219 @@
+log4j:WARN No appenders could be found for logger (org.apache.calcite.sql.parser).
+log4j:WARN Please initialize the log4j system properly.
+log4j:WARN See http://logging.apache.org/log4j/1.2/faq.html#noconfig for more info.
+com.alibaba.innodb.java.reader.exception.SqlParseException: Parse create table sql failed -- DRAFT DDL only for PORT_0005
+	at com.alibaba.innodb.java.reader.schema.TableDefUtil.covertToTableDef(TableDefUtil.java:56)
+	at com.alibaba.innodb.java.reader.schema.provider.impl.SqlTableDefProvider.load(SqlTableDefProvider.java:50)
+	at rewriter.SqlIo$1.initTables(SqlIo.java:114)
+	at org.apache.calcite.test.catalog.MyMockCatalogReader.init(MyMockCatalogReader.java:92)
+	at rewriter.SqlIo.lambda$inputSql$0(SqlIo.java:118)
+	at org.apache.calcite.sql.test.SqlTestFactory.lambda$new$2(SqlTestFactory.java:125)
+	at com.google.common.base.Suppliers$NonSerializableMemoizingSupplier.get(Suppliers.java:160)
+	at org.apache.calcite.sql.test.SqlTestFactory.createSqlToRelConverter(SqlTestFactory.java:313)
+	at org.apache.calcite.sql.test.AbstractSqlTester.convertSqlToRel2(AbstractSqlTester.java:540)
+	at org.apache.calcite.sql.test.SqlTester.convertSqlToRel(SqlTester.java:291)
+	at org.apache.calcite.test.RelSupplier$SqlRelSupplier.apply(RelSupplier.java:98)
+	at org.apache.calcite.test.RelOptFixture.toRel(RelOptFixture.java:305)
+	at rewriter.Rewriter.matchRules(Rewriter.java:63)
+	at rewriter.Rewriter.matchNormalRules(Rewriter.java:117)
+	at rewriter.Rewriter.matchAllRules(Rewriter.java:121)
+Caused by: net.sf.jsqlparser.JSQLParserException
+	at net.sf.jsqlparser.parser.CCJSqlParserUtil.parse(CCJSqlParserUtil.java:51)
+	at net.sf.jsqlparser.parser.CCJSqlParserUtil.parse(CCJSqlParserUtil.java:40)
+	at com.alibaba.innodb.java.reader.schema.TableDefUtil.covertToTableDef(TableDefUtil.java:39)
+	... 14 more
+Caused by: net.sf.jsqlparser.parser.ParseException: Encountered unexpected token:<EOF>
+    at line 1, column 31.
+
+Was expecting one of:
+
+    "ALTER"
+    "CALL"
+    "COMMENT"
+    "COMMIT"
+    "DECLARE"
+    "DELETE"
+    "DESCRIBE"
+    "DROP"
+    "EXEC"
+    "EXECUTE"
+    "EXPLAIN"
+    "INSERT"
+    "MERGE"
+    "REPLACE"
+    "SET"
+    "SHOW"
+    "TRUNCATE"
+    "UPDATE"
+    "UPSERT"
+    "USE"
+    "VALUES"
+    "WITH"
+
+	at net.sf.jsqlparser.parser.CCJSqlParser.generateParseException(CCJSqlParser.java:22439)
+	at net.sf.jsqlparser.parser.CCJSqlParser.jj_consume_token(CCJSqlParser.java:22286)
+	at net.sf.jsqlparser.parser.CCJSqlParser.SingleStatement(CCJSqlParser.java:229)
+	at net.sf.jsqlparser.parser.CCJSqlParser.Statement(CCJSqlParser.java:75)
+	at net.sf.jsqlparser.parser.CCJSqlParserUtil.parse(CCJSqlParserUtil.java:49)
+	... 16 more
+com.alibaba.innodb.java.reader.exception.SqlParseException: Parse create table sql failed -- DRAFT DDL only for PORT_0005
+	at com.alibaba.innodb.java.reader.schema.TableDefUtil.covertToTableDef(TableDefUtil.java:56)
+	at com.alibaba.innodb.java.reader.schema.provider.impl.SqlTableDefProvider.load(SqlTableDefProvider.java:50)
+	at rewriter.SqlIo$1.initTables(SqlIo.java:114)
+	at org.apache.calcite.test.catalog.MyMockCatalogReader.init(MyMockCatalogReader.java:92)
+	at rewriter.SqlIo.lambda$inputSql$0(SqlIo.java:118)
+	at org.apache.calcite.sql.test.SqlTestFactory.lambda$new$2(SqlTestFactory.java:125)
+	at com.google.common.base.Suppliers$NonSerializableMemoizingSupplier.get(Suppliers.java:160)
+	at org.apache.calcite.sql.test.SqlTestFactory.createSqlToRelConverter(SqlTestFactory.java:313)
+	at org.apache.calcite.sql.test.AbstractSqlTester.convertSqlToRel2(AbstractSqlTester.java:540)
+	at org.apache.calcite.sql.test.SqlTester.convertSqlToRel(SqlTester.java:291)
+	at org.apache.calcite.test.RelSupplier$SqlRelSupplier.apply(RelSupplier.java:98)
+	at org.apache.calcite.test.RelOptFixture.toRel(RelOptFixture.java:305)
+	at rewriter.Rewriter.matchRules(Rewriter.java:63)
+	at rewriter.Rewriter.matchExploreRules(Rewriter.java:113)
+	at rewriter.Rewriter.matchAllRules(Rewriter.java:125)
+Caused by: net.sf.jsqlparser.JSQLParserException
+	at net.sf.jsqlparser.parser.CCJSqlParserUtil.parse(CCJSqlParserUtil.java:51)
+	at net.sf.jsqlparser.parser.CCJSqlParserUtil.parse(CCJSqlParserUtil.java:40)
+	at com.alibaba.innodb.java.reader.schema.TableDefUtil.covertToTableDef(TableDefUtil.java:39)
+	... 14 more
+Caused by: net.sf.jsqlparser.parser.ParseException: Encountered unexpected token:<EOF>
+    at line 1, column 31.
+
+Was expecting one of:
+
+    "ALTER"
+    "CALL"
+    "COMMENT"
+    "COMMIT"
+    "DECLARE"
+    "DELETE"
+    "DESCRIBE"
+    "DROP"
+    "EXEC"
+    "EXECUTE"
+    "EXPLAIN"
+    "INSERT"
+    "MERGE"
+    "REPLACE"
+    "SET"
+    "SHOW"
+    "TRUNCATE"
+    "UPDATE"
+    "UPSERT"
+    "USE"
+    "VALUES"
+    "WITH"
+
+	at net.sf.jsqlparser.parser.CCJSqlParser.generateParseException(CCJSqlParser.java:22439)
+	at net.sf.jsqlparser.parser.CCJSqlParser.jj_consume_token(CCJSqlParser.java:22286)
+	at net.sf.jsqlparser.parser.CCJSqlParser.SingleStatement(CCJSqlParser.java:229)
+	at net.sf.jsqlparser.parser.CCJSqlParser.Statement(CCJSqlParser.java:75)
+	at net.sf.jsqlparser.parser.CCJSqlParserUtil.parse(CCJSqlParserUtil.java:49)
+	... 16 more
+com.alibaba.innodb.java.reader.exception.SqlParseException: Parse create table sql failed -- DRAFT DDL only for PORT_0005
+	at com.alibaba.innodb.java.reader.schema.TableDefUtil.covertToTableDef(TableDefUtil.java:56)
+	at com.alibaba.innodb.java.reader.schema.provider.impl.SqlTableDefProvider.load(SqlTableDefProvider.java:50)
+	at rewriter.SqlIo$1.initTables(SqlIo.java:114)
+	at org.apache.calcite.test.catalog.MyMockCatalogReader.init(MyMockCatalogReader.java:92)
+	at rewriter.SqlIo.lambda$inputSql$0(SqlIo.java:118)
+	at org.apache.calcite.sql.test.SqlTestFactory.lambda$new$2(SqlTestFactory.java:125)
+	at com.google.common.base.Suppliers$NonSerializableMemoizingSupplier.get(Suppliers.java:160)
+	at org.apache.calcite.sql.test.SqlTestFactory.createSqlToRelConverter(SqlTestFactory.java:313)
+	at org.apache.calcite.sql.test.AbstractSqlTester.convertSqlToRel2(AbstractSqlTester.java:540)
+	at org.apache.calcite.sql.test.SqlTester.convertSqlToRel(SqlTester.java:291)
+	at org.apache.calcite.test.RelSupplier$SqlRelSupplier.apply(RelSupplier.java:98)
+	at org.apache.calcite.test.RelOptFixture.toRel(RelOptFixture.java:305)
+	at rewriter.Rewriter.rewrite(Rewriter.java:259)
+Caused by: net.sf.jsqlparser.JSQLParserException
+	at net.sf.jsqlparser.parser.CCJSqlParserUtil.parse(CCJSqlParserUtil.java:51)
+	at net.sf.jsqlparser.parser.CCJSqlParserUtil.parse(CCJSqlParserUtil.java:40)
+	at com.alibaba.innodb.java.reader.schema.TableDefUtil.covertToTableDef(TableDefUtil.java:39)
+	... 12 more
+Caused by: net.sf.jsqlparser.parser.ParseException: Encountered unexpected token:<EOF>
+    at line 1, column 31.
+
+Was expecting one of:
+
+    "ALTER"
+    "CALL"
+    "COMMENT"
+    "COMMIT"
+    "DECLARE"
+    "DELETE"
+    "DESCRIBE"
+    "DROP"
+    "EXEC"
+    "EXECUTE"
+    "EXPLAIN"
+    "INSERT"
+    "MERGE"
+    "REPLACE"
+    "SET"
+    "SHOW"
+    "TRUNCATE"
+    "UPDATE"
+    "UPSERT"
+    "USE"
+    "VALUES"
+    "WITH"
+
+	at net.sf.jsqlparser.parser.CCJSqlParser.generateParseException(CCJSqlParser.java:22439)
+	at net.sf.jsqlparser.parser.CCJSqlParser.jj_consume_token(CCJSqlParser.java:22286)
+	at net.sf.jsqlparser.parser.CCJSqlParser.SingleStatement(CCJSqlParser.java:229)
+	at net.sf.jsqlparser.parser.CCJSqlParser.Statement(CCJSqlParser.java:75)
+	at net.sf.jsqlparser.parser.CCJSqlParserUtil.parse(CCJSqlParserUtil.java:49)
+	... 14 more
+com.alibaba.innodb.java.reader.exception.SqlParseException: Parse create table sql failed -- DRAFT DDL only for PORT_0005
+	at com.alibaba.innodb.java.reader.schema.TableDefUtil.covertToTableDef(TableDefUtil.java:56)
+	at com.alibaba.innodb.java.reader.schema.provider.impl.SqlTableDefProvider.load(SqlTableDefProvider.java:50)
+	at rewriter.SqlIo$1.initTables(SqlIo.java:114)
+	at org.apache.calcite.test.catalog.MyMockCatalogReader.init(MyMockCatalogReader.java:92)
+	at rewriter.SqlIo.lambda$inputSql$0(SqlIo.java:118)
+	at org.apache.calcite.sql.test.SqlTestFactory.lambda$new$2(SqlTestFactory.java:125)
+	at com.google.common.base.Suppliers$NonSerializableMemoizingSupplier.get(Suppliers.java:160)
+	at org.apache.calcite.sql.test.SqlTestFactory.createSqlToRelConverter(SqlTestFactory.java:313)
+	at org.apache.calcite.sql.test.AbstractSqlTester.convertSqlToRel2(AbstractSqlTester.java:540)
+	at org.apache.calcite.sql.test.SqlTester.convertSqlToRel(SqlTester.java:291)
+	at org.apache.calcite.test.RelSupplier$SqlRelSupplier.apply(RelSupplier.java:98)
+	at org.apache.calcite.test.RelOptFixture.toRel(RelOptFixture.java:305)
+	at rewriter.Rewriter.rewrite(Rewriter.java:259)
+Caused by: net.sf.jsqlparser.JSQLParserException
+	at net.sf.jsqlparser.parser.CCJSqlParserUtil.parse(CCJSqlParserUtil.java:51)
+	at net.sf.jsqlparser.parser.CCJSqlParserUtil.parse(CCJSqlParserUtil.java:40)
+	at com.alibaba.innodb.java.reader.schema.TableDefUtil.covertToTableDef(TableDefUtil.java:39)
+	... 12 more
+Caused by: net.sf.jsqlparser.parser.ParseException: Encountered unexpected token:<EOF>
+    at line 1, column 31.
+
+Was expecting one of:
+
+    "ALTER"
+    "CALL"
+    "COMMENT"
+    "COMMIT"
+    "DECLARE"
+    "DELETE"
+    "DESCRIBE"
+    "DROP"
+    "EXEC"
+    "EXECUTE"
+    "EXPLAIN"
+    "INSERT"
+    "MERGE"
+    "REPLACE"
+    "SET"
+    "SHOW"
+    "TRUNCATE"
+    "UPDATE"
+    "UPSERT"
+    "USE"
+    "VALUES"
+    "WITH"
+
+	at net.sf.jsqlparser.parser.CCJSqlParser.generateParseException(CCJSqlParser.java:22439)
+	at net.sf.jsqlparser.parser.CCJSqlParser.jj_consume_token(CCJSqlParser.java:22286)
+	at net.sf.jsqlparser.parser.CCJSqlParser.SingleStatement(CCJSqlParser.java:229)
+	at net.sf.jsqlparser.parser.CCJSqlParser.Statement(CCJSqlParser.java:75)
+	at net.sf.jsqlparser.parser.CCJSqlParserUtil.parse(CCJSqlParserUtil.java:49)
+	... 14 more

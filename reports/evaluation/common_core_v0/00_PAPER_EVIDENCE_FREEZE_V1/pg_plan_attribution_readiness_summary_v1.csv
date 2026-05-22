@@ -1,0 +1,11 @@
+summary_scope,summary_name,inspected_rows,attribution_ready_rows,blocked_rows,speedup_rows,regression_rows,neutral_rows,recommended_rows_for_first_run,notes
+overall,pg_plan_attribution_candidate_pool,146,113,33,26,22,65,24,Recommend a 24-row PG EXPLAIN ANALYZE BUFFERS attribution run: 6 direct_llm original + 2 direct_llm repair + 5 sqlglot noop + 5 sqlglot optimize + 6 calcite.
+method_route,calcite_hep / calcite_hep_fail_closed_120,31,31,0,8,9,14,,
+method_route,direct_llm / direct_llm_execute_repair_1shot,34,2,32,1,1,0,,
+method_route,direct_llm / direct_llm_same_engine_rewrite,33,32,1,13,4,15,,
+method_route,sqlglot / sqlglot_optimize_same_dialect,22,22,0,3,6,13,,
+method_route,sqlglot / sqlglot_transpile_same_dialect_noop,26,26,0,1,2,23,,
+pool,consistency,38,29,9,5,7,17,,
+pool,performance,68,53,15,13,10,30,,
+pool,portability,11,7,4,2,0,5,,
+pool,longtail,29,24,5,6,5,13,,

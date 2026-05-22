@@ -1,0 +1,13 @@
+# Calcite HEP 93 Exact Timing Summary
+
+This is a correctness-gated timing summary for the retained 93 exact-match Calcite HEP rows only.
+It is not a new correctness result and it is not a final ranked leaderboard.
+
+| method_id | route_id | denominator_id | planned_exact_rows | timing_attempted_rows | timing_success_rows | timing_failed_rows | median_speedup | gm_speedup | win_count | tie_count | loss_count | regression_20pct_count | regression_rate_20pct | best_case_id | best_case_engine | best_case_speedup | worst_case_id | worst_case_engine | worst_case_speedup | claim_boundary | notes |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| calcite_hep | calcite_hep_93_exact_timing | common_core_v0_40_same_engine_calcite_hep_exact93_timing | 93 | 93 | 93 | 0 | 0.999279423532 | 0.995917121478 | 12 | 66 | 15 | 7 | 0.0752688172043 | CONS_0011 | pg | 1.29704731001 | PERF_0007 | pg | 0.656673938818 | Calcite HEP 93 exact-row correctness-gated timing only; not a new correctness result; not a final ranked leaderboard | GM speedup and Regression@20 are computed only on timing_success rows. Existing PG-only 21-row timing evidence was not reused as the 93-row timing result. |
+
+## Interpretation notes
+
+- GM speedup and Regression@20 are computed only on timing_success rows.
+- Existing PG-only 21-row timing evidence was not reused as the 93-row timing result.

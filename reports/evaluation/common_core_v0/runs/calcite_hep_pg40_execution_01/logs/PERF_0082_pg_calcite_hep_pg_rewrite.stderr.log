@@ -1,0 +1,7 @@
+注意:  模式 "ccv0_calcite_hep_perf_0082" 不存在
+注意:  串联删除5个其它对象
+DETAIL:  递归删除 表 ccv0_calcite_hep_perf_0082.company_type
+递归删除 表 ccv0_calcite_hep_perf_0082.info_type
+递归删除 表 ccv0_calcite_hep_perf_0082.movie_companies
+递归删除 表 ccv0_calcite_hep_perf_0082.movie_info
+递归删除 表 ccv0_calcite_hep_perf_0082.title

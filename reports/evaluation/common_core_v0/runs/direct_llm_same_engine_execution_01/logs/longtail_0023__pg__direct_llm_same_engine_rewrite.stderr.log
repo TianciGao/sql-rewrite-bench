@@ -1,0 +1,12 @@
+注意:  模式 "ccv0_direct_llm_longtail_0023_pg" 不存在
+错误:  字段 "total_links" 不存在
+LINE 32:     total_links > 0
+             ^
+注意:  串联删除2个其它对象
+DETAIL:  递归删除 表 ccv0_direct_llm_longtail_0023_pg.posts
+递归删除 表 ccv0_direct_llm_longtail_0023_pg.postlinks
+Traceback (most recent call last):
+  File "<stdin>", line 153, in run_postgres_row
+  File "/usr/lib/python3.12/subprocess.py", line 571, in run
+    raise CalledProcessError(retcode, process.args,
+subprocess.CalledProcessError: Command '['psql', '-v', 'ON_ERROR_STOP=1', '-X', '-q', '-c', 'SET search_path TO ccv0_direct_llm_longtail_0023_pg;', '-c', "COPY (WITH OutboundLinks AS (\n    SELECT\n        pl.PostId,\n        COUNT(*) AS outbound_count\n    FROM\n        PostLinks pl\n    GROUP BY\n        pl.PostId\n),\nInboundLinks AS (\n    SELECT\n        pl.RelatedPostId AS PostId,\n        COUNT(*) AS inbound_count\n    FROM\n        PostLinks pl\n    GROUP BY\n        pl.RelatedPostId\n)\nSELECT\n    p.Id AS PostId,\n    p.Title,\n    COALESCE(o.outbound_count, 0) AS outbound_count,\n    COALESCE(i.inbound_count, 0) AS inbound_count,\n    COALESCE(o.outbound_count, 0) + COALESCE(i.inbound_count, 0) AS total_links\nFROM\n    Posts p\nLEFT JOIN\n    OutboundLinks o ON o.PostId = p.Id\nLEFT JOIN\n    InboundLinks i ON i.PostId = p.Id\nWHERE\n    total_links > 0\nORDER BY\n    total_links DESC,\n    p.Id) TO STDOUT WITH (FORMAT CSV, DELIMITER E'\\t', NULL 'NULL');"]' returned non-zero exit status 1.

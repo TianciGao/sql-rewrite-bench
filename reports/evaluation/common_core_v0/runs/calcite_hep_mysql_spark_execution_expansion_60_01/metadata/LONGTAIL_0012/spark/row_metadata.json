@@ -1,0 +1,20 @@
+{
+  "run_id": "calcite_hep_mysql_spark_execution_expansion_60_01",
+  "row_key": "LONGTAIL_0012:spark",
+  "case_id": "LONGTAIL_0012",
+  "pool": "longtail",
+  "engine": "spark",
+  "method_id": "calcite_hep",
+  "route_id": "calcite_hep_same_engine_rewrite",
+  "source_rewrite_run_id": "calcite_hep_mysql_spark_rewrite_expansion_80_01",
+  "execution_denominator_id": "calcite_hep_mysql_spark_execution_expansion_60_only",
+  "source_sql_path": "cases/LONGTAIL/LONGTAIL_0012/source.sql",
+  "schema_path": "cases/LONGTAIL/LONGTAIL_0012/schema/ddl_spark.sql",
+  "witness_data_path": "cases/LONGTAIL/LONGTAIL_0012/validation/spark_witness_data.sql",
+  "generated_sql_path": "reports/evaluation/common_core_v0/runs/calcite_hep_mysql_spark_rewrite_expansion_80_01/generated/LONGTAIL_0012/spark/calcite_hep_rewrite.sql",
+  "row_metadata_path": "reports/evaluation/common_core_v0/runs/calcite_hep_mysql_spark_execution_expansion_60_01/metadata/LONGTAIL_0012/spark/row_metadata.json",
+  "claim_boundary": "mysql_spark_execution_validity_expansion_60_only_not_timing_speedup_or_leaderboard_evidence",
+  "execution_status": "executed",
+  "exact_match": false,
+  "consistency_status": "mismatch"
+}

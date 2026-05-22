@@ -1,0 +1,7 @@
+{
+  "execution_status_observed": "execution_failed",
+  "consistency_check_status": "not_checked_execution_failed",
+  "error_type": "CalledProcessError",
+  "error_message": "Command '['psql', '-v', 'ON_ERROR_STOP=1', '-X', '-q', '-c', 'SET search_path TO ccv0_direct_llm_perf_0019_pg;', '-c', \"COPY (select\\n    c_count,\\n    count(*) as custdist\\nfrom\\n    (\\n        select\\n            c_custkey,\\n            count(o_orderkey)\\n        from\\n            customer\\n            left join orders on\\n                c_custkey = o_custkey\\n                and o_comment not like '%express%deposits%'\\n        group by\\n            c_custkey\\n    ) as c_orders\\ngroup by\\n    c_count\\norder by\\n    custdist desc,\\n    c_count desc) TO STDOUT WITH (FORMAT CSV, DELIMITER E'\\\\t', NULL 'NULL');\"]' returned non-zero exit status 1.",
+  "result_check_path": "reports/evaluation/common_core_v0/runs/direct_llm_same_engine_execution_01/workspaces/PERF_0019/pg/direct_llm_same_engine_rewrite/result_check.json"
+}

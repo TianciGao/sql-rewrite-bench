@@ -1,0 +1,17 @@
+{
+  "selected_id": "sel_tie_01",
+  "case_id": "LONGTAIL_0013",
+  "engine": "pg",
+  "method_id": "calcite_hep",
+  "route_id": "calcite_hep_same_engine_rewrite",
+  "outcome_type": "tie",
+  "runtime_effect": "near_neutral_0.999412588321x",
+  "source_plan_pattern": "top=Sort; scan=Seq Scan, Subquery Scan; join=Merge Join, Nested Loop; agg=Aggregate; sort_limit=Sort",
+  "rewrite_plan_pattern": "top=Sort; scan=Seq Scan, Subquery Scan; join=Merge Join, Nested Loop; agg=Aggregate; sort_limit=Sort",
+  "main_plan_delta": "node_count_change",
+  "attribution_confidence": "low",
+  "evidence_artifacts": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/calcite_hep_93_exact_timing_01/timing_event_long.csv|/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/selected_plan_observability_01/workspaces/sel_tie_01/source_plan.json|/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/selected_plan_observability_01/workspaces/sel_tie_01/rewrite_plan.json",
+  "paper_safe_interpretation": "major operator families are similar but visible node count differs",
+  "forbidden_overclaim": "Do not equate node-count change with full causal attribution.",
+  "notes": "speedup_closest_to_1.0_with_pg_preference_among_rows_within_0.001_of_best_closeness"
+}

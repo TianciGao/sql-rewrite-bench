@@ -1,0 +1,22 @@
+{
+  "case_id": "CONS_0009",
+  "engine": "spark",
+  "route_id": "sqlglot_transpile_same_dialect_noop",
+  "warmup_count": 1,
+  "repeat_count": 3,
+  "source_runtime_ms": [
+    477.62906493153423,
+    378.6330489674583,
+    390.46141994185746
+  ],
+  "generated_runtime_ms": [
+    422.84248606301844,
+    358.38971589691937,
+    447.04724999610335
+  ],
+  "median_source_ms": 390.46141994185746,
+  "median_generated_ms": 422.84248606301844,
+  "speedup_ratio": 0.923420500095312,
+  "status": "success",
+  "notes": ""
+}

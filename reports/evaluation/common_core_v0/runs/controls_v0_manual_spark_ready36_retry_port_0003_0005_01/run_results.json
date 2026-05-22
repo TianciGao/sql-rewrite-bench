@@ -1,0 +1,27 @@
+{
+  "run_id": "controls_v0_manual_spark_ready36_retry_port_0003_0005_01",
+  "mode": "manual_human_execution_retry",
+  "repo_root": "/home/tianci_gao/code/sql-rewrite-bench",
+  "denominator_id": "common_core_v0_40",
+  "retry_scope": "port_0003_port_0005_spark_only",
+  "records": [
+    {
+      "key": "port_0003_spark_validation",
+      "status": "executed",
+      "command": "bash cases/PORT/PORT_0003/validation/run_spark_validation.sh",
+      "exit_code": 0,
+      "stdout_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_spark_ready36_retry_port_0003_0005_01/logs/port_0003_spark_validation.stdout.log",
+      "stderr_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_spark_ready36_retry_port_0003_0005_01/logs/port_0003_spark_validation.stderr.log",
+      "notes": "narrow_retry_after_manual_spark_warehouse_cleanup; original_ready36_run_failed_with_LOCATION_ALREADY_EXISTS"
+    },
+    {
+      "key": "port_0005_spark_validation",
+      "status": "executed",
+      "command": "bash cases/PORT/PORT_0005/validation/run_spark_validation.sh",
+      "exit_code": 0,
+      "stdout_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_spark_ready36_retry_port_0003_0005_01/logs/port_0005_spark_validation.stdout.log",
+      "stderr_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_spark_ready36_retry_port_0003_0005_01/logs/port_0005_spark_validation.stderr.log",
+      "notes": "narrow_retry_after_manual_spark_warehouse_cleanup; original_ready36_run_failed_with_LOCATION_ALREADY_EXISTS"
+    }
+  ]
+}

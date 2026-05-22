@@ -1,0 +1,27 @@
+{
+  "case_id": "PERF_0013",
+  "engine": "pg",
+  "method_id": "llm_r2",
+  "run_id": "llm_r2_supported_pg3_pg_execution_checker_02",
+  "schema_name": "llm_r2_pg3_perf_0013_02",
+  "setup_exit_code": 0,
+  "source_exit_code": 0,
+  "generated_exit_code": 0,
+  "exact_match": true,
+  "failure_bucket": "exact_match",
+  "source_sql": "cases/PERF/PERF_0013/source.sql",
+  "generated_sql": "reports/evaluation/common_core_v0/runs/llm_r2_supported_pg3_generation_dry_run_01/retained_tmp_artifacts/PERF_0013/generated_sql_schema_native_clean_v1.sql",
+  "ddl_pg": "cases/PERF/PERF_0013/schema/ddl_pg.sql",
+  "pg_witness_data": "cases/PERF/PERF_0013/validation/pg_witness_data.sql",
+  "outputs": {
+    "source_tsv": "reports/evaluation/common_core_v0/runs/llm_r2_supported_pg3_pg_execution_checker_02/workspaces/PERF_0013/pg/source.tsv",
+    "generated_tsv": "reports/evaluation/common_core_v0/runs/llm_r2_supported_pg3_pg_execution_checker_02/workspaces/PERF_0013/pg/generated.tsv"
+  },
+  "non_claims": [
+    "No timing was run.",
+    "No speedup was computed.",
+    "No MySQL or Spark execution was run.",
+    "No full 120-row evidence is implied.",
+    "No result card or proposed row is created by this run."
+  ]
+}

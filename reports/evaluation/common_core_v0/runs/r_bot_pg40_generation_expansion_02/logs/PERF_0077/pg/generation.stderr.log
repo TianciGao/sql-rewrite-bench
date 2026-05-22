@@ -1,0 +1,157 @@
+log4j:WARN No appenders could be found for logger (org.apache.calcite.sql.parser).
+log4j:WARN Please initialize the log4j system properly.
+log4j:WARN See http://logging.apache.org/log4j/1.2/faq.html#noconfig for more info.
+com.alibaba.innodb.java.reader.exception.SqlParseException: Parse create table sql failed -- Minimal PostgreSQL DDL for PERF_0077
+-- Case-local construction only
+	at com.alibaba.innodb.java.reader.schema.TableDefUtil.covertToTableDef(TableDefUtil.java:56)
+	at com.alibaba.innodb.java.reader.schema.provider.impl.SqlTableDefProvider.load(SqlTableDefProvider.java:50)
+	at rewriter.SqlIo$1.initTables(SqlIo.java:114)
+	at org.apache.calcite.test.catalog.MyMockCatalogReader.init(MyMockCatalogReader.java:92)
+	at rewriter.SqlIo.lambda$inputSql$0(SqlIo.java:118)
+	at org.apache.calcite.sql.test.SqlTestFactory.lambda$new$2(SqlTestFactory.java:125)
+	at com.google.common.base.Suppliers$NonSerializableMemoizingSupplier.get(Suppliers.java:160)
+	at org.apache.calcite.sql.test.SqlTestFactory.createSqlToRelConverter(SqlTestFactory.java:313)
+	at org.apache.calcite.sql.test.AbstractSqlTester.convertSqlToRel2(AbstractSqlTester.java:540)
+	at org.apache.calcite.sql.test.SqlTester.convertSqlToRel(SqlTester.java:291)
+	at org.apache.calcite.test.RelSupplier$SqlRelSupplier.apply(RelSupplier.java:98)
+	at org.apache.calcite.test.RelOptFixture.toRel(RelOptFixture.java:305)
+	at rewriter.Rewriter.matchRules(Rewriter.java:63)
+	at rewriter.Rewriter.matchNormalRules(Rewriter.java:117)
+	at rewriter.Rewriter.matchAllRules(Rewriter.java:121)
+Caused by: net.sf.jsqlparser.JSQLParserException
+	at net.sf.jsqlparser.parser.CCJSqlParserUtil.parse(CCJSqlParserUtil.java:51)
+	at net.sf.jsqlparser.parser.CCJSqlParserUtil.parse(CCJSqlParserUtil.java:40)
+	at com.alibaba.innodb.java.reader.schema.TableDefUtil.covertToTableDef(TableDefUtil.java:39)
+	... 14 more
+Caused by: net.sf.jsqlparser.parser.ParseException: Encountered unexpected token:<EOF>
+    at line 2, column 31.
+
+Was expecting one of:
+
+    "ALTER"
+    "CALL"
+    "COMMENT"
+    "COMMIT"
+    "DECLARE"
+    "DELETE"
+    "DESCRIBE"
+    "DROP"
+    "EXEC"
+    "EXECUTE"
+    "EXPLAIN"
+    "INSERT"
+    "MERGE"
+    "REPLACE"
+    "SET"
+    "SHOW"
+    "TRUNCATE"
+    "UPDATE"
+    "UPSERT"
+    "USE"
+    "VALUES"
+    "WITH"
+
+	at net.sf.jsqlparser.parser.CCJSqlParser.generateParseException(CCJSqlParser.java:22439)
+	at net.sf.jsqlparser.parser.CCJSqlParser.jj_consume_token(CCJSqlParser.java:22286)
+	at net.sf.jsqlparser.parser.CCJSqlParser.SingleStatement(CCJSqlParser.java:229)
+	at net.sf.jsqlparser.parser.CCJSqlParser.Statement(CCJSqlParser.java:75)
+	at net.sf.jsqlparser.parser.CCJSqlParserUtil.parse(CCJSqlParserUtil.java:49)
+	... 16 more
+com.alibaba.innodb.java.reader.exception.SqlParseException: Parse create table sql failed -- Minimal PostgreSQL DDL for PERF_0077
+-- Case-local construction only
+	at com.alibaba.innodb.java.reader.schema.TableDefUtil.covertToTableDef(TableDefUtil.java:56)
+	at com.alibaba.innodb.java.reader.schema.provider.impl.SqlTableDefProvider.load(SqlTableDefProvider.java:50)
+	at rewriter.SqlIo$1.initTables(SqlIo.java:114)
+	at org.apache.calcite.test.catalog.MyMockCatalogReader.init(MyMockCatalogReader.java:92)
+	at rewriter.SqlIo.lambda$inputSql$0(SqlIo.java:118)
+	at org.apache.calcite.sql.test.SqlTestFactory.lambda$new$2(SqlTestFactory.java:125)
+	at com.google.common.base.Suppliers$NonSerializableMemoizingSupplier.get(Suppliers.java:160)
+	at org.apache.calcite.sql.test.SqlTestFactory.createSqlToRelConverter(SqlTestFactory.java:313)
+	at org.apache.calcite.sql.test.AbstractSqlTester.convertSqlToRel2(AbstractSqlTester.java:540)
+	at org.apache.calcite.sql.test.SqlTester.convertSqlToRel(SqlTester.java:291)
+	at org.apache.calcite.test.RelSupplier$SqlRelSupplier.apply(RelSupplier.java:98)
+	at org.apache.calcite.test.RelOptFixture.toRel(RelOptFixture.java:305)
+	at rewriter.Rewriter.matchRules(Rewriter.java:63)
+	at rewriter.Rewriter.matchExploreRules(Rewriter.java:113)
+	at rewriter.Rewriter.matchAllRules(Rewriter.java:125)
+Caused by: net.sf.jsqlparser.JSQLParserException
+	at net.sf.jsqlparser.parser.CCJSqlParserUtil.parse(CCJSqlParserUtil.java:51)
+	at net.sf.jsqlparser.parser.CCJSqlParserUtil.parse(CCJSqlParserUtil.java:40)
+	at com.alibaba.innodb.java.reader.schema.TableDefUtil.covertToTableDef(TableDefUtil.java:39)
+	... 14 more
+Caused by: net.sf.jsqlparser.parser.ParseException: Encountered unexpected token:<EOF>
+    at line 2, column 31.
+
+Was expecting one of:
+
+    "ALTER"
+    "CALL"
+    "COMMENT"
+    "COMMIT"
+    "DECLARE"
+    "DELETE"
+    "DESCRIBE"
+    "DROP"
+    "EXEC"
+    "EXECUTE"
+    "EXPLAIN"
+    "INSERT"
+    "MERGE"
+    "REPLACE"
+    "SET"
+    "SHOW"
+    "TRUNCATE"
+    "UPDATE"
+    "UPSERT"
+    "USE"
+    "VALUES"
+    "WITH"
+
+	at net.sf.jsqlparser.parser.CCJSqlParser.generateParseException(CCJSqlParser.java:22439)
+	at net.sf.jsqlparser.parser.CCJSqlParser.jj_consume_token(CCJSqlParser.java:22286)
+	at net.sf.jsqlparser.parser.CCJSqlParser.SingleStatement(CCJSqlParser.java:229)
+	at net.sf.jsqlparser.parser.CCJSqlParser.Statement(CCJSqlParser.java:75)
+	at net.sf.jsqlparser.parser.CCJSqlParserUtil.parse(CCJSqlParserUtil.java:49)
+	... 16 more
+Traceback (most recent call last):
+  File "<string>", line 50, in <module>
+  File "/tmp/rewritebench_rbot_llm4rewrite_pg40_expansion_runner/PERF_0077/runtime_patch_v4/my_rewriter/test_utils.py", line 25, in test
+    res = rag_retrieve(query, schema, docstore, embed_dim=model_args['EMBED_DIM'], RETRIEVER_TOP_K=RETRIEVER_TOP_K)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/rewritebench_rbot_llm4rewrite_pg40_expansion_runner/PERF_0077/runtime_patch_v4/my_rewriter/rag_retrieve.py", line 69, in rag_retrieve
+    retriever_res = retriever.retrieve(query)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/rewritebench_rbot_llm4rewrite_venv_smoke/lib/python3.12/site-packages/llama_index_instrumentation/dispatcher.py", line 413, in wrapper
+    result = func(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/rewritebench_rbot_llm4rewrite_venv_smoke/lib/python3.12/site-packages/llama_index/core/base/base_retriever.py", line 216, in retrieve
+    nodes = self._retrieve(query_bundle)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/rewritebench_rbot_llm4rewrite_venv_smoke/lib/python3.12/site-packages/llama_index_instrumentation/dispatcher.py", line 413, in wrapper
+    result = func(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/rewritebench_rbot_llm4rewrite_pg40_expansion_runner/PERF_0077/runtime_patch_v4/rag/my_query_fusion_retriver.py", line 311, in _retrieve
+    synthesized_queries = self._get_queries(query_bundle.query_str)
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/rewritebench_rbot_llm4rewrite_pg40_expansion_runner/PERF_0077/runtime_patch_v4/rag/my_query_fusion_retriver.py", line 116, in _get_queries
+    sql_templates = list(gen_sql_templates(original_query).keys())
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/rewritebench_rbot_llm4rewrite_pg40_expansion_runner/PERF_0077/runtime_patch_v4/rag/gen_sql_templates.py", line 423, in gen_sql_templates
+    final_sql = _gen_sql_template(pre_tree, col_name, table_name)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/rewritebench_rbot_llm4rewrite_pg40_expansion_runner/PERF_0077/runtime_patch_v4/rag/gen_sql_templates.py", line 364, in _gen_sql_template
+    transformed_tree = transform(parsed_tree, transformer, reserved_identifier=col_name, reserved_table=table_name)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/rewritebench_rbot_llm4rewrite_pg40_expansion_runner/PERF_0077/runtime_patch_v4/rag/gen_sql_templates.py", line 44, in transform
+    new_node = fun(node, *args, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/rewritebench_rbot_llm4rewrite_pg40_expansion_runner/PERF_0077/runtime_patch_v4/rag/gen_sql_templates.py", line 327, in transformer
+    node = merge_tables(node)
+           ^^^^^^^^^^^^^^^^^^
+  File "/tmp/rewritebench_rbot_llm4rewrite_pg40_expansion_runner/PERF_0077/runtime_patch_v4/rag/gen_sql_templates.py", line 202, in merge_tables
+    if len(joins) > 0 and is_identifiers_masked(node.args.get('from')):
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/rewritebench_rbot_llm4rewrite_pg40_expansion_runner/PERF_0077/runtime_patch_v4/rag/gen_sql_templates.py", line 148, in is_identifiers_masked
+    flags = [v.this == '_' for v in node.find_all(exp.Identifier)]
+                                    ^^^^^^^^^^^^^
+AttributeError: 'NoneType' object has no attribute 'find_all'

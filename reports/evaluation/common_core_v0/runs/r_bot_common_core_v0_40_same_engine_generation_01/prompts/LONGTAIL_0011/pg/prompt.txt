@@ -1,0 +1,3 @@
+generation_not_attempted
+row_status=blocked
+reason=Recovered committed PG runner currently hard-codes a supported-case subset in scripts/cli.py formal-rbot-llm4rewrite-single-case-smoke-run; keep row explicit and blocked until runner support expands.

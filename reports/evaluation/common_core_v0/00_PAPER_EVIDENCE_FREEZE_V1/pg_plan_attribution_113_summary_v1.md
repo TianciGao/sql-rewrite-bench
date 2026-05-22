@@ -1,0 +1,17 @@
+# PG Plan Attribution 113 Summary V1
+
+This file summarizes the 113-row PG frontier overall, by route, and by pool.
+中文说明：这是 frontier packet 汇总，不是最终 paper leaderboard。
+
+| summary_scope | summary_name | planned_candidates | source_plan_success | rewrite_plan_success | both_plan_success | feature_parse_success | node_delta_success | failed_candidates | delta_class_distribution | attribution_confidence_distribution | tag_coverage_count | notes |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| overall | pg_plan_attribution_113 | 113 | 113 | 113 | 113 | 113 | 113 | 0 | aggregate_strategy_change:1\|buffer_or_runtime_delta_without_operator_change:100\|join_strategy_change:1\|mixed_operator_change:6\|node_count_change:2\|scan_strategy_change:3 | low:102\|medium:11 | 56 |  |
+| route | calcite_hep / calcite_hep_fail_closed_120 | 31 | 31 | 31 | 31 | 31 | 31 | 0 | aggregate_strategy_change:1\|buffer_or_runtime_delta_without_operator_change:25\|mixed_operator_change:1\|node_count_change:2\|scan_strategy_change:2 | low:26\|medium:5 | 48 |  |
+| route | direct_llm / direct_llm_execute_repair_1shot | 2 | 2 | 2 | 2 | 2 | 2 | 0 | buffer_or_runtime_delta_without_operator_change:2 | low:2 | 17 |  |
+| route | direct_llm / direct_llm_same_engine_rewrite | 32 | 32 | 32 | 32 | 32 | 32 | 0 | buffer_or_runtime_delta_without_operator_change:30\|join_strategy_change:1\|mixed_operator_change:1 | low:30\|medium:2 | 56 |  |
+| route | sqlglot / sqlglot_optimize_same_dialect | 22 | 22 | 22 | 22 | 22 | 22 | 0 | buffer_or_runtime_delta_without_operator_change:17\|mixed_operator_change:4\|scan_strategy_change:1 | low:18\|medium:4 | 55 |  |
+| route | sqlglot / sqlglot_transpile_same_dialect_noop | 26 | 26 | 26 | 26 | 26 | 26 | 0 | buffer_or_runtime_delta_without_operator_change:26 | low:26 | 48 |  |
+| pool | consistency | 29 | 29 | 29 | 29 | 29 | 29 | 0 | buffer_or_runtime_delta_without_operator_change:28\|join_strategy_change:1 | low:28\|medium:1 | 24 |  |
+| pool | longtail | 24 | 24 | 24 | 24 | 24 | 24 | 0 | buffer_or_runtime_delta_without_operator_change:20\|node_count_change:2\|scan_strategy_change:2 | low:21\|medium:3 | 27 |  |
+| pool | performance | 53 | 53 | 53 | 53 | 53 | 53 | 0 | aggregate_strategy_change:1\|buffer_or_runtime_delta_without_operator_change:45\|mixed_operator_change:6\|scan_strategy_change:1 | low:46\|medium:7 | 34 |  |
+| pool | portability | 7 | 7 | 7 | 7 | 7 | 7 | 0 | buffer_or_runtime_delta_without_operator_change:7 | low:7 | 22 |  |

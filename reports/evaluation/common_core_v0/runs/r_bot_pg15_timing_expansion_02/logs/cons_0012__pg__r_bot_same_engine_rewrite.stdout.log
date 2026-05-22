@@ -1,0 +1,50 @@
+ deptno |   dname    |   loc    
+--------+------------+----------
+     10 | ACCOUNTING | NEW YORK
+     30 | SALES      | CHICAGO
+(2 rows)
+
+ deptno |   dname    |   loc    
+--------+------------+----------
+     10 | ACCOUNTING | NEW YORK
+     30 | SALES      | CHICAGO
+(2 rows)
+
+ deptno |   dname    |   loc    
+--------+------------+----------
+     10 | ACCOUNTING | NEW YORK
+     30 | SALES      | CHICAGO
+(2 rows)
+
+ deptno |   dname    |   loc    
+--------+------------+----------
+     10 | ACCOUNTING | NEW YORK
+     30 | SALES      | CHICAGO
+(2 rows)
+
+ deptno |   dname    |   loc    
+--------+------------+----------
+     10 | ACCOUNTING | NEW YORK
+     30 | SALES      | CHICAGO
+(2 rows)
+
+ deptno |   dname    |   loc    
+--------+------------+----------
+     10 | ACCOUNTING | NEW YORK
+     30 | SALES      | CHICAGO
+(2 rows)
+
+ deptno |   dname    |   loc    
+--------+------------+----------
+     10 | ACCOUNTING | NEW YORK
+     30 | SALES      | CHICAGO
+(2 rows)
+
+ deptno |   dname    |   loc    
+--------+------------+----------
+     10 | ACCOUNTING | NEW YORK
+     30 | SALES      | CHICAGO
+(2 rows)
+
+case_id=CONS_0012 pool=consistency engine=pg route_id=r_bot_same_engine_rewrite
+warmup_count=1 repeat_count=3

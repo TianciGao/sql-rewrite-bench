@@ -1,0 +1,51 @@
+{
+  "adapter_bundle_verified": true,
+  "blockers": [],
+  "can_execute_next": true,
+  "case_id": "PERF_0006",
+  "chroma_index_visible": false,
+  "claim_boundary": "single_case_harness_preflight_only_not_rbot_result",
+  "command": "formal-rbot-llm4rewrite-single-case-smoke-preflight",
+  "harness_dir": "/tmp/rewritebench_rbot_llm4rewrite_single_case_smoke/PERF_0006",
+  "harness_files": [
+    "/tmp/rewritebench_rbot_llm4rewrite_single_case_smoke/PERF_0006/source.sql",
+    "/tmp/rewritebench_rbot_llm4rewrite_single_case_smoke/PERF_0006/create_tables.sql",
+    "/tmp/rewritebench_rbot_llm4rewrite_single_case_smoke/PERF_0006/llm4rewrite_single_case_config_stub.py",
+    "/tmp/rewritebench_rbot_llm4rewrite_single_case_smoke/PERF_0006/proposed_future_execute_command.txt",
+    "/tmp/rewritebench_rbot_llm4rewrite_single_case_smoke/PERF_0006/artifact_capture_plan.md",
+    "/tmp/rewritebench_rbot_llm4rewrite_single_case_smoke/PERF_0006/readiness_summary.json",
+    "/tmp/rewritebench_rbot_llm4rewrite_single_case_smoke/PERF_0006/DO_NOT_RUN_YET.txt"
+  ],
+  "llm4rewrite_clone_visible": true,
+  "ok": true,
+  "openai_api_key_visible": true,
+  "pg_env_fields": {
+    "PGDATABASE": true,
+    "PGHOST": true,
+    "PGPORT": true,
+    "PGUSER": true
+  },
+  "pg_env_visible": true,
+  "pg_schema_found": true,
+  "pool": "performance",
+  "rag_assets_visible": true,
+  "ran_at_utc": "2026-05-08T10:16:38+00:00",
+  "required_python_imports": {
+    "chromadb": true,
+    "jpype": true,
+    "jsonlines": true,
+    "llama_index": true,
+    "psycopg2": true
+  },
+  "single_case_harness_created": true,
+  "source_sql_found": true,
+  "upstream_contract_observed": {
+    "chroma_index_build_documented": true,
+    "config_present": true,
+    "db_utils_present": true,
+    "rag_rewrite_present": true,
+    "readme_present": true,
+    "single_case_command_documented": true,
+    "test_runner_present": true
+  }
+}

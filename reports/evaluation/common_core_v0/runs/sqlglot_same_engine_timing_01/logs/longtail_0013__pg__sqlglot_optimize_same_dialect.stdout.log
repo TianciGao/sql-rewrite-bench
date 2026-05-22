@@ -1,0 +1,160 @@
+DROP SCHEMA
+CREATE SCHEMA
+SET
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+SET
+INSERT 0 3
+INSERT 0 3
+INSERT 0 2
+INSERT 0 2
+SET
+ displayname | answeredquestions |      avgscore      | totalbounty | goldbadges | questioncount |  bestpostcontent  
+-------------+-------------------+--------------------+-------------+------------+---------------+-------------------
+ Alice       |                 1 | 5.0000000000000000 |          50 |          1 |             0 | 
+ Bob         |                 1 | 4.0000000000000000 |          10 |          1 |             1 | bob question body
+(2 rows)
+
+DROP SCHEMA
+DROP SCHEMA
+CREATE SCHEMA
+SET
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+SET
+INSERT 0 3
+INSERT 0 3
+INSERT 0 2
+INSERT 0 2
+SET
+ displayname | answeredquestions |      avgscore      | totalbounty | goldbadges | questioncount |  bestpostcontent  
+-------------+-------------------+--------------------+-------------+------------+---------------+-------------------
+ Alice       |                 1 | 5.0000000000000000 |          50 |          1 |             0 | 
+ Bob         |                 1 | 4.0000000000000000 |          10 |          1 |             1 | bob question body
+(2 rows)
+
+DROP SCHEMA
+DROP SCHEMA
+CREATE SCHEMA
+SET
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+SET
+INSERT 0 3
+INSERT 0 3
+INSERT 0 2
+INSERT 0 2
+SET
+ displayname | answeredquestions |      avgscore      | totalbounty | goldbadges | questioncount |  bestpostcontent  
+-------------+-------------------+--------------------+-------------+------------+---------------+-------------------
+ Alice       |                 1 | 5.0000000000000000 |          50 |          1 |             0 | 
+ Bob         |                 1 | 4.0000000000000000 |          10 |          1 |             1 | bob question body
+(2 rows)
+
+DROP SCHEMA
+DROP SCHEMA
+CREATE SCHEMA
+SET
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+SET
+INSERT 0 3
+INSERT 0 3
+INSERT 0 2
+INSERT 0 2
+SET
+ displayname | answeredquestions |      avgscore      | totalbounty | goldbadges | questioncount |  bestpostcontent  
+-------------+-------------------+--------------------+-------------+------------+---------------+-------------------
+ Alice       |                 1 | 5.0000000000000000 |          50 |          1 |             0 | 
+ Bob         |                 1 | 4.0000000000000000 |          10 |          1 |             1 | bob question body
+(2 rows)
+
+DROP SCHEMA
+DROP SCHEMA
+CREATE SCHEMA
+SET
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+SET
+INSERT 0 3
+INSERT 0 3
+INSERT 0 2
+INSERT 0 2
+SET
+ displayname | answeredquestions |      avgscore      | totalbounty | goldbadges | questioncount |  bestpostcontent  
+-------------+-------------------+--------------------+-------------+------------+---------------+-------------------
+ Alice       |                 1 | 5.0000000000000000 |          50 |          1 |             0 | 
+ Bob         |                 1 | 4.0000000000000000 |          10 |          1 |             1 | bob question body
+(2 rows)
+
+DROP SCHEMA
+DROP SCHEMA
+CREATE SCHEMA
+SET
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+SET
+INSERT 0 3
+INSERT 0 3
+INSERT 0 2
+INSERT 0 2
+SET
+ displayname | answeredquestions |      avgscore      | totalbounty | goldbadges | questioncount |  bestpostcontent  
+-------------+-------------------+--------------------+-------------+------------+---------------+-------------------
+ Alice       |                 1 | 5.0000000000000000 |          50 |          1 |             0 | 
+ Bob         |                 1 | 4.0000000000000000 |          10 |          1 |             1 | bob question body
+(2 rows)
+
+DROP SCHEMA
+DROP SCHEMA
+CREATE SCHEMA
+SET
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+SET
+INSERT 0 3
+INSERT 0 3
+INSERT 0 2
+INSERT 0 2
+SET
+ displayname | answeredquestions |      avgscore      | totalbounty | goldbadges | questioncount |  bestpostcontent  
+-------------+-------------------+--------------------+-------------+------------+---------------+-------------------
+ Alice       |                 1 | 5.0000000000000000 |          50 |          1 |             0 | 
+ Bob         |                 1 | 4.0000000000000000 |          10 |          1 |             1 | bob question body
+(2 rows)
+
+DROP SCHEMA
+DROP SCHEMA
+CREATE SCHEMA
+SET
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+SET
+INSERT 0 3
+INSERT 0 3
+INSERT 0 2
+INSERT 0 2
+SET
+ displayname | answeredquestions |      avgscore      | totalbounty | goldbadges | questioncount |  bestpostcontent  
+-------------+-------------------+--------------------+-------------+------------+---------------+-------------------
+ Alice       |                 1 | 5.0000000000000000 |          50 |          1 |             0 | 
+ Bob         |                 1 | 4.0000000000000000 |          10 |          1 |             1 | bob question body
+(2 rows)
+
+DROP SCHEMA

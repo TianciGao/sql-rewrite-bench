@@ -1,0 +1,8 @@
+row_key,case_id,pool,engine,execution_status_observed,consistency_check_status,exact_match,result_check_exists,source_tsv_exists,generated_tsv_exists,timing_candidate,claim_boundary
+PERF_0006:pg,PERF_0006,performance,pg,executed,match_exact,true,true,true,true,true,execution_validity_only_not_timing_speedup_or_leaderboard
+PERF_0008:pg,PERF_0008,performance,pg,executed,match_exact,true,true,true,true,true,execution_validity_only_not_timing_speedup_or_leaderboard
+PERF_0013:pg,PERF_0013,performance,pg,executed,match_exact,true,true,true,true,true,execution_validity_only_not_timing_speedup_or_leaderboard
+PERF_0017:pg,PERF_0017,performance,pg,executed,match_exact,true,true,true,true,true,execution_validity_only_not_timing_speedup_or_leaderboard
+PERF_0024:pg,PERF_0024,performance,pg,executed,match_exact,true,true,true,true,true,execution_validity_only_not_timing_speedup_or_leaderboard
+PERF_0052:pg,PERF_0052,performance,pg,executed,match_exact,true,true,true,true,true,execution_validity_only_not_timing_speedup_or_leaderboard
+PERF_0054:pg,PERF_0054,performance,pg,executed,match_exact,true,true,true,true,true,execution_validity_only_not_timing_speedup_or_leaderboard

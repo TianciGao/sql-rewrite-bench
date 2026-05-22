@@ -1,0 +1,106 @@
+Error parsing SQL query.
+Error parsing SQL query.
+Error parsing SQL query: Expected END after CASE. Line 5, Col: 32.
+  
+-- draft-only / not validated
+-- source dialect: mysql_like_candidate
+SELECT CAST( SUM( CASE WHEN `[4msex[0m` = 'F' THEN 1 ELSE 0 END ) AS DOUBLE ) * 100 / COUNT( `id` ) FROM `patient` WHERE `diagnosis` = 'RA
+Error parsing SQL query: Expected END after CASE. Line 5, Col: 32.
+  
+-- draft-only / not validated
+-- source dialect: mysql_like_candidate
+SELECT CAST( SUM( CASE WHEN `[4msex[0m` = 'F' THEN 1 ELSE 0 END ) AS DOUBLE ) * 100 / COUNT( `id` ) FROM `patient` WHERE `diagnosis` = 'RA
+Error parsing SQL query.
+Error parsing SQL query.
+Error while parsing SQL query: Expected END after CASE. Line 5, Col: 32.
+  
+-- draft-only / not validated
+-- source dialect: mysql_like_candidate
+SELECT CAST( SUM( CASE WHEN `[4msex[0m` = 'F' THEN 1 ELSE 0 END ) AS DOUBLE ) * 100 / COUNT( `id` ) FROM `patient` WHERE `diagnosis` = 'RA
+Error parsing SQL query.
+Error parsing SQL query: Expected END after CASE. Line 5, Col: 32.
+  
+-- draft-only / not validated
+-- source dialect: mysql_like_candidate
+SELECT CAST( SUM( CASE WHEN `[4msex[0m` = 'F' THEN 1 ELSE 0 END ) AS DOUBLE ) * 100 / COUNT( `id` ) FROM `patient` WHERE `diagnosis` = 'RA
+Error parsing SQL query.
+Error parsing SQL query: Expected END after CASE. Line 5, Col: 32.
+  
+-- draft-only / not validated
+-- source dialect: mysql_like_candidate
+SELECT CAST( SUM( CASE WHEN `[4msex[0m` = 'F' THEN 1 ELSE 0 END ) AS DOUBLE ) * 100 / COUNT( `id` ) FROM `patient` WHERE `diagnosis` = 'RA
+Error parsing SQL query: Expected END after CASE. Line 5, Col: 32.
+  
+-- draft-only / not validated
+-- source dialect: mysql_like_candidate
+SELECT CAST( SUM( CASE WHEN `[4msex[0m` = 'F' THEN 1 ELSE 0 END ) AS DOUBLE ) * 100 / COUNT( `id` ) FROM `patient` WHERE `diagnosis` = 'RA
+Error parsing SQL query: Expected END after CASE. Line 5, Col: 32.
+  
+-- draft-only / not validated
+-- source dialect: mysql_like_candidate
+SELECT CAST( SUM( CASE WHEN `[4msex[0m` = 'F' THEN 1 ELSE 0 END ) AS DOUBLE ) * 100 / COUNT( `id` ) FROM `patient` WHERE `diagnosis` = 'RA
+Error parsing SQL query.
+Error parsing SQL query: Expected END after CASE. Line 5, Col: 32.
+  
+-- draft-only / not validated
+-- source dialect: mysql_like_candidate
+SELECT CAST( SUM( CASE WHEN `[4msex[0m` = 'F' THEN 1 ELSE 0 END ) AS DOUBLE ) * 100 / COUNT( `id` ) FROM `patient` WHERE `diagnosis` = 'RA
+Error parsing SQL query: Expected END after CASE. Line 5, Col: 32.
+  
+-- draft-only / not validated
+-- source dialect: mysql_like_candidate
+SELECT CAST( SUM( CASE WHEN `[4msex[0m` = 'F' THEN 1 ELSE 0 END ) AS DOUBLE ) * 100 / COUNT( `id` ) FROM `patient` WHERE `diagnosis` = 'RA
+Error parsing SQL query: Expected END after CASE. Line 5, Col: 32.
+  
+-- draft-only / not validated
+-- source dialect: mysql_like_candidate
+SELECT CAST( SUM( CASE WHEN `[4msex[0m` = 'F' THEN 1 ELSE 0 END ) AS DOUBLE ) * 100 / COUNT( `id` ) FROM `patient` WHERE `diagnosis` = 'RA
+Error parsing SQL query: Expected END after CASE. Line 5, Col: 32.
+  
+-- draft-only / not validated
+-- source dialect: mysql_like_candidate
+SELECT CAST( SUM( CASE WHEN `[4msex[0m` = 'F' THEN 1 ELSE 0 END ) AS DOUBLE ) * 100 / COUNT( `id` ) FROM `patient` WHERE `diagnosis` = 'RA
+Error parsing SQL query: Expected END after CASE. Line 5, Col: 32.
+  
+-- draft-only / not validated
+-- source dialect: mysql_like_candidate
+SELECT CAST( SUM( CASE WHEN `[4msex[0m` = 'F' THEN 1 ELSE 0 END ) AS DOUBLE ) * 100 / COUNT( `id` ) FROM `patient` WHERE `diagnosis` = 'RA
+Error parsing SQL query: Expected END after CASE. Line 5, Col: 32.
+  
+-- draft-only / not validated
+-- source dialect: mysql_like_candidate
+SELECT CAST( SUM( CASE WHEN `[4msex[0m` = 'F' THEN 1 ELSE 0 END ) AS DOUBLE ) * 100 / COUNT( `id` ) FROM `patient` WHERE `diagnosis` = 'RA
+Error parsing SQL query.
+Error parsing SQL query.
+Error parsing SQL query: Expected END after CASE. Line 5, Col: 32.
+  
+-- draft-only / not validated
+-- source dialect: mysql_like_candidate
+SELECT CAST( SUM( CASE WHEN `[4msex[0m` = 'F' THEN 1 ELSE 0 END ) AS DOUBLE ) * 100 / COUNT( `id` ) FROM `patient` WHERE `diagnosis` = 'RA
+Error parsing SQL query: Expected END after CASE. Line 5, Col: 32.
+  
+-- draft-only / not validated
+-- source dialect: mysql_like_candidate
+SELECT CAST( SUM( CASE WHEN `[4msex[0m` = 'F' THEN 1 ELSE 0 END ) AS DOUBLE ) * 100 / COUNT( `id` ) FROM `patient` WHERE `diagnosis` = 'RA
+Error parsing SQL query: Expected END after CASE. Line 5, Col: 32.
+  
+-- draft-only / not validated
+-- source dialect: mysql_like_candidate
+SELECT CAST( SUM( CASE WHEN `[4msex[0m` = 'F' THEN 1 ELSE 0 END ) AS DOUBLE ) * 100 / COUNT( `id` ) FROM `patient` WHERE `diagnosis` = 'RA
+Error parsing SQL query.
+Error parsing SQL query: Expected END after CASE. Line 5, Col: 32.
+  
+-- draft-only / not validated
+-- source dialect: mysql_like_candidate
+SELECT CAST( SUM( CASE WHEN `[4msex[0m` = 'F' THEN 1 ELSE 0 END ) AS DOUBLE ) * 100 / COUNT( `id` ) FROM `patient` WHERE `diagnosis` = 'RA
+Error parsing SQL query.
+Error parsing SQL query: Expected END after CASE. Line 5, Col: 32.
+  
+-- draft-only / not validated
+-- source dialect: mysql_like_candidate
+SELECT CAST( SUM( CASE WHEN `[4msex[0m` = 'F' THEN 1 ELSE 0 END ) AS DOUBLE ) * 100 / COUNT( `id` ) FROM `patient` WHERE `diagnosis` = 'RA
+Error parsing SQL query: Expected END after CASE. Line 5, Col: 32.
+  
+-- draft-only / not validated
+-- source dialect: mysql_like_candidate
+SELECT CAST( SUM( CASE WHEN `[4msex[0m` = 'F' THEN 1 ELSE 0 END ) AS DOUBLE ) * 100 / COUNT( `id` ) FROM `patient` WHERE `diagnosis` = 'RA

@@ -1,0 +1,81 @@
+row_type,scope,pool,engine,outcome_class,failure_subclass,numerator,denominator,rate_pct,planned_rows,generation_success_rows,ready_to_execute_rows,preflight_blocked_rows,executed_rows,match_exact_rows,mismatch_rows,execution_failed_rows,note
+summary,overall,,,,,120,120,100.00,120,120,115,5,99,94,5,16,generation_success_rate over planned denominator
+summary,overall,,,,,99,120,82.50,120,120,115,5,99,94,5,16,executable_rate over planned denominator defined as executed or planned
+summary,overall,,,,,99,115,86.09,120,120,115,5,99,94,5,16,executable_rate over ready_to_execute denominator defined as executed or ready_to_execute
+summary,overall,,,,,115,120,95.83,120,120,115,5,99,94,5,16,preflight ready coverage over planned denominator
+summary,overall,,,,,94,120,78.33,120,120,115,5,99,94,5,16,result_consistency_rate over planned denominator defined as match_exact or planned
+summary,overall,,,,,94,99,94.95,120,120,115,5,99,94,5,16,result_consistency_rate over executed denominator defined as match_exact or executed
+summary,overall,,,,,94,115,81.74,120,120,115,5,99,94,5,16,result_consistency_rate over ready_to_execute denominator defined as match_exact or ready_to_execute
+summary,overall,,,,,5,120,4.17,120,120,115,5,99,94,5,16,preflight_blocked_rate over planned denominator
+summary,overall,,,,,16,120,13.33,120,120,115,5,99,94,5,16,execution_failed_rate over planned denominator
+summary,overall,,,,,16,115,13.91,120,120,115,5,99,94,5,16,execution_failed_rate over ready_to_execute denominator
+summary,overall,,,,,5,99,5.05,120,120,115,5,99,94,5,16,mismatch_rate over executed denominator
+summary,overall,,,,,5,115,4.35,120,120,115,5,99,94,5,16,mismatch_rate over ready_to_execute denominator
+outcome_class,overall,,,match_exact,,94,120,78.33,120,120,115,5,99,94,5,16,executed and exact result match
+outcome_class,overall,,,mismatch,,5,120,4.17,120,120,115,5,99,94,5,16,executed but not consistency valid
+outcome_class,overall,,,execution_failed,,16,120,13.33,120,120,115,5,99,94,5,16,method or execution failure bucket before any timing or speedup analysis
+outcome_class,overall,,,not_executed_preflight_blocked,,5,120,4.17,120,120,115,5,99,94,5,16,package or artifact gap and not counted as LLM generated SQL failure
+failure_subclass,overall,,,,llm_generated_sql_dialect_execution_failure,14,16,87.50,120,120,115,5,99,94,5,16,execution_failed rows excluding draft DDL or package limitation
+failure_subclass,overall,,,,draft_ddl_package_limitation,2,16,12.50,120,120,115,5,99,94,5,16,execution_failed rows triaged as package limitation rather than rewrite semantics alone
+pool,overall,consistency,,,,27,120,22.50,27,27,27,0,27,24,3,0,pool share of planned denominator
+pool,validity,consistency,,match_exact,,24,27,88.89,27,27,27,0,27,24,3,0,match_exact or planned within pool
+pool,validity,consistency,,mismatch,,3,27,11.11,27,27,27,0,27,24,3,0,mismatch or planned within pool
+pool,validity,consistency,,execution_failed,,0,27,0.00,27,27,27,0,27,24,3,0,execution_failed or planned within pool
+pool,validity,consistency,,not_executed_preflight_blocked,,0,27,0.00,27,27,27,0,27,24,3,0,preflight blocked or planned within pool
+pool,overall,longtail,,,,18,120,15.00,18,18,18,0,16,16,0,2,pool share of planned denominator
+pool,validity,longtail,,match_exact,,16,18,88.89,18,18,18,0,16,16,0,2,match_exact or planned within pool
+pool,validity,longtail,,mismatch,,0,18,0.00,18,18,18,0,16,16,0,2,mismatch or planned within pool
+pool,validity,longtail,,execution_failed,,2,18,11.11,18,18,18,0,16,16,0,2,execution_failed or planned within pool
+pool,validity,longtail,,not_executed_preflight_blocked,,0,18,0.00,18,18,18,0,16,16,0,2,preflight blocked or planned within pool
+pool,overall,performance,,,,48,120,40.00,48,48,48,0,46,45,1,2,pool share of planned denominator
+pool,validity,performance,,match_exact,,45,48,93.75,48,48,48,0,46,45,1,2,match_exact or planned within pool
+pool,validity,performance,,mismatch,,1,48,2.08,48,48,48,0,46,45,1,2,mismatch or planned within pool
+pool,validity,performance,,execution_failed,,2,48,4.17,48,48,48,0,46,45,1,2,execution_failed or planned within pool
+pool,validity,performance,,not_executed_preflight_blocked,,0,48,0.00,48,48,48,0,46,45,1,2,preflight blocked or planned within pool
+pool,overall,portability,,,,27,120,22.50,27,27,22,5,10,9,1,12,portability stress rows keep caveats explicit
+pool,validity,portability,,match_exact,,9,27,33.33,27,27,22,5,10,9,1,12,match_exact or planned within pool and portability caveat remains
+pool,validity,portability,,mismatch,,1,27,3.70,27,27,22,5,10,9,1,12,mismatch or planned within pool
+pool,validity,portability,,execution_failed,,12,27,44.44,27,27,22,5,10,9,1,12,execution_failed or planned within pool and portability caveat remains
+pool,validity,portability,,not_executed_preflight_blocked,,5,27,18.52,27,27,22,5,10,9,1,12,preflight blocked rows are package or artifact gaps not LLM SQL failures
+engine,overall,,mysql,,,40,120,33.33,40,40,38,2,36,34,2,2,engine share of planned denominator
+engine,validity,,mysql,match_exact,,34,40,85.00,40,40,38,2,36,34,2,2,match_exact or planned within engine
+engine,validity,,mysql,mismatch,,2,40,5.00,40,40,38,2,36,34,2,2,mismatch or planned within engine
+engine,validity,,mysql,execution_failed,,2,40,5.00,40,40,38,2,36,34,2,2,execution_failed or planned within engine
+engine,validity,,mysql,not_executed_preflight_blocked,,2,40,5.00,40,40,38,2,36,34,2,2,preflight blocked or planned within engine
+engine,overall,,pg,,,40,120,33.33,40,40,39,1,33,32,1,6,engine share of planned denominator
+engine,validity,,pg,match_exact,,32,40,80.00,40,40,39,1,33,32,1,6,match_exact or planned within engine
+engine,validity,,pg,mismatch,,1,40,2.50,40,40,39,1,33,32,1,6,mismatch or planned within engine
+engine,validity,,pg,execution_failed,,6,40,15.00,40,40,39,1,33,32,1,6,execution_failed or planned within engine
+engine,validity,,pg,not_executed_preflight_blocked,,1,40,2.50,40,40,39,1,33,32,1,6,preflight blocked or planned within engine
+engine,overall,,spark,,,40,120,33.33,40,40,38,2,30,28,2,8,engine share of planned denominator
+engine,validity,,spark,match_exact,,28,40,70.00,40,40,38,2,30,28,2,8,match_exact or planned within engine
+engine,validity,,spark,mismatch,,2,40,5.00,40,40,38,2,30,28,2,8,mismatch or planned within engine
+engine,validity,,spark,execution_failed,,8,40,20.00,40,40,38,2,30,28,2,8,execution_failed or planned within engine
+engine,validity,,spark,not_executed_preflight_blocked,,2,40,5.00,40,40,38,2,30,28,2,8,preflight blocked or planned within engine
+pool_engine,overall,consistency,mysql,match_exact,,8,9,88.89,9,9,9,0,9,8,1,0,pool by engine validity slice
+pool_engine,overall,consistency,mysql,mismatch,,1,9,11.11,9,9,9,0,9,8,1,0,pool by engine validity slice
+pool_engine,overall,consistency,pg,match_exact,,8,9,88.89,9,9,9,0,9,8,1,0,pool by engine validity slice
+pool_engine,overall,consistency,pg,mismatch,,1,9,11.11,9,9,9,0,9,8,1,0,pool by engine validity slice
+pool_engine,overall,consistency,spark,match_exact,,8,9,88.89,9,9,9,0,9,8,1,0,pool by engine validity slice
+pool_engine,overall,consistency,spark,mismatch,,1,9,11.11,9,9,9,0,9,8,1,0,pool by engine validity slice
+pool_engine,overall,longtail,mysql,match_exact,,6,6,100.00,6,6,6,0,6,6,0,0,pool by engine validity slice
+pool_engine,overall,longtail,pg,match_exact,,5,6,83.33,6,6,6,0,5,5,0,1,pool by engine validity slice
+pool_engine,overall,longtail,pg,execution_failed,,1,6,16.67,6,6,6,0,5,5,0,1,pool by engine validity slice
+pool_engine,overall,longtail,spark,match_exact,,5,6,83.33,6,6,6,0,5,5,0,1,pool by engine validity slice
+pool_engine,overall,longtail,spark,execution_failed,,1,6,16.67,6,6,6,0,5,5,0,1,pool by engine validity slice
+pool_engine,overall,performance,mysql,match_exact,,16,16,100.00,16,16,16,0,16,16,0,0,pool by engine validity slice
+pool_engine,overall,performance,pg,match_exact,,15,16,93.75,16,16,16,0,15,15,0,1,pool by engine validity slice
+pool_engine,overall,performance,pg,execution_failed,,1,16,6.25,16,16,16,0,15,15,0,1,pool by engine validity slice
+pool_engine,overall,performance,spark,match_exact,,14,16,87.50,16,16,16,0,15,14,1,1,pool by engine validity slice
+pool_engine,overall,performance,spark,mismatch,,1,16,6.25,16,16,16,0,15,14,1,1,pool by engine validity slice
+pool_engine,overall,performance,spark,execution_failed,,1,16,6.25,16,16,16,0,15,14,1,1,pool by engine validity slice
+pool_engine,overall,portability,mysql,match_exact,,4,9,44.44,9,9,7,2,7,4,1,2,portability stress caveat remains
+pool_engine,overall,portability,mysql,mismatch,,1,9,11.11,9,9,7,2,7,4,1,2,portability stress caveat remains
+pool_engine,overall,portability,mysql,execution_failed,,2,9,22.22,9,9,7,2,7,4,1,2,portability stress caveat remains
+pool_engine,overall,portability,mysql,not_executed_preflight_blocked,,2,9,22.22,9,9,7,2,7,4,1,2,package or artifact gap not LLM SQL failure
+pool_engine,overall,portability,pg,match_exact,,4,9,44.44,9,9,8,1,4,4,0,4,portability stress caveat remains
+pool_engine,overall,portability,pg,execution_failed,,4,9,44.44,9,9,8,1,4,4,0,4,portability stress caveat remains
+pool_engine,overall,portability,pg,not_executed_preflight_blocked,,1,9,11.11,9,9,8,1,4,4,0,4,package or artifact gap not LLM SQL failure
+pool_engine,overall,portability,spark,match_exact,,1,9,11.11,9,9,7,2,7,1,0,6,portability stress caveat remains
+pool_engine,overall,portability,spark,execution_failed,,6,9,66.67,9,9,7,2,7,1,0,6,portability stress caveat remains
+pool_engine,overall,portability,spark,not_executed_preflight_blocked,,2,9,22.22,9,9,7,2,7,1,0,6,package or artifact gap not LLM SQL failure

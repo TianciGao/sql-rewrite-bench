@@ -1,0 +1,16 @@
+run_id,method_id,control_group,pool_scope,denominator_cases,control_events,control_valid_cases,control_failure_cases,control_expected_behavior,control_observed_behavior,notes
+controls_v0_artifact_reuse_01,controls,native_source,all,40,120,40,0,must_match,success=120,Derived from run_event_long; artifact_reuse_only; no failed case removed from denominator
+controls_v0_artifact_reuse_01,controls,native_source,performance,16,48,16,0,must_match,success=48,Derived from run_event_long; artifact_reuse_only; no failed case removed from denominator
+controls_v0_artifact_reuse_01,controls,native_source,consistency,9,27,9,0,must_match,success=27,Derived from run_event_long; artifact_reuse_only; no failed case removed from denominator
+controls_v0_artifact_reuse_01,controls,native_source,portability,9,27,9,0,must_match,success=27,Derived from run_event_long; artifact_reuse_only; no failed case removed from denominator
+controls_v0_artifact_reuse_01,controls,native_source,longtail,6,18,6,0,must_match,success=18,Derived from run_event_long; artifact_reuse_only; no failed case removed from denominator
+controls_v0_artifact_reuse_01,controls,human_positive,all,40,120,40,0,must_match,success=120,Derived from run_event_long; artifact_reuse_only; no failed case removed from denominator
+controls_v0_artifact_reuse_01,controls,human_positive,performance,16,48,16,0,must_match,success=48,Derived from run_event_long; artifact_reuse_only; no failed case removed from denominator
+controls_v0_artifact_reuse_01,controls,human_positive,consistency,9,27,9,0,must_match,success=27,Derived from run_event_long; artifact_reuse_only; no failed case removed from denominator
+controls_v0_artifact_reuse_01,controls,human_positive,portability,9,27,9,0,must_match,success=27,Derived from run_event_long; artifact_reuse_only; no failed case removed from denominator
+controls_v0_artifact_reuse_01,controls,human_positive,longtail,6,18,6,0,must_match,success=18,Derived from run_event_long; artifact_reuse_only; no failed case removed from denominator
+controls_v0_artifact_reuse_01,controls,hard_negative,all,40,120,0,40,must_fail,skipped=120,Derived from run_event_long; artifact_reuse_only; no failed case removed from denominator
+controls_v0_artifact_reuse_01,controls,hard_negative,performance,16,48,0,16,must_fail,skipped=48,Derived from run_event_long; artifact_reuse_only; no failed case removed from denominator
+controls_v0_artifact_reuse_01,controls,hard_negative,consistency,9,27,0,9,must_fail,skipped=27,Derived from run_event_long; artifact_reuse_only; no failed case removed from denominator
+controls_v0_artifact_reuse_01,controls,hard_negative,portability,9,27,0,9,must_fail,skipped=27,Derived from run_event_long; artifact_reuse_only; no failed case removed from denominator
+controls_v0_artifact_reuse_01,controls,hard_negative,longtail,6,18,0,6,must_fail,skipped=18,Derived from run_event_long; artifact_reuse_only; no failed case removed from denominator

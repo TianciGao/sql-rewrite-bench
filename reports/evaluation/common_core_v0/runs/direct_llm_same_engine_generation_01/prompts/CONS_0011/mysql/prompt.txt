@@ -1,0 +1,34 @@
+SYSTEM / OPERATOR INSTRUCTION
+Produce exactly one semantics-preserving SQL rewrite of the input query in the same target dialect.
+
+REQUIREMENTS
+- Output SQL only.
+- Do not use markdown fences.
+- Do not add explanations.
+- Do not add comments unless comments already exist in the input SQL.
+- Do not output DDL.
+- Do not output INSERT, UPDATE, DELETE, MERGE, COPY, or any data-changing statement.
+- Preserve result semantics exactly.
+- Keep the rewrite in the same target engine / dialect.
+- Avoid engine-specific functions unless they are compatible with the target engine.
+- If the original query is already near-minimal, you may return an equivalent no-op rewrite, but still output SQL only.
+
+TARGET ENGINE
+mysql
+
+SCHEMA
+CREATE TABLE emp (empno INT, ename VARCHAR(32), job VARCHAR(32), mgr INT, hiredate DATE, sal DECIMAL(10,2), comm DECIMAL(10,2), deptno INT);
+CREATE TABLE dept (deptno INT, dname VARCHAR(32), loc VARCHAR(32));
+CREATE TABLE bonus (ename VARCHAR(32), job VARCHAR(32), sal DECIMAL(10,2), comm DECIMAL(10,2));
+
+SOURCE SQL
+SELECT E1.ENAME
+FROM emp E1
+WHERE EXISTS (
+  SELECT 1
+  FROM dept D
+  LEFT JOIN bonus B
+    ON D.DNAME = B.ENAME
+   AND B.JOB = E1.JOB
+  WHERE B.ENAME IS NULL
+);

@@ -1,0 +1,41 @@
+case_id,pool,source_family,has_spark_validation_script,has_spark_result_check,has_spark_source_tsv,has_spark_positive_tsv,has_spark_negative_tsv,has_spark_plan_check,recommended_spark_execution_status,caveat
+PERF_0006,performance,TPC-H,no,yes,yes,yes,yes,yes,artifact_reuse_only,manual spark canary treated PERF_0006 as missing_script despite legacy spark artifacts
+PERF_0007,performance,TPC-H,no,yes,yes,yes,yes,yes,artifact_reuse_only,
+PERF_0008,performance,TPC-H,no,yes,yes,yes,yes,yes,artifact_reuse_only,
+PERF_0013,performance,TPC-H,no,yes,yes,yes,yes,yes,artifact_reuse_only,
+PERF_0017,performance,TPC-H,yes,yes,yes,yes,yes,yes,ready_for_manual_spark_validation,
+PERF_0019,performance,TPC-H,yes,yes,yes,yes,yes,yes,ready_for_manual_spark_validation,
+PERF_0024,performance,TPC-H,yes,yes,yes,yes,yes,yes,ready_for_manual_spark_validation,
+PERF_0033,performance,TPC-DS,yes,yes,yes,yes,yes,yes,ready_for_manual_spark_validation,
+PERF_0034,performance,TPC-DS,yes,yes,yes,yes,yes,yes,ready_for_manual_spark_validation,
+PERF_0035,performance,TPC-DS,yes,yes,yes,yes,yes,yes,ready_for_manual_spark_validation,
+PERF_0052,performance,TPC-DS,yes,yes,yes,yes,yes,yes,ready_for_manual_spark_validation,
+PERF_0054,performance,TPC-DS,yes,yes,yes,yes,yes,yes,ready_for_manual_spark_validation,
+PERF_0056,performance,TPC-DS,yes,yes,yes,yes,yes,yes,ready_for_manual_spark_validation,
+PERF_0062,performance,TPC-DS,yes,yes,yes,yes,yes,yes,ready_for_manual_spark_validation,
+PERF_0077,performance,JOB/IMDB,yes,yes,yes,yes,yes,yes,ready_for_manual_spark_validation,
+PERF_0082,performance,JOB/IMDB,yes,yes,yes,yes,yes,yes,ready_for_manual_spark_validation,
+CONS_0005,consistency,Calcite,yes,yes,yes,yes,yes,yes,ready_for_manual_spark_validation,
+CONS_0007,consistency,Calcite,yes,yes,yes,yes,yes,yes,ready_for_manual_spark_validation,
+CONS_0009,consistency,Calcite,yes,yes,yes,yes,yes,yes,ready_for_manual_spark_validation,
+CONS_0010,consistency,Calcite,yes,yes,yes,yes,yes,yes,ready_for_manual_spark_validation,
+CONS_0011,consistency,Calcite,yes,yes,yes,yes,yes,yes,ready_for_manual_spark_validation,
+CONS_0012,consistency,Calcite,yes,yes,yes,yes,yes,yes,ready_for_manual_spark_validation,
+CONS_0024,consistency,Calcite,yes,yes,yes,yes,yes,yes,ready_for_manual_spark_validation,
+CONS_0036,consistency,VeriEQL,yes,yes,yes,yes,yes,yes,ready_for_manual_spark_validation,
+CONS_0037,consistency,VeriEQL,yes,yes,yes,yes,yes,yes,ready_for_manual_spark_validation,
+PORT_0003,portability,PARROT,yes,no,no,no,no,no,ready_for_manual_spark_validation,portability cross-dialect semantics may use reference-based checker rather than spark-local source baseline
+PORT_0004,portability,PARROT,yes,yes,no,no,no,no,ready_for_manual_spark_validation,portability cross-dialect semantics may use reference-based checker rather than spark-local source baseline
+PORT_0005,portability,PARROT,yes,no,no,no,no,no,ready_for_manual_spark_validation,portability cross-dialect semantics may use reference-based checker rather than spark-local source baseline
+PORT_0008,portability,PARROT,yes,no,no,yes,yes,no,ready_for_manual_spark_validation,portability cross-dialect semantics may use reference-based checker rather than spark-local source baseline
+PORT_0012,portability,PARROT,yes,yes,no,yes,yes,no,ready_for_manual_spark_validation,portability cross-dialect semantics may use reference-based checker rather than spark-local source baseline
+PORT_0013,portability,PARROT,yes,yes,no,yes,yes,no,ready_for_manual_spark_validation,portability cross-dialect semantics may use reference-based checker rather than spark-local source baseline
+PORT_0022,portability,PARROT,yes,yes,yes,yes,yes,no,ready_for_manual_spark_validation,portability cross-dialect semantics may use reference-based checker rather than spark-local source baseline
+PORT_0024,portability,PARROT,yes,yes,yes,yes,yes,no,ready_for_manual_spark_validation,portability cross-dialect semantics may use reference-based checker rather than spark-local source baseline
+PORT_0025,portability,PARROT,yes,yes,yes,yes,yes,no,ready_for_manual_spark_validation,portability cross-dialect semantics may use reference-based checker rather than spark-local source baseline
+LONGTAIL_0011,longtail,SQLStorm,yes,yes,yes,yes,yes,yes,ready_for_manual_spark_validation,SQLStorm registry/status alignment caveat remains outside execution evidence
+LONGTAIL_0012,longtail,SQLStorm,yes,yes,yes,yes,yes,yes,ready_for_manual_spark_validation,SQLStorm registry/status alignment caveat remains outside execution evidence
+LONGTAIL_0013,longtail,SQLStorm,yes,yes,yes,yes,yes,yes,ready_for_manual_spark_validation,SQLStorm registry/status alignment caveat remains outside execution evidence
+LONGTAIL_0022,longtail,Stack Queries,yes,yes,yes,yes,yes,yes,ready_for_manual_spark_validation,
+LONGTAIL_0023,longtail,Stack Queries,yes,yes,yes,yes,yes,yes,ready_for_manual_spark_validation,
+LONGTAIL_0024,longtail,Stack Queries,yes,yes,yes,yes,yes,yes,ready_for_manual_spark_validation,

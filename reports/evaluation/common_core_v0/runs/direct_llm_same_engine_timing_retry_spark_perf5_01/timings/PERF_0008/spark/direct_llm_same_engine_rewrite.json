@@ -1,0 +1,22 @@
+{
+  "case_id": "PERF_0008",
+  "engine": "spark",
+  "route_id": "direct_llm_same_engine_rewrite",
+  "warmup_count": 1,
+  "repeat_count": 3,
+  "source_runtime_ms": [
+    421.3994659949094,
+    356.5817669732496,
+    316.37339293956757
+  ],
+  "generated_runtime_ms": [
+    393.00370402634144,
+    368.17417689599097,
+    311.3142669899389
+  ],
+  "median_source_ms": 356.5817669732496,
+  "median_generated_ms": 368.17417689599097,
+  "speedup_ratio": 0.9685137887168653,
+  "status": "success",
+  "notes": ""
+}

@@ -1,0 +1,42 @@
+ c_custkey |   c_name   | revenue | c_acctbal | n_name | c_address | c_phone |    c_comment    
+-----------+------------+---------+-----------+--------+-----------+---------+-----------------
+         1 | Customer#1 | 90.0000 |    100.00 | EGYPT  | Addr 1    | 10-001  | target customer
+(1 row)
+
+ c_custkey |   c_name   | revenue | c_acctbal | n_name | c_address | c_phone |    c_comment    
+-----------+------------+---------+-----------+--------+-----------+---------+-----------------
+         1 | Customer#1 | 90.0000 |    100.00 | EGYPT  | Addr 1    | 10-001  | target customer
+(1 row)
+
+ c_custkey |   c_name   | revenue | c_acctbal | n_name | c_address | c_phone |    c_comment    
+-----------+------------+---------+-----------+--------+-----------+---------+-----------------
+         1 | Customer#1 | 90.0000 |    100.00 | EGYPT  | Addr 1    | 10-001  | target customer
+(1 row)
+
+ c_custkey |   c_name   | revenue | c_acctbal | n_name | c_address | c_phone |    c_comment    
+-----------+------------+---------+-----------+--------+-----------+---------+-----------------
+         1 | Customer#1 | 90.0000 |    100.00 | EGYPT  | Addr 1    | 10-001  | target customer
+(1 row)
+
+ c_custkey |   c_name   | revenue | c_acctbal | n_name | c_address | c_phone |    c_comment    
+-----------+------------+---------+-----------+--------+-----------+---------+-----------------
+         1 | Customer#1 | 90.0000 |    100.00 | EGYPT  | Addr 1    | 10-001  | target customer
+(1 row)
+
+ c_custkey |   c_name   | revenue | c_acctbal | n_name | c_address | c_phone |    c_comment    
+-----------+------------+---------+-----------+--------+-----------+---------+-----------------
+         1 | Customer#1 | 90.0000 |    100.00 | EGYPT  | Addr 1    | 10-001  | target customer
+(1 row)
+
+ c_custkey |   c_name   | revenue | c_acctbal | n_name | c_address | c_phone |    c_comment    
+-----------+------------+---------+-----------+--------+-----------+---------+-----------------
+         1 | Customer#1 | 90.0000 |    100.00 | EGYPT  | Addr 1    | 10-001  | target customer
+(1 row)
+
+ c_custkey |   c_name   | revenue | c_acctbal | n_name | c_address | c_phone |    c_comment    
+-----------+------------+---------+-----------+--------+-----------+---------+-----------------
+         1 | Customer#1 | 90.0000 |    100.00 | EGYPT  | Addr 1    | 10-001  | target customer
+(1 row)
+
+case_id=PERF_0017 pool=performance engine=pg route_id=r_bot_same_engine_rewrite
+warmup_count=1 repeat_count=3

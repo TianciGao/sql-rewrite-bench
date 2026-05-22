@@ -1,0 +1,29 @@
+{
+  "case_id": "PERF_0082",
+  "pool": "performance",
+  "engine": "pg",
+  "route_id": "calcite_hep_pg_rewrite",
+  "method_id": "calcite_hep",
+  "denominator_id": "common_core_v0_40_pg40",
+  "warmup_count": 1,
+  "repeat_count": 3,
+  "source_runtime_ms": [
+    735.665195970796,
+    380.9169150190428,
+    382.80419900547713
+  ],
+  "generated_runtime_ms": [
+    381.66072801686823,
+    378.87316301930696,
+    384.02575091458857
+  ],
+  "median_source_ms": 382.80419900547713,
+  "median_generated_ms": 381.66072801686823,
+  "speedup_ratio": 1.0029960404743512,
+  "timing_status": "timing_success",
+  "timing_json_path": "reports/evaluation/common_core_v0/runs/calcite_hep_pg40_timing_01/timings/PERF_0082/pg/calcite_hep_pg_rewrite.json",
+  "stdout_log": "reports/evaluation/common_core_v0/runs/calcite_hep_pg40_timing_01/logs/PERF_0082_pg_calcite_hep_pg_rewrite.stdout.log",
+  "stderr_log": "reports/evaluation/common_core_v0/runs/calcite_hep_pg40_timing_01/logs/PERF_0082_pg_calcite_hep_pg_rewrite.stderr.log",
+  "notes": "",
+  "caveat": "manual_case_validation_materialized; JOB/IMDB real-schema bridge; human approved for review slate only; PostgreSQL-only witness validation"
+}

@@ -1,0 +1,19 @@
+{
+  "available": false,
+  "base_url_family": "api.gptsapi.net",
+  "case_id": "PORT_0005",
+  "completion_tokens": null,
+  "cost_fields": {},
+  "embedding_provider_family": "api.gptsapi.net",
+  "engine": "pg",
+  "method_id": "r_bot",
+  "model_name": "gpt-4o-mini",
+  "prompt_tokens": null,
+  "provider_family": "api.gptsapi.net",
+  "provider_name": "api.gptsapi.net",
+  "reason": "Recovered committed PG runner currently hard-codes a supported-case subset in scripts/cli.py formal-rbot-llm4rewrite-single-case-smoke-run; keep row explicit and blocked until runner support expands.",
+  "retry_count": 0,
+  "route_id": "r_bot_same_engine_rewrite",
+  "row_status": "blocked",
+  "total_tokens": null
+}

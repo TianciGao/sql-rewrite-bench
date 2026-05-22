@@ -1,0 +1,742 @@
+{
+  "run_id": "controls_v0_manual_pg_mysql_40_01",
+  "mode": "manual_human_execution",
+  "repo_root": "/home/tianci_gao/code/sql-rewrite-bench",
+  "denominator_id": "common_core_v0_40",
+  "case_scope": "full_frozen_common_core_v0_40",
+  "engine_scope": [
+    "pg",
+    "mysql"
+  ],
+  "records": [
+    {
+      "key": "env_check",
+      "status": "executed",
+      "command": "python -m scripts.cli env-check",
+      "exit_code": 0,
+      "stdout_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/env_check.stdout.log",
+      "stderr_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/env_check.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "perf_0006_pg_validation",
+      "status": "executed",
+      "command": "bash cases/PERF/PERF_0006/validation/run_pg_validation.sh",
+      "exit_code": 0,
+      "stdout_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/perf_0006_pg_validation.stdout.log",
+      "stderr_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/perf_0006_pg_validation.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "perf_0006_mysql_validation",
+      "status": "executed",
+      "command": "bash cases/PERF/PERF_0006/validation/run_mysql_validation.sh",
+      "exit_code": 0,
+      "stdout_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/perf_0006_mysql_validation.stdout.log",
+      "stderr_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/perf_0006_mysql_validation.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "perf_0007_pg_validation",
+      "status": "executed",
+      "command": "bash cases/PERF/PERF_0007/validation/run_pg_validation.sh",
+      "exit_code": 0,
+      "stdout_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/perf_0007_pg_validation.stdout.log",
+      "stderr_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/perf_0007_pg_validation.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "perf_0007_mysql_validation",
+      "status": "executed",
+      "command": "bash cases/PERF/PERF_0007/validation/run_mysql_validation.sh",
+      "exit_code": 0,
+      "stdout_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/perf_0007_mysql_validation.stdout.log",
+      "stderr_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/perf_0007_mysql_validation.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "perf_0008_pg_validation",
+      "status": "executed",
+      "command": "bash cases/PERF/PERF_0008/validation/run_pg_validation.sh",
+      "exit_code": 0,
+      "stdout_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/perf_0008_pg_validation.stdout.log",
+      "stderr_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/perf_0008_pg_validation.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "perf_0008_mysql_validation",
+      "status": "executed",
+      "command": "bash cases/PERF/PERF_0008/validation/run_mysql_validation.sh",
+      "exit_code": 0,
+      "stdout_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/perf_0008_mysql_validation.stdout.log",
+      "stderr_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/perf_0008_mysql_validation.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "perf_0013_pg_validation",
+      "status": "executed",
+      "command": "bash cases/PERF/PERF_0013/validation/run_pg_validation.sh",
+      "exit_code": 0,
+      "stdout_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/perf_0013_pg_validation.stdout.log",
+      "stderr_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/perf_0013_pg_validation.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "perf_0013_mysql_validation",
+      "status": "executed",
+      "command": "bash cases/PERF/PERF_0013/validation/run_mysql_validation.sh",
+      "exit_code": 0,
+      "stdout_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/perf_0013_mysql_validation.stdout.log",
+      "stderr_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/perf_0013_mysql_validation.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "perf_0017_pg_validation",
+      "status": "executed",
+      "command": "bash cases/PERF/PERF_0017/validation/run_pg_validation.sh",
+      "exit_code": 0,
+      "stdout_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/perf_0017_pg_validation.stdout.log",
+      "stderr_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/perf_0017_pg_validation.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "perf_0017_mysql_validation",
+      "status": "executed",
+      "command": "bash cases/PERF/PERF_0017/validation/run_mysql_validation.sh",
+      "exit_code": 0,
+      "stdout_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/perf_0017_mysql_validation.stdout.log",
+      "stderr_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/perf_0017_mysql_validation.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "perf_0019_pg_validation",
+      "status": "executed",
+      "command": "bash cases/PERF/PERF_0019/validation/run_pg_validation.sh",
+      "exit_code": 0,
+      "stdout_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/perf_0019_pg_validation.stdout.log",
+      "stderr_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/perf_0019_pg_validation.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "perf_0019_mysql_validation",
+      "status": "executed",
+      "command": "bash cases/PERF/PERF_0019/validation/run_mysql_validation.sh",
+      "exit_code": 0,
+      "stdout_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/perf_0019_mysql_validation.stdout.log",
+      "stderr_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/perf_0019_mysql_validation.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "perf_0024_pg_validation",
+      "status": "executed",
+      "command": "bash cases/PERF/PERF_0024/validation/run_pg_validation.sh",
+      "exit_code": 0,
+      "stdout_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/perf_0024_pg_validation.stdout.log",
+      "stderr_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/perf_0024_pg_validation.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "perf_0024_mysql_validation",
+      "status": "executed",
+      "command": "bash cases/PERF/PERF_0024/validation/run_mysql_validation.sh",
+      "exit_code": 0,
+      "stdout_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/perf_0024_mysql_validation.stdout.log",
+      "stderr_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/perf_0024_mysql_validation.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "perf_0033_pg_validation",
+      "status": "executed",
+      "command": "bash cases/PERF/PERF_0033/validation/run_pg_validation.sh",
+      "exit_code": 0,
+      "stdout_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/perf_0033_pg_validation.stdout.log",
+      "stderr_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/perf_0033_pg_validation.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "perf_0033_mysql_validation",
+      "status": "executed",
+      "command": "bash cases/PERF/PERF_0033/validation/run_mysql_validation.sh",
+      "exit_code": 0,
+      "stdout_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/perf_0033_mysql_validation.stdout.log",
+      "stderr_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/perf_0033_mysql_validation.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "perf_0034_pg_validation",
+      "status": "executed",
+      "command": "bash cases/PERF/PERF_0034/validation/run_pg_validation.sh",
+      "exit_code": 0,
+      "stdout_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/perf_0034_pg_validation.stdout.log",
+      "stderr_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/perf_0034_pg_validation.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "perf_0034_mysql_validation",
+      "status": "executed",
+      "command": "bash cases/PERF/PERF_0034/validation/run_mysql_validation.sh",
+      "exit_code": 0,
+      "stdout_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/perf_0034_mysql_validation.stdout.log",
+      "stderr_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/perf_0034_mysql_validation.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "perf_0035_pg_validation",
+      "status": "executed",
+      "command": "bash cases/PERF/PERF_0035/validation/run_pg_validation.sh",
+      "exit_code": 0,
+      "stdout_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/perf_0035_pg_validation.stdout.log",
+      "stderr_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/perf_0035_pg_validation.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "perf_0035_mysql_validation",
+      "status": "executed",
+      "command": "bash cases/PERF/PERF_0035/validation/run_mysql_validation.sh",
+      "exit_code": 0,
+      "stdout_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/perf_0035_mysql_validation.stdout.log",
+      "stderr_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/perf_0035_mysql_validation.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "perf_0052_pg_validation",
+      "status": "executed",
+      "command": "bash cases/PERF/PERF_0052/validation/run_pg_validation.sh",
+      "exit_code": 0,
+      "stdout_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/perf_0052_pg_validation.stdout.log",
+      "stderr_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/perf_0052_pg_validation.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "perf_0052_mysql_validation",
+      "status": "executed",
+      "command": "bash cases/PERF/PERF_0052/validation/run_mysql_validation.sh",
+      "exit_code": 0,
+      "stdout_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/perf_0052_mysql_validation.stdout.log",
+      "stderr_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/perf_0052_mysql_validation.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "perf_0054_pg_validation",
+      "status": "executed",
+      "command": "bash cases/PERF/PERF_0054/validation/run_pg_validation.sh",
+      "exit_code": 0,
+      "stdout_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/perf_0054_pg_validation.stdout.log",
+      "stderr_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/perf_0054_pg_validation.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "perf_0054_mysql_validation",
+      "status": "executed",
+      "command": "bash cases/PERF/PERF_0054/validation/run_mysql_validation.sh",
+      "exit_code": 0,
+      "stdout_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/perf_0054_mysql_validation.stdout.log",
+      "stderr_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/perf_0054_mysql_validation.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "perf_0056_pg_validation",
+      "status": "executed",
+      "command": "bash cases/PERF/PERF_0056/validation/run_pg_validation.sh",
+      "exit_code": 0,
+      "stdout_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/perf_0056_pg_validation.stdout.log",
+      "stderr_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/perf_0056_pg_validation.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "perf_0056_mysql_validation",
+      "status": "executed",
+      "command": "bash cases/PERF/PERF_0056/validation/run_mysql_validation.sh",
+      "exit_code": 0,
+      "stdout_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/perf_0056_mysql_validation.stdout.log",
+      "stderr_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/perf_0056_mysql_validation.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "perf_0062_pg_validation",
+      "status": "executed",
+      "command": "bash cases/PERF/PERF_0062/validation/run_pg_validation.sh",
+      "exit_code": 0,
+      "stdout_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/perf_0062_pg_validation.stdout.log",
+      "stderr_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/perf_0062_pg_validation.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "perf_0062_mysql_validation",
+      "status": "executed",
+      "command": "bash cases/PERF/PERF_0062/validation/run_mysql_validation.sh",
+      "exit_code": 0,
+      "stdout_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/perf_0062_mysql_validation.stdout.log",
+      "stderr_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/perf_0062_mysql_validation.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "perf_0077_pg_validation",
+      "status": "executed",
+      "command": "bash cases/PERF/PERF_0077/validation/run_pg_validation.sh",
+      "exit_code": 0,
+      "stdout_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/perf_0077_pg_validation.stdout.log",
+      "stderr_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/perf_0077_pg_validation.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "perf_0077_mysql_validation",
+      "status": "executed",
+      "command": "bash cases/PERF/PERF_0077/validation/run_mysql_validation.sh",
+      "exit_code": 0,
+      "stdout_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/perf_0077_mysql_validation.stdout.log",
+      "stderr_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/perf_0077_mysql_validation.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "perf_0082_pg_validation",
+      "status": "executed",
+      "command": "bash cases/PERF/PERF_0082/validation/run_pg_validation.sh",
+      "exit_code": 0,
+      "stdout_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/perf_0082_pg_validation.stdout.log",
+      "stderr_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/perf_0082_pg_validation.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "perf_0082_mysql_validation",
+      "status": "executed",
+      "command": "bash cases/PERF/PERF_0082/validation/run_mysql_validation.sh",
+      "exit_code": 0,
+      "stdout_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/perf_0082_mysql_validation.stdout.log",
+      "stderr_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/perf_0082_mysql_validation.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "cons_0005_pg_validation",
+      "status": "executed",
+      "command": "bash cases/CONS/CONS_0005/validation/run_pg_validation.sh",
+      "exit_code": 0,
+      "stdout_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/cons_0005_pg_validation.stdout.log",
+      "stderr_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/cons_0005_pg_validation.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "cons_0005_mysql_validation",
+      "status": "executed",
+      "command": "bash cases/CONS/CONS_0005/validation/run_mysql_validation.sh",
+      "exit_code": 0,
+      "stdout_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/cons_0005_mysql_validation.stdout.log",
+      "stderr_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/cons_0005_mysql_validation.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "cons_0007_pg_validation",
+      "status": "executed",
+      "command": "bash cases/CONS/CONS_0007/validation/run_pg_validation.sh",
+      "exit_code": 0,
+      "stdout_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/cons_0007_pg_validation.stdout.log",
+      "stderr_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/cons_0007_pg_validation.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "cons_0007_mysql_validation",
+      "status": "executed",
+      "command": "bash cases/CONS/CONS_0007/validation/run_mysql_validation.sh",
+      "exit_code": 0,
+      "stdout_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/cons_0007_mysql_validation.stdout.log",
+      "stderr_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/cons_0007_mysql_validation.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "cons_0009_pg_validation",
+      "status": "executed",
+      "command": "bash cases/CONS/CONS_0009/validation/run_pg_validation.sh",
+      "exit_code": 0,
+      "stdout_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/cons_0009_pg_validation.stdout.log",
+      "stderr_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/cons_0009_pg_validation.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "cons_0009_mysql_validation",
+      "status": "executed",
+      "command": "bash cases/CONS/CONS_0009/validation/run_mysql_validation.sh",
+      "exit_code": 0,
+      "stdout_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/cons_0009_mysql_validation.stdout.log",
+      "stderr_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/cons_0009_mysql_validation.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "cons_0010_pg_validation",
+      "status": "executed",
+      "command": "bash cases/CONS/CONS_0010/validation/run_pg_validation.sh",
+      "exit_code": 0,
+      "stdout_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/cons_0010_pg_validation.stdout.log",
+      "stderr_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/cons_0010_pg_validation.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "cons_0010_mysql_validation",
+      "status": "executed",
+      "command": "bash cases/CONS/CONS_0010/validation/run_mysql_validation.sh",
+      "exit_code": 0,
+      "stdout_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/cons_0010_mysql_validation.stdout.log",
+      "stderr_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/cons_0010_mysql_validation.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "cons_0011_pg_validation",
+      "status": "executed",
+      "command": "bash cases/CONS/CONS_0011/validation/run_pg_validation.sh",
+      "exit_code": 0,
+      "stdout_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/cons_0011_pg_validation.stdout.log",
+      "stderr_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/cons_0011_pg_validation.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "cons_0011_mysql_validation",
+      "status": "executed",
+      "command": "bash cases/CONS/CONS_0011/validation/run_mysql_validation.sh",
+      "exit_code": 0,
+      "stdout_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/cons_0011_mysql_validation.stdout.log",
+      "stderr_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/cons_0011_mysql_validation.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "cons_0012_pg_validation",
+      "status": "executed",
+      "command": "bash cases/CONS/CONS_0012/validation/run_pg_validation.sh",
+      "exit_code": 0,
+      "stdout_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/cons_0012_pg_validation.stdout.log",
+      "stderr_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/cons_0012_pg_validation.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "cons_0012_mysql_validation",
+      "status": "executed",
+      "command": "bash cases/CONS/CONS_0012/validation/run_mysql_validation.sh",
+      "exit_code": 0,
+      "stdout_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/cons_0012_mysql_validation.stdout.log",
+      "stderr_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/cons_0012_mysql_validation.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "cons_0024_pg_validation",
+      "status": "executed",
+      "command": "bash cases/CONS/CONS_0024/validation/run_pg_validation.sh",
+      "exit_code": 0,
+      "stdout_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/cons_0024_pg_validation.stdout.log",
+      "stderr_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/cons_0024_pg_validation.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "cons_0024_mysql_validation",
+      "status": "executed",
+      "command": "bash cases/CONS/CONS_0024/validation/run_mysql_validation.sh",
+      "exit_code": 0,
+      "stdout_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/cons_0024_mysql_validation.stdout.log",
+      "stderr_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/cons_0024_mysql_validation.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "cons_0036_pg_validation",
+      "status": "executed",
+      "command": "bash cases/CONS/CONS_0036/validation/run_pg_validation.sh",
+      "exit_code": 0,
+      "stdout_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/cons_0036_pg_validation.stdout.log",
+      "stderr_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/cons_0036_pg_validation.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "cons_0036_mysql_validation",
+      "status": "executed",
+      "command": "bash cases/CONS/CONS_0036/validation/run_mysql_validation.sh",
+      "exit_code": 0,
+      "stdout_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/cons_0036_mysql_validation.stdout.log",
+      "stderr_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/cons_0036_mysql_validation.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "cons_0037_pg_validation",
+      "status": "executed",
+      "command": "bash cases/CONS/CONS_0037/validation/run_pg_validation.sh",
+      "exit_code": 0,
+      "stdout_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/cons_0037_pg_validation.stdout.log",
+      "stderr_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/cons_0037_pg_validation.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "cons_0037_mysql_validation",
+      "status": "executed",
+      "command": "bash cases/CONS/CONS_0037/validation/run_mysql_validation.sh",
+      "exit_code": 0,
+      "stdout_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/cons_0037_mysql_validation.stdout.log",
+      "stderr_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/cons_0037_mysql_validation.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "port_0003_pg_validation",
+      "status": "executed",
+      "command": "bash cases/PORT/PORT_0003/validation/run_pg_validation.sh",
+      "exit_code": 0,
+      "stdout_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/port_0003_pg_validation.stdout.log",
+      "stderr_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/port_0003_pg_validation.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "port_0003_mysql_validation",
+      "status": "executed",
+      "command": "bash cases/PORT/PORT_0003/validation/run_mysql_validation.sh",
+      "exit_code": 0,
+      "stdout_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/port_0003_mysql_validation.stdout.log",
+      "stderr_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/port_0003_mysql_validation.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "port_0004_pg_validation",
+      "status": "executed",
+      "command": "bash cases/PORT/PORT_0004/validation/run_pg_validation.sh",
+      "exit_code": 0,
+      "stdout_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/port_0004_pg_validation.stdout.log",
+      "stderr_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/port_0004_pg_validation.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "port_0004_mysql_validation",
+      "status": "executed",
+      "command": "bash cases/PORT/PORT_0004/validation/run_mysql_validation.sh",
+      "exit_code": 0,
+      "stdout_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/port_0004_mysql_validation.stdout.log",
+      "stderr_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/port_0004_mysql_validation.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "port_0005_pg_validation",
+      "status": "executed",
+      "command": "bash cases/PORT/PORT_0005/validation/run_pg_validation.sh",
+      "exit_code": 0,
+      "stdout_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/port_0005_pg_validation.stdout.log",
+      "stderr_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/port_0005_pg_validation.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "port_0005_mysql_validation",
+      "status": "executed",
+      "command": "bash cases/PORT/PORT_0005/validation/run_mysql_validation.sh",
+      "exit_code": 0,
+      "stdout_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/port_0005_mysql_validation.stdout.log",
+      "stderr_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/port_0005_mysql_validation.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "port_0008_pg_validation",
+      "status": "executed",
+      "command": "bash cases/PORT/PORT_0008/validation/run_pg_validation.sh",
+      "exit_code": 0,
+      "stdout_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/port_0008_pg_validation.stdout.log",
+      "stderr_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/port_0008_pg_validation.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "port_0008_mysql_validation",
+      "status": "executed",
+      "command": "bash cases/PORT/PORT_0008/validation/run_mysql_validation.sh",
+      "exit_code": 0,
+      "stdout_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/port_0008_mysql_validation.stdout.log",
+      "stderr_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/port_0008_mysql_validation.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "port_0012_pg_validation",
+      "status": "executed",
+      "command": "bash cases/PORT/PORT_0012/validation/run_pg_validation.sh",
+      "exit_code": 0,
+      "stdout_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/port_0012_pg_validation.stdout.log",
+      "stderr_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/port_0012_pg_validation.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "port_0012_mysql_validation",
+      "status": "executed",
+      "command": "bash cases/PORT/PORT_0012/validation/run_mysql_validation.sh",
+      "exit_code": 0,
+      "stdout_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/port_0012_mysql_validation.stdout.log",
+      "stderr_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/port_0012_mysql_validation.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "port_0013_pg_validation",
+      "status": "executed",
+      "command": "bash cases/PORT/PORT_0013/validation/run_pg_validation.sh",
+      "exit_code": 0,
+      "stdout_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/port_0013_pg_validation.stdout.log",
+      "stderr_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/port_0013_pg_validation.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "port_0013_mysql_validation",
+      "status": "executed",
+      "command": "bash cases/PORT/PORT_0013/validation/run_mysql_validation.sh",
+      "exit_code": 0,
+      "stdout_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/port_0013_mysql_validation.stdout.log",
+      "stderr_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/port_0013_mysql_validation.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "port_0022_pg_validation",
+      "status": "executed",
+      "command": "bash cases/PORT/PORT_0022/validation/run_pg_validation.sh",
+      "exit_code": 0,
+      "stdout_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/port_0022_pg_validation.stdout.log",
+      "stderr_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/port_0022_pg_validation.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "port_0022_mysql_validation",
+      "status": "executed",
+      "command": "bash cases/PORT/PORT_0022/validation/run_mysql_validation.sh",
+      "exit_code": 0,
+      "stdout_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/port_0022_mysql_validation.stdout.log",
+      "stderr_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/port_0022_mysql_validation.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "port_0024_pg_validation",
+      "status": "executed",
+      "command": "bash cases/PORT/PORT_0024/validation/run_pg_validation.sh",
+      "exit_code": 0,
+      "stdout_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/port_0024_pg_validation.stdout.log",
+      "stderr_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/port_0024_pg_validation.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "port_0024_mysql_validation",
+      "status": "executed",
+      "command": "bash cases/PORT/PORT_0024/validation/run_mysql_validation.sh",
+      "exit_code": 0,
+      "stdout_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/port_0024_mysql_validation.stdout.log",
+      "stderr_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/port_0024_mysql_validation.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "port_0025_pg_validation",
+      "status": "executed",
+      "command": "bash cases/PORT/PORT_0025/validation/run_pg_validation.sh",
+      "exit_code": 0,
+      "stdout_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/port_0025_pg_validation.stdout.log",
+      "stderr_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/port_0025_pg_validation.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "port_0025_mysql_validation",
+      "status": "executed",
+      "command": "bash cases/PORT/PORT_0025/validation/run_mysql_validation.sh",
+      "exit_code": 0,
+      "stdout_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/port_0025_mysql_validation.stdout.log",
+      "stderr_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/port_0025_mysql_validation.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "longtail_0011_pg_validation",
+      "status": "executed",
+      "command": "bash cases/LONGTAIL/LONGTAIL_0011/validation/run_pg_validation.sh",
+      "exit_code": 0,
+      "stdout_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/longtail_0011_pg_validation.stdout.log",
+      "stderr_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/longtail_0011_pg_validation.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "longtail_0011_mysql_validation",
+      "status": "executed",
+      "command": "bash cases/LONGTAIL/LONGTAIL_0011/validation/run_mysql_validation.sh",
+      "exit_code": 0,
+      "stdout_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/longtail_0011_mysql_validation.stdout.log",
+      "stderr_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/longtail_0011_mysql_validation.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "longtail_0012_pg_validation",
+      "status": "executed",
+      "command": "bash cases/LONGTAIL/LONGTAIL_0012/validation/run_pg_validation.sh",
+      "exit_code": 0,
+      "stdout_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/longtail_0012_pg_validation.stdout.log",
+      "stderr_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/longtail_0012_pg_validation.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "longtail_0012_mysql_validation",
+      "status": "executed",
+      "command": "bash cases/LONGTAIL/LONGTAIL_0012/validation/run_mysql_validation.sh",
+      "exit_code": 0,
+      "stdout_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/longtail_0012_mysql_validation.stdout.log",
+      "stderr_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/longtail_0012_mysql_validation.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "longtail_0013_pg_validation",
+      "status": "executed",
+      "command": "bash cases/LONGTAIL/LONGTAIL_0013/validation/run_pg_validation.sh",
+      "exit_code": 0,
+      "stdout_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/longtail_0013_pg_validation.stdout.log",
+      "stderr_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/longtail_0013_pg_validation.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "longtail_0013_mysql_validation",
+      "status": "executed",
+      "command": "bash cases/LONGTAIL/LONGTAIL_0013/validation/run_mysql_validation.sh",
+      "exit_code": 0,
+      "stdout_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/longtail_0013_mysql_validation.stdout.log",
+      "stderr_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/longtail_0013_mysql_validation.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "longtail_0022_pg_validation",
+      "status": "executed",
+      "command": "bash cases/LONGTAIL/LONGTAIL_0022/validation/run_pg_validation.sh",
+      "exit_code": 0,
+      "stdout_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/longtail_0022_pg_validation.stdout.log",
+      "stderr_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/longtail_0022_pg_validation.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "longtail_0022_mysql_validation",
+      "status": "executed",
+      "command": "bash cases/LONGTAIL/LONGTAIL_0022/validation/run_mysql_validation.sh",
+      "exit_code": 0,
+      "stdout_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/longtail_0022_mysql_validation.stdout.log",
+      "stderr_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/longtail_0022_mysql_validation.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "longtail_0023_pg_validation",
+      "status": "executed",
+      "command": "bash cases/LONGTAIL/LONGTAIL_0023/validation/run_pg_validation.sh",
+      "exit_code": 0,
+      "stdout_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/longtail_0023_pg_validation.stdout.log",
+      "stderr_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/longtail_0023_pg_validation.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "longtail_0023_mysql_validation",
+      "status": "executed",
+      "command": "bash cases/LONGTAIL/LONGTAIL_0023/validation/run_mysql_validation.sh",
+      "exit_code": 0,
+      "stdout_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/longtail_0023_mysql_validation.stdout.log",
+      "stderr_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/longtail_0023_mysql_validation.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "longtail_0024_pg_validation",
+      "status": "executed",
+      "command": "bash cases/LONGTAIL/LONGTAIL_0024/validation/run_pg_validation.sh",
+      "exit_code": 0,
+      "stdout_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/longtail_0024_pg_validation.stdout.log",
+      "stderr_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/longtail_0024_pg_validation.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "longtail_0024_mysql_validation",
+      "status": "executed",
+      "command": "bash cases/LONGTAIL/LONGTAIL_0024/validation/run_mysql_validation.sh",
+      "exit_code": 0,
+      "stdout_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/longtail_0024_mysql_validation.stdout.log",
+      "stderr_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/logs/longtail_0024_mysql_validation.stderr.log",
+      "notes": ""
+    }
+  ]
+}

@@ -1,0 +1,59 @@
+{
+  "denominator_id": "common_core_v0_40_same_engine_120",
+  "case_denominator_source": "reports/curation/common_core_v0_final_denominator.csv",
+  "case_count": 40,
+  "engines": [
+    "pg",
+    "mysql",
+    "spark"
+  ],
+  "planned_rows": 120,
+  "method_id": "r_bot",
+  "route_id": "r_bot_same_engine_rewrite",
+  "run_scope": "r_bot_common_core_v0_40_same_engine_formal_protocol_only",
+  "benchmark_ready": false,
+  "coverage_aware_only": true,
+  "historical_prior_method_pg10_reuse_allowed": false,
+  "input_matrix_path": "reports/evaluation/common_core_v0/r_bot_formal_protocol/r_bot_common_core_v0_40_same_engine_candidate_matrix.csv",
+  "parameter_freeze_path": "reports/evaluation/common_core_v0/r_bot_formal_protocol/r_bot_parameter_freeze_v1.json",
+  "substrate_freeze_gate_path": "reports/evaluation/common_core_v0/r_bot_formal_protocol/r_bot_substrate_freeze_gate_v1.md",
+  "artifact_contract_path": "reports/evaluation/common_core_v0/r_bot_formal_protocol/r_bot_artifact_contract_v1.md",
+  "planned_run_root": "reports/evaluation/common_core_v0/runs/r_bot_common_core_v0_40_same_engine_generation_01/",
+  "planned_outputs": {
+    "generated_sql_root": "reports/evaluation/common_core_v0/runs/r_bot_common_core_v0_40_same_engine_generation_01/generated/",
+    "traces_root": "reports/evaluation/common_core_v0/runs/r_bot_common_core_v0_40_same_engine_generation_01/traces/",
+    "prompts_root": "reports/evaluation/common_core_v0/runs/r_bot_common_core_v0_40_same_engine_generation_01/prompts/",
+    "raw_responses_root": "reports/evaluation/common_core_v0/runs/r_bot_common_core_v0_40_same_engine_generation_01/raw_responses/",
+    "metadata_root": "reports/evaluation/common_core_v0/runs/r_bot_common_core_v0_40_same_engine_generation_01/metadata/",
+    "run_event_long": "reports/evaluation/common_core_v0/runs/r_bot_common_core_v0_40_same_engine_generation_01/run_event_long.csv",
+    "generation_summary": "reports/evaluation/common_core_v0/runs/r_bot_common_core_v0_40_same_engine_generation_01/generation_summary.csv",
+    "run_results": "reports/evaluation/common_core_v0/runs/r_bot_common_core_v0_40_same_engine_generation_01/run_results.json"
+  },
+  "counts_by_pool": {
+    "performance": 48,
+    "consistency": 27,
+    "portability": 27,
+    "longtail": 18
+  },
+  "counts_by_engine": {
+    "pg": 40,
+    "mysql": 40,
+    "spark": 40
+  },
+  "blocking_gates": [
+    "upstream LLM4Rewrite identity must be retained and attested in the formal run",
+    "retrieval corpus must be retained or deterministically rebuilt",
+    "Chroma index must be retained or deterministically rebuilt",
+    "embedding and rule-vector dimensions must be frozen without exploratory patching",
+    "demo selection policy must be frozen with exact retrieval settings",
+    "contamination guard must be attested in run artifacts",
+    "artifact contract must be satisfied row-by-row and package-wide",
+    "current_benchmark_gate_ready must become true before current benchmark evidence is allowed"
+  ],
+  "notes": [
+    "PG1 exploratory recovery and execution proved bounded feasibility only.",
+    "Formal R-Bot results require the full 120-row same-engine denominator.",
+    "Unsupported, blocked, and failed rows must remain explicit in denominator-aware reporting.",
+    "No timing, speedup, or leaderboard claim is authorized by this planning package."
+  ]
+}

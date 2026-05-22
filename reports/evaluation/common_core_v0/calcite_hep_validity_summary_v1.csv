@@ -1,0 +1,10 @@
+section,group_key,planned_rows,generation_success_rows,generation_failed_rows,ready_to_execute_rows,executed_rows,execution_failed_rows,match_exact_rows,mismatch_rows,generation_success_rate_planned,executable_rate_planned,executable_rate_ready,result_consistency_rate_planned,result_consistency_rate_executed,result_consistency_rate_ready,generation_failed_rate_planned,execution_failed_rate_planned,execution_failed_rate_ready,mismatch_rate_executed,mismatch_rate_ready
+overall,all,40,29,11,29,23,6,21,2,0.725,0.575,0.7931034482758621,0.525,0.9130434782608695,0.7241379310344828,0.275,0.15,0.20689655172413793,0.08695652173913043,0.06896551724137931
+pool,performance,16,16,0,16,16,0,14,2,1.0,1.0,1.0,0.875,0.875,0.875,0.0,0.0,0.0,0.125,0.125
+pool,consistency,9,9,0,9,7,2,7,0,1.0,0.7777777777777778,0.7777777777777778,0.7777777777777778,1.0,0.7777777777777778,0.0,0.2222222222222222,0.2222222222222222,0.0,0.0
+pool,portability,9,1,8,1,0,1,0,0,0.1111111111111111,0.0,0.0,0.0,,0.0,0.8888888888888888,0.1111111111111111,1.0,,0.0
+pool,longtail,6,3,3,3,0,3,0,0,0.5,0.0,0.0,0.0,,0.0,0.5,0.5,1.0,,0.0
+outcome_class,match_exact,40,,,,,,21,,,,,,,,,,,,
+outcome_class,mismatch,40,,,,,,2,,,,,,,,,,,,
+outcome_class,execution_failed,40,,,,,,6,,,,,,,,,,,,
+outcome_class,not_executed_generation_failed,40,,,,,,11,,,,,,,,,,,,

@@ -5,6 +5,20 @@ source_workload: core_sql_tests
 source_query_identity: sub-query.iq UNION ALL scalar predicate
 source_path: "datasets/raw/calcite/calcite/core/src/test/resources/sql/sub-query.iq"
 draft_origin: CONS_CALCITE_DRAFT_0014
+provenance:
+  style: manifest_source_fields
+  source_family: Calcite
+  source_workload: core_sql_tests
+  source_query_identity: sub-query.iq UNION ALL scalar predicate
+  source_path: datasets/raw/calcite/calcite/core/src/test/resources/sql/sub-query.iq
+  draft_origin: CONS_CALCITE_DRAFT_0014
+  source_fields:
+    source_files:
+      source: source.sql
+      positive_rewrite: rewrite_pos_01.sql
+      negative_rewrite: rewrite_neg_01.sql
+  provenance_files: []
+  release_note: Derived from existing manifest source fields during release-facing provenance normalization; no case status or evidence changed.
 consistency_focus:
   - set_semantics
 expected_engines:

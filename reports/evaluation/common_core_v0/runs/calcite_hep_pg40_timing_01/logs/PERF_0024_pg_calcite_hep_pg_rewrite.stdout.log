@@ -1,0 +1,42 @@
+   s_name    |   s_address    
+-------------+----------------
+ Supplier#10 | Brazil address
+(1 row)
+
+   s_name    |   s_address    
+-------------+----------------
+ Supplier#10 | Brazil address
+(1 row)
+
+   s_name    |   s_address    
+-------------+----------------
+ Supplier#10 | Brazil address
+(1 row)
+
+   s_name    |   s_address    
+-------------+----------------
+ Supplier#10 | Brazil address
+(1 row)
+
+   s_name    |   s_address    
+-------------+----------------
+ Supplier#10 | Brazil address
+(1 row)
+
+   s_name    |   s_address    
+-------------+----------------
+ Supplier#10 | Brazil address
+(1 row)
+
+   s_name    |   s_address    
+-------------+----------------
+ Supplier#10 | Brazil address
+(1 row)
+
+   s_name    |   s_address    
+-------------+----------------
+ Supplier#10 | Brazil address
+(1 row)
+
+case_id=PERF_0024 pool=performance engine=pg route_id=calcite_hep_pg_rewrite
+warmup_count=1 repeat_count=3

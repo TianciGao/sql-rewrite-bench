@@ -5,6 +5,20 @@ source_workload: calcite_subset
 source_query_identity: Calcite-397/223 COUNT(DISTINCT joined name) under removable LEFT JOIN
 source_path: datasets/raw/verieql/staged/VeriEQL/benchmarks/calcite/calcite2.jsonlines#index=223
 draft_origin: CONS_VERIEQL_DRAFT_0007
+provenance:
+  style: manifest_source_fields
+  source_family: VeriEQL
+  source_workload: calcite_subset
+  source_query_identity: Calcite-397/223 COUNT(DISTINCT joined name) under removable LEFT JOIN
+  source_path: datasets/raw/verieql/staged/VeriEQL/benchmarks/calcite/calcite2.jsonlines#index=223
+  draft_origin: CONS_VERIEQL_DRAFT_0007
+  source_fields:
+    source_files:
+      source: source.sql
+      positive_rewrite: rewrite_pos_01.sql
+      negative_rewrite: rewrite_neg_01.sql
+  provenance_files: []
+  release_note: Derived from existing manifest source fields during release-facing provenance normalization; no case status or evidence changed.
 consistency_focus:
 - duplicate_semantics
 - outer_join_semantics

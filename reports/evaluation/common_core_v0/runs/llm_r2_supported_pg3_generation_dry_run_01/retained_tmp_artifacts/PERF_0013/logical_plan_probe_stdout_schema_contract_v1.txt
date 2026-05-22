@@ -1,0 +1,74 @@
+# Raw Query Probe
+[32mAGGREGATE_EXPAND_DISTINCT_AGGREGATES was added successfully.[0m
+[32mAGGREGATE_EXPAND_DISTINCT_AGGREGATES_TO_JOIN was added successfully.[0m
+[32mAGGREGATE_JOIN_TRANSPOSE_EXTENDED was added successfully.[0m
+[32mAGGREGATE_PROJECT_MERGE was added successfully.[0m
+[32mAGGREGATE_ANY_PULL_UP_CONSTANTS was added successfully.[0m
+[32mAGGREGATE_UNION_AGGREGATE was added successfully.[0m
+[32mAGGREGATE_UNION_TRANSPOSE was added successfully.[0m
+[32mAGGREGATE_VALUES was added successfully.[0m
+[32mAGGREGATE_INSTANCE was added successfully.[0m
+[32mFILTER_AGGREGATE_TRANSPOSE was added successfully.[0m
+[32mFILTER_CORRELATE was added successfully.[0m
+[32mFILTER_INTO_JOIN was added successfully.[0m
+[32mJOIN_CONDITION_PUSH was added successfully.[0m
+[32mFILTER_MERGE was added successfully.[0m
+[32mFILTER_MULTI_JOIN_MERGE was added successfully.[0m
+[32mFILTER_PROJECT_TRANSPOSE was added successfully.[0m
+[32mFILTER_SET_OP_TRANSPOSE was added successfully.[0m
+[32mFILTER_TABLE_FUNCTION_TRANSPOSE was added successfully.[0m
+[32mFILTER_SCAN was added successfully.[0m
+[32mFILTER_REDUCE_EXPRESSIONS was added successfully.[0m
+[32mPROJECT_REDUCE_EXPRESSIONS was added successfully.[0m
+[32mFILTER_INSTANCE was added successfully.[0m
+[32mJOIN_EXTRACT_FILTER was added successfully.[0m
+[32mJOIN_PROJECT_BOTH_TRANSPOSE was added successfully.[0m
+[32mJOIN_PROJECT_LEFT_TRANSPOSE was added successfully.[0m
+[32mJOIN_PROJECT_RIGHT_TRANSPOSE was added successfully.[0m
+[32mJOIN_LEFT_UNION_TRANSPOSE was added successfully.[0m
+[32mJOIN_RIGHT_UNION_TRANSPOSE was added successfully.[0m
+[32mSEMI_JOIN_REMOVE was added successfully.[0m
+[32mJOIN_REDUCE_EXPRESSIONS was added successfully.[0m
+[32mJOIN_LEFT_INSTANCE was added successfully.[0m
+[32mJOIN_RIGHT_INSTANCE was added successfully.[0m
+[32mPROJECT_CALC_MERGE was added successfully.[0m
+[32mPROJECT_CORRELATE_TRANSPOSE was added successfully.[0m
+[32mPROJECT_MERGE was added successfully.[0m
+[32mPROJECT_MULTI_JOIN_MERGE was added successfully.[0m
+[32mPROJECT_REMOVE was added successfully.[0m
+[32mPROJECT_TO_CALC was added successfully.[0m
+[32mPROJECT_SUB_QUERY_TO_CORRELATE was added successfully.[0m
+[32mPROJECT_REDUCE_EXPRESSIONS was added successfully.[0m
+[32mPROJECT_INSTANCE was added successfully.[0m
+[32mCALC_MERGE was added successfully.[0m
+[32mCALC_REMOVE was added successfully.[0m
+[32mSORT_JOIN_TRANSPOSE was added successfully.[0m
+[32mSORT_PROJECT_TRANSPOSE was added successfully.[0m
+[32mSORT_UNION_TRANSPOSE was added successfully.[0m
+[32mSORT_REMOVE_CONSTANT_KEYS was added successfully.[0m
+[32mSORT_REMOVE was added successfully.[0m
+[32mSORT_INSTANCE was added successfully.[0m
+[32mSORT_FETCH_ZERO_INSTANCE was added successfully.[0m
+[32mUNION_MERGE was added successfully.[0m
+[32mUNION_REMOVE was added successfully.[0m
+[32mUNION_TO_DISTINCT was added successfully.[0m
+[32mUNION_PULL_UP_CONSTANTS was added successfully.[0m
+[32mUNION_INSTANCE was added successfully.[0m
+[32mINTERSECT_INSTANCE was added successfully.[0m
+[32mMINUS_INSTANCE was added successfully.[0m
+LogicalSort(sort0=[$1], dir0=[DESC])
+  LogicalAggregate(group=[{0}], revenue=[SUM($1)])
+    LogicalProject(n_name=[$12], $f1=[*($7, -(1, $8))])
+      LogicalFilter(condition=[AND(=($0, $3), =($5, $2), =($6, $9), =($1, $10), =($10, $11), =($13, $14), =(CAST($15):CHAR(11) NOT NULL, 'MIDDLE EAST'), >=($4, 1997-01-01), <($4, +(1997-01-01, 12:INTERVAL YEAR)))])
+        LogicalJoin(condition=[true], joinType=[inner])
+          LogicalJoin(condition=[true], joinType=[inner])
+            LogicalJoin(condition=[true], joinType=[inner])
+              LogicalJoin(condition=[true], joinType=[inner])
+                LogicalJoin(condition=[true], joinType=[inner])
+                  LogicalTableScan(table=[[customer]])
+                  LogicalTableScan(table=[[orders]])
+                LogicalTableScan(table=[[lineitem]])
+              LogicalTableScan(table=[[supplier]])
+            LogicalTableScan(table=[[nation]])
+          LogicalTableScan(table=[[region]])
+

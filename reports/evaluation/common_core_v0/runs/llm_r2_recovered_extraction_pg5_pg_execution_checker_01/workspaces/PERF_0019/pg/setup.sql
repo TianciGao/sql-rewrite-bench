@@ -1,0 +1,5 @@
+drop schema if exists llm_r2_recovered_pg5_perf_0019_01 cascade;
+create schema llm_r2_recovered_pg5_perf_0019_01;
+set search_path to llm_r2_recovered_pg5_perf_0019_01;
+\i reports/evaluation/common_core_v0/runs/llm_r2_recovered_extraction_pg5_pg_execution_checker_01/workspaces/PERF_0019/pg/ddl_pg.sql
+\i reports/evaluation/common_core_v0/runs/llm_r2_recovered_extraction_pg5_pg_execution_checker_01/workspaces/PERF_0019/pg/pg_witness_data.sql

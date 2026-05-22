@@ -1,0 +1,8 @@
+注意:  模式 "ccv0_direct_llm_perf_0013_pg" 不存在
+注意:  串联删除6个其它对象
+DETAIL:  递归删除 表 ccv0_direct_llm_perf_0013_pg.customer
+递归删除 表 ccv0_direct_llm_perf_0013_pg.orders
+递归删除 表 ccv0_direct_llm_perf_0013_pg.lineitem
+递归删除 表 ccv0_direct_llm_perf_0013_pg.supplier
+递归删除 表 ccv0_direct_llm_perf_0013_pg.nation
+递归删除 表 ccv0_direct_llm_perf_0013_pg.region

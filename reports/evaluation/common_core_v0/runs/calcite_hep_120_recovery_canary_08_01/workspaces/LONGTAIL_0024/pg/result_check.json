@@ -1,0 +1,7 @@
+{
+  "execution_status": "generated_execution_failed",
+  "exact_match": false,
+  "consistency_status": "not_applicable",
+  "failure_category": "execution_failed",
+  "blocker_reason": "Command '['psql', '-v', 'ON_ERROR_STOP=1', '-X', '-q', '-c', 'SET search_path TO ccv0_calcite_hep_recovery_longtail_0024;', '-c', 'COPY (SELECT \"Posts\".\"Id\" AS \"PostId\", \"Posts\".\"Title\", \"t0\".\"revision_count\", \"t0\".\"distinct_editors\", \"t0\".\"first_revision_at\", \"t0\".\"last_revision_at\", \"Posts\".\"Score\", \"Posts\".\"ViewCount\"\\nFROM (SELECT \"PostId\", COUNT(*) AS \"revision_count\", COUNT(DISTINCT \"UserId\") AS \"distinct_editors\", MIN(\"CreationDate\") AS \"first_revision_at\", MAX(\"CreationDate\") AS \"last_revision_at\"\\nFROM \"PostHistory\"\\nGROUP BY \"PostId\") AS \"t0\"\\nINNER JOIN \"Posts\" ON \"t0\".\"PostId\" = \"Posts\".\"Id\"\\nWHERE \"t0\".\"revision_count\" >= 2\\nORDER BY \"t0\".\"revision_count\" DESC, \"t0\".\"last_revision_at\" DESC, \"Posts\".\"Id\") TO STDOUT WITH (FORMAT CSV, DELIMITER E\\'\\\\t\\', NULL \\'NULL\\');']' returned non-zero exit status 1."
+}

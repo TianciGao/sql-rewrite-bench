@@ -1,0 +1,3 @@
+timing completed for sqlglot_transpile_same_dialect_noop__PERF_0082__spark
+source_runtime_ms=[68.5022200923413, 75.07977378554642, 83.20603985339403]
+rewrite_runtime_ms=[52.86438297480345, 80.71977482177317, 82.98899815417826]

@@ -1,0 +1,23 @@
+{
+  "run_id": "calcite_hep_120_recovery_perf0035_canary_03_01",
+  "row_key": "PERF_0035:pg",
+  "case_id": "PERF_0035",
+  "pool": "PERF",
+  "engine": "pg",
+  "method_id": "calcite_hep",
+  "route_id": "calcite_hep_same_engine_rewrite",
+  "denominator_id": "common_core_v0_40_same_engine_120",
+  "previous_fail_closed_exact_ledger": "90/120",
+  "attempted_recovery_family": "final_projection_helper_column_removal_plus_scale_preservation",
+  "source_sql_path": "cases/PERF/PERF_0035/source.sql",
+  "schema_path": "cases/PERF/PERF_0035/schema/ddl_pg.sql",
+  "witness_data_path": "cases/PERF/PERF_0035/validation/pg_witness_data.sql",
+  "retained_generated_sql_path": "reports/evaluation/common_core_v0/runs/calcite_hep_pg40_generation_01/generated/PERF_0035/pg/calcite_hep_pg_rewrite.sql",
+  "repaired_generated_sql_path": "reports/evaluation/common_core_v0/runs/calcite_hep_120_recovery_perf0035_canary_03_01/generated/PERF_0035/pg/calcite_hep_recovery_perf0035_rewrite.sql",
+  "claim_boundary": "calcite_hep_120_recovery_perf0035_canary_only_not_timing_speedup_or_leaderboard_evidence",
+  "execution_status": "executed",
+  "exact_match": true,
+  "consistency_status": "match_exact",
+  "recovered_exact": true,
+  "row_metadata_path": "reports/evaluation/common_core_v0/runs/calcite_hep_120_recovery_perf0035_canary_03_01/metadata/PERF_0035/pg/row_metadata.json"
+}

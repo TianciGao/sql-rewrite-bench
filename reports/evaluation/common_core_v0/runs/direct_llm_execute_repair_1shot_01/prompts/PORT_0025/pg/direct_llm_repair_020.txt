@@ -1,0 +1,32 @@
+You are repairing a SQL rewrite.
+
+Goal:
+Return one complete SQL statement that is semantically equivalent to the source SQL and executable on the target engine.
+
+Target engine:
+pg
+
+Schema:
+CREATE TABLE account (account_id INTEGER, account_date DATE);
+CREATE TABLE loan (account_id INTEGER, duration INTEGER, amount INTEGER);
+
+Source SQL:
+SELECT `t1`.`account_id` FROM `loan` AS `t1` INNER JOIN `account` AS `t2` ON `t1`.`account_id` = `t2`.`account_id` WHERE DATE_FORMAT( CAST( `t2`.`account_date` AS DATETIME ) , '%Y' ) = '1993' AND `t1`.`duration` > 12 ORDER BY `t1`.`amount` DESC LIMIT 1
+
+Previous candidate SQL:
+SELECT t1.account_id FROM loan AS t1 INNER JOIN account AS t2 ON t1.account_id = t2.account_id WHERE TO_CHAR(t2.account_date, 'YYYY') = '1993' AND t1.duration > 12 ORDER BY t1.amount DESC LIMIT 1
+
+Observed failure:
+{"outcome_class": "execution_failed", "failure_category": "llm_generated_sql_dialect_execution_failure", "triage_note": "dialect-incompatible syntax in PostgreSQL; portability stress row", "result_check": {"execution_status_observed": "execution_failed", "consistency_check_status": "not_checked_execution_failed", "error_type": "CalledProcessError", "error_message": "Command '['psql', '-v', 'ON_ERROR_STOP=1', '-X', '-q', '-c', 'SET search_path TO ccv0_direct_llm_port_0025_pg;', '-c', \"COPY (SELECT `t1`.`account_id` FROM `loan` AS `t1` INNER JOIN `account` AS `t2` ON `t1`.`account_id` = `t2`.`account_id` WHERE DATE_FORMAT( CAST( `t2`.`account_date` AS DATETIME ) , '%Y' ) = '1993' AND `t1`.`duration` > 12 ORDER BY `t1`.`amount` DESC LIMIT 1) TO STDOUT WITH (FORMAT CSV, DELIMITER E'\\\\t', NULL 'NULL');\"]' returned non-zero exit status 1.", "result_check_path": "reports/evaluation/common_core_v0/runs/direct_llm_same_engine_execution_01/workspaces/PORT_0025/pg/direct_llm_same_engine_rewrite/result_check.json"}, "execution_log_excerpt": "注意:  模式 \"ccv0_direct_llm_port_0025_pg\" 不存在\n错误:  语法错误 在 \".\" 或附近的\nLINE 1: COPY (SELECT `t1`.`account_id` FROM `loan` AS `t1` INNER JOI...\n                         ^\n注意:  串联删除2个其它对象\nDETAIL:  递归删除 表 ccv0_direct_llm_port_0025_pg.account\n递归删除 表 ccv0_direct_llm_port_0025_pg.loan\nTraceback (most recent call last):\n  File \"<stdin>\", line 151, in run_postgres_row\n  File \"/usr/lib/python3.12/subprocess.py\", line 571, in run\n    raise CalledProcessError(retcode, process.args,\nsubprocess.CalledProcessError: Command '['psql', '-v', 'ON_ERROR_STOP=1', '-X', '-q', '-c', 'SET search_path TO ccv0_direct_llm_port_0025_pg;', '-c', \"COPY (SELECT `t1`.`account_id` FROM `loan` AS `t1` INNER JOIN `account` AS `t2` ON `t1`.`account_id` = `t2`.`account_id` WHERE DATE_FORMAT( CAST( `t2`.`account_date` AS DATETIME ) , '%Y' ) = '1993' AND `t1`.`duration` > 12 ORDER BY `t1`.`amount` DESC LIMIT 1) TO STDOUT WITH (FORMAT CSV, DELIMITER E'\\\\t', NULL 'NULL');\"]' returned non-zero exit status 1."}
+
+Checker or execution context:
+{"result_check_artifact": "reports/evaluation/common_core_v0/runs/direct_llm_same_engine_execution_01/workspaces/PORT_0025/pg/direct_llm_same_engine_rewrite/result_check.json", "execution_error_artifact": "reports/evaluation/common_core_v0/runs/direct_llm_same_engine_execution_01/logs/port_0025__pg__direct_llm_same_engine_rewrite.stderr.log", "checker_feedback_artifact": "reports/evaluation/common_core_v0/runs/direct_llm_same_engine_execution_01/workspaces/PORT_0025/pg/direct_llm_same_engine_rewrite/result_check.json"}
+
+Rules:
+- Return exactly one complete SQL statement.
+- Do not include markdown.
+- Do not include explanation.
+- Do not include comments unless required by SQL syntax.
+- Preserve source semantics.
+- Use only tables and columns from the schema.
+- Use syntax supported by the target engine.

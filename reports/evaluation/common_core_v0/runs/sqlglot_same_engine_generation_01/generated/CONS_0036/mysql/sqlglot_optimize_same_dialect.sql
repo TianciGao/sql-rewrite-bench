@@ -1,0 +1,8 @@
+SELECT
+  `DEPT`.`NAME` AS `NAME`,
+  COUNT(*) AS `C`
+FROM `DEPT` AS `DEPT`
+GROUP BY
+  `DEPT`.`NAME`
+HAVING
+  `NAME` = 'Charlie'

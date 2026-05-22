@@ -1,0 +1,10 @@
+{
+  "execution_status_observed": "executed",
+  "result_check_path": "reports/evaluation/common_core_v0/runs/r_bot_pg1_execution_canary_01/workspaces/PERF_0006/pg/r_bot_pg_rewrite/result_check.json",
+  "source_output_path": "reports/evaluation/common_core_v0/runs/r_bot_pg1_execution_canary_01/workspaces/PERF_0006/pg/r_bot_pg_rewrite/source.tsv",
+  "generated_output_path": "reports/evaluation/common_core_v0/runs/r_bot_pg1_execution_canary_01/workspaces/PERF_0006/pg/r_bot_pg_rewrite/generated.tsv",
+  "claim_boundary": "exploratory_smoke_only_not_current_common_core_metric_evidence",
+  "current_benchmark_metric_evidence": false,
+  "exact_match": true,
+  "consistency_check_status": "match_exact"
+}

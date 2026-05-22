@@ -1,0 +1,7 @@
+{
+  "execution_status": "generated_execution_failed",
+  "exact_match": false,
+  "consistency_status": "not_applicable",
+  "failure_category": "execution_failed",
+  "blocker_reason": "Command '['mysql', '--host', '127.0.0.1', '--port', '3306', '--user', 'bench', '--password=benchpass', 'bench', '-e', 'source /home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/calcite_hep_120_recovery_round2_canary_09_01/workspaces/LONGTAIL_0013/mysql/ddl_mysql.sql;']' returned non-zero exit status 1."
+}

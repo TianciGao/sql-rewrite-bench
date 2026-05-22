@@ -1,0 +1,23 @@
+{
+  "packet_id": "pg_plan_attribution_113",
+  "planned_candidates": 113,
+  "loaded_candidates": 113,
+  "source_plan_success_count": 113,
+  "rewrite_plan_success_count": 113,
+  "both_plan_success_count": 113,
+  "feature_parse_success_count": 113,
+  "node_delta_success_count": 113,
+  "delta_class_distribution": {
+    "buffer_or_runtime_delta_without_operator_change": 100,
+    "join_strategy_change": 1,
+    "mixed_operator_change": 6,
+    "scan_strategy_change": 3,
+    "node_count_change": 2,
+    "aggregate_strategy_change": 1
+  },
+  "attribution_confidence_distribution": {
+    "low": 102,
+    "medium": 11
+  },
+  "failed_candidates": []
+}

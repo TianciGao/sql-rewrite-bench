@@ -1,0 +1,29 @@
+{
+  "case_id": "CONS_0011",
+  "pool": "consistency",
+  "engine": "pg",
+  "route_id": "calcite_hep_pg_rewrite",
+  "method_id": "calcite_hep",
+  "denominator_id": "common_core_v0_40_pg40",
+  "warmup_count": 1,
+  "repeat_count": 3,
+  "source_runtime_ms": [
+    472.27354696951807,
+    589.7773270262405,
+    466.9715240597725
+  ],
+  "generated_runtime_ms": [
+    370.02487503923476,
+    482.1596139809117,
+    365.2345639420673
+  ],
+  "median_source_ms": 472.27354696951807,
+  "median_generated_ms": 370.02487503923476,
+  "speedup_ratio": 1.2763291844080527,
+  "timing_status": "timing_success",
+  "timing_json_path": "reports/evaluation/common_core_v0/runs/calcite_hep_pg40_timing_01/timings/CONS_0011/pg/calcite_hep_pg_rewrite.json",
+  "stdout_log": "reports/evaluation/common_core_v0/runs/calcite_hep_pg40_timing_01/logs/CONS_0011_pg_calcite_hep_pg_rewrite.stdout.log",
+  "stderr_log": "reports/evaluation/common_core_v0/runs/calcite_hep_pg40_timing_01/logs/CONS_0011_pg_calcite_hep_pg_rewrite.stderr.log",
+  "notes": "",
+  "caveat": "manual_case_validation_materialized; common_core_v0 consistency candidate; PostgreSQL-only witness validation"
+}

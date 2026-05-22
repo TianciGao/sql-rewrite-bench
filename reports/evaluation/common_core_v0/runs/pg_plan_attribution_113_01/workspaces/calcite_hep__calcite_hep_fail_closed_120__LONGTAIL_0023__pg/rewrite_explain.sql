@@ -1,0 +1,15 @@
+set search_path to attr113_calcite_hep_calcite_hep_fail_closed_120_longtail_002;
+begin read only;
+set local statement_timeout = '60s';
+explain (analyze, buffers, format json)
+SELECT "posts"."id" AS "postid", "posts"."title", CASE WHEN "t0"."outbound_count" IS NOT NULL THEN CAST("t0"."outbound_count" AS BIGINT) ELSE 0 END AS "outbound_count", CASE WHEN "t2"."inbound_count" IS NOT NULL THEN CAST("t2"."inbound_count" AS BIGINT) ELSE 0 END AS "inbound_count", CASE WHEN "t0"."outbound_count" IS NOT NULL THEN CAST("t0"."outbound_count" AS BIGINT) ELSE 0 END + CASE WHEN "t2"."inbound_count" IS NOT NULL THEN CAST("t2"."inbound_count" AS BIGINT) ELSE 0 END AS "total_links"
+FROM "posts"
+LEFT JOIN (SELECT "postid", COUNT(*) AS "outbound_count"
+FROM "postlinks"
+GROUP BY "postid") AS "t0" ON "posts"."id" = "t0"."postid"
+LEFT JOIN (SELECT "relatedpostid" AS "postid", COUNT(*) AS "inbound_count"
+FROM "postlinks"
+GROUP BY "relatedpostid") AS "t2" ON "posts"."id" = "t2"."postid"
+WHERE CASE WHEN "t0"."outbound_count" IS NOT NULL THEN CAST("t0"."outbound_count" AS BIGINT) ELSE 0 END + CASE WHEN "t2"."inbound_count" IS NOT NULL THEN CAST("t2"."inbound_count" AS BIGINT) ELSE 0 END > 0
+ORDER BY 5 DESC, "posts"."id";
+rollback;

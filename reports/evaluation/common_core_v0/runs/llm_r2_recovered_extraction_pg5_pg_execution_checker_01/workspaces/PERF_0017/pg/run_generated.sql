@@ -1,0 +1,2 @@
+set search_path to llm_r2_recovered_pg5_perf_0017_01;
+\i reports/evaluation/common_core_v0/runs/llm_r2_recovered_extraction_pg5_pg_execution_checker_01/workspaces/PERF_0017/pg/generated_sql_schema_native_recovered_extraction_v1_semicolon_normalized.sql

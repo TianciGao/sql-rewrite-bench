@@ -1,0 +1,12 @@
+注意:  模式 "ccv0_direct_llm_port_0013_pg" 不存在
+错误:  语法错误 在 "." 或附近的
+LINE 1: COPY (SELECT CAST( SUM( `t2`.`gender` = 'F' ) AS DOUBLE ) * ...
+                                    ^
+注意:  串联删除2个其它对象
+DETAIL:  递归删除 表 ccv0_direct_llm_port_0013_pg.district
+递归删除 表 ccv0_direct_llm_port_0013_pg.client
+Traceback (most recent call last):
+  File "<stdin>", line 151, in run_postgres_row
+  File "/usr/lib/python3.12/subprocess.py", line 571, in run
+    raise CalledProcessError(retcode, process.args,
+subprocess.CalledProcessError: Command '['psql', '-v', 'ON_ERROR_STOP=1', '-X', '-q', '-c', 'SET search_path TO ccv0_direct_llm_port_0013_pg;', '-c', "COPY (SELECT CAST( SUM( `t2`.`gender` = 'F' ) AS DOUBLE ) * 100 / COUNT( `t2`.`client_id` ) FROM `district` AS `t1` INNER JOIN `client` AS `t2` ON `t1`.`district_id` = `t2`.`district_id` WHERE `t1`.`a11` > 10000) TO STDOUT WITH (FORMAT CSV, DELIMITER E'\\t', NULL 'NULL');"]' returned non-zero exit status 1.
