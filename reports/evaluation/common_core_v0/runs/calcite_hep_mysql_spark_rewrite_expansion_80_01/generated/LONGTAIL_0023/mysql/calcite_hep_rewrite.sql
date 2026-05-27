@@ -1,0 +1,10 @@
+SELECT `Posts`.`Id` AS `PostId`, `Posts`.`Title`, CASE WHEN `t0`.`outbound_count` IS NOT NULL THEN CAST(`t0`.`outbound_count` AS SIGNED) ELSE 0 END AS `outbound_count`, CASE WHEN `t2`.`inbound_count` IS NOT NULL THEN CAST(`t2`.`inbound_count` AS SIGNED) ELSE 0 END AS `inbound_count`, CASE WHEN `t0`.`outbound_count` IS NOT NULL THEN CAST(`t0`.`outbound_count` AS SIGNED) ELSE 0 END + CASE WHEN `t2`.`inbound_count` IS NOT NULL THEN CAST(`t2`.`inbound_count` AS SIGNED) ELSE 0 END AS `total_links`
+FROM `Posts`
+LEFT JOIN (SELECT `PostId`, COUNT(*) AS `outbound_count`
+FROM `PostLinks`
+GROUP BY `PostId`) AS `t0` ON `Posts`.`Id` = `t0`.`PostId`
+LEFT JOIN (SELECT `RelatedPostId` AS `PostId`, COUNT(*) AS `inbound_count`
+FROM `PostLinks`
+GROUP BY `RelatedPostId`) AS `t2` ON `Posts`.`Id` = `t2`.`PostId`
+WHERE CASE WHEN `t0`.`outbound_count` IS NOT NULL THEN CAST(`t0`.`outbound_count` AS SIGNED) ELSE 0 END + CASE WHEN `t2`.`inbound_count` IS NOT NULL THEN CAST(`t2`.`inbound_count` AS SIGNED) ELSE 0 END > 0
+ORDER BY CASE WHEN `t0`.`outbound_count` IS NOT NULL THEN CAST(`t0`.`outbound_count` AS SIGNED) ELSE 0 END + CASE WHEN `t2`.`inbound_count` IS NOT NULL THEN CAST(`t2`.`inbound_count` AS SIGNED) ELSE 0 END IS NULL DESC, 5 DESC, `Posts`.`Id` IS NULL, `Posts`.`Id`

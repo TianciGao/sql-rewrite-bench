@@ -1,0 +1,7 @@
+{
+  "execution_status_observed": "execution_failed",
+  "consistency_check_status": "not_checked_execution_failed",
+  "error_type": "CalledProcessError",
+  "error_message": "Command '['psql', '-v', 'ON_ERROR_STOP=1', '-X', '-q', '-c', 'SET search_path TO ccv0_direct_llm_port_0022_pg;', '-c', \"COPY (SELECT CAST( COUNT( `t1`.`id` ) AS DOUBLE ) / 12 FROM `postlinks` AS `t1` INNER JOIN `posts` AS `t2` ON `t1`.`postid` = `t2`.`id` WHERE `t2`.`answercount` <= 2 AND DATE_FORMAT( CAST( `t1`.`creationdate` AS DATETIME ) , '%Y' ) = '2010') TO STDOUT WITH (FORMAT CSV, DELIMITER E'\\\\t', NULL 'NULL');\"]' returned non-zero exit status 1.",
+  "result_check_path": "reports/evaluation/common_core_v0/runs/direct_llm_same_engine_execution_01/workspaces/PORT_0022/pg/direct_llm_same_engine_rewrite/result_check.json"
+}

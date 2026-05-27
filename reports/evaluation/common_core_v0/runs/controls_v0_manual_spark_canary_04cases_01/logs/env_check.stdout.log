@@ -1,0 +1,12 @@
+{
+  "command": "env-check",
+  "cwd": "/home/tianci_gao/code/sql-rewrite-bench",
+  "ok": true,
+  "ran_at_utc": "2026-05-07T15:30:47+00:00",
+  "report_path": "reports/cli/env-check.json",
+  "visible": {
+    "MYSQL_HOST": true,
+    "PGHOST": true,
+    "SPARK_LOCAL_IP": true
+  }
+}

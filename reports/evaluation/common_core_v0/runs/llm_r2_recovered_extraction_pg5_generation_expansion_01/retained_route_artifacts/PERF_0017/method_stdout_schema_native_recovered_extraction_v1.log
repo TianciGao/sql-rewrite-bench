@@ -1,0 +1,49 @@
+select l_shipmode, sum(case when o_orderpriority = '1-URGENT' or o_orderpriority = '2-HIGH' then 1 else 0 end) as high_line_count, sum(case when o_orderpriority <> '1-URGENT' and o_orderpriority <> '2-HIGH' then 1 else 0 end) as low_line_count from orders, lineitem where o_orderkey = l_orderkey and l_shipmode in ('SHIP', 'MAIL') and l_commitdate < l_receiptdate and l_shipdate < l_commitdate and l_receiptdate >= date '1996-01-01' and l_receiptdate < date '1996-01-01' + interval '1' year group by l_shipmode order by l_shipmode SELECT lineitem.l_shipmode, SUM(CASE WHEN CAST(orders.o_orderpriority AS CHAR(8)) = '1-URGENT' OR CAST(orders.o_orderpriority AS CHAR(6)) = '2-HIGH' THEN 1 ELSE 0 END) AS high_line_count, SUM(CASE WHEN CAST(orders.o_orderpriority AS CHAR(8)) <> '1-URGENT' AND CAST(orders.o_orderpriority AS CHAR(6)) <> '2-HIGH' THEN 1 ELSE 0 END) AS low_line_count FROM orders, lineitem WHERE orders.o_orderkey = lineitem.l_orderkey AND ((lineitem.l_shipmode = 'SHIP' OR lineitem.l_shipmode = 'MAIL') AND lineitem.l_commitdate < lineitem.l_receiptdate) AND (lineitem.l_shipdate < lineitem.l_commitdate AND (lineitem.l_receiptdate >= DATE '1996-01-01' AND lineitem.l_receiptdate < (DATE '1996-01-01' + INTERVAL '1' YEAR))) GROUP BY lineitem.l_shipmode ORDER BY lineitem.l_shipmode
+preprocess time:  2.404975414276123
+query pool embeddings collected
+demo sql:  with wss as (select d_week_seq,  ss_store_sk,  sum(case when (d_day_name='Sunday') then ss_sales_price else null end) sun_sales,  sum(case when (d_day_name='Monday') then ss_sales_price else null end) mon_sales,  sum(case when (d_day_name='Tuesday') then ss_sales_price else null end) tue_sales,  sum(case when (d_day_name='Wednesday') then ss_sales_price else null end) wed_sales,  sum(case when (d_day_name='Thursday') then ss_sales_price else null end) thu_sales,  sum(case when (d_day_name='Friday') then ss_sales_price else null end) fri_sales,  sum(case when (d_day_name='Saturday') then ss_sales_price else null end) sat_sales from store_sales,date_dim where d_date_sk = ss_sold_date_sk and ss_sales_price / ss_list_price BETWEEN 100 * 0.01 AND 120 * 0.01 group by d_week_seq,ss_store_sk ) select s_store_name1,s_store_id1,d_week_seq1  ,sun_sales1/sun_sales2,mon_sales1/mon_sales2  ,tue_sales1/tue_sales2,wed_sales1/wed_sales2,thu_sales1/thu_sales2  ,fri_sales1/fri_sales2,sat_sales1/sat_sales2 from (select s_store_name s_store_name1,wss.d_week_seq d_week_seq1  ,s_store_id s_store_id1,sun_sales sun_sales1  ,mon_sales mon_sales1,tue_sales tue_sales1  ,wed_sales wed_sales1,thu_sales thu_sales1  ,fri_sales fri_sales1,sat_sales sat_sales1 from wss,store,date_dim d where d.d_week_seq = wss.d_week_seq and  ss_store_sk = s_store_sk and  d_month_seq between 1195 and 1195 + 11  and s_state in ('CA','IN','KS'   ,'KY','LA','MO','SC','SD')  ) y, (select s_store_name s_store_name2,wss.d_week_seq d_week_seq2  ,s_store_id s_store_id2,sun_sales sun_sales2  ,mon_sales mon_sales2,tue_sales tue_sales2  ,wed_sales wed_sales2,thu_sales thu_sales2  ,fri_sales fri_sales2,sat_sales sat_sales2 from wss,store,date_dim d where d.d_week_seq = wss.d_week_seq and  ss_store_sk = s_store_sk and  d_month_seq between 1195+ 12 and 1195 + 23  and s_state in ('CA','IN','KS'   ,'KY','LA','MO','SC','SD')) x where s_store_id1=s_store_id2 and d_week_seq1=d_week_seq2-52 order by s_store_name1,s_store_id1,d_week_seq1 limit 100 ;
+demo rules: Rules selected:  ['Empty List']
+False
+-- PERF_0017 source layer
+-- Source registry row: SRC_001 (TPC-H)
+-- Raw source file: datasets/raw/tpch/TPC-H V3.0.1/dbgen/queries/10.sql
+-- Seed: TPC-H Query 10, Returned Item Reporting Query
+-- Freeze method: manual freeze because local qgen executable was not used for this batch.
+-- Reference substitution file: datasets/raw/tpch/TPC-H V3.0.1/ref_data/1/subparam_10
+-- Substitutions: :1 = 1993-11-01 :n 20 = LIMIT 20.
+-- No execution, equivalence, rewrite, or validation claim is made by this file.
+
+-- TPC-H/TPC-R Returned Item Reporting Query (Q10)
+select
+    c_custkey,
+    c_name,
+    sum(l_extendedprice * (1 - l_discount)) as revenue,
+    c_acctbal,
+    n_name,
+    c_address,
+    c_phone,
+    c_comment
+from
+    customer,
+    orders,
+    lineitem,
+    nation
+where
+    c_custkey = o_custkey
+    and l_orderkey = o_orderkey
+    and o_orderdate >= date '1993-11-01'
+    and o_orderdate < date '1993-11-01' + interval '3' month
+    and l_returnflag = 'R'
+    and c_nationkey = n_nationkey
+group by
+    c_custkey,
+    c_name,
+    c_acctbal,
+    c_phone,
+    n_name,
+    c_address,
+    c_comment
+order by
+    revenue desc
+limit 20;
+[]

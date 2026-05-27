@@ -1,0 +1,17 @@
+{
+  "selected_id": "sel_speedup_01",
+  "case_id": "PERF_0019",
+  "engine": "pg",
+  "method_id": "direct_llm",
+  "route_id": "direct_llm_execute_repair_1shot",
+  "outcome_type": "speedup",
+  "runtime_effect": "speedup_1.311721840284349x",
+  "source_plan_pattern": "top=Sort; scan=Seq Scan; join=Hash Join; agg=Aggregate; sort_limit=Sort",
+  "rewrite_plan_pattern": "top=Sort; scan=Seq Scan; join=Hash Join; agg=Aggregate; sort_limit=Sort",
+  "main_plan_delta": "no_major_plan_delta",
+  "attribution_confidence": "low",
+  "evidence_artifacts": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_execute_repair_1shot_01/repair_timing_event_long.csv|/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/selected_plan_observability_01/workspaces/sel_speedup_01/source_plan.json|/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/selected_plan_observability_01/workspaces/sel_speedup_01/rewrite_plan.json",
+  "paper_safe_interpretation": "the selected source/rewrite plans look broadly similar at this lightweight feature level",
+  "forbidden_overclaim": "Do not overread lightweight similarity as proof of no physical-plan difference.",
+  "notes": "highest_retained_speedup_across_selected_exact_timed_rows_from_retained_event_packets"
+}

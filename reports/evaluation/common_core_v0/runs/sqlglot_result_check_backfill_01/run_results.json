@@ -1,0 +1,47 @@
+{
+  "command": "sqlglot_result_check_backfill_01",
+  "ran_at_utc": "2026-05-11T12:20:05.010821+00:00",
+  "status": "ok",
+  "rows_checked": 137,
+  "route_counts": {
+    "sqlglot_optimize_same_dialect": 65,
+    "sqlglot_transpile_same_dialect_noop": 72
+  },
+  "checker_status_counts": {
+    "exact": 135,
+    "checker_failed": 2
+  },
+  "summary_rows": [
+    {
+      "route_id": "sqlglot_transpile_same_dialect_noop",
+      "expected_exact_rows_from_table6": "72",
+      "rows_checked": "72",
+      "exact_rows_after_backfill": "72",
+      "mismatch_rows_after_backfill": "0",
+      "source_execution_failed_rows": "0",
+      "candidate_execution_failed_rows": "0",
+      "blocked_rows": "0",
+      "checker_failed_rows": "0",
+      "timing_denominator_ready_rows": "72",
+      "denominator_status": "timing_ready",
+      "recommended_next_step": "Route-separated timing run may proceed on exact rows after backfill.",
+      "notes": "No-op route backfill is based on the reconstructed 72-row exact frontier."
+    },
+    {
+      "route_id": "sqlglot_optimize_same_dialect",
+      "expected_exact_rows_from_table6": "65",
+      "rows_checked": "65",
+      "exact_rows_after_backfill": "63",
+      "mismatch_rows_after_backfill": "0",
+      "source_execution_failed_rows": "0",
+      "candidate_execution_failed_rows": "0",
+      "blocked_rows": "0",
+      "checker_failed_rows": "2",
+      "timing_denominator_ready_rows": "63",
+      "denominator_status": "timing_ready_with_revised_exact_denominator",
+      "recommended_next_step": "Route-separated timing run may proceed on exact rows after backfill.",
+      "notes": "Optimize route includes 56 reconstructed rows plus 9 PORT execution-only rows rechecked here."
+    }
+  ],
+  "claim_boundary": "sqlglot_result_check_backfill_only_no_timing_no_leaderboard"
+}

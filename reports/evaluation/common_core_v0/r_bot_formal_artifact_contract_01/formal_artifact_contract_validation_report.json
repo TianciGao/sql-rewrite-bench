@@ -1,0 +1,55 @@
+{
+  "checks": [
+    {
+      "name": "contract_constants",
+      "status": "pass"
+    },
+    {
+      "name": "row_statuses",
+      "status": "pass"
+    },
+    {
+      "name": "row_artifacts",
+      "status": "pass"
+    },
+    {
+      "name": "package_artifacts",
+      "status": "pass"
+    },
+    {
+      "name": "secret_hygiene_spec",
+      "status": "pass"
+    },
+    {
+      "name": "row_count",
+      "status": "pass"
+    },
+    {
+      "counts_by_engine": {
+        "mysql": 40,
+        "pg": 40,
+        "spark": 40
+      },
+      "name": "matrix_alignment",
+      "status": "pass"
+    },
+    {
+      "name": "existing_output_scan",
+      "reason": "planned run root does not exist yet",
+      "status": "not_applicable"
+    }
+  ],
+  "current_benchmark_gate_ready": false,
+  "formal_generation_may_start_from_artifact_contract_perspective": true,
+  "message": "Formal run-path artifact contract is internally consistent and ready for human-run validation.",
+  "status": "artifact_contract_definition_valid",
+  "summary": {
+    "candidate_matrix_rows": 120,
+    "case_count": 40,
+    "contract_matrix_rows": 120,
+    "denominator_id": "common_core_v0_40_same_engine_120",
+    "engine_count": 3,
+    "formal_chroma_index_identifier_path": "reports/evaluation/common_core_v0/r_bot_formal_index_build_01/formal_chroma_index_identifier_v1.json",
+    "planned_rows": 120
+  }
+}

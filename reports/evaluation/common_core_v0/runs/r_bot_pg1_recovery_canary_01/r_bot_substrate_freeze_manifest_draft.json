@@ -1,0 +1,130 @@
+{
+  "manifest_type": "r_bot_pg1_substrate_freeze_manifest_draft",
+  "method_id": "r_bot",
+  "route_id": "r_bot_pg_rewrite",
+  "case_id": "PERF_0006",
+  "engine": "pg",
+  "denominator_id": "common_core_v0_40_pg40",
+  "canary_denominator_id": "common_core_v0_40_perf_pg1_r_bot_recovery_canary",
+  "status": "draft_not_frozen_for_current_evidence",
+  "claim_boundary": "substrate_inventory_only_not_current_rbot_result",
+  "observed_from": {
+    "repo_run_results": "reports/evaluation/common_core_v0/runs/r_bot_pg1_recovery_canary_01/run_results.json",
+    "repo_policy_docs": [
+      "reports/evaluation/common_core_v0/runs/r_bot_pg1_recovery_canary_01/recovery_dependency_plan.md",
+      "reports/evaluation/common_core_v0/runs/r_bot_pg1_recovery_canary_01/recovery_policy_freeze_plan.md"
+    ],
+    "scratch_support_docs": [
+      "docs/_scratch/RBOT_LLM4REWRITE_RAG_INDEX_PREFLIGHT_v1.md",
+      "docs/_scratch/RBOT_LLM4REWRITE_RAG_INDEX_BUILD_OPENAI_LIKE_DEP_v1.md",
+      "docs/_scratch/RBOT_LLM4REWRITE_DEPENDENCY_PROBE_BINARY_PG_V1.md",
+      "docs/_scratch/RBOT_LLM4REWRITE_SMOKE_READINESS_DECISION_v1.md"
+    ]
+  },
+  "upstream_clone": {
+    "path": "/tmp/rewritebench_prior_method_audit/LLM4Rewrite",
+    "remote_url": "https://github.com/curtis-sun/LLM4Rewrite",
+    "commit": "c9c90e5d7867888c3aaba86e4fc9e6d48f53b375",
+    "git_status_clean_observed": true,
+    "freeze_status": "identified_tmp_only"
+  },
+  "knowledge_base": {
+    "root": "/tmp/rewritebench_prior_method_audit/LLM4Rewrite/knowledge-base",
+    "rule_cluster_summaries_structured_jsonl": {
+      "path": "/tmp/rewritebench_prior_method_audit/LLM4Rewrite/knowledge-base/rule_cluster_summaries_structured.jsonl",
+      "sha256": "039823a6b5e87476dfc7a7be1cc9ac1bbeed31ec8972ceaa72364c1a56a03b5d"
+    },
+    "rule_cluster_funcs_dir": {
+      "path": "/tmp/rewritebench_prior_method_audit/LLM4Rewrite/knowledge-base/rule_cluster_funcs",
+      "file_count": 30
+    },
+    "freeze_status": "partially_hashed_tmp_only"
+  },
+  "retrieval_archive": {
+    "path": "/tmp/rewritebench_prior_method_audit/LLM4Rewrite/rag/stackoverflow-rewrite-embed.zip",
+    "sha256": "e7e68b08a4283467f899f05a3150c485e2bf615ccdde4f4ab76e0f08734e546a",
+    "size_bytes": 71610403,
+    "freeze_status": "hashed_tmp_only"
+  },
+  "rag_index": {
+    "path": "/tmp/rewritebench_rbot_llm4rewrite_rag_build_openai_like/rag/chroma_db",
+    "size_human": "204M",
+    "anchor_files": [
+      {
+        "path": "/tmp/rewritebench_rbot_llm4rewrite_rag_build_openai_like/rag/chroma_db/chroma.sqlite3",
+        "sha256": "50d5c588aaae41b3f0d26b7f53b1546bde30632765efaa0a428d9118236392d5"
+      },
+      {
+        "path": "/tmp/rewritebench_rbot_llm4rewrite_rag_build_openai_like/rag/chroma_db/cbe4ef38-1d2b-4a34-87de-2028505d6c1c/index_metadata.pickle",
+        "sha256": "aa39371d0b6c369442bebb8df4b4fca759d6b5abd1a58a2f84b29dd1d61a84d4"
+      },
+      {
+        "path": "/tmp/rewritebench_rbot_llm4rewrite_rag_build_openai_like/rag/chroma_db/cbe4ef38-1d2b-4a34-87de-2028505d6c1c/header.bin",
+        "sha256": "56ac6fd6e2797ab645da45c1904068a760d15d62e298a4307443b2cad56cbffa"
+      }
+    ],
+    "build_provenance": {
+      "build_log_path": "/tmp/rewritebench_rbot_llm4rewrite_rag_build_openai_like/rag_gen_build.log",
+      "build_exit_code_path": "/tmp/rewritebench_rbot_llm4rewrite_rag_build_openai_like/rag_gen_exit_code.txt",
+      "build_exit_code_observed": 0,
+      "lineage_note": "openai_like dependency-recovery scratch build line"
+    },
+    "freeze_status": "partially_hashed_tmp_only"
+  },
+  "execution_environment": {
+    "smoke_venv_path": "/tmp/rewritebench_rbot_llm4rewrite_venv_smoke",
+    "smoke_requirements_path": "/tmp/rewritebench_rbot_llm4rewrite_requirements_smoke.txt",
+    "smoke_requirements_sha256": "7c944dc6c40904d97e580890d907eea28bddc1615371659441d740a902d9a9c0",
+    "pip_freeze_snapshot_observed": true,
+    "key_packages": {
+      "chromadb": "1.5.9",
+      "jpype1": "1.7.0",
+      "jsonlines": "4.0.0",
+      "llama-index": "0.14.21",
+      "llama-index-embeddings-openai": "0.6.0",
+      "llama-index-embeddings-huggingface": "0.7.0",
+      "llama-index-llms-openai": "0.7.7",
+      "llama-index-llms-openai-like": "0.7.2",
+      "llama-index-vector-stores-chroma": "0.5.5",
+      "openai": "2.34.0",
+      "psycopg2-binary": "2.9.12",
+      "sqlglot": "30.7.0"
+    },
+    "freeze_status": "documented_tmp_only"
+  },
+  "policy_sources": {
+    "rag_prompts_py": {
+      "path": "/tmp/rewritebench_prior_method_audit/LLM4Rewrite/rag/prompts.py",
+      "sha256": "5d512e0ce872f9818731ef36afa997f50d762af2b40cf54e3f2897f0ee83a8fd"
+    },
+    "my_rewriter_prompts_py": {
+      "path": "/tmp/rewritebench_prior_method_audit/LLM4Rewrite/my_rewriter/prompts.py",
+      "sha256": "8343c81948836589d4b21c76e82bdc7d2e448afb57ca416805a87b054a0e3999"
+    },
+    "config_py": {
+      "path": "/tmp/rewritebench_prior_method_audit/LLM4Rewrite/my_rewriter/config.py",
+      "sha256": "0440f9dfe5b7ee00f276f9edb3b8b776da5ada21829db2eafc5b7d1aa0bf98d8"
+    },
+    "demo_policy_status": "not_frozen",
+    "contamination_guard_status": "not_available"
+  },
+  "artifact_contract": {
+    "generated_sql_path": "reports/evaluation/common_core_v0/runs/r_bot_pg1_recovery_canary_01/generated/PERF_0006/pg/r_bot_pg_rewrite.sql",
+    "selected_rules_required": true,
+    "retrieval_trace_required": true,
+    "token_cost_log_required": true,
+    "provider_or_base_url_must_be_logged_without_secret": true,
+    "freeze_status": "declared_but_not_frozen"
+  },
+  "run_gate_summary": {
+    "openai_api_key_visible_in_observed_canary": false,
+    "upstream_repo_identity_pinned": true,
+    "retrieval_corpus_pinned": false,
+    "index_snapshot_pinned": false,
+    "demo_policy_frozen": false,
+    "contamination_guard_frozen": false,
+    "output_artifact_contract_frozen": false,
+    "allowed_to_produce_current_evidence": false
+  },
+  "non_current_evidence_warning": "Tmp-visible assets with checksums are still temporary unless retained or explicitly registered as benchmark substrate under a frozen policy contract."
+}

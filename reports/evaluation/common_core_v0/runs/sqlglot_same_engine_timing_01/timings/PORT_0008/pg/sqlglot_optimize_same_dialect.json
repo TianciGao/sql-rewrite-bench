@@ -1,0 +1,22 @@
+{
+  "case_id": "PORT_0008",
+  "engine": "pg",
+  "route_id": "sqlglot_optimize_same_dialect",
+  "warmup_count": 1,
+  "repeat_count": 3,
+  "source_runtime_ms": [
+    437.57906602695584,
+    299.50455692596734,
+    405.784924980253
+  ],
+  "generated_runtime_ms": [
+    294.71862607169896,
+    409.2753790318966,
+    436.5023410646245
+  ],
+  "median_source_ms": 405.784924980253,
+  "median_generated_ms": 409.2753790318966,
+  "speedup_ratio": 0.9914716246555071,
+  "status": "success",
+  "notes": ""
+}

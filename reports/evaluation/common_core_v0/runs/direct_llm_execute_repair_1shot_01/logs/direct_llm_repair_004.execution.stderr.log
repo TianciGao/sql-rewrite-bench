@@ -1,0 +1,13 @@
+Traceback (most recent call last):
+  File "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_execute_repair_1shot_01/run_direct_llm_execute_repair_1shot.py", line 548, in run_spark_row
+    spark.sql(stmt).collect()
+    ^^^^^^^^^^^^^^^
+  File "/home/tianci_gao/code/sql-rewrite-bench/.venv/lib/python3.12/site-packages/pyspark/sql/session.py", line 1816, in sql
+    return DataFrame(self._jsparkSession.sql(sqlQuery, litArgs), self)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/tianci_gao/code/sql-rewrite-bench/.venv/lib/python3.12/site-packages/py4j/java_gateway.py", line 1362, in __call__
+    return_value = get_return_value(
+                   ^^^^^^^^^^^^^^^^^
+  File "/home/tianci_gao/code/sql-rewrite-bench/.venv/lib/python3.12/site-packages/pyspark/errors/exceptions/captured.py", line 269, in deco
+    raise converted from None
+pyspark.errors.exceptions.captured.SparkRuntimeException: [LOCATION_ALREADY_EXISTS] Cannot name the managed table as `spark_catalog`.`default`.`lineitem`, as its associated location 'file:/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_execute_repair_1shot_01/workspaces/PERF_0007/spark/direct_llm_execute_repair_1shot/warehouse/lineitem' already exists. Please pick a different table name, or remove the existing location first. SQLSTATE: 42710

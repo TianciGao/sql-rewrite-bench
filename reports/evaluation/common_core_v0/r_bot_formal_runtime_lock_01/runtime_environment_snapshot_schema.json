@@ -1,0 +1,229 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "r_bot_formal_runtime_lock_01/runtime_environment_snapshot_schema.json",
+  "title": "R-Bot Formal Runtime Environment Snapshot v1",
+  "type": "object",
+  "required": [
+    "snapshot_id",
+    "created_at",
+    "python",
+    "platform",
+    "runtime_lock",
+    "provider_metadata",
+    "formal_index",
+    "package_checks",
+    "status",
+    "current_benchmark_gate_ready",
+    "formal_generation_may_start"
+  ],
+  "properties": {
+    "snapshot_id": {
+      "type": "string"
+    },
+    "created_at": {
+      "type": "string"
+    },
+    "python": {
+      "type": "object",
+      "required": [
+        "version",
+        "version_info",
+        "executable"
+      ],
+      "properties": {
+        "version": {
+          "type": "string"
+        },
+        "version_info": {
+          "type": "object",
+          "required": [
+            "major",
+            "minor",
+            "micro"
+          ],
+          "properties": {
+            "major": {
+              "type": "integer"
+            },
+            "minor": {
+              "type": "integer"
+            },
+            "micro": {
+              "type": "integer"
+            }
+          }
+        },
+        "executable": {
+          "type": "string"
+        }
+      }
+    },
+    "platform": {
+      "type": "object",
+      "required": [
+        "system",
+        "release",
+        "version",
+        "machine",
+        "platform"
+      ],
+      "properties": {
+        "system": {
+          "type": "string"
+        },
+        "release": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        },
+        "machine": {
+          "type": "string"
+        },
+        "platform": {
+          "type": "string"
+        }
+      }
+    },
+    "runtime_lock": {
+      "type": "object",
+      "required": [
+        "requirements_lock_path",
+        "requirements_lock_sha256"
+      ],
+      "properties": {
+        "requirements_lock_path": {
+          "type": "string"
+        },
+        "requirements_lock_sha256": {
+          "type": "string"
+        }
+      }
+    },
+    "provider_metadata": {
+      "type": "object",
+      "required": [
+        "provider_family",
+        "provider_name",
+        "base_url",
+        "secrets_present"
+      ],
+      "properties": {
+        "provider_family": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "provider_name": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "base_url": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "secrets_present": {
+          "type": "boolean"
+        }
+      }
+    },
+    "formal_index": {
+      "type": "object",
+      "required": [
+        "identifier_path",
+        "index_id",
+        "index_directory",
+        "index_directory_visible",
+        "collection_name",
+        "rule_vector_width",
+        "total_dimension"
+      ],
+      "properties": {
+        "identifier_path": {
+          "type": "string"
+        },
+        "index_id": {
+          "type": "string"
+        },
+        "index_directory": {
+          "type": "string"
+        },
+        "index_directory_visible": {
+          "type": "boolean"
+        },
+        "collection_name": {
+          "type": "string"
+        },
+        "rule_vector_width": {
+          "type": "integer"
+        },
+        "total_dimension": {
+          "type": "integer"
+        }
+      }
+    },
+    "package_checks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "distribution",
+          "expected_version",
+          "observed_version",
+          "import_target",
+          "import_ok",
+          "version_match"
+        ],
+        "properties": {
+          "distribution": {
+            "type": "string"
+          },
+          "expected_version": {
+            "type": "string"
+          },
+          "observed_version": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "import_target": {
+            "type": "string"
+          },
+          "import_ok": {
+            "type": "boolean"
+          },
+          "version_match": {
+            "type": "boolean"
+          },
+          "error": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      }
+    },
+    "status": {
+      "type": "string"
+    },
+    "errors": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "current_benchmark_gate_ready": {
+      "type": "boolean"
+    },
+    "formal_generation_may_start": {
+      "type": "boolean"
+    }
+  }
+}

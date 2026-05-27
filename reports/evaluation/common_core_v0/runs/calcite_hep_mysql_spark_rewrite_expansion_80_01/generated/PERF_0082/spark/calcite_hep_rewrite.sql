@@ -1,0 +1,7 @@
+SELECT MIN(`title`.`title`) `typical_european_movie`
+FROM `company_type`
+CROSS JOIN `info_type`
+CROSS JOIN `movie_companies`
+CROSS JOIN `movie_info`
+CROSS JOIN `title`
+WHERE `company_type`.`kind` = 'production companies' AND `movie_companies`.`note` LIKE '%(theatrical)%' AND (`movie_companies`.`note` LIKE '%(France)%' AND ((`movie_info`.`info` = 'Sweden' OR `movie_info`.`info` = 'Norway' OR (`movie_info`.`info` = 'Germany' OR `movie_info`.`info` = 'Denmark') OR (`movie_info`.`info` = 'Swedish' OR `movie_info`.`info` = 'Denish' OR (`movie_info`.`info` = 'Norwegian' OR `movie_info`.`info` = 'German'))) AND `title`.`production_year` > 2005)) AND (`title`.`id` = `movie_info`.`movie_id` AND `title`.`id` = `movie_companies`.`movie_id` AND (`movie_companies`.`movie_id` = `movie_info`.`movie_id` AND (`company_type`.`id` = `movie_companies`.`company_type_id` AND `info_type`.`id` = `movie_info`.`info_type_id`)))

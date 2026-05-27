@@ -1,0 +1,3 @@
+timing completed for sqlglot_transpile_same_dialect_noop__LONGTAIL_0023__pg
+source_runtime_ms=[4.28473181091249, 4.8546697944402695, 4.345288034528494]
+rewrite_runtime_ms=[4.6005710028111935, 4.412066889926791, 4.2876319494098425]

@@ -1,0 +1,7 @@
+{
+  "activated_rules_gpt": [
+    "FILTER_REDUCE_EXPRESSIONS",
+    "AGGREGATE_PROJECT_MERGE",
+    "AGGREGATE_ANY_PULL_UP_CONSTANTS"
+  ]
+}

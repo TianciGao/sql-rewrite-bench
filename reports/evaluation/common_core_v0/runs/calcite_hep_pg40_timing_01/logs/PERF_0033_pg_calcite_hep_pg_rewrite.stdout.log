@@ -1,0 +1,42 @@
+ brand_id |      brand       | ext_price 
+----------+------------------+-----------
+      360 | brand_manager_36 |    150.00
+(1 row)
+
+ brand_id |      brand       | ext_price 
+----------+------------------+-----------
+      360 | brand_manager_36 |    150.00
+(1 row)
+
+ brand_id |      brand       | ext_price 
+----------+------------------+-----------
+      360 | brand_manager_36 |    150.00
+(1 row)
+
+ brand_id |      brand       | ext_price 
+----------+------------------+-----------
+      360 | brand_manager_36 |    150.00
+(1 row)
+
+ brand_id |      brand       | ext_price 
+----------+------------------+-----------
+      360 | brand_manager_36 |    150.00
+(1 row)
+
+ brand_id |      brand       | ext_price 
+----------+------------------+-----------
+      360 | brand_manager_36 |    150.00
+(1 row)
+
+ brand_id |      brand       | ext_price 
+----------+------------------+-----------
+      360 | brand_manager_36 |    150.00
+(1 row)
+
+ brand_id |      brand       | ext_price 
+----------+------------------+-----------
+      360 | brand_manager_36 |    150.00
+(1 row)
+
+case_id=PERF_0033 pool=performance engine=pg route_id=calcite_hep_pg_rewrite
+warmup_count=1 repeat_count=3

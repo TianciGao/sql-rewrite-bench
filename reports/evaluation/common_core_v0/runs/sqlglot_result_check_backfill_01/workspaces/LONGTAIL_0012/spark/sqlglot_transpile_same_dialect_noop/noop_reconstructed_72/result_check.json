@@ -1,0 +1,8 @@
+{
+  "row_id": "sqlglot_transpile_same_dialect_noop__LONGTAIL_0012__spark",
+  "exact_match": true,
+  "sorted_match": true,
+  "checker_status": "exact",
+  "source_tsv_artifact": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_result_check_backfill_01/workspaces/LONGTAIL_0012/spark/sqlglot_transpile_same_dialect_noop/noop_reconstructed_72/source.tsv",
+  "generated_tsv_artifact": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_result_check_backfill_01/workspaces/LONGTAIL_0012/spark/sqlglot_transpile_same_dialect_noop/noop_reconstructed_72/generated.tsv"
+}

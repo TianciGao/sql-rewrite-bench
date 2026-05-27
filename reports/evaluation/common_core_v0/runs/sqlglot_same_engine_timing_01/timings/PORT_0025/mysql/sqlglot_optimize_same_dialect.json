@@ -1,0 +1,22 @@
+{
+  "case_id": "PORT_0025",
+  "engine": "mysql",
+  "route_id": "sqlglot_optimize_same_dialect",
+  "warmup_count": 1,
+  "repeat_count": 3,
+  "source_runtime_ms": [
+    134.3659699195996,
+    136.8368020048365,
+    132.51582602970302
+  ],
+  "generated_runtime_ms": [
+    131.62115204613656,
+    130.43045601807535,
+    133.96895199548453
+  ],
+  "median_source_ms": 134.3659699195996,
+  "median_generated_ms": 131.62115204613656,
+  "speedup_ratio": 1.0208539268255372,
+  "status": "success",
+  "notes": ""
+}

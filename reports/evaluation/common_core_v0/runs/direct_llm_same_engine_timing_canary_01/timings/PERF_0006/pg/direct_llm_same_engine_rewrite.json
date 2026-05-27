@@ -1,0 +1,22 @@
+{
+  "case_id": "PERF_0006",
+  "engine": "pg",
+  "route_id": "direct_llm_same_engine_rewrite",
+  "warmup_count": 1,
+  "repeat_count": 3,
+  "source_runtime_ms": [
+    293.70667203329504,
+    292.71999502088875,
+    367.3482539597899
+  ],
+  "generated_runtime_ms": [
+    393.1349039776251,
+    421.9828799832612,
+    403.64608098752797
+  ],
+  "median_source_ms": 293.70667203329504,
+  "median_generated_ms": 403.64608098752797,
+  "speedup_ratio": 0.7276341475054978,
+  "status": "success",
+  "notes": ""
+}

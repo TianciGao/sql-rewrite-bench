@@ -1,0 +1,23 @@
+{
+  "candidate_begins_with_select_or_with": true,
+  "candidate_starts_with_select_or_with": true,
+  "candidate_written": true,
+  "case_id": "PERF_0008",
+  "extraction_rule_used": "first_select_or_with_then_strip_trailing_source_comments_v1",
+  "failure_category": "",
+  "failure_summary": "",
+  "first_sql_line_index": 0,
+  "generic_sql_like_status": "extracted",
+  "leading_select_or_with_in_raw": true,
+  "notes": [],
+  "raw_field_non_empty": true,
+  "raw_field_present": true,
+  "raw_field_source_column": "rewritten_sql_gpt",
+  "recovered_sql_candidate": "select \tl_orderkey, \tsum(l_extendedprice * (1 - l_discount)) as revenue, \to_orderdate, \to_shippriority from \tcustomer, \torders, \tlineitem where \tc_mktsegment = 'MACHINERY' \tand c_custkey = o_custkey \tand l_orderkey = o_orderkey \tand o_orderdate < date '1995-03-27' \tand l_shipdate > date '1995-03-27' group by \tl_orderkey, \to_orderdate, \to_shippriority order by \trevenue desc, \to_orderdate limit 10",
+  "route_id": "llm_r2_recovered_extraction_route_v1",
+  "source_comments_detected": false,
+  "source_comments_stripped": false,
+  "source_comments_stripped_or_rejected": false,
+  "sql_generated_by_method_not_manually_repaired": true,
+  "write_generated_sql_allowed": true
+}

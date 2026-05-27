@@ -1,0 +1,50 @@
+ ename 
+-------
+ ALICE
+ BOB
+(2 rows)
+
+ ENAME 
+-------
+ ALICE
+ BOB
+(2 rows)
+
+ ename 
+-------
+ ALICE
+ BOB
+(2 rows)
+
+ ENAME 
+-------
+ ALICE
+ BOB
+(2 rows)
+
+ ename 
+-------
+ ALICE
+ BOB
+(2 rows)
+
+ ENAME 
+-------
+ ALICE
+ BOB
+(2 rows)
+
+ ename 
+-------
+ ALICE
+ BOB
+(2 rows)
+
+ ENAME 
+-------
+ ALICE
+ BOB
+(2 rows)
+
+case_id=CONS_0011 pool=consistency engine=pg route_id=calcite_hep_pg_rewrite
+warmup_count=1 repeat_count=3

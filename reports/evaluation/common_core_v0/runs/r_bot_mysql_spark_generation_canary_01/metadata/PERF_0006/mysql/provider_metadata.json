@@ -1,0 +1,15 @@
+{
+  "base_url": "https://api.gptsapi.net/v1",
+  "benchmark_model_name": "gpt-4o-mini",
+  "claim_boundary": "mysql_spark_generation_canary_only_not_execution_timing_speedup_or_leaderboard_evidence",
+  "embedding_model": "text-embedding-3-small",
+  "openai_api_key_visible": true,
+  "openai_base_url_family": "api.gptsapi.net",
+  "openai_base_url_visible": true,
+  "provider_name": "api.gptsapi.net",
+  "rewriter_database": "MySQL",
+  "rule_vector_width": 100,
+  "target_engine": "mysql",
+  "target_engine_prompt_label": "MySQL",
+  "total_dimension": 3172
+}

@@ -1,0 +1,11 @@
+dependency,current_status,retained_artifact_path,blocker_severity,required_before_generation,notes
+runner,missing,reports/baseline_smoke/rbot_llmr2_retrieval_readiness_v0.json; docs/_scratch/RBOT_LLMR2_READINESS_AUDIT_v0.md,high,yes,retained readiness artifacts explicitly mark llmr2 runner unavailable
+logical_plan_substrate,incomplete_probe_blocker_retained,docs/_scratch/LLMR2_LOGICAL_PLAN_FAILURE_AUDIT_PERF_0006_v1.md; docs/_scratch/LLMR2_10CASE_SMOKE_ROLLUP_v1.md,high,yes,bounded historical route kept one logical-plan-stage failure explicit
+output_sql_extraction,partial_one_case_cleanup_only,docs/_scratch/LLMR2_OUTPUT_SQL_EXTRACTION_AUDIT_PERF_0006_v1.md; docs/_scratch/LLMR2_10CASE_SMOKE_ROLLUP_v1.md,medium,yes,one-case cleanup path exists but reusable 120-route extraction contract is not frozen
+input_format_contract,partially_recovered_from_substrate_audit,docs/_scratch/LLMR2_EXTERNAL_REPO_SUBSTRATE_AUDIT_v1.md,medium,yes,retained notes describe dataset CSV schema and pool expectations but not a RewriteBench 120 adapter contract
+per_engine_sql_dialect_support,pg_bounded_only_mysql_spark_not_recovered,reports/evaluation/common_core_v0/prior_methods_preflight/prior_methods_common_core_v0_40_preflight.md,high,yes,retained artifacts support only bounded historical PG evidence
+generated_sql_retention_path,missing_for_common_core_120,reports/evaluation/common_core_v0/prior_methods_preflight/prior_methods_common_core_v0_40_preflight.md,high,yes,no retained 120-row generated SQL output location exists
+checker_handoff,bounded_pg_only_historical_evidence,docs/_scratch/LLMR2_CHECKER_HANDOFF_PERF_0006_v1.md; docs/_scratch/LLMR2_10CASE_SMOKE_ROLLUP_v1.md,medium,yes,checker handoff is not recovered as a reusable 120-row route contract
+timing_policy,bounded_pg_only_historical_subset,docs/_scratch/PRIOR_METHOD_SPEEDUP_LLMR2_BATCH_B_v1.md,medium,no,historical timing slice exists only on 9 PG-only eligible rows
+failure_bucket_policy,available_stage0_draft,reports/evaluation/common_core_v0/failure_bucket_policy_for_rerun_v1.md,low,yes,Stage-0 failure bucket draft exists for future reruns
+reproducibility_contract,missing,reports/baseline_smoke/rbot_llmr2_retrieval_readiness_v0.json; docs/_scratch/RBOT_LLMR2_READINESS_AUDIT_v0.md,high,yes,demo-selection and retrieval reproducibility remain unfrozen in retained readiness artifacts

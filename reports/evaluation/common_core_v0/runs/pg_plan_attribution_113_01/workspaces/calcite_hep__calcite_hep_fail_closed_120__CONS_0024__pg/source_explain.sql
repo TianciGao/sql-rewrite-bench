@@ -1,0 +1,16 @@
+set search_path to attr113_calcite_hep_calcite_hep_fail_closed_120_cons_0024_pg;
+begin read only;
+set local statement_timeout = '60s';
+explain (analyze, buffers, format json)
+SELECT empno
+FROM emp AS e
+LEFT JOIN dept AS d
+  ON d.deptno = e.deptno
+ AND EXISTS (
+   SELECT e2.deptno
+   FROM emp AS e2
+   WHERE e2.deptno = d.deptno
+   GROUP BY e2.deptno
+   HAVING SUM(e2.sal) > 1000000
+ );
+rollback;

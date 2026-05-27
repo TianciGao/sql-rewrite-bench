@@ -1,0 +1,44 @@
+{
+  "config_id": "formal_retrieval_config_extracted_v1",
+  "denominator_id": "common_core_v0_40_same_engine_120",
+  "embedding_model_identity": {
+    "provider_family": "openai_compatible",
+    "status": "extracted",
+    "value": "text-embedding-3-small"
+  },
+  "gate_rule": "do not open formal gate from this extraction alone",
+  "index_identifier": {
+    "notes": [
+      "visible index path exists but is /tmp scratch lineage only"
+    ],
+    "status": "scratch_only_visible_not_formal_evidence",
+    "value": "/tmp/rewritebench_rbot_llm4rewrite_rag_build_openai_like/rag/chroma_db"
+  },
+  "method_id": "r_bot",
+  "reranking_mode": {
+    "status": "blocked_not_visible_in_config_text",
+    "value": null
+  },
+  "route_id": "r_bot_same_engine_rewrite",
+  "rule_vector_width": {
+    "status": "taken_from_formal_dimension_contract",
+    "value": 100
+  },
+  "similarity_threshold": {
+    "status": "blocked_not_visible_in_config_text",
+    "value": null
+  },
+  "source_notes": [
+    "config_file: visible at /tmp/rewritebench_prior_method_audit/LLM4Rewrite/my_rewriter/config.py",
+    "prompt_file_rag: visible at /tmp/rewritebench_prior_method_audit/LLM4Rewrite/rag/prompts.py",
+    "prompt_file_rewriter: visible at /tmp/rewritebench_prior_method_audit/LLM4Rewrite/my_rewriter/prompts.py"
+  ],
+  "top_k": {
+    "status": "blocked_not_visible_in_config_text",
+    "value": null
+  },
+  "total_dimension": {
+    "status": "taken_from_formal_dimension_contract",
+    "value": 3172
+  }
+}

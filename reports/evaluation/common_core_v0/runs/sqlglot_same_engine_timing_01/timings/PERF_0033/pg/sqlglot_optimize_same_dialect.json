@@ -1,0 +1,22 @@
+{
+  "case_id": "PERF_0033",
+  "engine": "pg",
+  "route_id": "sqlglot_optimize_same_dialect",
+  "warmup_count": 1,
+  "repeat_count": 3,
+  "source_runtime_ms": [
+    297.3492140881717,
+    302.0279370248318,
+    300.92181207146496
+  ],
+  "generated_runtime_ms": [
+    412.0919860433787,
+    297.4737120093778,
+    297.22712200600654
+  ],
+  "median_source_ms": 300.92181207146496,
+  "median_generated_ms": 297.4737120093778,
+  "speedup_ratio": 1.0115912765494333,
+  "status": "success",
+  "notes": ""
+}

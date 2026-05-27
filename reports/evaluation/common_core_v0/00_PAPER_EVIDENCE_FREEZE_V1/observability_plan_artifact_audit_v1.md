@@ -1,0 +1,23 @@
+# Observability Plan Artifact Audit v1
+
+This is paper-facing synthesis from retained artifacts.
+
+This does not create a final ranked leaderboard.
+
+Support-layer metrics are not rewrite method ranking metrics.
+
+| evidence_scope | method_id | route_id | denominator_id | source_plan_artifacts_found | rewrite_plan_artifacts_found | node_alignment_artifacts_found | attribution_artifacts_found | retained_numeric_metric_available | metric_values_if_available | source_artifacts | readiness_status | notes |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| overall_track_b_observability | track_b_support | NA_not_applicable | track_b_support_selected_cases | yes_controls_selected_cases | yes_controls_selected_cases | no | no | no | NA_not_computed | reports/evaluation/common_core_v0/metric_readiness_matrix.csv;reports/evaluation/common_core_v0/plan_observability_summary.schema.csv;reports/evaluation/common_core_v0/runs/controls_v0_fresh_source_positive_01/tmp_repo/cases/PERF/PERF_0017/runs/plan_check.json | selected_case_only | Controls-selected cases retain plan files but no denominator-complete Common-core v0 observability summary is materialized |
+| sqlglot_transpile_observability | sqlglot | sqlglot_transpile_same_dialect_noop | track_b_support_selected_cases | selected_case_only | no | no | no | no | NA_not_computed | docs/_scratch/FORMAL_COMMON_CORE_METHOD_PLAN_COLLECTION_PREFLIGHT_SUMMARY_v0.md;reports/evaluation/common_core_v0/sqlglot_method_comparison_proposed_row_v1.csv | preflight_or_schema_only | Formal preflight says candidate SQL is ready on 9 of 9 selected cases but existing method-plan artifacts are 0 of 9 |
+| sqlglot_optimize_observability | sqlglot | sqlglot_optimize_same_dialect | track_b_support_selected_cases | selected_case_only | no | no | no | no | NA_not_computed | docs/_scratch/FORMAL_COMMON_CORE_METHOD_PLAN_COLLECTION_PREFLIGHT_SUMMARY_v0.md;reports/evaluation/common_core_v0/sqlglot_optimize_same_dialect_proposed_row_v1.csv | preflight_or_schema_only | Formal preflight says candidate SQL is ready on 9 of 9 selected cases but existing method-plan artifacts are 0 of 9 |
+| calcite_hep_observability | calcite_hep | calcite_hep_pg_rewrite | track_b_support_selected_cases | selected_case_only | NA_not_found | no | no | no | NA_not_computed | reports/evaluation/common_core_v0/calcite_hep_method_comparison_proposed_row_v1.csv;reports/evaluation/common_core_v0/metric_readiness_matrix.csv | needs_new_experiment | Retained row metadata marks plan_parse_rate node_alignment_coverage and attribution_coverage as NA_not_computed and no dedicated Common-core v0 method-plan packet is retained |
+| direct_llm_observability | direct_llm | direct_llm_same_engine_rewrite | track_b_support_selected_cases | selected_case_only | no | no | no | no | NA_not_computed | docs/_scratch/FORMAL_COMMON_CORE_METHOD_PLAN_COLLECTION_PREFLIGHT_SUMMARY_v0.md;reports/evaluation/common_core_v0/direct_llm_same_engine_proposed_row_v1.csv | preflight_or_schema_only | Formal preflight says candidate SQL is ready on 9 of 9 selected cases but existing method-plan artifacts are 0 of 9 |
+| r_bot_observability | r_bot | r_bot_same_engine_rewrite | track_b_support_selected_cases | selected_case_only | NA_not_found | no | no | no | NA_not_computed | reports/evaluation/common_core_v0/metric_readiness_matrix.csv;reports/evaluation/common_core_v0/00_PAPER_EVIDENCE_FREEZE_V1/METHOD_STATUS_LEDGER.csv | not_found | Retained mixed-scope R-Bot evidence does not include a Common-core v0 method-plan observability packet |
+| llm_r2_observability | llm_r2 | llm_r2_pg_supported_common_core_bounded | track_b_support_selected_cases | selected_case_only | NA_not_found | no | no | no | NA_not_computed | reports/evaluation/common_core_v0/metric_readiness_matrix.csv;reports/evaluation/common_core_v0/00_PAPER_EVIDENCE_FREEZE_V1/METHOD_STATUS_LEDGER.csv | not_found | Retained LLM-R2 bounded packets are execution and recovery packets rather than plan observability packets |
+
+## Interpretation notes
+
+- Track B observability currently has retained controls-side plan artifacts and method-side preflight/readiness notes.
+- No retained Common-core v0 packet proves denominator-complete numeric `PlanParseRate`, `NodeAlignmentCoverage`, or `AttributionCoverage`.
+- The current audit therefore records readiness and artifact existence rather than full observability metrics.

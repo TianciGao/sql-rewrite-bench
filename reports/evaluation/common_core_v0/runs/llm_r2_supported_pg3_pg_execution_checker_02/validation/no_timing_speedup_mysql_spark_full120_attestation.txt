@@ -1,0 +1,14 @@
+This human-run was authorized only for LLM-R2 PG3 PostgreSQL execution/checker.
+
+Confirmed scope:
+- PostgreSQL setup/source/generated execution was attempted only for PERF_0006, PERF_0013, PERF_0024.
+- Exact TSV comparison checker was attempted only for those 3 PG rows.
+- Timing was not run.
+- Speedup was not computed.
+- MySQL was not run.
+- Spark was not run.
+- PG40 was not run.
+- Full 120 was not run.
+- No result card or proposed row was created.
+
+These outputs are not paper-table evidence until governance review.

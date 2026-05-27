@@ -1,0 +1,18 @@
+=== PERF_0006 ===
+command=python -m scripts.cli formal-llmr2-one-row-fast-path --case PERF_0006 --force-cpu --schema-native-contract
+exit_code=0
+stdout_exists=True size=1724
+stderr_exists=True size=0
+
+=== PERF_0013 ===
+command=python -m scripts.cli formal-llmr2-one-row-fast-path --case PERF_0013 --force-cpu --schema-native-contract
+exit_code=0
+stdout_exists=True size=1724
+stderr_exists=True size=0
+
+=== PERF_0024 ===
+command=python -m scripts.cli formal-llmr2-one-row-fast-path --case PERF_0024 --force-cpu --schema-native-contract
+exit_code=0
+stdout_exists=True size=1724
+stderr_exists=True size=0
+

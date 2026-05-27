@@ -1,0 +1,8 @@
+zip_entry_name,json_field_selector,field_kind,extract_for_contamination_check,notes
+stackoverflow-rewrite-query-optimization.jsonl,question_body_sqls[],sql_list,yes,"Question-body SQL snippets only; ignore question_body, answer_body, summary, and embedding"
+stackoverflow-rewrite-rules-query-optimization.jsonl,sql,sql_text,yes,"Direct SQL text"
+stackoverflow-rewrite-rules-query-optimization.jsonl,schema,schema_text,yes,"Schema text retained because the formal audit marked it contamination-relevant"
+stackoverflow-rewrite-rules-query-optimization.jsonl,rules[],rule_text_list,yes,"Rule strings only; ignore nl_rules[] for this frozen package"
+stackoverflow-rewrite-sql-templates-query-optimization.jsonl,question_body_sqls[],sql_list,yes,"Question-body SQL snippets"
+stackoverflow-rewrite-sql-templates-query-optimization.jsonl,sql_templates[].template,sql_template_list,yes,"Template string only from each sql_templates[] entry"
+stackoverflow-rewrite-sql-templates-embed-query-optimization.jsonl,sql_template,sql_template_text,yes,"Template text only; ignore embedding vector"

@@ -1,0 +1,128 @@
+{
+  "status_id": "formal_gate_status_v3",
+  "denominator_id": "common_core_v0_40_same_engine_120",
+  "method_id": "r_bot",
+  "route_id": "r_bot_same_engine_rewrite",
+  "basis_artifacts": {
+    "contamination_checked_csv": "reports/evaluation/common_core_v0/r_bot_formal_substrate_freeze_01/formal_contamination_attestation_checked_v1.csv",
+    "contamination_checked_summary": "reports/evaluation/common_core_v0/r_bot_formal_substrate_freeze_01/formal_contamination_attestation_checked_summary.md",
+    "contamination_hashes_json": "reports/evaluation/common_core_v0/r_bot_formal_substrate_freeze_01/formal_contamination_hashes_v1.json",
+    "retrieval_config_extracted_json": "reports/evaluation/common_core_v0/r_bot_formal_substrate_freeze_01/formal_retrieval_config_extracted_v1.json",
+    "retrieval_config_extraction_report": "reports/evaluation/common_core_v0/r_bot_formal_substrate_freeze_01/formal_retrieval_config_extraction_report.md",
+    "prior_gate_status": "reports/evaluation/common_core_v0/r_bot_formal_substrate_freeze_01/formal_gate_status_v2.md",
+    "gate_closure_checklist": "reports/evaluation/common_core_v0/r_bot_formal_substrate_freeze_01/formal_gate_closure_checklist_v1.md",
+    "formal_protocol": "reports/evaluation/common_core_v0/r_bot_formal_protocol/r_bot_common_core_v0_40_same_engine_protocol.md",
+    "candidate_matrix": "reports/evaluation/common_core_v0/r_bot_formal_protocol/r_bot_common_core_v0_40_same_engine_candidate_matrix.csv"
+  },
+  "contamination_status": {
+    "rows_covered": 40,
+    "rows_passed": 0,
+    "rows_blocked": 40,
+    "all_40_rows_passed": false,
+    "row_attestation_status": "blocked_partial_check_only",
+    "exact_manifest_match_rows": 0,
+    "exact_generated_output_match_rows": 11,
+    "exact_generated_output_match_case_ids": [
+      "PERF_0006",
+      "CONS_0009",
+      "CONS_0010",
+      "CONS_0011",
+      "CONS_0036",
+      "CONS_0037",
+      "PORT_0005",
+      "LONGTAIL_0011",
+      "LONGTAIL_0012",
+      "LONGTAIL_0013",
+      "LONGTAIL_0022"
+    ],
+    "rows_still_blocked_because": [
+      "manifest text coverage incomplete",
+      "generated output coverage incomplete",
+      "near-duplicate check not implemented"
+    ],
+    "manifest_blockers": [
+      "manifest_text_unavailable:/tmp/rewritebench_prior_method_audit/LLM4Rewrite",
+      "manifest_text_unavailable:/tmp/rewritebench_prior_method_audit/LLM4Rewrite/knowledge-base",
+      "manifest_text_unavailable:/tmp/rewritebench_prior_method_audit/LLM4Rewrite/knowledge-base/rule_cluster_funcs",
+      "manifest_text_unavailable:/tmp/rewritebench_prior_method_audit/LLM4Rewrite/rag/stackoverflow-rewrite-embed.zip"
+    ],
+    "generated_output_blockers": [
+      "generated_source_missing:calcite:/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/calcite_same_engine_generation_01/generated"
+    ],
+    "near_duplicate_check_implemented": false
+  },
+  "retrieval_config_status": {
+    "fully_frozen": false,
+    "top_k": {
+      "resolved": false,
+      "value": null,
+      "status": "blocked_not_visible_in_config_text"
+    },
+    "reranking_mode": {
+      "resolved": false,
+      "value": null,
+      "status": "blocked_not_visible_in_config_text"
+    },
+    "threshold_or_none": {
+      "resolved": false,
+      "value": null,
+      "status": "blocked_not_visible_in_config_text"
+    },
+    "embedding_model_identity": {
+      "resolved": false,
+      "status": "extracted_only_not_formally_closed",
+      "provider_family": "openai_compatible",
+      "visible_value": "text-embedding-3-small",
+      "remaining_blocker": "exact rebuild-time provider/model/base_url identity is not yet fully retained as formal evidence"
+    },
+    "rule_vector_width": {
+      "resolved": true,
+      "value": 100,
+      "status": "taken_from_formal_dimension_contract"
+    },
+    "total_dimension": {
+      "resolved": true,
+      "value": 3172,
+      "status": "taken_from_formal_dimension_contract"
+    },
+    "index_identifier": {
+      "resolved": false,
+      "visible_value": "/tmp/rewritebench_rbot_llm4rewrite_rag_build_openai_like/rag/chroma_db",
+      "status": "scratch_only_visible_not_formal_evidence"
+    }
+  },
+  "gate_outcome": {
+    "current_benchmark_gate_ready": false,
+    "formal_gate_open": false,
+    "formal_r_bot_120_generation_may_start": false
+  },
+  "exact_remaining_blockers": [
+    "dependency lock is still candidate-only rather than a complete retained final lock",
+    "retained runtime package snapshot and environment metadata path do not yet exist",
+    "corpus manifest is still not complete enough for deterministic retained rebuild",
+    "retained external provenance handle for stackoverflow-rewrite-embed.zip is still missing",
+    "formal rebuilt chroma_db index package and retained formal index identifier do not yet exist",
+    "exact retrieval top_k is still not frozen",
+    "exact reranking mode is still not frozen",
+    "exact similarity threshold or explicit none is still not frozen",
+    "exact rebuild-time embedding provider/model/base_url identity is not yet fully retained as formal evidence",
+    "contamination attestation is still blocked because all 40 rows remain blocked",
+    "exact generated-output contamination hits remain present on 11 rows and must be resolved or formally excluded in the retained corpus/output line",
+    "manifest-side contamination coverage is incomplete because the current included manifest entries are not all text-readable hashable items",
+    "generated-output contamination coverage is incomplete because the visible calcite generated family is missing",
+    "machine-readable near-duplicate exclusion checking is not implemented",
+    "the future retained run package has not yet been validated as satisfying the full artifact contract"
+  ],
+  "recommended_next_package": {
+    "package_id": "formal_retrieval_and_contamination_closure_01",
+    "goals": [
+      "replace non-text manifest include rows with a manifest-complete retained inventory that distinguishes text-hashable items from binary/container identities",
+      "assign retained provenance for stackoverflow-rewrite-embed.zip",
+      "freeze and retain exact top_k, reranking mode, threshold-or-none, and exact embedding provider/model/base_url identity",
+      "rebuild and retain the formal chroma_db index under the frozen 3172 contract and record the formal index identifier",
+      "close generated-output family coverage, including the current missing calcite generated root",
+      "implement and retain machine-readable near-duplicate checking",
+      "rerun the human contamination attestation on complete coverage"
+    ]
+  }
+}

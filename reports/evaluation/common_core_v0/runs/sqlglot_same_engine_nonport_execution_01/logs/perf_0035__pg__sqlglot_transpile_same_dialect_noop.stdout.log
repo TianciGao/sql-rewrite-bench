@@ -1,0 +1,27 @@
+DROP SCHEMA
+CREATE SCHEMA
+SET
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+SET
+INSERT 0 1
+INSERT 0 1
+INSERT 0 4
+INSERT 0 4
+SET
+ cc_name  | d_year | d_moy |  avg_monthly_sales   | sum_sales |  psum  |  nsum  
+----------+--------+-------+----------------------+-----------+--------+--------
+ cc_alpha |   2000 |     1 | 150.0000000000000000 |    100.00 | 100.00 | 200.00
+ cc_alpha |   2000 |     2 | 150.0000000000000000 |    200.00 | 100.00 | 200.00
+(2 rows)
+
+SET
+ cc_name  | d_year | d_moy |  avg_monthly_sales   | sum_sales |  psum  |  nsum  
+----------+--------+-------+----------------------+-----------+--------+--------
+ cc_alpha |   2000 |     1 | 150.0000000000000000 |    100.00 | 100.00 | 200.00
+ cc_alpha |   2000 |     2 | 150.0000000000000000 |    200.00 | 100.00 | 200.00
+(2 rows)
+
+DROP SCHEMA

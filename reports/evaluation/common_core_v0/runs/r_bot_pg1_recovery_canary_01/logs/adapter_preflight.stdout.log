@@ -1,0 +1,44 @@
+{
+  "blockers_before_smoke": [
+    "postgres_runtime_not_prepared",
+    "rag_index_not_built_or_pinned",
+    "model_api_policy_unresolved",
+    "single_case_runner_not_implemented_upstream"
+  ],
+  "bundle_files": [
+    "/tmp/rewritebench_rbot_llm4rewrite_adapter_preflight/PERF_0006/source.sql",
+    "/tmp/rewritebench_rbot_llm4rewrite_adapter_preflight/PERF_0006/create_tables.sql",
+    "/tmp/rewritebench_rbot_llm4rewrite_adapter_preflight/PERF_0006/rewritebench_case_metadata.json",
+    "/tmp/rewritebench_rbot_llm4rewrite_adapter_preflight/PERF_0006/llm4rewrite_config_stub.py",
+    "/tmp/rewritebench_rbot_llm4rewrite_adapter_preflight/PERF_0006/expected_command.txt",
+    "/tmp/rewritebench_rbot_llm4rewrite_adapter_preflight/PERF_0006/output_capture_contract.md"
+  ],
+  "bundle_path": "/tmp/rewritebench_rbot_llm4rewrite_adapter_preflight/PERF_0006",
+  "can_attempt_future_1_case_smoke": "conditional",
+  "case_id": "PERF_0006",
+  "claim_boundary": "no_execution_adapter_preflight_only",
+  "command": "formal-rbot-llm4rewrite-adapter-preflight",
+  "config_stub_created": true,
+  "expected_command_documented": true,
+  "manifest_found": true,
+  "manifest_source_dialect_hint": "",
+  "ok": true,
+  "output_capture_contract_documented": true,
+  "pg_schema_found": true,
+  "pool": "performance",
+  "ran_at_utc": "2026-05-08T10:16:38+00:00",
+  "schema_status": "found",
+  "source_sql_found": true,
+  "status_upgrade_boundary": "adapter_preflight_created_not_executed",
+  "temp_bundle_created": true,
+  "upstream_contract_observed": {
+    "config_present": true,
+    "db_utils_present": true,
+    "output_sql_capture_path_understood": true,
+    "rag_rewrite_present": true,
+    "readme_present": true,
+    "runner_shape": "benchmark_loop_not_single_case",
+    "selected_rules_trace_path_understood": true,
+    "test_runner_present": true
+  }
+}

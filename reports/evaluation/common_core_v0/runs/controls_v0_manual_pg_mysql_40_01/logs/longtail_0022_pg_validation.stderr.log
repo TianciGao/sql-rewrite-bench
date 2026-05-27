@@ -1,0 +1,4 @@
+注意:  串联删除3个其它对象
+DETAIL:  递归删除 表 longtail_0022_validation.users
+递归删除 表 longtail_0022_validation.posts
+递归删除 表 longtail_0022_validation.comments

@@ -1,0 +1,5 @@
+注意:  串联删除4个其它对象
+DETAIL:  递归删除 表 perf_0077_pg_src_hn.keyword
+递归删除 表 perf_0077_pg_src_hn.movie_info
+递归删除 表 perf_0077_pg_src_hn.movie_keyword
+递归删除 表 perf_0077_pg_src_hn.title

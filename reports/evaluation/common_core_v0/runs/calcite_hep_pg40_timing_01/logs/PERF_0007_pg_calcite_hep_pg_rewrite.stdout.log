@@ -1,0 +1,42 @@
+ revenue 
+---------
+ 25.0000
+(1 row)
+
+ revenue 
+---------
+ 25.0000
+(1 row)
+
+ revenue 
+---------
+ 25.0000
+(1 row)
+
+ revenue 
+---------
+ 25.0000
+(1 row)
+
+ revenue 
+---------
+ 25.0000
+(1 row)
+
+ revenue 
+---------
+ 25.0000
+(1 row)
+
+ revenue 
+---------
+ 25.0000
+(1 row)
+
+ revenue 
+---------
+ 25.0000
+(1 row)
+
+case_id=PERF_0007 pool=performance engine=pg route_id=calcite_hep_pg_rewrite
+warmup_count=1 repeat_count=3

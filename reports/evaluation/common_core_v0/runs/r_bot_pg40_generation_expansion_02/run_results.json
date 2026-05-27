@@ -1,0 +1,33 @@
+{
+  "claim_boundary": "formal_pg_generation_expansion_only_not_execution_timing_speedup_or_leaderboard_evidence",
+  "current_benchmark_metric_evidence": false,
+  "engine_scope": "pg_only",
+  "method_id": "r_bot",
+  "notes": [
+    "PG-only expansion run",
+    "generation-only route",
+    "no database or SQL execution in package runner logic",
+    "does not replace prior PG7 retained result card",
+    "mysql and spark remain unsupported outside this package scope"
+  ],
+  "pg_expansion_denominator_id": "common_core_v0_40_pg40",
+  "planned_rows": 40,
+  "pool_counts": {
+    "consistency": 9,
+    "longtail": 6,
+    "performance": 16,
+    "portability": 9
+  },
+  "previous_generation_status_class_counts": {
+    "previously_blocked_pg31": 31,
+    "previously_failed_pg2": 2,
+    "previously_generated_pg7": 7
+  },
+  "route_id": "r_bot_same_engine_rewrite",
+  "run_id": "r_bot_pg40_generation_expansion_02",
+  "source_generation_denominator_id": "common_core_v0_40_same_engine_120",
+  "status_counts": {
+    "failed": 25,
+    "generated": 15
+  }
+}

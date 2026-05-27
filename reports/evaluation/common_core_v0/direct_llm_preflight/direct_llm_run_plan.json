@@ -1,0 +1,30 @@
+{
+  "denominator_id": "common_core_v0_40",
+  "method_id": "direct_llm",
+  "run_scope": "direct_llm_same_engine_generation_preflight",
+  "planned_rows": 120,
+  "route_id": "direct_llm_same_engine_rewrite",
+  "prompt_template_path": "reports/evaluation/common_core_v0/direct_llm_preflight/direct_llm_prompt_template.md",
+  "generation_matrix_path": "reports/evaluation/common_core_v0/direct_llm_preflight/direct_llm_generation_matrix.csv",
+  "output_directory": "reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_01/",
+  "model_config_to_fill_later": {
+    "provider": "",
+    "model": "",
+    "temperature": "",
+    "top_p": "",
+    "max_tokens": "",
+    "seed_if_available": "",
+    "run_timestamp": ""
+  },
+  "planned_outputs": {
+    "generated_sql_root": "reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_01/generated/",
+    "generation_event_long": "reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_01/generation_event_long.csv",
+    "generation_summary": "reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_01/generation_summary.csv"
+  },
+  "notes": [
+    "No LLM or API call is made in this task.",
+    "This is generation preflight only.",
+    "Validity, timing, speedup, and leaderboard artifacts are out of scope here.",
+    "Direct LLM remains separate from SQLGlot until Direct LLM has its own end-to-end evidence on common_core_v0_40."
+  ]
+}

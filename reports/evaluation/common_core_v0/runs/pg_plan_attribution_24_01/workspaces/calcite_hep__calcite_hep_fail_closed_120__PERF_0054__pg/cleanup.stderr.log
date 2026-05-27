@@ -1,0 +1,4 @@
+注意:  串联删除3个其它对象
+DETAIL:  递归删除 表 attr24_calcite_hep__calcite_hep_fail_closed_120__perf_0054__.date_dim
+递归删除 表 attr24_calcite_hep__calcite_hep_fail_closed_120__perf_0054__.store_sales
+递归删除 表 attr24_calcite_hep__calcite_hep_fail_closed_120__perf_0054__.item

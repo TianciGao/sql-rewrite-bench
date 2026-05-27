@@ -1,0 +1,10 @@
+{
+  "execution_status_observed": "executed",
+  "result_check_path": "reports/evaluation/common_core_v0/runs/r_bot_pg7_execution_01/workspaces/PERF_0054/pg/r_bot_same_engine_rewrite/result_check.json",
+  "source_output_path": "reports/evaluation/common_core_v0/runs/r_bot_pg7_execution_01/workspaces/PERF_0054/pg/r_bot_same_engine_rewrite/source.tsv",
+  "generated_output_path": "reports/evaluation/common_core_v0/runs/r_bot_pg7_execution_01/workspaces/PERF_0054/pg/r_bot_same_engine_rewrite/generated.tsv",
+  "claim_boundary": "formal_generated_pg7_execution_validity_only_not_timing_speedup_or_leaderboard_evidence",
+  "current_benchmark_metric_evidence": false,
+  "exact_match": true,
+  "consistency_check_status": "match_exact"
+}

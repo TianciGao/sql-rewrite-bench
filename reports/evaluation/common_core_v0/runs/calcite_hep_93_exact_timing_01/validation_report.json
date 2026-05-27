@@ -1,0 +1,22 @@
+{
+  "expected_denominator_rows": 93,
+  "input_preflight_path": "reports/evaluation/common_core_v0/00_PAPER_EVIDENCE_FREEZE_V1/calcite_hep_93_exact_timing_denominator_preflight_v1.csv",
+  "timing_event_long_rows": 93,
+  "timing_attempted_rows": 93,
+  "timing_success_rows": 93,
+  "timing_failed_rows": 0,
+  "unexpected_extra_rows": 0,
+  "missing_denominator_rows": 0,
+  "exact_match_rechecked_or_retained_policy": "retained_exact_match_only_no_checker_rerun",
+  "timing_policy": {
+    "warmup_count": 1,
+    "repeat_count": 3,
+    "speedup_ratio": "source_runtime_ms / rewrite_runtime_ms using row-local medians",
+    "win_threshold": "> 1.05",
+    "tie_threshold": "0.95 <= x <= 1.05",
+    "loss_threshold": "< 0.95",
+    "regression_20pct_threshold": "< 0.8"
+  },
+  "command_or_runner_used": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/calcite_hep_93_exact_timing_01/run_manual_calcite_hep_93_exact_timing.sh",
+  "status": "ok"
+}

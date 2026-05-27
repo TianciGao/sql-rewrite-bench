@@ -1,0 +1,7 @@
+注意:  模式 "ccv0_sqlglot_perf_0082_sqlglot_optimize_same_dialect" 不存在
+注意:  串联删除5个其它对象
+DETAIL:  递归删除 表 ccv0_sqlglot_perf_0082_sqlglot_optimize_same_dialect.company_type
+递归删除 表 ccv0_sqlglot_perf_0082_sqlglot_optimize_same_dialect.info_type
+递归删除 表 ccv0_sqlglot_perf_0082_sqlglot_optimize_same_dialect.movie_companies
+递归删除 表 ccv0_sqlglot_perf_0082_sqlglot_optimize_same_dialect.movie_info
+递归删除 表 ccv0_sqlglot_perf_0082_sqlglot_optimize_same_dialect.title

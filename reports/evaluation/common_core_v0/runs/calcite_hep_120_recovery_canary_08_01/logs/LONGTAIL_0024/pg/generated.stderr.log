@@ -1,0 +1,6 @@
+错误:  关系 "PostHistory" 不存在
+LINE 3: FROM "PostHistory"
+             ^
+注意:  串联删除2个其它对象
+DETAIL:  递归删除 表 ccv0_calcite_hep_recovery_longtail_0024.posts
+递归删除 表 ccv0_calcite_hep_recovery_longtail_0024.posthistory

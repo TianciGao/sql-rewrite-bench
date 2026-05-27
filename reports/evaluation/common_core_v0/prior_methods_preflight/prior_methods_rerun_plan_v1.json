@@ -1,0 +1,107 @@
+{
+  "denominator_id": "common_core_v0_40",
+  "run_scope": "prior_methods_rerun_policy_v1",
+  "methods": [
+    "calcite_hep",
+    "r_bot",
+    "learnedrewrite",
+    "llm_r2"
+  ],
+  "policy": {
+    "old_numeric_results_disallowed_as_current_metrics": [
+      "all prior_method_pg10 numeric results",
+      "all seed9 numeric results",
+      "all expanded_pg_evidence_46 numeric results when used as current common_core_v0_40 rows",
+      "all bounded 4-case or 6-case slice numeric results when used as current common_core_v0_40 rows"
+    ],
+    "old_scripts_reusable_as_templates_only": true,
+    "unsupported_rows_must_remain_visible": true,
+    "calcite_hep_first": true
+  },
+  "method_rerun_contracts": {
+    "calcite_hep": {
+      "target_denominator": "common_core_v0_40_perf_pg9_overlap",
+      "supported_pools": "performance_only",
+      "supported_engines": "pg_only",
+      "required_dependencies": "tools/calcite_hep/CalciteHepRewriteSmoke.java; reports/formal_expansion/calcite_hep_* scaffolds; PostgreSQL checker/timing harness templates",
+      "current_repo_runnable_code": "partial_yes_closest_to_runnable",
+      "old_scripts_reusable": "yes_repo_local_templates",
+      "old_numeric_results_disallowed_for_current_metrics": true,
+      "proposed_first_rerun_scope": "common_core_v0_40_perf_pg9_overlap on pg",
+      "primary_table_entry": "no_until_current_denominator_rerun_exists",
+      "bounded_baseline_table_entry": "yes_after_current_rerun",
+      "appendix_only_if_not_recovered": true
+    },
+    "r_bot": {
+      "target_denominator": "common_core_v0_40_perf_pg9_overlap_after_retrieval_stack_recovery",
+      "supported_pools": "performance_only",
+      "supported_engines": "pg_only",
+      "required_dependencies": "retrieval corpus; demo-selection policy; contamination/fair-comparison contract; rule pool; old single-case smoke runner templates",
+      "current_repo_runnable_code": "no_runner_recovery_needed",
+      "old_scripts_reusable": "yes_template_only",
+      "old_numeric_results_disallowed_for_current_metrics": true,
+      "proposed_first_rerun_scope": "common_core_v0_40_perf_pg9_overlap on pg after retrieval stack recovery",
+      "primary_table_entry": "no",
+      "bounded_baseline_table_entry": "yes_after_recovery_and_current_rerun",
+      "appendix_only_if_not_recovered": true
+    },
+    "learnedrewrite": {
+      "target_denominator": "common_core_v0_40_perf_pg9_overlap_after_adapter_checkpoint_recovery",
+      "supported_pools": "performance_only",
+      "supported_engines": "pg_only",
+      "required_dependencies": "adapter; checkpoint; inference entrypoint; old dry-run and single-case smoke templates; explicit noop accounting",
+      "current_repo_runnable_code": "no_artifact_stack_missing",
+      "old_scripts_reusable": "yes_template_only",
+      "old_numeric_results_disallowed_for_current_metrics": true,
+      "proposed_first_rerun_scope": "common_core_v0_40_perf_pg9_overlap on pg after adapter/checkpoint recovery",
+      "primary_table_entry": "no",
+      "bounded_baseline_table_entry": "yes_after_recovery_and_current_rerun",
+      "appendix_only_if_not_recovered": true
+    },
+    "llm_r2": {
+      "target_denominator": "common_core_v0_40_perf_pg9_overlap_after_runner_recovery",
+      "supported_pools": "performance_only",
+      "supported_engines": "pg_only",
+      "required_dependencies": "runner recovery; logical-plan probe path; deterministic output extraction contract; old bounded smoke templates",
+      "current_repo_runnable_code": "no_runner_recovery_needed",
+      "old_scripts_reusable": "yes_template_only",
+      "old_numeric_results_disallowed_for_current_metrics": true,
+      "proposed_first_rerun_scope": "common_core_v0_40_perf_pg9_overlap on pg after runner recovery",
+      "primary_table_entry": "no",
+      "bounded_baseline_table_entry": "yes_after_recovery_and_current_rerun",
+      "appendix_only_if_not_recovered": true
+    }
+  },
+  "recommended_first_rerun_method": "calcite_hep",
+  "recommended_execution_order": [
+    "calcite_hep",
+    "llm_r2",
+    "r_bot",
+    "learnedrewrite"
+  ],
+  "matrix_row_count": 480,
+  "status_counts_by_method": {
+    "calcite_hep": {
+      "planned_rerun_overlap": 9,
+      "not_attempted_unsupported": 104,
+      "defer_until_overlap_policy_decision": 7
+    },
+    "r_bot": {
+      "planned_rerun_with_explicit_failure_visibility": 3,
+      "not_attempted_unsupported": 104,
+      "defer_until_overlap_policy_decision": 7,
+      "blocked_until_recovery": 6
+    },
+    "learnedrewrite": {
+      "planned_rerun_with_explicit_failure_visibility": 7,
+      "not_attempted_unsupported": 104,
+      "defer_until_overlap_policy_decision": 7,
+      "blocked_until_recovery": 2
+    },
+    "llm_r2": {
+      "blocked_until_recovery": 9,
+      "not_attempted_unsupported": 104,
+      "defer_until_overlap_policy_decision": 7
+    }
+  }
+}

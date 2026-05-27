@@ -1,0 +1,7 @@
+{
+  "execution_status_observed": "execution_failed",
+  "consistency_check_status": "not_checked_execution_failed",
+  "error_type": "ParseException",
+  "error_message": "\n[PARSE_SYNTAX_ERROR] Syntax error at or near end of input. SQLSTATE: 42601 (line 1, pos 17)\n\n== SQL ==\n-- DRAFT DDL only\n-----------------^^^\n",
+  "result_check_path": "reports/evaluation/common_core_v0/runs/direct_llm_same_engine_execution_01/workspaces/PORT_0013/spark/direct_llm_same_engine_rewrite/result_check.json"
+}

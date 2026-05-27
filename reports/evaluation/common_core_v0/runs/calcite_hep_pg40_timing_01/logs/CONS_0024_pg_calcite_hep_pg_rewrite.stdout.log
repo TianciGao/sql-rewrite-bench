@@ -1,0 +1,42 @@
+ empno 
+-------
+     1
+(1 row)
+
+ empno 
+-------
+     1
+(1 row)
+
+ empno 
+-------
+     1
+(1 row)
+
+ empno 
+-------
+     1
+(1 row)
+
+ empno 
+-------
+     1
+(1 row)
+
+ empno 
+-------
+     1
+(1 row)
+
+ empno 
+-------
+     1
+(1 row)
+
+ empno 
+-------
+     1
+(1 row)
+
+case_id=CONS_0024 pool=consistency engine=pg route_id=calcite_hep_pg_rewrite
+warmup_count=1 repeat_count=3

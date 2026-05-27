@@ -1,0 +1,34 @@
+Traceback (most recent call last):
+  File "<stdin>", line 293, in run_spark_row
+  File "/home/tianci_gao/code/sql-rewrite-bench/.venv/lib/python3.12/site-packages/pyspark/sql/session.py", line 1816, in sql
+    return DataFrame(self._jsparkSession.sql(sqlQuery, litArgs), self)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/tianci_gao/code/sql-rewrite-bench/.venv/lib/python3.12/site-packages/py4j/java_gateway.py", line 1362, in __call__
+    return_value = get_return_value(
+                   ^^^^^^^^^^^^^^^^^
+  File "/home/tianci_gao/code/sql-rewrite-bench/.venv/lib/python3.12/site-packages/pyspark/errors/exceptions/captured.py", line 269, in deco
+    raise converted from None
+pyspark.errors.exceptions.captured.AnalysisException: [UNRESOLVED_COLUMN.WITH_SUGGESTION] A column, variable, or function parameter with name `total_links` cannot be resolved. Did you mean one of the following? [`p`.`Id`, `o`.`PostId`, `p`.`Title`, `i`.`PostId`, `i`.`inbound_count`]. SQLSTATE: 42703; line 32 pos 4;
+'Sort ['total_links DESC NULLS LAST, 'p.Id ASC NULLS FIRST], true
++- 'Project ['p.Id AS PostId#2178, 'p.Title, 'COALESCE('o.outbound_count, 0) AS outbound_count#2179, 'COALESCE('i.inbound_count, 0) AS inbound_count#2180, ('COALESCE('o.outbound_count, 0) + 'COALESCE('i.inbound_count, 0)) AS total_links#2181]
+   +- 'Filter ('total_links > 0)
+      +- Join LeftOuter, (PostId#2183 = Id#2168)
+         :- Join LeftOuter, (PostId#2164 = Id#2168)
+         :  :- SubqueryAlias p
+         :  :  +- SubqueryAlias spark_catalog.default.posts
+         :  :     +- Relation spark_catalog.default.posts[Id#2168,Title#2169] parquet
+         :  +- SubqueryAlias o
+         :     +- SubqueryAlias OutboundLinks
+         :        +- SubqueryAlias OutboundLinks
+         :           +- Aggregate [PostId#2164], [PostId#2164, count(1) AS outbound_count#2182L]
+         :              +- SubqueryAlias pl
+         :                 +- SubqueryAlias spark_catalog.default.postlinks
+         :                    +- Relation spark_catalog.default.postlinks[Id#2163,PostId#2164,RelatedPostId#2165,LinkTypeId#2166,CreationDate#2167] parquet
+         +- SubqueryAlias i
+            +- SubqueryAlias InboundLinks
+               +- SubqueryAlias InboundLinks
+                  +- Aggregate [RelatedPostId#2189], [RelatedPostId#2189 AS PostId#2183, count(1) AS inbound_count#2184L]
+                     +- SubqueryAlias pl
+                        +- SubqueryAlias spark_catalog.default.postlinks
+                           +- Relation spark_catalog.default.postlinks[Id#2187,PostId#2188,RelatedPostId#2189,LinkTypeId#2190,CreationDate#2191] parquet
+

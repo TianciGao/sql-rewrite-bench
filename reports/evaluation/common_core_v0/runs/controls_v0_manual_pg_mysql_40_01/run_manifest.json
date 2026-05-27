@@ -1,0 +1,18 @@
+{
+  "run_id": "controls_v0_manual_pg_mysql_40_01",
+  "method_id": "controls",
+  "git_commit": "f808b63fb3e9b08878eb3ae93166196d6364b2e6",
+  "denominator_id": "common_core_v0_40",
+  "attempted_cases": 40,
+  "is_leaderboard_method": false,
+  "method_role": "controls",
+  "method_version": "manual_pg_mysql_40_materialized",
+  "run_scope": "40_case_pg_mysql_manual_controls",
+  "artifact_mode": "manual_case_validation_materialization",
+  "route_scope": "native_source_human_positive_hard_negative_derived_from_result_check",
+  "artifact_paths": {
+    "run_event_long": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/run_event_long.csv",
+    "controls_summary": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/controls_summary.csv"
+  },
+  "source_run_results": "reports/evaluation/common_core_v0/runs/controls_v0_manual_pg_mysql_40_01/run_results.json"
+}

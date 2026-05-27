@@ -1,0 +1,25 @@
+{
+  "run_id": "sqlglot_same_engine_port_execution_resolved_01",
+  "method_id": "sqlglot",
+  "git_commit": "90331d565540df9779e1c9f795e24e916bc7cbde",
+  "denominator_id": "common_core_v0_40",
+  "attempted_cases": 9,
+  "is_leaderboard_method": false,
+  "method_role": "same_engine_method_port_execution_resolved",
+  "run_scope": "port_sqlglot_same_engine_execution_resolved",
+  "engine_scope": [
+    "pg",
+    "mysql",
+    "spark"
+  ],
+  "route_scope": [
+    "sqlglot_optimize_same_dialect",
+    "sqlglot_transpile_same_dialect_noop"
+  ],
+  "planned_rows": 54,
+  "artifact_paths": {
+    "run_event_long": "reports/evaluation/common_core_v0/runs/sqlglot_same_engine_port_execution_resolved_01/run_event_long.csv",
+    "method_case_summary": "reports/evaluation/common_core_v0/runs/sqlglot_same_engine_port_execution_resolved_01/method_case_summary.csv"
+  },
+  "notes": "Resolved PORT same-engine SQLGlot execution-only materialization. Retry replaces two original package witness gap failures after pg_witness_data.sql backfill. No result validation, no timing, no leaderboard metrics."
+}

@@ -1,0 +1,15 @@
+This run retains one LLM-R2 recovered-extraction generation-only canary for PERF_0008:pg.
+
+Scope:
+- recovered-extraction route only
+- generation / extraction only
+- no PostgreSQL execution
+- no checker
+- no timing
+- no speedup
+- no MySQL
+- no Spark
+- no PG40/full120
+- no result card or proposed row
+
+The original PG9 bounded evidence remains unchanged.

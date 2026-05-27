@@ -1,0 +1,523 @@
+{
+  "created_at": "2026-05-08T18:57:12.361036+00:00",
+  "current_benchmark_gate_ready": false,
+  "errors": [],
+  "formal_generation_may_start": false,
+  "formal_index": {
+    "collection_name": "r_bot_formal_stackoverflow",
+    "identifier_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/r_bot_formal_index_build_01/formal_chroma_index_identifier_v1.json",
+    "index_directory": "/tmp/rewritebench_rbot_formal_chroma_index_01",
+    "index_directory_visible": true,
+    "index_id": "r_bot_formal_chroma_index_01",
+    "rule_vector_width": 100,
+    "total_dimension": 3172
+  },
+  "package_checks": [
+    {
+      "distribution": "annotated-types",
+      "error": null,
+      "expected_version": "0.7.0",
+      "import_ok": true,
+      "import_target": "annotated_types",
+      "observed_version": "0.7.0",
+      "version_match": true
+    },
+    {
+      "distribution": "anyio",
+      "error": null,
+      "expected_version": "4.13.0",
+      "import_ok": true,
+      "import_target": "anyio",
+      "observed_version": "4.13.0",
+      "version_match": true
+    },
+    {
+      "distribution": "chromadb",
+      "error": null,
+      "expected_version": "1.5.9",
+      "import_ok": true,
+      "import_target": "chromadb",
+      "observed_version": "1.5.9",
+      "version_match": true
+    },
+    {
+      "distribution": "dataclasses-json",
+      "error": null,
+      "expected_version": "0.6.7",
+      "import_ok": true,
+      "import_target": "dataclasses_json",
+      "observed_version": "0.6.7",
+      "version_match": true
+    },
+    {
+      "distribution": "dirtyjson",
+      "error": null,
+      "expected_version": "1.0.8",
+      "import_ok": true,
+      "import_target": "dirtyjson",
+      "observed_version": "1.0.8",
+      "version_match": true
+    },
+    {
+      "distribution": "distro",
+      "error": null,
+      "expected_version": "1.9.0",
+      "import_ok": true,
+      "import_target": "distro",
+      "observed_version": "1.9.0",
+      "version_match": true
+    },
+    {
+      "distribution": "filetype",
+      "error": null,
+      "expected_version": "1.2.0",
+      "import_ok": true,
+      "import_target": "filetype",
+      "observed_version": "1.2.0",
+      "version_match": true
+    },
+    {
+      "distribution": "h11",
+      "error": null,
+      "expected_version": "0.16.0",
+      "import_ok": true,
+      "import_target": "h11",
+      "observed_version": "0.16.0",
+      "version_match": true
+    },
+    {
+      "distribution": "httpcore",
+      "error": null,
+      "expected_version": "1.0.9",
+      "import_ok": true,
+      "import_target": "httpcore",
+      "observed_version": "1.0.9",
+      "version_match": true
+    },
+    {
+      "distribution": "httpx",
+      "error": null,
+      "expected_version": "0.28.1",
+      "import_ok": true,
+      "import_target": "httpx",
+      "observed_version": "0.28.1",
+      "version_match": true
+    },
+    {
+      "distribution": "huggingface_hub",
+      "error": null,
+      "expected_version": "1.13.0",
+      "import_ok": true,
+      "import_target": "huggingface_hub",
+      "observed_version": "1.13.0",
+      "version_match": true
+    },
+    {
+      "distribution": "jiter",
+      "error": null,
+      "expected_version": "0.14.0",
+      "import_ok": true,
+      "import_target": "jiter",
+      "observed_version": "0.14.0",
+      "version_match": true
+    },
+    {
+      "distribution": "jpype1",
+      "error": null,
+      "expected_version": "1.7.0",
+      "import_ok": true,
+      "import_target": "jpype",
+      "observed_version": "1.7.0",
+      "version_match": true
+    },
+    {
+      "distribution": "jsonlines",
+      "error": null,
+      "expected_version": "4.0.0",
+      "import_ok": true,
+      "import_target": "jsonlines",
+      "observed_version": "4.0.0",
+      "version_match": true
+    },
+    {
+      "distribution": "llama-index",
+      "error": null,
+      "expected_version": "0.14.21",
+      "import_ok": true,
+      "import_target": "llama_index",
+      "observed_version": "0.14.21",
+      "version_match": true
+    },
+    {
+      "distribution": "llama-index-core",
+      "error": null,
+      "expected_version": "0.14.21",
+      "import_ok": true,
+      "import_target": "llama_index.core",
+      "observed_version": "0.14.21",
+      "version_match": true
+    },
+    {
+      "distribution": "llama-index-embeddings-huggingface",
+      "error": null,
+      "expected_version": "0.7.0",
+      "import_ok": true,
+      "import_target": "llama_index.embeddings.huggingface",
+      "observed_version": "0.7.0",
+      "version_match": true
+    },
+    {
+      "distribution": "llama-index-embeddings-openai",
+      "error": null,
+      "expected_version": "0.6.0",
+      "import_ok": true,
+      "import_target": "llama_index.embeddings.openai",
+      "observed_version": "0.6.0",
+      "version_match": true
+    },
+    {
+      "distribution": "llama-index-instrumentation",
+      "error": null,
+      "expected_version": "0.5.0",
+      "import_ok": true,
+      "import_target": "llama_index_instrumentation",
+      "observed_version": "0.5.0",
+      "version_match": true
+    },
+    {
+      "distribution": "llama-index-llms-openai",
+      "error": null,
+      "expected_version": "0.7.7",
+      "import_ok": true,
+      "import_target": "llama_index.llms.openai",
+      "observed_version": "0.7.7",
+      "version_match": true
+    },
+    {
+      "distribution": "llama-index-llms-openai-like",
+      "error": null,
+      "expected_version": "0.7.2",
+      "import_ok": true,
+      "import_target": "llama_index.llms.openai_like",
+      "observed_version": "0.7.2",
+      "version_match": true
+    },
+    {
+      "distribution": "llama-index-vector-stores-chroma",
+      "error": null,
+      "expected_version": "0.5.5",
+      "import_ok": true,
+      "import_target": "llama_index.vector_stores.chroma",
+      "observed_version": "0.5.5",
+      "version_match": true
+    },
+    {
+      "distribution": "llama-index-workflows",
+      "error": null,
+      "expected_version": "2.20.0",
+      "import_ok": true,
+      "import_target": "workflows",
+      "observed_version": "2.20.0",
+      "version_match": true
+    },
+    {
+      "distribution": "nltk",
+      "error": null,
+      "expected_version": "3.9.4",
+      "import_ok": true,
+      "import_target": "nltk",
+      "observed_version": "3.9.4",
+      "version_match": true
+    },
+    {
+      "distribution": "numpy",
+      "error": null,
+      "expected_version": "2.4.4",
+      "import_ok": true,
+      "import_target": "numpy",
+      "observed_version": "2.4.4",
+      "version_match": true
+    },
+    {
+      "distribution": "openai",
+      "error": null,
+      "expected_version": "2.34.0",
+      "import_ok": true,
+      "import_target": "openai",
+      "observed_version": "2.34.0",
+      "version_match": true
+    },
+    {
+      "distribution": "orjson",
+      "error": null,
+      "expected_version": "3.11.8",
+      "import_ok": true,
+      "import_target": "orjson",
+      "observed_version": "3.11.8",
+      "version_match": true
+    },
+    {
+      "distribution": "prettytable",
+      "error": null,
+      "expected_version": "3.17.0",
+      "import_ok": true,
+      "import_target": "prettytable",
+      "observed_version": "3.17.0",
+      "version_match": true
+    },
+    {
+      "distribution": "psycopg",
+      "error": null,
+      "expected_version": "3.3.4",
+      "import_ok": true,
+      "import_target": "psycopg",
+      "observed_version": "3.3.4",
+      "version_match": true
+    },
+    {
+      "distribution": "psycopg-binary",
+      "error": null,
+      "expected_version": "3.3.4",
+      "import_ok": true,
+      "import_target": "psycopg",
+      "observed_version": "3.3.4",
+      "version_match": true
+    },
+    {
+      "distribution": "psycopg2-binary",
+      "error": null,
+      "expected_version": "2.9.12",
+      "import_ok": true,
+      "import_target": "psycopg2",
+      "observed_version": "2.9.12",
+      "version_match": true
+    },
+    {
+      "distribution": "pydantic",
+      "error": null,
+      "expected_version": "2.13.3",
+      "import_ok": true,
+      "import_target": "pydantic",
+      "observed_version": "2.13.3",
+      "version_match": true
+    },
+    {
+      "distribution": "pydantic-settings",
+      "error": null,
+      "expected_version": "2.14.0",
+      "import_ok": true,
+      "import_target": "pydantic_settings",
+      "observed_version": "2.14.0",
+      "version_match": true
+    },
+    {
+      "distribution": "pydantic_core",
+      "error": null,
+      "expected_version": "2.46.3",
+      "import_ok": true,
+      "import_target": "pydantic_core",
+      "observed_version": "2.46.3",
+      "version_match": true
+    },
+    {
+      "distribution": "PyYAML",
+      "error": null,
+      "expected_version": "6.0.3",
+      "import_ok": true,
+      "import_target": "yaml",
+      "observed_version": "6.0.3",
+      "version_match": true
+    },
+    {
+      "distribution": "requests",
+      "error": null,
+      "expected_version": "2.33.1",
+      "import_ok": true,
+      "import_target": "requests",
+      "observed_version": "2.33.1",
+      "version_match": true
+    },
+    {
+      "distribution": "rich",
+      "error": null,
+      "expected_version": "15.0.0",
+      "import_ok": true,
+      "import_target": "rich",
+      "observed_version": "15.0.0",
+      "version_match": true
+    },
+    {
+      "distribution": "safetensors",
+      "error": null,
+      "expected_version": "0.7.0",
+      "import_ok": true,
+      "import_target": "safetensors",
+      "observed_version": "0.7.0",
+      "version_match": true
+    },
+    {
+      "distribution": "scikit-learn",
+      "error": null,
+      "expected_version": "1.8.0",
+      "import_ok": true,
+      "import_target": "sklearn",
+      "observed_version": "1.8.0",
+      "version_match": true
+    },
+    {
+      "distribution": "scipy",
+      "error": null,
+      "expected_version": "1.17.1",
+      "import_ok": true,
+      "import_target": "scipy",
+      "observed_version": "1.17.1",
+      "version_match": true
+    },
+    {
+      "distribution": "sentence-transformers",
+      "error": null,
+      "expected_version": "5.4.1",
+      "import_ok": true,
+      "import_target": "sentence_transformers",
+      "observed_version": "5.4.1",
+      "version_match": true
+    },
+    {
+      "distribution": "sniffio",
+      "error": null,
+      "expected_version": "1.3.1",
+      "import_ok": true,
+      "import_target": "sniffio",
+      "observed_version": "1.3.1",
+      "version_match": true
+    },
+    {
+      "distribution": "sqlalchemy",
+      "error": null,
+      "expected_version": "2.0.49",
+      "import_ok": true,
+      "import_target": "sqlalchemy",
+      "observed_version": "2.0.49",
+      "version_match": true
+    },
+    {
+      "distribution": "sqlglot",
+      "error": null,
+      "expected_version": "30.7.0",
+      "import_ok": true,
+      "import_target": "sqlglot",
+      "observed_version": "30.7.0",
+      "version_match": true
+    },
+    {
+      "distribution": "tenacity",
+      "error": null,
+      "expected_version": "9.1.4",
+      "import_ok": true,
+      "import_target": "tenacity",
+      "observed_version": "9.1.4",
+      "version_match": true
+    },
+    {
+      "distribution": "tiktoken",
+      "error": null,
+      "expected_version": "0.12.0",
+      "import_ok": true,
+      "import_target": "tiktoken",
+      "observed_version": "0.12.0",
+      "version_match": true
+    },
+    {
+      "distribution": "tokenizers",
+      "error": null,
+      "expected_version": "0.22.2",
+      "import_ok": true,
+      "import_target": "tokenizers",
+      "observed_version": "0.22.2",
+      "version_match": true
+    },
+    {
+      "distribution": "torch",
+      "error": null,
+      "expected_version": "2.11.0",
+      "import_ok": true,
+      "import_target": "torch",
+      "observed_version": "2.11.0",
+      "version_match": true
+    },
+    {
+      "distribution": "tqdm",
+      "error": null,
+      "expected_version": "4.67.3",
+      "import_ok": true,
+      "import_target": "tqdm",
+      "observed_version": "4.67.3",
+      "version_match": true
+    },
+    {
+      "distribution": "transformers",
+      "error": null,
+      "expected_version": "5.7.0",
+      "import_ok": true,
+      "import_target": "transformers",
+      "observed_version": "5.7.0",
+      "version_match": true
+    },
+    {
+      "distribution": "typing-inspect",
+      "error": null,
+      "expected_version": "0.9.0",
+      "import_ok": true,
+      "import_target": "typing_inspect",
+      "observed_version": "0.9.0",
+      "version_match": true
+    },
+    {
+      "distribution": "typing-inspection",
+      "error": null,
+      "expected_version": "0.4.2",
+      "import_ok": true,
+      "import_target": "typing_inspection",
+      "observed_version": "0.4.2",
+      "version_match": true
+    },
+    {
+      "distribution": "typing_extensions",
+      "error": null,
+      "expected_version": "4.15.0",
+      "import_ok": true,
+      "import_target": "typing_extensions",
+      "observed_version": "4.15.0",
+      "version_match": true
+    }
+  ],
+  "platform": {
+    "machine": "x86_64",
+    "platform": "Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+    "release": "6.6.87.2-microsoft-standard-WSL2",
+    "system": "Linux",
+    "version": "#1 SMP PREEMPT_DYNAMIC Thu Jun  5 18:30:46 UTC 2025"
+  },
+  "provider_metadata": {
+    "base_url": null,
+    "provider_family": "api.gptsapi.net",
+    "provider_name": "api.gptsapi.net",
+    "secrets_present": false
+  },
+  "python": {
+    "executable": "/tmp/rewritebench_rbot_llm4rewrite_venv_smoke/bin/python",
+    "version": "3.12.3 (main, Mar 23 2026, 19:04:32) [GCC 13.3.0]",
+    "version_info": {
+      "major": 3,
+      "micro": 3,
+      "minor": 12
+    }
+  },
+  "runtime_lock": {
+    "requirements_lock_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/r_bot_formal_runtime_lock_01/r_bot_formal_requirements_lock.txt",
+    "requirements_lock_sha256": "47703030f52ffb6bc7054a0f2250b562c51d766ee9ca0f540f66cde3e72f3c00",
+    "schema_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/r_bot_formal_runtime_lock_01/runtime_environment_snapshot_schema.json"
+  },
+  "snapshot_id": "r_bot_formal_runtime_environment_snapshot_v1",
+  "status": "runtime_verify_passed_gate_still_closed"
+}

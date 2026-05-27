@@ -1,0 +1,5 @@
+drop schema if exists attr24_sqlglot__sqlglot_transpile_same_dialect_noop__cons_00 cascade;
+create schema attr24_sqlglot__sqlglot_transpile_same_dialect_noop__cons_00;
+set search_path to attr24_sqlglot__sqlglot_transpile_same_dialect_noop__cons_00;
+\i /home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/workspaces/CONS_0005/pg/sqlglot_transpile_same_dialect_noop/ddl_pg.sql
+\i /home/tianci_gao/code/sql-rewrite-bench/cases/CONS/CONS_0005/validation/pg_witness_data.sql

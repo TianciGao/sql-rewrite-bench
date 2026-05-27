@@ -1,0 +1,7 @@
+{
+  "execution_status_observed": "execution_failed",
+  "consistency_check_status": "not_checked_execution_failed",
+  "error_type": "ParseException",
+  "error_message": "\n[UNSUPPORTED_DATATYPE] Unsupported data type \"DATETIME\". SQLSTATE: 0A000\n== SQL (line 1, position 164) ==\n...T( CAST( `t2`.`account_date` AS DATETIME ) , '%Y' ) = '1993' AND `t1`.`d...\n                                   ^^^^^^^^\n",
+  "result_check_path": "reports/evaluation/common_core_v0/runs/direct_llm_same_engine_execution_01/workspaces/PORT_0025/spark/direct_llm_same_engine_rewrite/result_check.json"
+}

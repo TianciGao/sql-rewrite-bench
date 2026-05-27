@@ -1,0 +1,35 @@
+{
+  "run_id": "controls_v0_manual_canary_01",
+  "mode": "manual_human_execution",
+  "repo_root": "/home/tianci_gao/code/sql-rewrite-bench",
+  "case_scope": [
+    "PERF_0006"
+  ],
+  "engine_scope": [
+    "pg",
+    "mysql"
+  ],
+  "records": [
+    {
+      "key": "env_check",
+      "command": "python -m scripts.cli env-check",
+      "exit_code": 0,
+      "stdout_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_canary_01/logs/env_check.stdout.log",
+      "stderr_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_canary_01/logs/env_check.stderr.log"
+    },
+    {
+      "key": "perf_0006_pg_validation",
+      "command": "bash cases/PERF/PERF_0006/validation/run_pg_validation.sh",
+      "exit_code": 0,
+      "stdout_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_canary_01/logs/perf_0006_pg_validation.stdout.log",
+      "stderr_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_canary_01/logs/perf_0006_pg_validation.stderr.log"
+    },
+    {
+      "key": "perf_0006_mysql_validation",
+      "command": "bash cases/PERF/PERF_0006/validation/run_mysql_validation.sh",
+      "exit_code": 0,
+      "stdout_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_canary_01/logs/perf_0006_mysql_validation.stdout.log",
+      "stderr_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_canary_01/logs/perf_0006_mysql_validation.stderr.log"
+    }
+  ]
+}

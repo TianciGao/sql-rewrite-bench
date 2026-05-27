@@ -1,0 +1,19 @@
+DROP SCHEMA
+CREATE SCHEMA
+SET
+CREATE TABLE
+CREATE TABLE
+SET
+INSERT 0 2
+INSERT 0 2
+SET
+ i | j 
+---+---
+(0 rows)
+
+SET
+ i | j 
+---+---
+(0 rows)
+
+DROP SCHEMA

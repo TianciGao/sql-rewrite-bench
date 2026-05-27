@@ -1,0 +1,3 @@
+timing completed for sqlglot_transpile_same_dialect_noop__CONS_0010__pg
+source_runtime_ms=[3.616094123572111, 3.653064137324691, 3.373943967744708]
+rewrite_runtime_ms=[3.653725842013955, 3.4237161744385958, 3.472939133644104]

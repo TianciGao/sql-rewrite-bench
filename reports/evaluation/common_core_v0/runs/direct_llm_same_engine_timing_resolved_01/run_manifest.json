@@ -1,0 +1,77 @@
+{
+  "run_id": "direct_llm_same_engine_timing_resolved_01",
+  "denominator_id": "common_core_v0_40",
+  "method_id": "direct_llm",
+  "route_id": "direct_llm_same_engine_rewrite",
+  "planned_rows": 120,
+  "timing_eligible_rows": 94,
+  "original_full_timing_successes": 89,
+  "targeted_retry_successes": 5,
+  "resolved_timing_success_rows": 94,
+  "timing_failed_rows_after_retry": 0,
+  "excluded_rows": {
+    "execution_failed": 16,
+    "mismatch": 5,
+    "preflight_blocked_missing_artifact": 5
+  },
+  "replacement_rows": [
+    {
+      "case_id": "PERF_0008",
+      "engine": "spark",
+      "route_id": "direct_llm_same_engine_rewrite"
+    },
+    {
+      "case_id": "PERF_0013",
+      "engine": "spark",
+      "route_id": "direct_llm_same_engine_rewrite"
+    },
+    {
+      "case_id": "PERF_0017",
+      "engine": "spark",
+      "route_id": "direct_llm_same_engine_rewrite"
+    },
+    {
+      "case_id": "PERF_0019",
+      "engine": "spark",
+      "route_id": "direct_llm_same_engine_rewrite"
+    },
+    {
+      "case_id": "PERF_0024",
+      "engine": "spark",
+      "route_id": "direct_llm_same_engine_rewrite"
+    }
+  ],
+  "replacement_reason": "original full timing failures were Spark timing-runner loader ParseException failures; resolved by targeted retry package with corrected Spark SQL loader",
+  "source_packages": {
+    "full_timing_run": "reports/evaluation/common_core_v0/runs/direct_llm_same_engine_timing_01/run_results.json",
+    "retry_timing_run": "reports/evaluation/common_core_v0/runs/direct_llm_same_engine_timing_retry_spark_perf5_01/run_results.json",
+    "timing_candidate_matrix": "reports/evaluation/common_core_v0/direct_llm_timing_preflight/direct_llm_timing_candidate_matrix.csv",
+    "timing_run_plan": "reports/evaluation/common_core_v0/direct_llm_timing_preflight/direct_llm_timing_run_plan.json",
+    "validity_summary": "reports/evaluation/common_core_v0/direct_llm_validity_summary_v1.md",
+    "evaluation_protocol": "benchmark_spec/COMMON_CORE_V0_EVALUATION_PROTOCOL.md"
+  },
+  "counts_by_engine": {
+    "mysql": 34,
+    "pg": 32,
+    "spark": 28
+  },
+  "counts_by_pool": {
+    "consistency": 24,
+    "longtail": 16,
+    "performance": 45,
+    "portability": 9
+  },
+  "counts_by_timing_source_package": {
+    "direct_llm_same_engine_timing_01": 89,
+    "direct_llm_same_engine_timing_retry_spark_perf5_01": 5
+  },
+  "warmup_count": 1,
+  "repeat_count": 3,
+  "compute_final_gm_speedup": false,
+  "compute_regression_rate": false,
+  "compute_leaderboard": false,
+  "validation_report_path": "reports/evaluation/common_core_v0/runs/direct_llm_same_engine_timing_resolved_01/validation_report.json",
+  "timing_event_long_path": "reports/evaluation/common_core_v0/runs/direct_llm_same_engine_timing_resolved_01/timing_event_long.csv",
+  "timing_case_summary_path": "reports/evaluation/common_core_v0/runs/direct_llm_same_engine_timing_resolved_01/timing_case_summary.csv",
+  "materialization_notes_path": "reports/evaluation/common_core_v0/runs/direct_llm_same_engine_timing_resolved_01/materialization_notes.md"
+}

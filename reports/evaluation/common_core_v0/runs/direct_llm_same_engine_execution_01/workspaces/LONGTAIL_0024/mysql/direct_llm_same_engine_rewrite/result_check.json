@@ -1,0 +1,9 @@
+{
+  "execution_status_observed": "executed",
+  "source_output_path": "reports/evaluation/common_core_v0/runs/direct_llm_same_engine_execution_01/workspaces/LONGTAIL_0024/mysql/direct_llm_same_engine_rewrite/source.tsv",
+  "generated_output_path": "reports/evaluation/common_core_v0/runs/direct_llm_same_engine_execution_01/workspaces/LONGTAIL_0024/mysql/direct_llm_same_engine_rewrite/generated.tsv",
+  "exact_match": true,
+  "sorted_match": true,
+  "consistency_check_status": "match_exact",
+  "result_check_path": "reports/evaluation/common_core_v0/runs/direct_llm_same_engine_execution_01/workspaces/LONGTAIL_0024/mysql/direct_llm_same_engine_rewrite/result_check.json"
+}

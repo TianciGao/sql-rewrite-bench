@@ -1,0 +1,1 @@
+python -m scripts.cli formal-llmr2-one-row-fast-path --case PERF_0013 --force-cpu --schema-native-contract

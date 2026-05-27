@@ -1,0 +1,522 @@
+{
+  "run_id": "sqlglot_same_engine_port_execution_01",
+  "mode": "manual_human_execution",
+  "repo_root": "/home/tianci_gao/code/sql-rewrite-bench",
+  "case_scope": [
+    "PORT_0003",
+    "PORT_0004",
+    "PORT_0005",
+    "PORT_0008",
+    "PORT_0012",
+    "PORT_0013",
+    "PORT_0022",
+    "PORT_0024",
+    "PORT_0025"
+  ],
+  "engine_scope": [
+    "pg",
+    "mysql",
+    "spark"
+  ],
+  "route_scope": [
+    "sqlglot_optimize_same_dialect",
+    "sqlglot_transpile_same_dialect_noop"
+  ],
+  "records": [
+    {
+      "key": "env_check",
+      "row_status": "executed",
+      "command": "python -m scripts.cli env-check",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_port_execution_01/logs/env_check.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_port_execution_01/logs/env_check.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "port_0003__mysql__sqlglot_optimize_same_dialect",
+      "row_status": "skipped_unsupported",
+      "command": "",
+      "exit_code": null,
+      "stdout_log": "",
+      "stderr_log": "",
+      "notes": "PORT same-engine row is unsupported on this engine; row remains explicit and is not executed."
+    },
+    {
+      "key": "port_0003__mysql__sqlglot_transpile_same_dialect_noop",
+      "row_status": "skipped_unsupported",
+      "command": "",
+      "exit_code": null,
+      "stdout_log": "",
+      "stderr_log": "",
+      "notes": "PORT same-engine row is unsupported on this engine; row remains explicit and is not executed."
+    },
+    {
+      "key": "port_0003__pg__sqlglot_optimize_same_dialect",
+      "row_status": "executed",
+      "command": "python - <<'PY' <postgres runner>",
+      "exit_code": 1,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_port_execution_01/logs/port_0003__pg__sqlglot_optimize_same_dialect.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_port_execution_01/logs/port_0003__pg__sqlglot_optimize_same_dialect.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "port_0003__pg__sqlglot_transpile_same_dialect_noop",
+      "row_status": "noop_generated",
+      "command": "",
+      "exit_code": null,
+      "stdout_log": "",
+      "stderr_log": "",
+      "notes": "Generated SQL was an explicit no-op output; row remains explicit and is not executed."
+    },
+    {
+      "key": "port_0003__spark__sqlglot_optimize_same_dialect",
+      "row_status": "skipped_unsupported",
+      "command": "",
+      "exit_code": null,
+      "stdout_log": "",
+      "stderr_log": "",
+      "notes": "PORT same-engine row is unsupported on this engine; row remains explicit and is not executed."
+    },
+    {
+      "key": "port_0003__spark__sqlglot_transpile_same_dialect_noop",
+      "row_status": "skipped_unsupported",
+      "command": "",
+      "exit_code": null,
+      "stdout_log": "",
+      "stderr_log": "",
+      "notes": "PORT same-engine row is unsupported on this engine; row remains explicit and is not executed."
+    },
+    {
+      "key": "port_0004__mysql__sqlglot_optimize_same_dialect",
+      "row_status": "executed",
+      "command": "python - <<'PY' <mysql runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_port_execution_01/logs/port_0004__mysql__sqlglot_optimize_same_dialect.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_port_execution_01/logs/port_0004__mysql__sqlglot_optimize_same_dialect.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "port_0004__mysql__sqlglot_transpile_same_dialect_noop",
+      "row_status": "noop_generated",
+      "command": "",
+      "exit_code": null,
+      "stdout_log": "",
+      "stderr_log": "",
+      "notes": "Generated SQL was an explicit no-op output; row remains explicit and is not executed."
+    },
+    {
+      "key": "port_0004__pg__sqlglot_optimize_same_dialect",
+      "row_status": "skipped_unsupported",
+      "command": "",
+      "exit_code": null,
+      "stdout_log": "",
+      "stderr_log": "",
+      "notes": "PORT same-engine row is unsupported on this engine; row remains explicit and is not executed."
+    },
+    {
+      "key": "port_0004__pg__sqlglot_transpile_same_dialect_noop",
+      "row_status": "skipped_unsupported",
+      "command": "",
+      "exit_code": null,
+      "stdout_log": "",
+      "stderr_log": "",
+      "notes": "PORT same-engine row is unsupported on this engine; row remains explicit and is not executed."
+    },
+    {
+      "key": "port_0004__spark__sqlglot_optimize_same_dialect",
+      "row_status": "skipped_unsupported",
+      "command": "",
+      "exit_code": null,
+      "stdout_log": "",
+      "stderr_log": "",
+      "notes": "PORT same-engine row is unsupported on this engine; row remains explicit and is not executed."
+    },
+    {
+      "key": "port_0004__spark__sqlglot_transpile_same_dialect_noop",
+      "row_status": "skipped_unsupported",
+      "command": "",
+      "exit_code": null,
+      "stdout_log": "",
+      "stderr_log": "",
+      "notes": "PORT same-engine row is unsupported on this engine; row remains explicit and is not executed."
+    },
+    {
+      "key": "port_0005__mysql__sqlglot_optimize_same_dialect",
+      "row_status": "skipped_unsupported",
+      "command": "",
+      "exit_code": null,
+      "stdout_log": "",
+      "stderr_log": "",
+      "notes": "PORT same-engine row is unsupported on this engine; row remains explicit and is not executed."
+    },
+    {
+      "key": "port_0005__mysql__sqlglot_transpile_same_dialect_noop",
+      "row_status": "skipped_unsupported",
+      "command": "",
+      "exit_code": null,
+      "stdout_log": "",
+      "stderr_log": "",
+      "notes": "PORT same-engine row is unsupported on this engine; row remains explicit and is not executed."
+    },
+    {
+      "key": "port_0005__pg__sqlglot_optimize_same_dialect",
+      "row_status": "executed",
+      "command": "python - <<'PY' <postgres runner>",
+      "exit_code": 1,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_port_execution_01/logs/port_0005__pg__sqlglot_optimize_same_dialect.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_port_execution_01/logs/port_0005__pg__sqlglot_optimize_same_dialect.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "port_0005__pg__sqlglot_transpile_same_dialect_noop",
+      "row_status": "noop_generated",
+      "command": "",
+      "exit_code": null,
+      "stdout_log": "",
+      "stderr_log": "",
+      "notes": "Generated SQL was an explicit no-op output; row remains explicit and is not executed."
+    },
+    {
+      "key": "port_0005__spark__sqlglot_optimize_same_dialect",
+      "row_status": "skipped_unsupported",
+      "command": "",
+      "exit_code": null,
+      "stdout_log": "",
+      "stderr_log": "",
+      "notes": "PORT same-engine row is unsupported on this engine; row remains explicit and is not executed."
+    },
+    {
+      "key": "port_0005__spark__sqlglot_transpile_same_dialect_noop",
+      "row_status": "skipped_unsupported",
+      "command": "",
+      "exit_code": null,
+      "stdout_log": "",
+      "stderr_log": "",
+      "notes": "PORT same-engine row is unsupported on this engine; row remains explicit and is not executed."
+    },
+    {
+      "key": "port_0008__mysql__sqlglot_optimize_same_dialect",
+      "row_status": "skipped_unsupported",
+      "command": "",
+      "exit_code": null,
+      "stdout_log": "",
+      "stderr_log": "",
+      "notes": "PORT same-engine row is unsupported on this engine; row remains explicit and is not executed."
+    },
+    {
+      "key": "port_0008__mysql__sqlglot_transpile_same_dialect_noop",
+      "row_status": "skipped_unsupported",
+      "command": "",
+      "exit_code": null,
+      "stdout_log": "",
+      "stderr_log": "",
+      "notes": "PORT same-engine row is unsupported on this engine; row remains explicit and is not executed."
+    },
+    {
+      "key": "port_0008__pg__sqlglot_optimize_same_dialect",
+      "row_status": "executed",
+      "command": "python - <<'PY' <postgres runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_port_execution_01/logs/port_0008__pg__sqlglot_optimize_same_dialect.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_port_execution_01/logs/port_0008__pg__sqlglot_optimize_same_dialect.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "port_0008__pg__sqlglot_transpile_same_dialect_noop",
+      "row_status": "noop_generated",
+      "command": "",
+      "exit_code": null,
+      "stdout_log": "",
+      "stderr_log": "",
+      "notes": "Generated SQL was an explicit no-op output; row remains explicit and is not executed."
+    },
+    {
+      "key": "port_0008__spark__sqlglot_optimize_same_dialect",
+      "row_status": "skipped_unsupported",
+      "command": "",
+      "exit_code": null,
+      "stdout_log": "",
+      "stderr_log": "",
+      "notes": "PORT same-engine row is unsupported on this engine; row remains explicit and is not executed."
+    },
+    {
+      "key": "port_0008__spark__sqlglot_transpile_same_dialect_noop",
+      "row_status": "skipped_unsupported",
+      "command": "",
+      "exit_code": null,
+      "stdout_log": "",
+      "stderr_log": "",
+      "notes": "PORT same-engine row is unsupported on this engine; row remains explicit and is not executed."
+    },
+    {
+      "key": "port_0012__mysql__sqlglot_optimize_same_dialect",
+      "row_status": "skipped_unsupported",
+      "command": "",
+      "exit_code": null,
+      "stdout_log": "",
+      "stderr_log": "",
+      "notes": "PORT same-engine row is unsupported on this engine; row remains explicit and is not executed."
+    },
+    {
+      "key": "port_0012__mysql__sqlglot_transpile_same_dialect_noop",
+      "row_status": "skipped_unsupported",
+      "command": "",
+      "exit_code": null,
+      "stdout_log": "",
+      "stderr_log": "",
+      "notes": "PORT same-engine row is unsupported on this engine; row remains explicit and is not executed."
+    },
+    {
+      "key": "port_0012__pg__sqlglot_optimize_same_dialect",
+      "row_status": "executed",
+      "command": "python - <<'PY' <postgres runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_port_execution_01/logs/port_0012__pg__sqlglot_optimize_same_dialect.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_port_execution_01/logs/port_0012__pg__sqlglot_optimize_same_dialect.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "port_0012__pg__sqlglot_transpile_same_dialect_noop",
+      "row_status": "noop_generated",
+      "command": "",
+      "exit_code": null,
+      "stdout_log": "",
+      "stderr_log": "",
+      "notes": "Generated SQL was an explicit no-op output; row remains explicit and is not executed."
+    },
+    {
+      "key": "port_0012__spark__sqlglot_optimize_same_dialect",
+      "row_status": "skipped_unsupported",
+      "command": "",
+      "exit_code": null,
+      "stdout_log": "",
+      "stderr_log": "",
+      "notes": "PORT same-engine row is unsupported on this engine; row remains explicit and is not executed."
+    },
+    {
+      "key": "port_0012__spark__sqlglot_transpile_same_dialect_noop",
+      "row_status": "skipped_unsupported",
+      "command": "",
+      "exit_code": null,
+      "stdout_log": "",
+      "stderr_log": "",
+      "notes": "PORT same-engine row is unsupported on this engine; row remains explicit and is not executed."
+    },
+    {
+      "key": "port_0013__mysql__sqlglot_optimize_same_dialect",
+      "row_status": "executed",
+      "command": "python - <<'PY' <mysql runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_port_execution_01/logs/port_0013__mysql__sqlglot_optimize_same_dialect.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_port_execution_01/logs/port_0013__mysql__sqlglot_optimize_same_dialect.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "port_0013__mysql__sqlglot_transpile_same_dialect_noop",
+      "row_status": "noop_generated",
+      "command": "",
+      "exit_code": null,
+      "stdout_log": "",
+      "stderr_log": "",
+      "notes": "Generated SQL was an explicit no-op output; row remains explicit and is not executed."
+    },
+    {
+      "key": "port_0013__pg__sqlglot_optimize_same_dialect",
+      "row_status": "skipped_unsupported",
+      "command": "",
+      "exit_code": null,
+      "stdout_log": "",
+      "stderr_log": "",
+      "notes": "PORT same-engine row is unsupported on this engine; row remains explicit and is not executed."
+    },
+    {
+      "key": "port_0013__pg__sqlglot_transpile_same_dialect_noop",
+      "row_status": "skipped_unsupported",
+      "command": "",
+      "exit_code": null,
+      "stdout_log": "",
+      "stderr_log": "",
+      "notes": "PORT same-engine row is unsupported on this engine; row remains explicit and is not executed."
+    },
+    {
+      "key": "port_0013__spark__sqlglot_optimize_same_dialect",
+      "row_status": "skipped_unsupported",
+      "command": "",
+      "exit_code": null,
+      "stdout_log": "",
+      "stderr_log": "",
+      "notes": "PORT same-engine row is unsupported on this engine; row remains explicit and is not executed."
+    },
+    {
+      "key": "port_0013__spark__sqlglot_transpile_same_dialect_noop",
+      "row_status": "skipped_unsupported",
+      "command": "",
+      "exit_code": null,
+      "stdout_log": "",
+      "stderr_log": "",
+      "notes": "PORT same-engine row is unsupported on this engine; row remains explicit and is not executed."
+    },
+    {
+      "key": "port_0022__mysql__sqlglot_optimize_same_dialect",
+      "row_status": "executed",
+      "command": "python - <<'PY' <mysql runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_port_execution_01/logs/port_0022__mysql__sqlglot_optimize_same_dialect.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_port_execution_01/logs/port_0022__mysql__sqlglot_optimize_same_dialect.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "port_0022__mysql__sqlglot_transpile_same_dialect_noop",
+      "row_status": "noop_generated",
+      "command": "",
+      "exit_code": null,
+      "stdout_log": "",
+      "stderr_log": "",
+      "notes": "Generated SQL was an explicit no-op output; row remains explicit and is not executed."
+    },
+    {
+      "key": "port_0022__pg__sqlglot_optimize_same_dialect",
+      "row_status": "skipped_unsupported",
+      "command": "",
+      "exit_code": null,
+      "stdout_log": "",
+      "stderr_log": "",
+      "notes": "PORT same-engine row is unsupported on this engine; row remains explicit and is not executed."
+    },
+    {
+      "key": "port_0022__pg__sqlglot_transpile_same_dialect_noop",
+      "row_status": "skipped_unsupported",
+      "command": "",
+      "exit_code": null,
+      "stdout_log": "",
+      "stderr_log": "",
+      "notes": "PORT same-engine row is unsupported on this engine; row remains explicit and is not executed."
+    },
+    {
+      "key": "port_0022__spark__sqlglot_optimize_same_dialect",
+      "row_status": "skipped_unsupported",
+      "command": "",
+      "exit_code": null,
+      "stdout_log": "",
+      "stderr_log": "",
+      "notes": "PORT same-engine row is unsupported on this engine; row remains explicit and is not executed."
+    },
+    {
+      "key": "port_0022__spark__sqlglot_transpile_same_dialect_noop",
+      "row_status": "skipped_unsupported",
+      "command": "",
+      "exit_code": null,
+      "stdout_log": "",
+      "stderr_log": "",
+      "notes": "PORT same-engine row is unsupported on this engine; row remains explicit and is not executed."
+    },
+    {
+      "key": "port_0024__mysql__sqlglot_optimize_same_dialect",
+      "row_status": "executed",
+      "command": "python - <<'PY' <mysql runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_port_execution_01/logs/port_0024__mysql__sqlglot_optimize_same_dialect.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_port_execution_01/logs/port_0024__mysql__sqlglot_optimize_same_dialect.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "port_0024__mysql__sqlglot_transpile_same_dialect_noop",
+      "row_status": "noop_generated",
+      "command": "",
+      "exit_code": null,
+      "stdout_log": "",
+      "stderr_log": "",
+      "notes": "Generated SQL was an explicit no-op output; row remains explicit and is not executed."
+    },
+    {
+      "key": "port_0024__pg__sqlglot_optimize_same_dialect",
+      "row_status": "skipped_unsupported",
+      "command": "",
+      "exit_code": null,
+      "stdout_log": "",
+      "stderr_log": "",
+      "notes": "PORT same-engine row is unsupported on this engine; row remains explicit and is not executed."
+    },
+    {
+      "key": "port_0024__pg__sqlglot_transpile_same_dialect_noop",
+      "row_status": "skipped_unsupported",
+      "command": "",
+      "exit_code": null,
+      "stdout_log": "",
+      "stderr_log": "",
+      "notes": "PORT same-engine row is unsupported on this engine; row remains explicit and is not executed."
+    },
+    {
+      "key": "port_0024__spark__sqlglot_optimize_same_dialect",
+      "row_status": "skipped_unsupported",
+      "command": "",
+      "exit_code": null,
+      "stdout_log": "",
+      "stderr_log": "",
+      "notes": "PORT same-engine row is unsupported on this engine; row remains explicit and is not executed."
+    },
+    {
+      "key": "port_0024__spark__sqlglot_transpile_same_dialect_noop",
+      "row_status": "skipped_unsupported",
+      "command": "",
+      "exit_code": null,
+      "stdout_log": "",
+      "stderr_log": "",
+      "notes": "PORT same-engine row is unsupported on this engine; row remains explicit and is not executed."
+    },
+    {
+      "key": "port_0025__mysql__sqlglot_optimize_same_dialect",
+      "row_status": "executed",
+      "command": "python - <<'PY' <mysql runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_port_execution_01/logs/port_0025__mysql__sqlglot_optimize_same_dialect.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_port_execution_01/logs/port_0025__mysql__sqlglot_optimize_same_dialect.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "port_0025__mysql__sqlglot_transpile_same_dialect_noop",
+      "row_status": "noop_generated",
+      "command": "",
+      "exit_code": null,
+      "stdout_log": "",
+      "stderr_log": "",
+      "notes": "Generated SQL was an explicit no-op output; row remains explicit and is not executed."
+    },
+    {
+      "key": "port_0025__pg__sqlglot_optimize_same_dialect",
+      "row_status": "skipped_unsupported",
+      "command": "",
+      "exit_code": null,
+      "stdout_log": "",
+      "stderr_log": "",
+      "notes": "PORT same-engine row is unsupported on this engine; row remains explicit and is not executed."
+    },
+    {
+      "key": "port_0025__pg__sqlglot_transpile_same_dialect_noop",
+      "row_status": "skipped_unsupported",
+      "command": "",
+      "exit_code": null,
+      "stdout_log": "",
+      "stderr_log": "",
+      "notes": "PORT same-engine row is unsupported on this engine; row remains explicit and is not executed."
+    },
+    {
+      "key": "port_0025__spark__sqlglot_optimize_same_dialect",
+      "row_status": "skipped_unsupported",
+      "command": "",
+      "exit_code": null,
+      "stdout_log": "",
+      "stderr_log": "",
+      "notes": "PORT same-engine row is unsupported on this engine; row remains explicit and is not executed."
+    },
+    {
+      "key": "port_0025__spark__sqlglot_transpile_same_dialect_noop",
+      "row_status": "skipped_unsupported",
+      "command": "",
+      "exit_code": null,
+      "stdout_log": "",
+      "stderr_log": "",
+      "notes": "PORT same-engine row is unsupported on this engine; row remains explicit and is not executed."
+    }
+  ]
+}

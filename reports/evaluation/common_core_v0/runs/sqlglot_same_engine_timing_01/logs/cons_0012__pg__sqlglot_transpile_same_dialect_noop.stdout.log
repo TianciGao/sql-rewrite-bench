@@ -1,0 +1,128 @@
+DROP SCHEMA
+CREATE SCHEMA
+SET
+CREATE TABLE
+CREATE TABLE
+SET
+INSERT 0 4
+INSERT 0 9
+SET
+ deptno |   dname    |   loc    
+--------+------------+----------
+     10 | ACCOUNTING | NEW YORK
+     30 | SALES      | CHICAGO
+(2 rows)
+
+DROP SCHEMA
+DROP SCHEMA
+CREATE SCHEMA
+SET
+CREATE TABLE
+CREATE TABLE
+SET
+INSERT 0 4
+INSERT 0 9
+SET
+ deptno |   dname    |   loc    
+--------+------------+----------
+     10 | ACCOUNTING | NEW YORK
+     30 | SALES      | CHICAGO
+(2 rows)
+
+DROP SCHEMA
+DROP SCHEMA
+CREATE SCHEMA
+SET
+CREATE TABLE
+CREATE TABLE
+SET
+INSERT 0 4
+INSERT 0 9
+SET
+ deptno |   dname    |   loc    
+--------+------------+----------
+     10 | ACCOUNTING | NEW YORK
+     30 | SALES      | CHICAGO
+(2 rows)
+
+DROP SCHEMA
+DROP SCHEMA
+CREATE SCHEMA
+SET
+CREATE TABLE
+CREATE TABLE
+SET
+INSERT 0 4
+INSERT 0 9
+SET
+ deptno |   dname    |   loc    
+--------+------------+----------
+     10 | ACCOUNTING | NEW YORK
+     30 | SALES      | CHICAGO
+(2 rows)
+
+DROP SCHEMA
+DROP SCHEMA
+CREATE SCHEMA
+SET
+CREATE TABLE
+CREATE TABLE
+SET
+INSERT 0 4
+INSERT 0 9
+SET
+ deptno |   dname    |   loc    
+--------+------------+----------
+     10 | ACCOUNTING | NEW YORK
+     30 | SALES      | CHICAGO
+(2 rows)
+
+DROP SCHEMA
+DROP SCHEMA
+CREATE SCHEMA
+SET
+CREATE TABLE
+CREATE TABLE
+SET
+INSERT 0 4
+INSERT 0 9
+SET
+ deptno |   dname    |   loc    
+--------+------------+----------
+     10 | ACCOUNTING | NEW YORK
+     30 | SALES      | CHICAGO
+(2 rows)
+
+DROP SCHEMA
+DROP SCHEMA
+CREATE SCHEMA
+SET
+CREATE TABLE
+CREATE TABLE
+SET
+INSERT 0 4
+INSERT 0 9
+SET
+ deptno |   dname    |   loc    
+--------+------------+----------
+     10 | ACCOUNTING | NEW YORK
+     30 | SALES      | CHICAGO
+(2 rows)
+
+DROP SCHEMA
+DROP SCHEMA
+CREATE SCHEMA
+SET
+CREATE TABLE
+CREATE TABLE
+SET
+INSERT 0 4
+INSERT 0 9
+SET
+ deptno |   dname    |   loc    
+--------+------------+----------
+     10 | ACCOUNTING | NEW YORK
+     30 | SALES      | CHICAGO
+(2 rows)
+
+DROP SCHEMA

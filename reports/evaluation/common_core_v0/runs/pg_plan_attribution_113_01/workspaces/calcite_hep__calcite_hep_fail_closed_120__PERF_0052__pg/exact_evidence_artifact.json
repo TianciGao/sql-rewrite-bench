@@ -1,0 +1,9 @@
+{
+  "execution_status_observed": "executed",
+  "result_check_path": "reports/evaluation/common_core_v0/runs/calcite_hep_pg40_execution_01/workspaces/PERF_0052/pg/result_check.json",
+  "source_output_path": "reports/evaluation/common_core_v0/runs/calcite_hep_pg40_execution_01/workspaces/PERF_0052/pg/source.tsv",
+  "generated_output_path": "reports/evaluation/common_core_v0/runs/calcite_hep_pg40_execution_01/workspaces/PERF_0052/pg/generated.tsv",
+  "exact_match": true,
+  "sorted_match": true,
+  "consistency_check_status": "match_exact"
+}

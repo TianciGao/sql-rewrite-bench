@@ -1,0 +1,59 @@
+{
+  "manifest_version": "common_core_v0_eval_manifest_template",
+  "benchmark_line": "common_core_v0",
+  "denominator_source": "reports/curation/common_core_v0_final_denominator.csv",
+  "freeze_review": "benchmark_spec/reviews/COMMON_CORE_V0_FINAL_FREEZE_REVIEW.md",
+  "run_label": "<fill_me>",
+  "evaluation_branch": "<fill_me>",
+  "generated_at_utc": "<YYYY-MM-DDTHH:MM:SSZ>",
+  "generated_by": "<fill_me>",
+  "method": {
+    "method_id": "<fill_me>",
+    "method_family": "<fill_me>",
+    "method_version": "<fill_me>",
+    "inference_mode": "<same_engine|cross_engine|mixed>",
+    "notes": "<fill_me>"
+  },
+  "engines": [
+    "postgresql",
+    "mysql",
+    "spark"
+  ],
+  "input_tables": {
+    "run_event_long": "reports/evaluation/common_core_v0/run_event_long.csv",
+    "method_case_summary": "reports/evaluation/common_core_v0/method_case_summary.csv",
+    "same_engine_leaderboard": "reports/evaluation/common_core_v0/same_engine_leaderboard.csv",
+    "controls_summary": "reports/evaluation/common_core_v0/controls_summary.csv",
+    "port_translation_summary": "reports/evaluation/common_core_v0/port_translation_summary.csv",
+    "verifier_support_summary": "reports/evaluation/common_core_v0/verifier_support_summary.csv",
+    "plan_observability_summary": "reports/evaluation/common_core_v0/plan_observability_summary.csv",
+    "failure_bucket_summary": "reports/evaluation/common_core_v0/failure_bucket_summary.csv"
+  },
+  "denominator_expectation": {
+    "total_cases": 40,
+    "pool_counts": {
+      "performance": 16,
+      "consistency": 9,
+      "portability": 9,
+      "longtail": 6
+    },
+    "drop_failed_cases_from_denominator": false
+  },
+  "reporting_rules": {
+    "compute_leaderboard_in_this_manifest": false,
+    "claim_speedup_transfer_rate": false,
+    "merge_extended_into_common_core": false,
+    "report_support_and_translation_separately": true,
+    "report_coverage_aware_denominators": true
+  },
+  "artifacts_present": {
+    "run_event_long": false,
+    "method_case_summary": false,
+    "same_engine_leaderboard": false,
+    "controls_summary": false,
+    "port_translation_summary": false,
+    "verifier_support_summary": false,
+    "plan_observability_summary": false,
+    "failure_bucket_summary": false
+  }
+}

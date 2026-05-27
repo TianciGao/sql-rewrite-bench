@@ -1,0 +1,19 @@
+DROP SCHEMA
+CREATE SCHEMA
+SET
+CREATE TABLE
+SET
+INSERT 0 4
+SET
+ gsoffered 
+-----------
+ north-max
+(1 row)
+
+SET
+ gsoffered 
+-----------
+ north-max
+(1 row)
+
+DROP SCHEMA

@@ -1,0 +1,6 @@
+SELECT
+  CAST(SUM(CASE WHEN "patient"."sex" = 'F' THEN 1 ELSE 0 END) AS REAL) * 100 / NULLIF(COUNT("patient"."id"), 0) AS "_col_0"
+FROM "patient" AS "patient"
+WHERE
+  "patient"."diagnosis" = 'RA'
+  AND TO_CHAR(CAST("patient"."birthday" AS TIMESTAMP), 'YYYY') = '1980'

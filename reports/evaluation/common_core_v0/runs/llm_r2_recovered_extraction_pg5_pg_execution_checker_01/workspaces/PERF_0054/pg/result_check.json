@@ -1,0 +1,22 @@
+{
+  "case_id": "PERF_0054",
+  "engine": "pg",
+  "method_id": "llm_r2",
+  "route_id": "llm_r2_recovered_extraction_route_v1",
+  "run_id": "llm_r2_recovered_extraction_pg5_pg_execution_checker_01",
+  "setup_exit_code": 0,
+  "source_exit_code": 0,
+  "generated_exit_code": 0,
+  "source_row_count": 1,
+  "candidate_row_count": 1,
+  "exact_match": true,
+  "failure_bucket": "exact_match",
+  "source_tsv_path": "reports/evaluation/common_core_v0/runs/llm_r2_recovered_extraction_pg5_pg_execution_checker_01/workspaces/PERF_0054/pg/source.tsv",
+  "generated_tsv_path": "reports/evaluation/common_core_v0/runs/llm_r2_recovered_extraction_pg5_pg_execution_checker_01/workspaces/PERF_0054/pg/generated.tsv",
+  "notes": [
+    "PostgreSQL execution/checker only.",
+    "Result JSON reconstructed from retained exit-code and TSV artifacts after earlier Python boolean typo.",
+    "Generated SQL execution used a semicolon-normalized copy; original recovered SQL retained unchanged.",
+    "No timing/speedup/MySQL/Spark/full120 was run."
+  ]
+}

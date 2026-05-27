@@ -1,0 +1,106 @@
+{
+  "denominator_id": "common_core_v0_40_same_engine_120",
+  "method_id": "r_bot",
+  "route_id": "r_bot_same_engine_rewrite",
+  "freeze_status": "partial_freeze_with_explicit_blockers",
+  "current_benchmark_ready": false,
+  "historical_prior_method_pg10_reuse_allowed": false,
+  "model_config": {
+    "model_name": "gpt-4o-mini",
+    "model_policy_basis": "align_to_current_direct_llm_same_engine_generation_01_unless_documented_method_exception_is_approved",
+    "provider_policy": {
+      "provider_family": "openai_compatible",
+      "exact_provider_requirement": "provider name must be logged in retained run artifacts without secrets",
+      "base_url_policy": "exact base_url or endpoint family must be logged in retained run artifacts without secrets",
+      "current_alignment_default": {
+        "provider": "api.gptsapi.net",
+        "base_url": "https://api.gptsapi.net/v1"
+      },
+      "exception_rule": "any provider/model/base_url deviation requires a documented benchmark-side exception before the run"
+    },
+    "temperature": 0,
+    "top_p": 1,
+    "max_tokens": 2048,
+    "candidate_count": 1,
+    "feedback_rounds": 0,
+    "seed_policy": "record if available; otherwise leave explicit null"
+  },
+  "retry_policy": {
+    "allowed_retry_class": "infrastructure_only",
+    "allowed_examples": [
+      "transient network failure",
+      "provider timeout",
+      "rate limit backoff"
+    ],
+    "forbidden": [
+      "manual semantic fixes",
+      "manual prompt rewriting after row inspection",
+      "manual SQL editing",
+      "manual retrieved-demo swapping",
+      "case-specific rule injection"
+    ]
+  },
+  "prompt_demo_policy": {
+    "status": "policy_shape_defined_but_not_benchmark_frozen",
+    "prompt_contract": {
+      "sql_only_output": true,
+      "single_statement_only": true,
+      "same_engine_only": true,
+      "forbid_markdown_fences": true,
+      "forbid_explanations": true,
+      "forbid_ddl_dml": true,
+      "preserve_semantics": true
+    },
+    "demo_constraints": [
+      "no ad hoc corpus change after target inspection",
+      "no case-specific manual demo injection",
+      "no manual override of retrieved examples after inspection",
+      "no reuse of benchmark-produced generated SQL as retrieval demos"
+    ]
+  },
+  "retrieval_parameters": {
+    "retrieval_backend": "chroma_backed_retrieval",
+    "retrieval_corpus_family": [
+      "LLM4Rewrite knowledge/rule assets",
+      "stackoverflow-rewrite-embed.zip"
+    ],
+    "top_k": null,
+    "top_k_status": "blocked_not_recovered_from_frozen_runner_contract",
+    "similarity_threshold": null,
+    "similarity_threshold_status": "blocked_not_recovered_from_frozen_runner_contract",
+    "reranking_mode": null,
+    "reranking_mode_status": "blocked_not_recovered_from_frozen_runner_contract",
+    "selection_rule": "actual run must log retrieval mode, top_k, threshold if any, reranking if any, selected rules, and retrieval trace"
+  },
+  "rule_vector_alignment_policy": {
+    "expected_rule_vector_dimension": 100,
+    "current_status": "blocked_exploratory_patch_only",
+    "freeze_rule": "embedding dimension, rule-vector dimension, and retrieval index dimension must match under a deterministic documented policy",
+    "forbidden": "no exploratory patching in a benchmark-facing run",
+    "failure_rule": "dimension mismatch blocks the row; it must not be silently patched during benchmark evidence generation"
+  },
+  "generated_sql_extraction_policy": {
+    "extract_single_sql_statement_only": true,
+    "prefer_single_select_statement": true,
+    "strip_markdown_fences_if_present": true,
+    "fail_if_multiple_statements": true,
+    "fail_if_non_sql_or_empty": true,
+    "fail_if_ddl_or_data_changing_statement": true,
+    "retain_raw_response_separately": true
+  },
+  "blocked_items_before_current_evidence": [
+    "exact retrieval top_k must be frozen",
+    "exact retrieval threshold/reranking contract must be frozen",
+    "rule-vector alignment must become deterministic rather than exploratory patch behavior",
+    "contamination guard must be attested in run artifacts",
+    "artifact contract must be satisfied on a formal denominator-aware run",
+    "current_benchmark_gate_ready must become true"
+  ],
+  "sources": [
+    "reports/evaluation/common_core_v0/runs/direct_llm_same_engine_generation_01/run_results.json",
+    "reports/evaluation/common_core_v0/runs/r_bot_pg1_recovery_canary_01/run_results.json",
+    "reports/evaluation/common_core_v0/runs/r_bot_pg1_recovery_canary_01/r_bot_demo_policy_v0.md",
+    "reports/evaluation/common_core_v0/runs/r_bot_pg1_recovery_canary_01/r_bot_contamination_guard_v0.md",
+    "reports/evaluation/common_core_v0/runs/r_bot_pg1_recovery_canary_01/r_bot_actual_run_gate_v1.md"
+  ]
+}

@@ -1,0 +1,10 @@
+This is paper-facing synthesis from retained artifacts. It does not create a final ranked leaderboard. The gap summary describes what still separates row-level readiness from an actual future timing packet.
+
+| `gap_id` | `gap_type` | `affected_rows` | `affected_engines` | `current_status` | `required_next_artifact_or_action` | `can_be_fixed_by_aggregation_only` | `requires_new_execution` | `paper_risk_if_not_fixed` | `notes` |
+|---|---|---|---|---|---|---|---|---|---|
+| pg_only_timing_cannot_substitute_93 | PG-only timing evidence exists but cannot substitute for 93-row timing | 21 | pg | boundary_preserved_pg_only_timing_separate_from_93_row_fail_closed_ledger | future_correctness_gated_93_row_timing_packet_using_reconstructed_exact_rows | no | yes | low | PG-only timing packet is retained and useful for appendix context only; it must not be copied into the tri-engine 93/120 correctness ledger. |
+
+**Interpretation notes**
+
+- The current preflight can still succeed even when the gap summary is non-empty, because some rows may be timing-ready while broader paper boundaries remain in force.
+- In this audit, the main retained boundary is that PG-only timing evidence cannot be reused as if it were the tri-engine 93-row timing denominator.

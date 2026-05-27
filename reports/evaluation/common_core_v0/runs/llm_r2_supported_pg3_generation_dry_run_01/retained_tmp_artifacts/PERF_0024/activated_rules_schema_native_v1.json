@@ -1,0 +1,10 @@
+{
+  "activated_rules_gpt": [
+    "FILTER_REDUCE_EXPRESSIONS",
+    "FILTER_MERGE",
+    "FILTER_PROJECT_TRANSPOSE",
+    "FILTER_INTO_JOIN",
+    "JOIN_CONDITION_PUSH",
+    "JOIN_REDUCE_EXPRESSIONS"
+  ]
+}

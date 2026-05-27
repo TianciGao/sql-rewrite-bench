@@ -1,0 +1,11 @@
+{
+  "row_id": "PORT_0003__mysql__rewrite_neg_01",
+  "case_id": "PORT_0003",
+  "engine": "mysql",
+  "negative_rewrite_id": "rewrite_neg_01",
+  "validation_model": "cross_dialect_reference",
+  "source_reference_engine": "pg",
+  "exact_match": false,
+  "sorted_match": false,
+  "accepted_as_equivalent": false
+}

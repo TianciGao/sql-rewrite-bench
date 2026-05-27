@@ -1,0 +1,64 @@
+{
+  "status_id": "formal_gate_status_v8",
+  "scope": "r_bot_formal_substrate_freeze_01",
+  "denominator_id": "common_core_v0_40_same_engine_120",
+  "method_id": "r_bot",
+  "route_id": "r_bot_same_engine_rewrite",
+  "basis": {
+    "artifacts": [
+      "reports/evaluation/common_core_v0/r_bot_formal_substrate_freeze_01/formal_zip_text_manifest_v1.csv",
+      "reports/evaluation/common_core_v0/r_bot_formal_substrate_freeze_01/formal_zip_text_hashes_v1.json",
+      "reports/evaluation/common_core_v0/r_bot_formal_substrate_freeze_01/formal_zip_text_manifest_summary.md",
+      "reports/evaluation/common_core_v0/r_bot_formal_substrate_freeze_01/formal_near_duplicate_check_v1.csv",
+      "reports/evaluation/common_core_v0/r_bot_formal_substrate_freeze_01/formal_near_duplicate_check_summary.md",
+      "reports/evaluation/common_core_v0/r_bot_formal_substrate_freeze_01/formal_generated_output_exclusion_v1.csv",
+      "reports/evaluation/common_core_v0/r_bot_formal_substrate_freeze_01/formal_generated_output_exclusion_summary.md",
+      "reports/evaluation/common_core_v0/r_bot_formal_substrate_freeze_01/formal_generated_output_hashes_v1.json",
+      "reports/evaluation/common_core_v0/r_bot_formal_protocol/r_bot_parameter_freeze_v2.json"
+    ]
+  },
+  "direct_answers": {
+    "zip_text_manifest_extracted_rows": 18744,
+    "zip_text_included_in_contamination_checks": true,
+    "near_duplicate_failures": 0,
+    "generated_output_exact_matches": 0,
+    "corpus_text_unavailable_blockers": 0,
+    "generated_output_family_blockers": 0,
+    "current_benchmark_gate_ready": false,
+    "formal_generation_may_start": false
+  },
+  "zip_text_manifest": {
+    "zip_path": "/tmp/rewritebench_prior_method_audit/LLM4Rewrite/rag/stackoverflow-rewrite-embed.zip",
+    "zip_sha256_verified": true,
+    "extracted_text_rows": 18744,
+    "zip_text_included_in_contamination_checks": true
+  },
+  "near_duplicate_check": {
+    "rows_covered": 40,
+    "near_duplicate_failures": 0,
+    "rows_blocked_by_retention_provenance": 40,
+    "rows_blocked_by_corpus_text_unavailability": 0,
+    "visible_flat_file_included_manifest_items": 31,
+    "zip_derived_text_rows_available": 18744
+  },
+  "generated_output_exclusion": {
+    "rows_covered": 357,
+    "generated_output_exact_matches": 0,
+    "rows_blocked_by_retention_provenance": 357,
+    "rows_blocked_by_corpus_text_unavailability": 0,
+    "visible_flat_file_included_manifest_items": 31,
+    "zip_derived_text_rows_available": 18744,
+    "generated_output_family_blockers": 0
+  },
+  "remaining_blockers": [
+    "ZIP external retained URI/provenance for stackoverflow-rewrite-embed.zip",
+    "formal index identifier/rebuild",
+    "runtime lock",
+    "artifact-contract validation"
+  ],
+  "gate_outcome": {
+    "current_benchmark_gate_ready": false,
+    "formal_generation_may_start": false,
+    "overall_status": "closed"
+  }
+}

@@ -1,0 +1,11 @@
+check_name,status,severity,notes
+csv_row_width_consistency,pass,pass,"canonical CSV width is 31 columns across all rows"
+denominator_scope_columns_present,pass,pass,"generation, execution, timing denominator columns and engine_scope are explicit for all rows"
+leaderboard_comparable_conservative,pass,pass,"leaderboard_comparable is no for all rows"
+r_bot_scope_check,pass,pass,"R-Bot row is PG-only with generation=common_core_v0_40_pg40, execution=generated_pg15_from_pg40_expansion_only, timing=generated_pg15_from_pg40_expansion_match_exact_only"
+r_bot_overclaim_check,pass,pass,"R-Bot GM_Speedup is not described as full PG40, full 120, tri-engine, or leaderboard evidence"
+r_bot_historical_provenance_check,pass,pass,"historical PG7 provenance remains in source_summary_files"
+generalization_placeholders_check,pass,pass,"cross_engine_executable_rate, cross_engine_consistency_rate, and speedup_transfer_rate remain NA_not_computed"
+negative_rejection_rate_check,pass,pass,"negative_rejection_rate remains NA_not_computed where unavailable"
+winner_language_check,pass,pass,"no row is described as a winner or best method"
+paper_framing_warning,warning,warning,"paper caption should restate that the table is an evidence ledger rather than a leaderboard"

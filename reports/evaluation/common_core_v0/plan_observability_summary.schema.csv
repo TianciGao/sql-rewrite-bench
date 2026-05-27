@@ -1,0 +1,12 @@
+column_name,data_type,required,example_or_allowed_values,description
+run_id,string,yes,<fill_me>,Run identifier.
+method_id,string,yes,<fill_me>,Method identifier.
+pool_scope,string,yes,all|performance|consistency|portability|longtail,Pool slice summarized for plan observability.
+engine_target,string,yes,postgresql|mysql|spark,Engine for the observability summary row.
+denominator_cases,integer,yes,40,Coverage-aware denominator used for the summary.
+cases_with_plan_artifacts,integer,yes,0,Number of denominator cases with usable plan artifacts.
+cases_with_operator_delta,integer,yes,0,Number of denominator cases where a plan delta could be summarized.
+plan_observability_rate,number,yes,0.0,Share of denominator cases with usable plan observability artifacts.
+operator_delta_rate,number,yes,0.0,Share of denominator cases with a meaningful operator-level change summary.
+plan_collection_failure_cases,integer,yes,0,Number of denominator cases blocked by missing or unusable plan artifacts.
+notes,string,no,<fill_me>,Short comment on observability interpretation or exclusions.

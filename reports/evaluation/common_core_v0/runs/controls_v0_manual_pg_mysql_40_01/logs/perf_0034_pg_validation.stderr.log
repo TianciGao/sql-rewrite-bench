@@ -1,0 +1,7 @@
+注意:  串联删除6个其它对象
+DETAIL:  递归删除 表 perf_0034_validation.item
+递归删除 表 perf_0034_validation.date_dim
+递归删除 表 perf_0034_validation.customer_address
+递归删除 表 perf_0034_validation.store_sales
+递归删除 表 perf_0034_validation.catalog_sales
+递归删除 表 perf_0034_validation.web_sales

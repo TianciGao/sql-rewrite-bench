@@ -1,0 +1,12 @@
+mysql: [Warning] Using a password on the command line interface can be insecure.
+mysql: [Warning] Using a password on the command line interface can be insecure.
+mysql: [Warning] Using a password on the command line interface can be insecure.
+mysql: [Warning] Using a password on the command line interface can be insecure.
+ERROR 1064 (42000) at line 1: You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near '."admemail1" , "t2"."admemail2" FROM "frpm" AS "t1" INNER JOIN "schools" AS "t2"' at line 1
+mysql: [Warning] Using a password on the command line interface can be insecure.
+Traceback (most recent call last):
+  File "<stdin>", line 219, in run_mysql_row
+  File "<stdin>", line 211, in mysql_exec
+  File "/usr/lib/python3.12/subprocess.py", line 571, in run
+    raise CalledProcessError(retcode, process.args,
+subprocess.CalledProcessError: Command '['mysql', '--host', '127.0.0.1', '--port', '3306', '--user', 'bench', '--password=benchpass', 'bench', '--batch', '--raw', '--skip-column-names', '-e', 'SELECT "t2"."admemail1" , "t2"."admemail2" FROM "frpm" AS "t1" INNER JOIN "schools" AS "t2" ON "t1"."cdscode" = "t2"."cdscode" WHERE "t2"."county" = \'San Bernardino\' AND "t2"."city" = \'San Bernardino\' AND "t2"."doc" :: integer = 54 AND EXTRACT( YEAR FROM "t2"."opendate" ) BETWEEN 2009 AND 2010 AND "t2"."soc" :: integer = 62']' returned non-zero exit status 1.

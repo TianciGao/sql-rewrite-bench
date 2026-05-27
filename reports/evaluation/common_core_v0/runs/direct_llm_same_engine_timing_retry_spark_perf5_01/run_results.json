@@ -1,0 +1,159 @@
+{
+  "run_id": "direct_llm_same_engine_timing_retry_spark_perf5_01",
+  "denominator_id": "common_core_v0_40",
+  "method_id": "direct_llm",
+  "route_id": "direct_llm_same_engine_rewrite",
+  "engine_scope": [
+    "spark"
+  ],
+  "retry_case_ids": [
+    "PERF_0008",
+    "PERF_0013",
+    "PERF_0017",
+    "PERF_0019",
+    "PERF_0024"
+  ],
+  "warmup_count": 1,
+  "repeat_count": 3,
+  "compute_final_gm_speedup": false,
+  "compute_regression_rate": false,
+  "compute_leaderboard": false,
+  "records": [
+    {
+      "key": "env_check",
+      "row_status": "executed",
+      "command": "python -m scripts.cli env-check",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_timing_retry_spark_perf5_01/logs/env_check.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_timing_retry_spark_perf5_01/logs/env_check.stderr.log",
+      "timing_json_path": "",
+      "speedup_exclusion_reason": "not_applicable_env_check",
+      "source_runtime_ms": [],
+      "generated_runtime_ms": [],
+      "median_source_ms": null,
+      "median_generated_ms": null,
+      "speedup_ratio": null,
+      "notes": ""
+    },
+    {
+      "key": "perf_0008__spark__direct_llm_same_engine_rewrite",
+      "row_status": "executed",
+      "command": "python - <<'PY' <spark timing retry runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_timing_retry_spark_perf5_01/logs/perf_0008__spark__direct_llm_same_engine_rewrite.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_timing_retry_spark_perf5_01/logs/perf_0008__spark__direct_llm_same_engine_rewrite.stderr.log",
+      "timing_json_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_timing_retry_spark_perf5_01/timings/PERF_0008/spark/direct_llm_same_engine_rewrite.json",
+      "speedup_exclusion_reason": "spark_loader_retry_after_parse_syntax_error",
+      "source_runtime_ms": [
+        421.3994659949094,
+        356.5817669732496,
+        316.37339293956757
+      ],
+      "generated_runtime_ms": [
+        393.00370402634144,
+        368.17417689599097,
+        311.3142669899389
+      ],
+      "median_source_ms": 356.5817669732496,
+      "median_generated_ms": 368.17417689599097,
+      "speedup_ratio": 0.9685137887168653,
+      "notes": ""
+    },
+    {
+      "key": "perf_0013__spark__direct_llm_same_engine_rewrite",
+      "row_status": "executed",
+      "command": "python - <<'PY' <spark timing retry runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_timing_retry_spark_perf5_01/logs/perf_0013__spark__direct_llm_same_engine_rewrite.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_timing_retry_spark_perf5_01/logs/perf_0013__spark__direct_llm_same_engine_rewrite.stderr.log",
+      "timing_json_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_timing_retry_spark_perf5_01/timings/PERF_0013/spark/direct_llm_same_engine_rewrite.json",
+      "speedup_exclusion_reason": "spark_loader_retry_after_parse_syntax_error",
+      "source_runtime_ms": [
+        614.9587880354375,
+        508.06855596601963,
+        485.1196550298482
+      ],
+      "generated_runtime_ms": [
+        534.8632610403001,
+        519.0438529243693,
+        469.8270589578897
+      ],
+      "median_source_ms": 508.06855596601963,
+      "median_generated_ms": 519.0438529243693,
+      "speedup_ratio": 0.9788547790393562,
+      "notes": ""
+    },
+    {
+      "key": "perf_0017__spark__direct_llm_same_engine_rewrite",
+      "row_status": "executed",
+      "command": "python - <<'PY' <spark timing retry runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_timing_retry_spark_perf5_01/logs/perf_0017__spark__direct_llm_same_engine_rewrite.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_timing_retry_spark_perf5_01/logs/perf_0017__spark__direct_llm_same_engine_rewrite.stderr.log",
+      "timing_json_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_timing_retry_spark_perf5_01/timings/PERF_0017/spark/direct_llm_same_engine_rewrite.json",
+      "speedup_exclusion_reason": "spark_loader_retry_after_parse_syntax_error",
+      "source_runtime_ms": [
+        483.5534989833832,
+        401.0570099344477,
+        375.6598769687116
+      ],
+      "generated_runtime_ms": [
+        509.8476610146463,
+        374.7169839916751,
+        373.02651698701084
+      ],
+      "median_source_ms": 401.0570099344477,
+      "median_generated_ms": 374.7169839916751,
+      "speedup_ratio": 1.070293120056063,
+      "notes": ""
+    },
+    {
+      "key": "perf_0019__spark__direct_llm_same_engine_rewrite",
+      "row_status": "executed",
+      "command": "python - <<'PY' <spark timing retry runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_timing_retry_spark_perf5_01/logs/perf_0019__spark__direct_llm_same_engine_rewrite.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_timing_retry_spark_perf5_01/logs/perf_0019__spark__direct_llm_same_engine_rewrite.stderr.log",
+      "timing_json_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_timing_retry_spark_perf5_01/timings/PERF_0019/spark/direct_llm_same_engine_rewrite.json",
+      "speedup_exclusion_reason": "spark_loader_retry_after_parse_syntax_error",
+      "source_runtime_ms": [
+        392.96473807189614,
+        319.5061630103737,
+        312.58711603004485
+      ],
+      "generated_runtime_ms": [
+        355.8715470135212,
+        328.7476550322026,
+        312.8970570396632
+      ],
+      "median_source_ms": 319.5061630103737,
+      "median_generated_ms": 328.7476550322026,
+      "speedup_ratio": 0.9718887971355304,
+      "notes": ""
+    },
+    {
+      "key": "perf_0024__spark__direct_llm_same_engine_rewrite",
+      "row_status": "executed",
+      "command": "python - <<'PY' <spark timing retry runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_timing_retry_spark_perf5_01/logs/perf_0024__spark__direct_llm_same_engine_rewrite.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_timing_retry_spark_perf5_01/logs/perf_0024__spark__direct_llm_same_engine_rewrite.stderr.log",
+      "timing_json_path": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_same_engine_timing_retry_spark_perf5_01/timings/PERF_0024/spark/direct_llm_same_engine_rewrite.json",
+      "speedup_exclusion_reason": "spark_loader_retry_after_parse_syntax_error",
+      "source_runtime_ms": [
+        743.1821380741894,
+        558.8947660289705,
+        498.4223310602829
+      ],
+      "generated_runtime_ms": [
+        667.8312380099669,
+        507.4197290232405,
+        441.99943693820387
+      ],
+      "median_source_ms": 558.8947660289705,
+      "median_generated_ms": 507.4197290232405,
+      "speedup_ratio": 1.101444689793235,
+      "notes": ""
+    }
+  ]
+}

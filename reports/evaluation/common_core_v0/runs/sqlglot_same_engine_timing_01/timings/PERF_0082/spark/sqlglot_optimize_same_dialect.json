@@ -1,0 +1,22 @@
+{
+  "case_id": "PERF_0082",
+  "engine": "spark",
+  "route_id": "sqlglot_optimize_same_dialect",
+  "warmup_count": 1,
+  "repeat_count": 3,
+  "source_runtime_ms": [
+    859.2029269784689,
+    700.7548689143732,
+    680.0625449977815
+  ],
+  "generated_runtime_ms": [
+    817.5709170754999,
+    698.0309950886294,
+    667.9677909705788
+  ],
+  "median_source_ms": 700.7548689143732,
+  "median_generated_ms": 698.0309950886294,
+  "speedup_ratio": 1.0039022247506328,
+  "status": "success",
+  "notes": ""
+}

@@ -1,0 +1,61 @@
+{
+  "run_id": "controls_v0_manual_spark_canary_04cases_01",
+  "mode": "manual_human_execution",
+  "repo_root": "/home/tianci_gao/code/sql-rewrite-bench",
+  "case_scope": [
+    "PERF_0006",
+    "CONS_0007",
+    "LONGTAIL_0011",
+    "PORT_0012"
+  ],
+  "engine_scope": [
+    "spark"
+  ],
+  "records": [
+    {
+      "key": "env_check",
+      "status": "executed",
+      "command": "python -m scripts.cli env-check",
+      "exit_code": 0,
+      "stdout_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_spark_canary_04cases_01/logs/env_check.stdout.log",
+      "stderr_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_spark_canary_04cases_01/logs/env_check.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "perf_0006_spark_validation",
+      "status": "missing_script",
+      "command": "bash cases/PERF/PERF_0006/validation/run_spark_validation.sh",
+      "exit_code": null,
+      "stdout_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_spark_canary_04cases_01/logs/perf_0006_spark_validation.stdout.log",
+      "stderr_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_spark_canary_04cases_01/logs/perf_0006_spark_validation.stderr.log",
+      "notes": "missing_script"
+    },
+    {
+      "key": "cons_0007_spark_validation",
+      "status": "executed",
+      "command": "bash cases/CONS/CONS_0007/validation/run_spark_validation.sh",
+      "exit_code": 0,
+      "stdout_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_spark_canary_04cases_01/logs/cons_0007_spark_validation.stdout.log",
+      "stderr_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_spark_canary_04cases_01/logs/cons_0007_spark_validation.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "longtail_0011_spark_validation",
+      "status": "executed",
+      "command": "bash cases/LONGTAIL/LONGTAIL_0011/validation/run_spark_validation.sh",
+      "exit_code": 0,
+      "stdout_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_spark_canary_04cases_01/logs/longtail_0011_spark_validation.stdout.log",
+      "stderr_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_spark_canary_04cases_01/logs/longtail_0011_spark_validation.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "port_0012_spark_validation",
+      "status": "executed",
+      "command": "bash cases/PORT/PORT_0012/validation/run_spark_validation.sh",
+      "exit_code": 0,
+      "stdout_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_spark_canary_04cases_01/logs/port_0012_spark_validation.stdout.log",
+      "stderr_log": "reports/evaluation/common_core_v0/runs/controls_v0_manual_spark_canary_04cases_01/logs/port_0012_spark_validation.stderr.log",
+      "notes": ""
+    }
+  ]
+}

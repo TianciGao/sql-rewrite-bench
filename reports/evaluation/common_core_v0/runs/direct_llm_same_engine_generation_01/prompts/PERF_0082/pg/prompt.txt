@@ -1,0 +1,78 @@
+SYSTEM / OPERATOR INSTRUCTION
+Produce exactly one semantics-preserving SQL rewrite of the input query in the same target dialect.
+
+REQUIREMENTS
+- Output SQL only.
+- Do not use markdown fences.
+- Do not add explanations.
+- Do not add comments unless comments already exist in the input SQL.
+- Do not output DDL.
+- Do not output INSERT, UPDATE, DELETE, MERGE, COPY, or any data-changing statement.
+- Preserve result semantics exactly.
+- Keep the rewrite in the same target engine / dialect.
+- Avoid engine-specific functions unless they are compatible with the target engine.
+- If the original query is already near-minimal, you may return an equivalent no-op rewrite, but still output SQL only.
+
+TARGET ENGINE
+pg
+
+SCHEMA
+-- PostgreSQL DDL for PERF_0082
+-- draft_origin: JOB_DRAFT_0005
+
+CREATE TABLE company_type (
+  id INT,
+  kind TEXT
+);
+
+CREATE TABLE info_type (
+  id INT
+);
+
+CREATE TABLE movie_companies (
+  id INT,
+  company_type_id INT,
+  movie_id INT,
+  note TEXT
+);
+
+CREATE TABLE movie_info (
+  id INT,
+  info_type_id INT,
+  info TEXT,
+  movie_id INT
+);
+
+CREATE TABLE title (
+  id INT,
+  production_year INT,
+  title TEXT
+);
+
+SOURCE SQL
+-- draft_id: JOB_DRAFT_0005
+-- original local source path: /home/tianci_gao/code/sql-rewrite-bench/runs/codex_overnight/job_candidate_drafts_30/candidates/JOB_DRAFT_0005/source.sql
+-- not official case
+SELECT min(t.title) AS typical_european_movie
+FROM company_type AS ct,
+     info_type AS it,
+     movie_companies AS mc,
+     movie_info AS mi,
+     title AS t
+WHERE ct.kind = 'production companies'
+  AND mc.note like '%(theatrical)%'
+  AND mc.note like '%(France)%'
+  AND mi.info IN ('Sweden',
+                  'Norway',
+                  'Germany',
+                  'Denmark',
+                  'Swedish',
+                  'Denish',
+                  'Norwegian',
+                  'German')
+  AND t.production_year > 2005
+  AND t.id = mi.movie_id
+  AND t.id = mc.movie_id
+  AND mc.movie_id = mi.movie_id
+  AND ct.id = mc.company_type_id
+  AND it.id = mi.info_type_id;

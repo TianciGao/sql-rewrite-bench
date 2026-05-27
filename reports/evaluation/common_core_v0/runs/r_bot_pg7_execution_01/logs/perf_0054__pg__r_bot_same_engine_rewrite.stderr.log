@@ -1,0 +1,5 @@
+注意:  模式 "rbot_pg7_exec_perf_0054" 不存在
+注意:  串联删除3个其它对象
+DETAIL:  递归删除 表 rbot_pg7_exec_perf_0054.date_dim
+递归删除 表 rbot_pg7_exec_perf_0054.store_sales
+递归删除 表 rbot_pg7_exec_perf_0054.item

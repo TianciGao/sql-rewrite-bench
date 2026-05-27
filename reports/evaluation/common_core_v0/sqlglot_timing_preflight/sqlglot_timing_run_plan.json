@@ -1,0 +1,28 @@
+{
+  "denominator_id": "common_core_v0_40",
+  "method_id": "sqlglot",
+  "run_scope": "sqlglot_same_engine_timing_preflight",
+  "planned_timing_denominator": {
+    "row_count": 137,
+    "rule": "only executed_success rows are timing_eligible"
+  },
+  "planned_speedup_denominator": {
+    "row_count": 137,
+    "rule": "subset of timing_eligible rows excluding noop_generated rows and any non-success rows"
+  },
+  "exclusion_buckets": {
+    "executed_failed": 16,
+    "generation_failed": 27,
+    "noop_generated_not_executed": 24,
+    "skipped_unsupported": 36
+  },
+  "planned_output_directory": "reports/evaluation/common_core_v0/runs/sqlglot_same_engine_timing_01/",
+  "planned_outputs": {
+    "run_manifest": "reports/evaluation/common_core_v0/runs/sqlglot_same_engine_timing_01/run_manifest.json",
+    "run_event_long": "reports/evaluation/common_core_v0/runs/sqlglot_same_engine_timing_01/run_event_long.csv",
+    "method_case_summary": "reports/evaluation/common_core_v0/runs/sqlglot_same_engine_timing_01/method_case_summary.csv",
+    "same_engine_leaderboard": "reports/evaluation/common_core_v0/runs/sqlglot_same_engine_timing_01/same_engine_leaderboard.csv",
+    "timing_artifacts_root": "reports/evaluation/common_core_v0/runs/sqlglot_same_engine_timing_01/timings/"
+  },
+  "validator_command": "python scripts/common_core_v0_validation.py --manifest reports/evaluation/common_core_v0/runs/sqlglot_same_engine_timing_01/run_manifest.json --run-event-long reports/evaluation/common_core_v0/runs/sqlglot_same_engine_timing_01/run_event_long.csv --method-case-summary reports/evaluation/common_core_v0/runs/sqlglot_same_engine_timing_01/method_case_summary.csv --json"
+}

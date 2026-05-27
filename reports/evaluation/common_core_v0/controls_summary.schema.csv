@@ -1,0 +1,12 @@
+column_name,data_type,required,example_or_allowed_values,description
+run_id,string,yes,<fill_me>,Run identifier.
+method_id,string,yes,<fill_me>,Method identifier.
+control_group,string,yes,negative_rewrites|source_only|sanity_subset|legacy_anchor_reference,Control family being summarized.
+pool_scope,string,yes,all|performance|consistency|portability|longtail,Pool slice used for the control summary.
+denominator_cases,integer,yes,40,Coverage-aware denominator for this summary.
+control_events,integer,yes,0,Number of control events observed.
+control_valid_cases,integer,yes,0,Number of cases with valid control evidence.
+control_failure_cases,integer,yes,0,Number of denominator cases failing the control condition.
+control_expected_behavior,string,yes,no_speedup|no_translation|must_fail|must_match,Expected control behavior under the protocol.
+control_observed_behavior,string,no,<fill_me>,Observed aggregate behavior description.
+notes,string,no,<fill_me>,Short note on interpretation or caveat.

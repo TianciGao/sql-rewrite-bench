@@ -1,0 +1,5 @@
+/tmp/rewritebench_llmr2_recovered_extraction_route_v1/PERF_0013/runtime_root_recovered_extraction_v1/src/SentEval/senteval/utils.py:62: SyntaxWarning: invalid escape sequence '\d'
+  assert re.match("^[+-]?(\d+(\.\d*)?|\.\d+)$", split[1]) is not None
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+Loading weights:   0%|          | 0/103 [00:00<?, ?it/s]Loading weights: 100%|██████████| 103/103 [00:00<00:00, 3780.01it/s]
+Loading weights:   0%|          | 0/103 [00:00<?, ?it/s]Loading weights: 100%|██████████| 103/103 [00:00<00:00, 3770.70it/s]

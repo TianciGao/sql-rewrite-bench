@@ -1,0 +1,7 @@
+注意:  模式 "ccv0_direct_llm_perf_0056_pg" 不存在
+注意:  串联删除5个其它对象
+DETAIL:  递归删除 表 ccv0_direct_llm_perf_0056_pg.customer_address
+递归删除 表 ccv0_direct_llm_perf_0056_pg.customer
+递归删除 表 ccv0_direct_llm_perf_0056_pg.store_sales
+递归删除 表 ccv0_direct_llm_perf_0056_pg.date_dim
+递归删除 表 ccv0_direct_llm_perf_0056_pg.item

@@ -1,0 +1,22 @@
+{
+  "case_id": "CONS_0010",
+  "engine": "spark",
+  "route_id": "direct_llm_same_engine_rewrite",
+  "warmup_count": 1,
+  "repeat_count": 3,
+  "source_runtime_ms": [
+    312.97529104631394,
+    269.3450211081654,
+    246.829116018489
+  ],
+  "generated_runtime_ms": [
+    319.21513203997165,
+    265.14009793754667,
+    265.22554992698133
+  ],
+  "median_source_ms": 269.3450211081654,
+  "median_generated_ms": 265.22554992698133,
+  "speedup_ratio": 1.015531954528205,
+  "status": "success",
+  "notes": ""
+}

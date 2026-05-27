@@ -1,0 +1,27 @@
+{
+  "expected_zip_sha256": "e7e68b08a4283467f899f05a3150c485e2bf615ccdde4f4ab76e0f08734e546a",
+  "formal_retention_blocker": true,
+  "normalization_policy": {
+    "collapse_whitespace": true,
+    "lowercase_all_text": true,
+    "remove_trailing_semicolon": true,
+    "strip_block_comments": true,
+    "strip_line_comments": true
+  },
+  "retention_blocker_reason": "tmp_only_archive_text_without_retained_external_provenance",
+  "row_count": 18744,
+  "row_counts_by_entry": {
+    "stackoverflow-rewrite-query-optimization.jsonl": 2428,
+    "stackoverflow-rewrite-rules-query-optimization.jsonl": 6584,
+    "stackoverflow-rewrite-sql-templates-embed-query-optimization.jsonl": 3798,
+    "stackoverflow-rewrite-sql-templates-query-optimization.jsonl": 5934
+  },
+  "streamed_entries": [
+    "stackoverflow-rewrite-query-optimization.jsonl",
+    "stackoverflow-rewrite-rules-query-optimization.jsonl",
+    "stackoverflow-rewrite-sql-templates-query-optimization.jsonl",
+    "stackoverflow-rewrite-sql-templates-embed-query-optimization.jsonl"
+  ],
+  "zip_path": "/tmp/rewritebench_prior_method_audit/LLM4Rewrite/rag/stackoverflow-rewrite-embed.zip",
+  "zip_sha256": "e7e68b08a4283467f899f05a3150c485e2bf615ccdde4f4ab76e0f08734e546a"
+}

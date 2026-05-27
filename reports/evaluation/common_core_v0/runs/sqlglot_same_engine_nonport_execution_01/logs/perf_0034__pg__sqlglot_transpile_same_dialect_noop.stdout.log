@@ -1,0 +1,31 @@
+DROP SCHEMA
+CREATE SCHEMA
+SET
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+SET
+INSERT 0 2
+INSERT 0 1
+INSERT 0 2
+INSERT 0 2
+INSERT 0 1
+INSERT 0 1
+SET
+  i_item_id  | total_sales 
+-------------+-------------
+ item_lace   |       50.00
+ item_orchid |      600.00
+(2 rows)
+
+SET
+  i_item_id  | total_sales 
+-------------+-------------
+ item_lace   |       50.00
+ item_orchid |      600.00
+(2 rows)
+
+DROP SCHEMA

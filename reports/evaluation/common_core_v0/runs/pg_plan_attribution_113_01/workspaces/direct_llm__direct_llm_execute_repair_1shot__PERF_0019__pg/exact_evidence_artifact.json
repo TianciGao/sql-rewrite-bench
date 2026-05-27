@@ -1,0 +1,9 @@
+{
+  "execution_status_observed": "executed",
+  "exact_match": true,
+  "sorted_match": true,
+  "consistency_check_status": "match_exact",
+  "source_output_path": "reports/evaluation/common_core_v0/runs/direct_llm_execute_repair_1shot_01/workspaces/PERF_0019/pg/direct_llm_execute_repair_1shot/source.tsv",
+  "generated_output_path": "reports/evaluation/common_core_v0/runs/direct_llm_execute_repair_1shot_01/workspaces/PERF_0019/pg/direct_llm_execute_repair_1shot/generated.tsv",
+  "result_check_path": "reports/evaluation/common_core_v0/runs/direct_llm_execute_repair_1shot_01/workspaces/PERF_0019/pg/direct_llm_execute_repair_1shot/result_check.json"
+}

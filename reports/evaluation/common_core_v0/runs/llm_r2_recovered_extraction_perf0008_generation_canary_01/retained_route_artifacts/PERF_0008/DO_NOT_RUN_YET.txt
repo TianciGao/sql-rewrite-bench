@@ -1,0 +1,5 @@
+DO NOT RUN YET
+- recovered-extraction route scaffold only
+- no LLM-R2 execution occurred
+- no PostgreSQL, checker, timing, or speedup execution occurred
+- any future run must preserve original-route PG9 evidence and emit a separate artifact family

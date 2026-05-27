@@ -1,0 +1,29 @@
+column_name,data_type,required,example_or_allowed_values,description
+run_id,string,yes,<fill_me>,Stable identifier for one evaluation run.
+event_id,string,yes,<fill_me>,Stable identifier for one raw event row.
+method_id,string,yes,<fill_me>,Method identifier used across all derived tables.
+method_version,string,yes,<fill_me>,Version or commit label for the evaluated method.
+case_id,string,yes,PERF_0006,Case identifier from the frozen 40-case denominator.
+pool,string,yes,performance|consistency|portability|longtail,Primary pool from the frozen denominator.
+source_family,string,yes,TPC-H|TPC-DS|JOB/IMDB|Calcite|VeriEQL|PARROT|SQLStorm|Stack Queries,Source family from the frozen denominator.
+task_track,string,yes,same_engine|cross_engine|control|verification|plan_observability,High-level evaluation track for this event.
+engine_source,string,no,postgresql|mysql|spark,Source engine when the event involves translation or transfer.
+engine_target,string,yes,postgresql|mysql|spark,Target engine on which this event executed or was verified.
+rewrite_id,string,no,rewrite_pos_01|rewrite_neg_01|source,Benchmark rewrite identifier or source baseline marker.
+rewrite_role,string,yes,source|positive|negative|control,Role of the SQL artifact within the case package.
+attempt_index,integer,yes,1,Monotonic attempt number for retried executions.
+execution_phase,string,yes,prepare|execute|verify_result|collect_plan|aggregate,Pipeline phase represented by the event.
+status,string,yes,success|failure|skipped|timeout|unsupported,Outcome of this raw event.
+failure_bucket,string,no,parse_error|execution_error|wrong_result|plan_missing|timeout|method_error|unsupported|normalization_gap,Normalized failure bucket when status is not success.
+is_denominator_case,boolean,yes,true,Must remain true for Common-core v0 denominator rows.
+is_valid_result,boolean,yes,false,Whether the event produced a valid comparable result artifact.
+is_speedup_eligible,boolean,yes,false,Whether this event can contribute to GM_Speedup style summaries.
+result_match_status,string,no,match|mismatch|not_checked,Result equivalence status for this event.
+normalization_policy,string,no,none|portability_stress|case_specific|manual_review,Normalization policy used for result comparison.
+baseline_runtime_ms,number,no,1234.5,Baseline runtime in milliseconds when applicable.
+rewrite_runtime_ms,number,no,987.6,Rewrite runtime in milliseconds when applicable.
+speedup_ratio,number,no,1.25,Derived per-event speedup ratio if valid and eligible.
+plan_artifact_status,string,no,present|missing|not_applicable,Whether required plan artifacts were available for this event.
+verifier_mode,string,no,engine_local_witness|engine_local_plan_artifacts|external|manual,Verifier or checker mode used for this event.
+artifact_path,string,no,reports/evaluation/common_core_v0/run_event_long.csv,Optional path to the raw artifact or log backing the row.
+notes,string,no,<fill_me>,Free-form short note for caveats or operator annotations.

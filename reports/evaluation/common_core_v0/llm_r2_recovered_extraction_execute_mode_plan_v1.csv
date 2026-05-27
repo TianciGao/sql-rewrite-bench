@@ -1,0 +1,3 @@
+route_id,mode,scope,staged_runtime_patch_only,preserves_raw_field,separate_output_root,postgres_checker_timing_run,success_exit_condition,original_pg9_preserved,notes
+llm_r2_recovered_extraction_route_v1,dry_run,recovered_route_scaffold_only,yes,no,yes,no,preflight_only,yes,dry-run behavior remains planning-only and does not execute LLM-R2
+llm_r2_recovered_extraction_route_v1,execute,generation_only_recovered_route,yes,yes,yes,no,recovered_generated_sql_retained_and_begins_with_select_or_with,yes,execute mode is limited to staged runtime generation and recovered extraction audit only

@@ -1,0 +1,79 @@
+SYSTEM / OPERATOR INSTRUCTION
+Produce exactly one semantics-preserving SQL rewrite of the input query in the same target dialect.
+
+REQUIREMENTS
+- Output SQL only.
+- Do not use markdown fences.
+- Do not add explanations.
+- Do not add comments unless comments already exist in the input SQL.
+- Do not output DDL.
+- Do not output INSERT, UPDATE, DELETE, MERGE, COPY, or any data-changing statement.
+- Preserve result semantics exactly.
+- Keep the rewrite in the same target engine / dialect.
+- Avoid engine-specific functions unless they are compatible with the target engine.
+- If the original query is already near-minimal, you may return an equivalent no-op rewrite, but still output SQL only.
+
+TARGET ENGINE
+mysql
+
+SCHEMA
+-- PERF_0056 draft MySQL schema for package enablement review only.
+-- Derived mechanically from schema/ddl_pg.sql.
+-- Draft only: do not treat as executed or validated.
+
+create table customer_address (
+  ca_address_sk int,
+  ca_state varchar(20)
+);
+
+create table customer (
+  c_customer_sk int,
+  c_current_addr_sk int
+);
+
+create table store_sales (
+  ss_customer_sk int,
+  ss_sold_date_sk int,
+  ss_item_sk int
+);
+
+create table date_dim (
+  d_date_sk int,
+  d_year int,
+  d_moy int,
+  d_month_seq int
+);
+
+create table item (
+  i_item_sk int,
+  i_current_price decimal(9,2),
+  i_category varchar(255)
+);
+
+SOURCE SQL
+-- PERF_0056 source SQL.
+-- Frozen from TPC-DS query_templates/query6.tpl via repaired repo-local dsqgen:
+--   COUNT=1, QUALIFY=Y, SCALE=1, DIALECT=ansi
+-- PostgreSQL normalization replaces TOP 100 with LIMIT 100.
+
+select a.ca_state state, count(*) cnt
+from customer_address a, customer c, store_sales s, date_dim d, item i
+where a.ca_address_sk = c.c_current_addr_sk
+  and c.c_customer_sk = s.ss_customer_sk
+  and s.ss_sold_date_sk = d.d_date_sk
+  and s.ss_item_sk = i.i_item_sk
+  and d.d_month_seq = (
+      select distinct d_month_seq
+      from date_dim
+      where d_year = 2000
+        and d_moy = 2
+  )
+  and i.i_current_price > 1.2 * (
+      select avg(j.i_current_price)
+      from item j
+      where j.i_category = i.i_category
+  )
+group by a.ca_state
+having count(*) >= 10
+order by cnt, a.ca_state
+limit 100;

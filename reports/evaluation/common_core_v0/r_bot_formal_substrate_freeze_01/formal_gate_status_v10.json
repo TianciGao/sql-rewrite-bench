@@ -1,0 +1,63 @@
+{
+  "status_id": "formal_gate_status_v10",
+  "scope": "r_bot_formal_substrate_freeze_01",
+  "denominator_id": "common_core_v0_40_same_engine_120",
+  "method_id": "r_bot",
+  "route_id": "r_bot_same_engine_rewrite",
+  "basis": {
+    "prior_gate_status": "formal_gate_status_v9",
+    "artifacts": [
+      "reports/evaluation/common_core_v0/r_bot_formal_substrate_freeze_01/formal_stackoverflow_zip_retention_manifest_v2.json",
+      "reports/evaluation/common_core_v0/r_bot_formal_substrate_freeze_01/formal_stackoverflow_zip_retention_manifest_v2.csv",
+      "reports/evaluation/common_core_v0/r_bot_formal_substrate_freeze_01/formal_gate_status_v9.md",
+      "reports/evaluation/common_core_v0/r_bot_formal_substrate_freeze_01/formal_gate_status_v9.json",
+      "reports/evaluation/common_core_v0/r_bot_formal_substrate_freeze_01/formal_gate_status_v8.md",
+      "reports/evaluation/common_core_v0/r_bot_formal_protocol/r_bot_parameter_freeze_v2.json"
+    ]
+  },
+  "direct_answers": {
+    "zip_provenance_blocker_closed": true,
+    "external_artifact_uri": "https://doi.org/10.5281/zenodo.20087267",
+    "expected_filename": "stackoverflow-rewrite-embed.zip",
+    "outer_zip_sha256": "e7e68b08a4283467f899f05a3150c485e2bf615ccdde4f4ab76e0f08734e546a",
+    "current_benchmark_gate_ready": false,
+    "formal_generation_may_start": false
+  },
+  "zip_retention_state": {
+    "artifact_name": "stackoverflow-rewrite-embed.zip",
+    "external_artifact_doi": "10.5281/zenodo.20087267",
+    "external_artifact_uri": "https://doi.org/10.5281/zenodo.20087267",
+    "expected_filename": "stackoverflow-rewrite-embed.zip",
+    "retention_status": "externally_retained_with_checksum",
+    "zip_external_provenance_closed": true,
+    "outer_zip_sha256": "e7e68b08a4283467f899f05a3150c485e2bf615ccdde4f4ab76e0f08734e546a"
+  },
+  "required_member_hashes": [
+    {
+      "entry_name": "stackoverflow-rewrite-query-optimization.jsonl",
+      "entry_sha256": "cabe00234f4f4e92707b6490e0b540f5aabf97708dd128355243815b772bc4aa"
+    },
+    {
+      "entry_name": "stackoverflow-rewrite-rules-query-optimization.jsonl",
+      "entry_sha256": "cd95e4645c675226c04c2f8c722b6006847778dbf5c6bd27243e304ff2c16c14"
+    },
+    {
+      "entry_name": "stackoverflow-rewrite-sql-templates-query-optimization.jsonl",
+      "entry_sha256": "0b2592bb1c748c7c4ab644ecba330c33c1d0174e54a8b91d1443375955aa2c3e"
+    },
+    {
+      "entry_name": "stackoverflow-rewrite-sql-templates-embed-query-optimization.jsonl",
+      "entry_sha256": "91b45329be8922e8141fdb98f36f9d87d5525eac6b687bec5becb1569b9c83c6"
+    }
+  ],
+  "remaining_blockers": [
+    "formal Chroma index identifier / rebuild",
+    "runtime/dependency lock",
+    "retained run-path artifact-contract validation"
+  ],
+  "gate_outcome": {
+    "current_benchmark_gate_ready": false,
+    "formal_generation_may_start": false,
+    "overall_status": "closed"
+  }
+}

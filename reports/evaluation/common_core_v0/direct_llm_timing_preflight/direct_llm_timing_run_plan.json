@@ -1,0 +1,75 @@
+{
+  "denominator_id": "common_core_v0_40",
+  "method_id": "direct_llm",
+  "route_id": "direct_llm_same_engine_rewrite",
+  "run_scope": "direct_llm_same_engine_timing_preflight",
+  "planned_rows": 120,
+  "timing_eligible_rows": 94,
+  "speedup_eligible_rows": 94,
+  "output_directory": "reports/evaluation/common_core_v0/runs/direct_llm_same_engine_timing_01/",
+  "warmup_count": 1,
+  "repeat_count": 3,
+  "compute_final_gm_speedup": false,
+  "compute_regression_rate": false,
+  "compute_leaderboard": false,
+  "exclusion_counts": {
+    "mismatch": 5,
+    "execution_failed": 16,
+    "preflight_blocked_missing_artifact": 5
+  },
+  "counts_by_engine": {
+    "mysql": {
+      "total": 40,
+      "timing_eligible": 34,
+      "mismatch": 2,
+      "preflight_blocked_missing_artifact": 2,
+      "execution_failed": 2
+    },
+    "pg": {
+      "total": 40,
+      "timing_eligible": 32,
+      "mismatch": 1,
+      "execution_failed": 6,
+      "preflight_blocked_missing_artifact": 1
+    },
+    "spark": {
+      "total": 40,
+      "timing_eligible": 28,
+      "mismatch": 2,
+      "execution_failed": 8,
+      "preflight_blocked_missing_artifact": 2
+    }
+  },
+  "counts_by_pool": {
+    "consistency": {
+      "total": 27,
+      "timing_eligible": 24,
+      "mismatch": 3
+    },
+    "longtail": {
+      "total": 18,
+      "timing_eligible": 16,
+      "execution_failed": 2
+    },
+    "performance": {
+      "total": 48,
+      "timing_eligible": 45,
+      "mismatch": 1,
+      "execution_failed": 2
+    },
+    "portability": {
+      "total": 27,
+      "preflight_blocked_missing_artifact": 5,
+      "timing_eligible": 9,
+      "execution_failed": 12,
+      "mismatch": 1
+    }
+  },
+  "notes": [
+    "Timing-eligible rows are exactly the match_exact rows from the Direct LLM validity summary.",
+    "Preflight-blocked rows are package/artifact gaps and are not counted as LLM-generated SQL failures.",
+    "Execution-failed rows remain in-scope in the matrix but are excluded from timing and speedup eligibility.",
+    "Mismatch rows remain in-scope in the matrix but are excluded from timing and speedup eligibility.",
+    "No final GM_Speedup, RegressionRate, or leaderboard is computed in this preflight package."
+  ]
+}

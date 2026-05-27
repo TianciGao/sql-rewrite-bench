@@ -1,0 +1,1732 @@
+{
+  "run_id": "sqlglot_same_engine_nonport_execution_01",
+  "mode": "manual_human_execution",
+  "repo_root": "/home/tianci_gao/code/sql-rewrite-bench",
+  "case_scope": [
+    "PERF_0006",
+    "PERF_0007",
+    "PERF_0008",
+    "PERF_0013",
+    "PERF_0017",
+    "PERF_0019",
+    "PERF_0024",
+    "PERF_0033",
+    "PERF_0034",
+    "PERF_0035",
+    "PERF_0052",
+    "PERF_0054",
+    "PERF_0056",
+    "PERF_0062",
+    "PERF_0077",
+    "PERF_0082",
+    "CONS_0005",
+    "CONS_0007",
+    "CONS_0009",
+    "CONS_0010",
+    "CONS_0011",
+    "CONS_0012",
+    "CONS_0024",
+    "CONS_0036",
+    "CONS_0037",
+    "LONGTAIL_0011",
+    "LONGTAIL_0012",
+    "LONGTAIL_0013",
+    "LONGTAIL_0022",
+    "LONGTAIL_0023",
+    "LONGTAIL_0024"
+  ],
+  "engine_scope": [
+    "pg",
+    "mysql",
+    "spark"
+  ],
+  "route_scope": [
+    "sqlglot_optimize_same_dialect",
+    "sqlglot_transpile_same_dialect_noop"
+  ],
+  "records": [
+    {
+      "key": "env_check",
+      "row_status": "executed",
+      "command": "python -m scripts.cli env-check",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/env_check.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/env_check.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "cons_0005__mysql__sqlglot_optimize_same_dialect",
+      "row_status": "executed",
+      "command": "python - <<'PY' <mysql runner>",
+      "exit_code": 1,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/cons_0005__mysql__sqlglot_optimize_same_dialect.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/cons_0005__mysql__sqlglot_optimize_same_dialect.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "cons_0005__mysql__sqlglot_transpile_same_dialect_noop",
+      "row_status": "executed",
+      "command": "python - <<'PY' <mysql runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/cons_0005__mysql__sqlglot_transpile_same_dialect_noop.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/cons_0005__mysql__sqlglot_transpile_same_dialect_noop.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "cons_0005__pg__sqlglot_optimize_same_dialect",
+      "row_status": "executed",
+      "command": "python - <<'PY' <postgres runner>",
+      "exit_code": 1,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/cons_0005__pg__sqlglot_optimize_same_dialect.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/cons_0005__pg__sqlglot_optimize_same_dialect.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "cons_0005__pg__sqlglot_transpile_same_dialect_noop",
+      "row_status": "executed",
+      "command": "python - <<'PY' <postgres runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/cons_0005__pg__sqlglot_transpile_same_dialect_noop.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/cons_0005__pg__sqlglot_transpile_same_dialect_noop.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "cons_0005__spark__sqlglot_optimize_same_dialect",
+      "row_status": "executed",
+      "command": "python - <<'PY' <spark runner>",
+      "exit_code": 1,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/cons_0005__spark__sqlglot_optimize_same_dialect.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/cons_0005__spark__sqlglot_optimize_same_dialect.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "cons_0005__spark__sqlglot_transpile_same_dialect_noop",
+      "row_status": "executed",
+      "command": "python - <<'PY' <spark runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/cons_0005__spark__sqlglot_transpile_same_dialect_noop.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/cons_0005__spark__sqlglot_transpile_same_dialect_noop.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "cons_0007__mysql__sqlglot_optimize_same_dialect",
+      "row_status": "executed",
+      "command": "python - <<'PY' <mysql runner>",
+      "exit_code": 1,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/cons_0007__mysql__sqlglot_optimize_same_dialect.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/cons_0007__mysql__sqlglot_optimize_same_dialect.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "cons_0007__mysql__sqlglot_transpile_same_dialect_noop",
+      "row_status": "executed",
+      "command": "python - <<'PY' <mysql runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/cons_0007__mysql__sqlglot_transpile_same_dialect_noop.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/cons_0007__mysql__sqlglot_transpile_same_dialect_noop.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "cons_0007__pg__sqlglot_optimize_same_dialect",
+      "row_status": "executed",
+      "command": "python - <<'PY' <postgres runner>",
+      "exit_code": 1,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/cons_0007__pg__sqlglot_optimize_same_dialect.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/cons_0007__pg__sqlglot_optimize_same_dialect.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "cons_0007__pg__sqlglot_transpile_same_dialect_noop",
+      "row_status": "executed",
+      "command": "python - <<'PY' <postgres runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/cons_0007__pg__sqlglot_transpile_same_dialect_noop.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/cons_0007__pg__sqlglot_transpile_same_dialect_noop.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "cons_0007__spark__sqlglot_optimize_same_dialect",
+      "row_status": "executed",
+      "command": "python - <<'PY' <spark runner>",
+      "exit_code": 1,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/cons_0007__spark__sqlglot_optimize_same_dialect.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/cons_0007__spark__sqlglot_optimize_same_dialect.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "cons_0007__spark__sqlglot_transpile_same_dialect_noop",
+      "row_status": "executed",
+      "command": "python - <<'PY' <spark runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/cons_0007__spark__sqlglot_transpile_same_dialect_noop.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/cons_0007__spark__sqlglot_transpile_same_dialect_noop.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "cons_0009__mysql__sqlglot_optimize_same_dialect",
+      "row_status": "executed",
+      "command": "python - <<'PY' <mysql runner>",
+      "exit_code": 1,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/cons_0009__mysql__sqlglot_optimize_same_dialect.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/cons_0009__mysql__sqlglot_optimize_same_dialect.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "cons_0009__mysql__sqlglot_transpile_same_dialect_noop",
+      "row_status": "executed",
+      "command": "python - <<'PY' <mysql runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/cons_0009__mysql__sqlglot_transpile_same_dialect_noop.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/cons_0009__mysql__sqlglot_transpile_same_dialect_noop.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "cons_0009__pg__sqlglot_optimize_same_dialect",
+      "row_status": "executed",
+      "command": "python - <<'PY' <postgres runner>",
+      "exit_code": 1,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/cons_0009__pg__sqlglot_optimize_same_dialect.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/cons_0009__pg__sqlglot_optimize_same_dialect.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "cons_0009__pg__sqlglot_transpile_same_dialect_noop",
+      "row_status": "executed",
+      "command": "python - <<'PY' <postgres runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/cons_0009__pg__sqlglot_transpile_same_dialect_noop.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/cons_0009__pg__sqlglot_transpile_same_dialect_noop.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "cons_0009__spark__sqlglot_optimize_same_dialect",
+      "row_status": "executed",
+      "command": "python - <<'PY' <spark runner>",
+      "exit_code": 1,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/cons_0009__spark__sqlglot_optimize_same_dialect.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/cons_0009__spark__sqlglot_optimize_same_dialect.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "cons_0009__spark__sqlglot_transpile_same_dialect_noop",
+      "row_status": "executed",
+      "command": "python - <<'PY' <spark runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/cons_0009__spark__sqlglot_transpile_same_dialect_noop.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/cons_0009__spark__sqlglot_transpile_same_dialect_noop.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "cons_0010__mysql__sqlglot_optimize_same_dialect",
+      "row_status": "executed",
+      "command": "python - <<'PY' <mysql runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/cons_0010__mysql__sqlglot_optimize_same_dialect.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/cons_0010__mysql__sqlglot_optimize_same_dialect.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "cons_0010__mysql__sqlglot_transpile_same_dialect_noop",
+      "row_status": "executed",
+      "command": "python - <<'PY' <mysql runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/cons_0010__mysql__sqlglot_transpile_same_dialect_noop.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/cons_0010__mysql__sqlglot_transpile_same_dialect_noop.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "cons_0010__pg__sqlglot_optimize_same_dialect",
+      "row_status": "executed",
+      "command": "python - <<'PY' <postgres runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/cons_0010__pg__sqlglot_optimize_same_dialect.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/cons_0010__pg__sqlglot_optimize_same_dialect.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "cons_0010__pg__sqlglot_transpile_same_dialect_noop",
+      "row_status": "executed",
+      "command": "python - <<'PY' <postgres runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/cons_0010__pg__sqlglot_transpile_same_dialect_noop.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/cons_0010__pg__sqlglot_transpile_same_dialect_noop.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "cons_0010__spark__sqlglot_optimize_same_dialect",
+      "row_status": "executed",
+      "command": "python - <<'PY' <spark runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/cons_0010__spark__sqlglot_optimize_same_dialect.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/cons_0010__spark__sqlglot_optimize_same_dialect.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "cons_0010__spark__sqlglot_transpile_same_dialect_noop",
+      "row_status": "executed",
+      "command": "python - <<'PY' <spark runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/cons_0010__spark__sqlglot_transpile_same_dialect_noop.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/cons_0010__spark__sqlglot_transpile_same_dialect_noop.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "cons_0011__mysql__sqlglot_optimize_same_dialect",
+      "row_status": "executed",
+      "command": "python - <<'PY' <mysql runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/cons_0011__mysql__sqlglot_optimize_same_dialect.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/cons_0011__mysql__sqlglot_optimize_same_dialect.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "cons_0011__mysql__sqlglot_transpile_same_dialect_noop",
+      "row_status": "executed",
+      "command": "python - <<'PY' <mysql runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/cons_0011__mysql__sqlglot_transpile_same_dialect_noop.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/cons_0011__mysql__sqlglot_transpile_same_dialect_noop.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "cons_0011__pg__sqlglot_optimize_same_dialect",
+      "row_status": "executed",
+      "command": "python - <<'PY' <postgres runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/cons_0011__pg__sqlglot_optimize_same_dialect.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/cons_0011__pg__sqlglot_optimize_same_dialect.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "cons_0011__pg__sqlglot_transpile_same_dialect_noop",
+      "row_status": "executed",
+      "command": "python - <<'PY' <postgres runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/cons_0011__pg__sqlglot_transpile_same_dialect_noop.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/cons_0011__pg__sqlglot_transpile_same_dialect_noop.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "cons_0011__spark__sqlglot_optimize_same_dialect",
+      "row_status": "executed",
+      "command": "python - <<'PY' <spark runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/cons_0011__spark__sqlglot_optimize_same_dialect.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/cons_0011__spark__sqlglot_optimize_same_dialect.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "cons_0011__spark__sqlglot_transpile_same_dialect_noop",
+      "row_status": "executed",
+      "command": "python - <<'PY' <spark runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/cons_0011__spark__sqlglot_transpile_same_dialect_noop.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/cons_0011__spark__sqlglot_transpile_same_dialect_noop.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "cons_0012__mysql__sqlglot_optimize_same_dialect",
+      "row_status": "executed",
+      "command": "python - <<'PY' <mysql runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/cons_0012__mysql__sqlglot_optimize_same_dialect.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/cons_0012__mysql__sqlglot_optimize_same_dialect.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "cons_0012__mysql__sqlglot_transpile_same_dialect_noop",
+      "row_status": "executed",
+      "command": "python - <<'PY' <mysql runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/cons_0012__mysql__sqlglot_transpile_same_dialect_noop.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/cons_0012__mysql__sqlglot_transpile_same_dialect_noop.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "cons_0012__pg__sqlglot_optimize_same_dialect",
+      "row_status": "executed",
+      "command": "python - <<'PY' <postgres runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/cons_0012__pg__sqlglot_optimize_same_dialect.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/cons_0012__pg__sqlglot_optimize_same_dialect.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "cons_0012__pg__sqlglot_transpile_same_dialect_noop",
+      "row_status": "executed",
+      "command": "python - <<'PY' <postgres runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/cons_0012__pg__sqlglot_transpile_same_dialect_noop.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/cons_0012__pg__sqlglot_transpile_same_dialect_noop.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "cons_0012__spark__sqlglot_optimize_same_dialect",
+      "row_status": "executed",
+      "command": "python - <<'PY' <spark runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/cons_0012__spark__sqlglot_optimize_same_dialect.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/cons_0012__spark__sqlglot_optimize_same_dialect.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "cons_0012__spark__sqlglot_transpile_same_dialect_noop",
+      "row_status": "executed",
+      "command": "python - <<'PY' <spark runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/cons_0012__spark__sqlglot_transpile_same_dialect_noop.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/cons_0012__spark__sqlglot_transpile_same_dialect_noop.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "cons_0024__mysql__sqlglot_optimize_same_dialect",
+      "row_status": "not_executed_generation_failed",
+      "command": "",
+      "exit_code": null,
+      "stdout_log": "",
+      "stderr_log": "",
+      "notes": "Generation failed earlier; row remains explicit and is not executed."
+    },
+    {
+      "key": "cons_0024__mysql__sqlglot_transpile_same_dialect_noop",
+      "row_status": "executed",
+      "command": "python - <<'PY' <mysql runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/cons_0024__mysql__sqlglot_transpile_same_dialect_noop.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/cons_0024__mysql__sqlglot_transpile_same_dialect_noop.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "cons_0024__pg__sqlglot_optimize_same_dialect",
+      "row_status": "not_executed_generation_failed",
+      "command": "",
+      "exit_code": null,
+      "stdout_log": "",
+      "stderr_log": "",
+      "notes": "Generation failed earlier; row remains explicit and is not executed."
+    },
+    {
+      "key": "cons_0024__pg__sqlglot_transpile_same_dialect_noop",
+      "row_status": "executed",
+      "command": "python - <<'PY' <postgres runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/cons_0024__pg__sqlglot_transpile_same_dialect_noop.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/cons_0024__pg__sqlglot_transpile_same_dialect_noop.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "cons_0024__spark__sqlglot_optimize_same_dialect",
+      "row_status": "not_executed_generation_failed",
+      "command": "",
+      "exit_code": null,
+      "stdout_log": "",
+      "stderr_log": "",
+      "notes": "Generation failed earlier; row remains explicit and is not executed."
+    },
+    {
+      "key": "cons_0024__spark__sqlglot_transpile_same_dialect_noop",
+      "row_status": "executed",
+      "command": "python - <<'PY' <spark runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/cons_0024__spark__sqlglot_transpile_same_dialect_noop.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/cons_0024__spark__sqlglot_transpile_same_dialect_noop.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "cons_0036__mysql__sqlglot_optimize_same_dialect",
+      "row_status": "executed",
+      "command": "python - <<'PY' <mysql runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/cons_0036__mysql__sqlglot_optimize_same_dialect.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/cons_0036__mysql__sqlglot_optimize_same_dialect.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "cons_0036__mysql__sqlglot_transpile_same_dialect_noop",
+      "row_status": "noop_generated",
+      "command": "",
+      "exit_code": null,
+      "stdout_log": "",
+      "stderr_log": "",
+      "notes": "Generated SQL was an explicit no-op output; row remains explicit and is not executed."
+    },
+    {
+      "key": "cons_0036__pg__sqlglot_optimize_same_dialect",
+      "row_status": "executed",
+      "command": "python - <<'PY' <postgres runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/cons_0036__pg__sqlglot_optimize_same_dialect.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/cons_0036__pg__sqlglot_optimize_same_dialect.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "cons_0036__pg__sqlglot_transpile_same_dialect_noop",
+      "row_status": "noop_generated",
+      "command": "",
+      "exit_code": null,
+      "stdout_log": "",
+      "stderr_log": "",
+      "notes": "Generated SQL was an explicit no-op output; row remains explicit and is not executed."
+    },
+    {
+      "key": "cons_0036__spark__sqlglot_optimize_same_dialect",
+      "row_status": "executed",
+      "command": "python - <<'PY' <spark runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/cons_0036__spark__sqlglot_optimize_same_dialect.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/cons_0036__spark__sqlglot_optimize_same_dialect.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "cons_0036__spark__sqlglot_transpile_same_dialect_noop",
+      "row_status": "noop_generated",
+      "command": "",
+      "exit_code": null,
+      "stdout_log": "",
+      "stderr_log": "",
+      "notes": "Generated SQL was an explicit no-op output; row remains explicit and is not executed."
+    },
+    {
+      "key": "cons_0037__mysql__sqlglot_optimize_same_dialect",
+      "row_status": "executed",
+      "command": "python - <<'PY' <mysql runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/cons_0037__mysql__sqlglot_optimize_same_dialect.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/cons_0037__mysql__sqlglot_optimize_same_dialect.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "cons_0037__mysql__sqlglot_transpile_same_dialect_noop",
+      "row_status": "noop_generated",
+      "command": "",
+      "exit_code": null,
+      "stdout_log": "",
+      "stderr_log": "",
+      "notes": "Generated SQL was an explicit no-op output; row remains explicit and is not executed."
+    },
+    {
+      "key": "cons_0037__pg__sqlglot_optimize_same_dialect",
+      "row_status": "executed",
+      "command": "python - <<'PY' <postgres runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/cons_0037__pg__sqlglot_optimize_same_dialect.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/cons_0037__pg__sqlglot_optimize_same_dialect.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "cons_0037__pg__sqlglot_transpile_same_dialect_noop",
+      "row_status": "noop_generated",
+      "command": "",
+      "exit_code": null,
+      "stdout_log": "",
+      "stderr_log": "",
+      "notes": "Generated SQL was an explicit no-op output; row remains explicit and is not executed."
+    },
+    {
+      "key": "cons_0037__spark__sqlglot_optimize_same_dialect",
+      "row_status": "executed",
+      "command": "python - <<'PY' <spark runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/cons_0037__spark__sqlglot_optimize_same_dialect.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/cons_0037__spark__sqlglot_optimize_same_dialect.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "cons_0037__spark__sqlglot_transpile_same_dialect_noop",
+      "row_status": "noop_generated",
+      "command": "",
+      "exit_code": null,
+      "stdout_log": "",
+      "stderr_log": "",
+      "notes": "Generated SQL was an explicit no-op output; row remains explicit and is not executed."
+    },
+    {
+      "key": "longtail_0011__mysql__sqlglot_optimize_same_dialect",
+      "row_status": "executed",
+      "command": "python - <<'PY' <mysql runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/longtail_0011__mysql__sqlglot_optimize_same_dialect.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/longtail_0011__mysql__sqlglot_optimize_same_dialect.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "longtail_0011__mysql__sqlglot_transpile_same_dialect_noop",
+      "row_status": "executed",
+      "command": "python - <<'PY' <mysql runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/longtail_0011__mysql__sqlglot_transpile_same_dialect_noop.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/longtail_0011__mysql__sqlglot_transpile_same_dialect_noop.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "longtail_0011__pg__sqlglot_optimize_same_dialect",
+      "row_status": "executed",
+      "command": "python - <<'PY' <postgres runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/longtail_0011__pg__sqlglot_optimize_same_dialect.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/longtail_0011__pg__sqlglot_optimize_same_dialect.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "longtail_0011__pg__sqlglot_transpile_same_dialect_noop",
+      "row_status": "executed",
+      "command": "python - <<'PY' <postgres runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/longtail_0011__pg__sqlglot_transpile_same_dialect_noop.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/longtail_0011__pg__sqlglot_transpile_same_dialect_noop.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "longtail_0011__spark__sqlglot_optimize_same_dialect",
+      "row_status": "executed",
+      "command": "python - <<'PY' <spark runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/longtail_0011__spark__sqlglot_optimize_same_dialect.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/longtail_0011__spark__sqlglot_optimize_same_dialect.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "longtail_0011__spark__sqlglot_transpile_same_dialect_noop",
+      "row_status": "executed",
+      "command": "python - <<'PY' <spark runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/longtail_0011__spark__sqlglot_transpile_same_dialect_noop.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/longtail_0011__spark__sqlglot_transpile_same_dialect_noop.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "longtail_0012__mysql__sqlglot_optimize_same_dialect",
+      "row_status": "executed",
+      "command": "python - <<'PY' <mysql runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/longtail_0012__mysql__sqlglot_optimize_same_dialect.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/longtail_0012__mysql__sqlglot_optimize_same_dialect.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "longtail_0012__mysql__sqlglot_transpile_same_dialect_noop",
+      "row_status": "executed",
+      "command": "python - <<'PY' <mysql runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/longtail_0012__mysql__sqlglot_transpile_same_dialect_noop.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/longtail_0012__mysql__sqlglot_transpile_same_dialect_noop.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "longtail_0012__pg__sqlglot_optimize_same_dialect",
+      "row_status": "executed",
+      "command": "python - <<'PY' <postgres runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/longtail_0012__pg__sqlglot_optimize_same_dialect.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/longtail_0012__pg__sqlglot_optimize_same_dialect.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "longtail_0012__pg__sqlglot_transpile_same_dialect_noop",
+      "row_status": "executed",
+      "command": "python - <<'PY' <postgres runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/longtail_0012__pg__sqlglot_transpile_same_dialect_noop.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/longtail_0012__pg__sqlglot_transpile_same_dialect_noop.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "longtail_0012__spark__sqlglot_optimize_same_dialect",
+      "row_status": "executed",
+      "command": "python - <<'PY' <spark runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/longtail_0012__spark__sqlglot_optimize_same_dialect.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/longtail_0012__spark__sqlglot_optimize_same_dialect.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "longtail_0012__spark__sqlglot_transpile_same_dialect_noop",
+      "row_status": "executed",
+      "command": "python - <<'PY' <spark runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/longtail_0012__spark__sqlglot_transpile_same_dialect_noop.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/longtail_0012__spark__sqlglot_transpile_same_dialect_noop.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "longtail_0013__mysql__sqlglot_optimize_same_dialect",
+      "row_status": "executed",
+      "command": "python - <<'PY' <mysql runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/longtail_0013__mysql__sqlglot_optimize_same_dialect.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/longtail_0013__mysql__sqlglot_optimize_same_dialect.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "longtail_0013__mysql__sqlglot_transpile_same_dialect_noop",
+      "row_status": "executed",
+      "command": "python - <<'PY' <mysql runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/longtail_0013__mysql__sqlglot_transpile_same_dialect_noop.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/longtail_0013__mysql__sqlglot_transpile_same_dialect_noop.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "longtail_0013__pg__sqlglot_optimize_same_dialect",
+      "row_status": "executed",
+      "command": "python - <<'PY' <postgres runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/longtail_0013__pg__sqlglot_optimize_same_dialect.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/longtail_0013__pg__sqlglot_optimize_same_dialect.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "longtail_0013__pg__sqlglot_transpile_same_dialect_noop",
+      "row_status": "executed",
+      "command": "python - <<'PY' <postgres runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/longtail_0013__pg__sqlglot_transpile_same_dialect_noop.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/longtail_0013__pg__sqlglot_transpile_same_dialect_noop.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "longtail_0013__spark__sqlglot_optimize_same_dialect",
+      "row_status": "executed",
+      "command": "python - <<'PY' <spark runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/longtail_0013__spark__sqlglot_optimize_same_dialect.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/longtail_0013__spark__sqlglot_optimize_same_dialect.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "longtail_0013__spark__sqlglot_transpile_same_dialect_noop",
+      "row_status": "executed",
+      "command": "python - <<'PY' <spark runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/longtail_0013__spark__sqlglot_transpile_same_dialect_noop.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/longtail_0013__spark__sqlglot_transpile_same_dialect_noop.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "longtail_0022__mysql__sqlglot_optimize_same_dialect",
+      "row_status": "executed",
+      "command": "python - <<'PY' <mysql runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/longtail_0022__mysql__sqlglot_optimize_same_dialect.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/longtail_0022__mysql__sqlglot_optimize_same_dialect.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "longtail_0022__mysql__sqlglot_transpile_same_dialect_noop",
+      "row_status": "executed",
+      "command": "python - <<'PY' <mysql runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/longtail_0022__mysql__sqlglot_transpile_same_dialect_noop.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/longtail_0022__mysql__sqlglot_transpile_same_dialect_noop.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "longtail_0022__pg__sqlglot_optimize_same_dialect",
+      "row_status": "executed",
+      "command": "python - <<'PY' <postgres runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/longtail_0022__pg__sqlglot_optimize_same_dialect.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/longtail_0022__pg__sqlglot_optimize_same_dialect.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "longtail_0022__pg__sqlglot_transpile_same_dialect_noop",
+      "row_status": "executed",
+      "command": "python - <<'PY' <postgres runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/longtail_0022__pg__sqlglot_transpile_same_dialect_noop.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/longtail_0022__pg__sqlglot_transpile_same_dialect_noop.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "longtail_0022__spark__sqlglot_optimize_same_dialect",
+      "row_status": "executed",
+      "command": "python - <<'PY' <spark runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/longtail_0022__spark__sqlglot_optimize_same_dialect.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/longtail_0022__spark__sqlglot_optimize_same_dialect.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "longtail_0022__spark__sqlglot_transpile_same_dialect_noop",
+      "row_status": "executed",
+      "command": "python - <<'PY' <spark runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/longtail_0022__spark__sqlglot_transpile_same_dialect_noop.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/longtail_0022__spark__sqlglot_transpile_same_dialect_noop.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "longtail_0023__mysql__sqlglot_optimize_same_dialect",
+      "row_status": "executed",
+      "command": "python - <<'PY' <mysql runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/longtail_0023__mysql__sqlglot_optimize_same_dialect.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/longtail_0023__mysql__sqlglot_optimize_same_dialect.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "longtail_0023__mysql__sqlglot_transpile_same_dialect_noop",
+      "row_status": "executed",
+      "command": "python - <<'PY' <mysql runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/longtail_0023__mysql__sqlglot_transpile_same_dialect_noop.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/longtail_0023__mysql__sqlglot_transpile_same_dialect_noop.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "longtail_0023__pg__sqlglot_optimize_same_dialect",
+      "row_status": "executed",
+      "command": "python - <<'PY' <postgres runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/longtail_0023__pg__sqlglot_optimize_same_dialect.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/longtail_0023__pg__sqlglot_optimize_same_dialect.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "longtail_0023__pg__sqlglot_transpile_same_dialect_noop",
+      "row_status": "executed",
+      "command": "python - <<'PY' <postgres runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/longtail_0023__pg__sqlglot_transpile_same_dialect_noop.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/longtail_0023__pg__sqlglot_transpile_same_dialect_noop.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "longtail_0023__spark__sqlglot_optimize_same_dialect",
+      "row_status": "executed",
+      "command": "python - <<'PY' <spark runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/longtail_0023__spark__sqlglot_optimize_same_dialect.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/longtail_0023__spark__sqlglot_optimize_same_dialect.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "longtail_0023__spark__sqlglot_transpile_same_dialect_noop",
+      "row_status": "executed",
+      "command": "python - <<'PY' <spark runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/longtail_0023__spark__sqlglot_transpile_same_dialect_noop.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/longtail_0023__spark__sqlglot_transpile_same_dialect_noop.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "longtail_0024__mysql__sqlglot_optimize_same_dialect",
+      "row_status": "executed",
+      "command": "python - <<'PY' <mysql runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/longtail_0024__mysql__sqlglot_optimize_same_dialect.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/longtail_0024__mysql__sqlglot_optimize_same_dialect.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "longtail_0024__mysql__sqlglot_transpile_same_dialect_noop",
+      "row_status": "executed",
+      "command": "python - <<'PY' <mysql runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/longtail_0024__mysql__sqlglot_transpile_same_dialect_noop.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/longtail_0024__mysql__sqlglot_transpile_same_dialect_noop.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "longtail_0024__pg__sqlglot_optimize_same_dialect",
+      "row_status": "executed",
+      "command": "python - <<'PY' <postgres runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/longtail_0024__pg__sqlglot_optimize_same_dialect.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/longtail_0024__pg__sqlglot_optimize_same_dialect.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "longtail_0024__pg__sqlglot_transpile_same_dialect_noop",
+      "row_status": "executed",
+      "command": "python - <<'PY' <postgres runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/longtail_0024__pg__sqlglot_transpile_same_dialect_noop.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/longtail_0024__pg__sqlglot_transpile_same_dialect_noop.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "longtail_0024__spark__sqlglot_optimize_same_dialect",
+      "row_status": "executed",
+      "command": "python - <<'PY' <spark runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/longtail_0024__spark__sqlglot_optimize_same_dialect.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/longtail_0024__spark__sqlglot_optimize_same_dialect.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "longtail_0024__spark__sqlglot_transpile_same_dialect_noop",
+      "row_status": "executed",
+      "command": "python - <<'PY' <spark runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/longtail_0024__spark__sqlglot_transpile_same_dialect_noop.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/longtail_0024__spark__sqlglot_transpile_same_dialect_noop.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "perf_0006__mysql__sqlglot_optimize_same_dialect",
+      "row_status": "executed",
+      "command": "python - <<'PY' <mysql runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/perf_0006__mysql__sqlglot_optimize_same_dialect.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/perf_0006__mysql__sqlglot_optimize_same_dialect.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "perf_0006__mysql__sqlglot_transpile_same_dialect_noop",
+      "row_status": "executed",
+      "command": "python - <<'PY' <mysql runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/perf_0006__mysql__sqlglot_transpile_same_dialect_noop.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/perf_0006__mysql__sqlglot_transpile_same_dialect_noop.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "perf_0006__pg__sqlglot_optimize_same_dialect",
+      "row_status": "executed",
+      "command": "python - <<'PY' <postgres runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/perf_0006__pg__sqlglot_optimize_same_dialect.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/perf_0006__pg__sqlglot_optimize_same_dialect.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "perf_0006__pg__sqlglot_transpile_same_dialect_noop",
+      "row_status": "executed",
+      "command": "python - <<'PY' <postgres runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/perf_0006__pg__sqlglot_transpile_same_dialect_noop.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/perf_0006__pg__sqlglot_transpile_same_dialect_noop.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "perf_0006__spark__sqlglot_optimize_same_dialect",
+      "row_status": "executed",
+      "command": "python - <<'PY' <spark runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/perf_0006__spark__sqlglot_optimize_same_dialect.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/perf_0006__spark__sqlglot_optimize_same_dialect.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "perf_0006__spark__sqlglot_transpile_same_dialect_noop",
+      "row_status": "executed",
+      "command": "python - <<'PY' <spark runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/perf_0006__spark__sqlglot_transpile_same_dialect_noop.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/perf_0006__spark__sqlglot_transpile_same_dialect_noop.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "perf_0007__mysql__sqlglot_optimize_same_dialect",
+      "row_status": "executed",
+      "command": "python - <<'PY' <mysql runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/perf_0007__mysql__sqlglot_optimize_same_dialect.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/perf_0007__mysql__sqlglot_optimize_same_dialect.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "perf_0007__mysql__sqlglot_transpile_same_dialect_noop",
+      "row_status": "noop_generated",
+      "command": "",
+      "exit_code": null,
+      "stdout_log": "",
+      "stderr_log": "",
+      "notes": "Generated SQL was an explicit no-op output; row remains explicit and is not executed."
+    },
+    {
+      "key": "perf_0007__pg__sqlglot_optimize_same_dialect",
+      "row_status": "executed",
+      "command": "python - <<'PY' <postgres runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/perf_0007__pg__sqlglot_optimize_same_dialect.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/perf_0007__pg__sqlglot_optimize_same_dialect.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "perf_0007__pg__sqlglot_transpile_same_dialect_noop",
+      "row_status": "noop_generated",
+      "command": "",
+      "exit_code": null,
+      "stdout_log": "",
+      "stderr_log": "",
+      "notes": "Generated SQL was an explicit no-op output; row remains explicit and is not executed."
+    },
+    {
+      "key": "perf_0007__spark__sqlglot_optimize_same_dialect",
+      "row_status": "executed",
+      "command": "python - <<'PY' <spark runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/perf_0007__spark__sqlglot_optimize_same_dialect.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/perf_0007__spark__sqlglot_optimize_same_dialect.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "perf_0007__spark__sqlglot_transpile_same_dialect_noop",
+      "row_status": "noop_generated",
+      "command": "",
+      "exit_code": null,
+      "stdout_log": "",
+      "stderr_log": "",
+      "notes": "Generated SQL was an explicit no-op output; row remains explicit and is not executed."
+    },
+    {
+      "key": "perf_0008__mysql__sqlglot_optimize_same_dialect",
+      "row_status": "not_executed_generation_failed",
+      "command": "",
+      "exit_code": null,
+      "stdout_log": "",
+      "stderr_log": "",
+      "notes": "Generation failed earlier; row remains explicit and is not executed."
+    },
+    {
+      "key": "perf_0008__mysql__sqlglot_transpile_same_dialect_noop",
+      "row_status": "executed",
+      "command": "python - <<'PY' <mysql runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/perf_0008__mysql__sqlglot_transpile_same_dialect_noop.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/perf_0008__mysql__sqlglot_transpile_same_dialect_noop.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "perf_0008__pg__sqlglot_optimize_same_dialect",
+      "row_status": "not_executed_generation_failed",
+      "command": "",
+      "exit_code": null,
+      "stdout_log": "",
+      "stderr_log": "",
+      "notes": "Generation failed earlier; row remains explicit and is not executed."
+    },
+    {
+      "key": "perf_0008__pg__sqlglot_transpile_same_dialect_noop",
+      "row_status": "executed",
+      "command": "python - <<'PY' <postgres runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/perf_0008__pg__sqlglot_transpile_same_dialect_noop.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/perf_0008__pg__sqlglot_transpile_same_dialect_noop.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "perf_0008__spark__sqlglot_optimize_same_dialect",
+      "row_status": "not_executed_generation_failed",
+      "command": "",
+      "exit_code": null,
+      "stdout_log": "",
+      "stderr_log": "",
+      "notes": "Generation failed earlier; row remains explicit and is not executed."
+    },
+    {
+      "key": "perf_0008__spark__sqlglot_transpile_same_dialect_noop",
+      "row_status": "executed",
+      "command": "python - <<'PY' <spark runner>",
+      "exit_code": 1,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/perf_0008__spark__sqlglot_transpile_same_dialect_noop.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/perf_0008__spark__sqlglot_transpile_same_dialect_noop.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "perf_0013__mysql__sqlglot_optimize_same_dialect",
+      "row_status": "not_executed_generation_failed",
+      "command": "",
+      "exit_code": null,
+      "stdout_log": "",
+      "stderr_log": "",
+      "notes": "Generation failed earlier; row remains explicit and is not executed."
+    },
+    {
+      "key": "perf_0013__mysql__sqlglot_transpile_same_dialect_noop",
+      "row_status": "executed",
+      "command": "python - <<'PY' <mysql runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/perf_0013__mysql__sqlglot_transpile_same_dialect_noop.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/perf_0013__mysql__sqlglot_transpile_same_dialect_noop.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "perf_0013__pg__sqlglot_optimize_same_dialect",
+      "row_status": "not_executed_generation_failed",
+      "command": "",
+      "exit_code": null,
+      "stdout_log": "",
+      "stderr_log": "",
+      "notes": "Generation failed earlier; row remains explicit and is not executed."
+    },
+    {
+      "key": "perf_0013__pg__sqlglot_transpile_same_dialect_noop",
+      "row_status": "executed",
+      "command": "python - <<'PY' <postgres runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/perf_0013__pg__sqlglot_transpile_same_dialect_noop.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/perf_0013__pg__sqlglot_transpile_same_dialect_noop.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "perf_0013__spark__sqlglot_optimize_same_dialect",
+      "row_status": "not_executed_generation_failed",
+      "command": "",
+      "exit_code": null,
+      "stdout_log": "",
+      "stderr_log": "",
+      "notes": "Generation failed earlier; row remains explicit and is not executed."
+    },
+    {
+      "key": "perf_0013__spark__sqlglot_transpile_same_dialect_noop",
+      "row_status": "executed",
+      "command": "python - <<'PY' <spark runner>",
+      "exit_code": 1,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/perf_0013__spark__sqlglot_transpile_same_dialect_noop.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/perf_0013__spark__sqlglot_transpile_same_dialect_noop.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "perf_0017__mysql__sqlglot_optimize_same_dialect",
+      "row_status": "not_executed_generation_failed",
+      "command": "",
+      "exit_code": null,
+      "stdout_log": "",
+      "stderr_log": "",
+      "notes": "Generation failed earlier; row remains explicit and is not executed."
+    },
+    {
+      "key": "perf_0017__mysql__sqlglot_transpile_same_dialect_noop",
+      "row_status": "executed",
+      "command": "python - <<'PY' <mysql runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/perf_0017__mysql__sqlglot_transpile_same_dialect_noop.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/perf_0017__mysql__sqlglot_transpile_same_dialect_noop.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "perf_0017__pg__sqlglot_optimize_same_dialect",
+      "row_status": "not_executed_generation_failed",
+      "command": "",
+      "exit_code": null,
+      "stdout_log": "",
+      "stderr_log": "",
+      "notes": "Generation failed earlier; row remains explicit and is not executed."
+    },
+    {
+      "key": "perf_0017__pg__sqlglot_transpile_same_dialect_noop",
+      "row_status": "executed",
+      "command": "python - <<'PY' <postgres runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/perf_0017__pg__sqlglot_transpile_same_dialect_noop.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/perf_0017__pg__sqlglot_transpile_same_dialect_noop.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "perf_0017__spark__sqlglot_optimize_same_dialect",
+      "row_status": "not_executed_generation_failed",
+      "command": "",
+      "exit_code": null,
+      "stdout_log": "",
+      "stderr_log": "",
+      "notes": "Generation failed earlier; row remains explicit and is not executed."
+    },
+    {
+      "key": "perf_0017__spark__sqlglot_transpile_same_dialect_noop",
+      "row_status": "executed",
+      "command": "python - <<'PY' <spark runner>",
+      "exit_code": 1,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/perf_0017__spark__sqlglot_transpile_same_dialect_noop.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/perf_0017__spark__sqlglot_transpile_same_dialect_noop.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "perf_0019__mysql__sqlglot_optimize_same_dialect",
+      "row_status": "not_executed_generation_failed",
+      "command": "",
+      "exit_code": null,
+      "stdout_log": "",
+      "stderr_log": "",
+      "notes": "Generation failed earlier; row remains explicit and is not executed."
+    },
+    {
+      "key": "perf_0019__mysql__sqlglot_transpile_same_dialect_noop",
+      "row_status": "executed",
+      "command": "python - <<'PY' <mysql runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/perf_0019__mysql__sqlglot_transpile_same_dialect_noop.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/perf_0019__mysql__sqlglot_transpile_same_dialect_noop.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "perf_0019__pg__sqlglot_optimize_same_dialect",
+      "row_status": "not_executed_generation_failed",
+      "command": "",
+      "exit_code": null,
+      "stdout_log": "",
+      "stderr_log": "",
+      "notes": "Generation failed earlier; row remains explicit and is not executed."
+    },
+    {
+      "key": "perf_0019__pg__sqlglot_transpile_same_dialect_noop",
+      "row_status": "executed",
+      "command": "python - <<'PY' <postgres runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/perf_0019__pg__sqlglot_transpile_same_dialect_noop.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/perf_0019__pg__sqlglot_transpile_same_dialect_noop.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "perf_0019__spark__sqlglot_optimize_same_dialect",
+      "row_status": "not_executed_generation_failed",
+      "command": "",
+      "exit_code": null,
+      "stdout_log": "",
+      "stderr_log": "",
+      "notes": "Generation failed earlier; row remains explicit and is not executed."
+    },
+    {
+      "key": "perf_0019__spark__sqlglot_transpile_same_dialect_noop",
+      "row_status": "executed",
+      "command": "python - <<'PY' <spark runner>",
+      "exit_code": 1,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/perf_0019__spark__sqlglot_transpile_same_dialect_noop.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/perf_0019__spark__sqlglot_transpile_same_dialect_noop.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "perf_0024__mysql__sqlglot_optimize_same_dialect",
+      "row_status": "not_executed_generation_failed",
+      "command": "",
+      "exit_code": null,
+      "stdout_log": "",
+      "stderr_log": "",
+      "notes": "Generation failed earlier; row remains explicit and is not executed."
+    },
+    {
+      "key": "perf_0024__mysql__sqlglot_transpile_same_dialect_noop",
+      "row_status": "executed",
+      "command": "python - <<'PY' <mysql runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/perf_0024__mysql__sqlglot_transpile_same_dialect_noop.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/perf_0024__mysql__sqlglot_transpile_same_dialect_noop.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "perf_0024__pg__sqlglot_optimize_same_dialect",
+      "row_status": "not_executed_generation_failed",
+      "command": "",
+      "exit_code": null,
+      "stdout_log": "",
+      "stderr_log": "",
+      "notes": "Generation failed earlier; row remains explicit and is not executed."
+    },
+    {
+      "key": "perf_0024__pg__sqlglot_transpile_same_dialect_noop",
+      "row_status": "executed",
+      "command": "python - <<'PY' <postgres runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/perf_0024__pg__sqlglot_transpile_same_dialect_noop.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/perf_0024__pg__sqlglot_transpile_same_dialect_noop.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "perf_0024__spark__sqlglot_optimize_same_dialect",
+      "row_status": "not_executed_generation_failed",
+      "command": "",
+      "exit_code": null,
+      "stdout_log": "",
+      "stderr_log": "",
+      "notes": "Generation failed earlier; row remains explicit and is not executed."
+    },
+    {
+      "key": "perf_0024__spark__sqlglot_transpile_same_dialect_noop",
+      "row_status": "executed",
+      "command": "python - <<'PY' <spark runner>",
+      "exit_code": 1,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/perf_0024__spark__sqlglot_transpile_same_dialect_noop.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/perf_0024__spark__sqlglot_transpile_same_dialect_noop.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "perf_0033__mysql__sqlglot_optimize_same_dialect",
+      "row_status": "executed",
+      "command": "python - <<'PY' <mysql runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/perf_0033__mysql__sqlglot_optimize_same_dialect.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/perf_0033__mysql__sqlglot_optimize_same_dialect.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "perf_0033__mysql__sqlglot_transpile_same_dialect_noop",
+      "row_status": "noop_generated",
+      "command": "",
+      "exit_code": null,
+      "stdout_log": "",
+      "stderr_log": "",
+      "notes": "Generated SQL was an explicit no-op output; row remains explicit and is not executed."
+    },
+    {
+      "key": "perf_0033__pg__sqlglot_optimize_same_dialect",
+      "row_status": "executed",
+      "command": "python - <<'PY' <postgres runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/perf_0033__pg__sqlglot_optimize_same_dialect.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/perf_0033__pg__sqlglot_optimize_same_dialect.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "perf_0033__pg__sqlglot_transpile_same_dialect_noop",
+      "row_status": "noop_generated",
+      "command": "",
+      "exit_code": null,
+      "stdout_log": "",
+      "stderr_log": "",
+      "notes": "Generated SQL was an explicit no-op output; row remains explicit and is not executed."
+    },
+    {
+      "key": "perf_0033__spark__sqlglot_optimize_same_dialect",
+      "row_status": "executed",
+      "command": "python - <<'PY' <spark runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/perf_0033__spark__sqlglot_optimize_same_dialect.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/perf_0033__spark__sqlglot_optimize_same_dialect.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "perf_0033__spark__sqlglot_transpile_same_dialect_noop",
+      "row_status": "noop_generated",
+      "command": "",
+      "exit_code": null,
+      "stdout_log": "",
+      "stderr_log": "",
+      "notes": "Generated SQL was an explicit no-op output; row remains explicit and is not executed."
+    },
+    {
+      "key": "perf_0034__mysql__sqlglot_optimize_same_dialect",
+      "row_status": "executed",
+      "command": "python - <<'PY' <mysql runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/perf_0034__mysql__sqlglot_optimize_same_dialect.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/perf_0034__mysql__sqlglot_optimize_same_dialect.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "perf_0034__mysql__sqlglot_transpile_same_dialect_noop",
+      "row_status": "executed",
+      "command": "python - <<'PY' <mysql runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/perf_0034__mysql__sqlglot_transpile_same_dialect_noop.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/perf_0034__mysql__sqlglot_transpile_same_dialect_noop.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "perf_0034__pg__sqlglot_optimize_same_dialect",
+      "row_status": "executed",
+      "command": "python - <<'PY' <postgres runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/perf_0034__pg__sqlglot_optimize_same_dialect.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/perf_0034__pg__sqlglot_optimize_same_dialect.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "perf_0034__pg__sqlglot_transpile_same_dialect_noop",
+      "row_status": "executed",
+      "command": "python - <<'PY' <postgres runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/perf_0034__pg__sqlglot_transpile_same_dialect_noop.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/perf_0034__pg__sqlglot_transpile_same_dialect_noop.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "perf_0034__spark__sqlglot_optimize_same_dialect",
+      "row_status": "executed",
+      "command": "python - <<'PY' <spark runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/perf_0034__spark__sqlglot_optimize_same_dialect.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/perf_0034__spark__sqlglot_optimize_same_dialect.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "perf_0034__spark__sqlglot_transpile_same_dialect_noop",
+      "row_status": "executed",
+      "command": "python - <<'PY' <spark runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/perf_0034__spark__sqlglot_transpile_same_dialect_noop.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/perf_0034__spark__sqlglot_transpile_same_dialect_noop.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "perf_0035__mysql__sqlglot_optimize_same_dialect",
+      "row_status": "executed",
+      "command": "python - <<'PY' <mysql runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/perf_0035__mysql__sqlglot_optimize_same_dialect.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/perf_0035__mysql__sqlglot_optimize_same_dialect.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "perf_0035__mysql__sqlglot_transpile_same_dialect_noop",
+      "row_status": "executed",
+      "command": "python - <<'PY' <mysql runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/perf_0035__mysql__sqlglot_transpile_same_dialect_noop.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/perf_0035__mysql__sqlglot_transpile_same_dialect_noop.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "perf_0035__pg__sqlglot_optimize_same_dialect",
+      "row_status": "executed",
+      "command": "python - <<'PY' <postgres runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/perf_0035__pg__sqlglot_optimize_same_dialect.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/perf_0035__pg__sqlglot_optimize_same_dialect.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "perf_0035__pg__sqlglot_transpile_same_dialect_noop",
+      "row_status": "executed",
+      "command": "python - <<'PY' <postgres runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/perf_0035__pg__sqlglot_transpile_same_dialect_noop.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/perf_0035__pg__sqlglot_transpile_same_dialect_noop.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "perf_0035__spark__sqlglot_optimize_same_dialect",
+      "row_status": "executed",
+      "command": "python - <<'PY' <spark runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/perf_0035__spark__sqlglot_optimize_same_dialect.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/perf_0035__spark__sqlglot_optimize_same_dialect.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "perf_0035__spark__sqlglot_transpile_same_dialect_noop",
+      "row_status": "executed",
+      "command": "python - <<'PY' <spark runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/perf_0035__spark__sqlglot_transpile_same_dialect_noop.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/perf_0035__spark__sqlglot_transpile_same_dialect_noop.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "perf_0052__mysql__sqlglot_optimize_same_dialect",
+      "row_status": "not_executed_generation_failed",
+      "command": "",
+      "exit_code": null,
+      "stdout_log": "",
+      "stderr_log": "",
+      "notes": "Generation failed earlier; row remains explicit and is not executed."
+    },
+    {
+      "key": "perf_0052__mysql__sqlglot_transpile_same_dialect_noop",
+      "row_status": "executed",
+      "command": "python - <<'PY' <mysql runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/perf_0052__mysql__sqlglot_transpile_same_dialect_noop.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/perf_0052__mysql__sqlglot_transpile_same_dialect_noop.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "perf_0052__pg__sqlglot_optimize_same_dialect",
+      "row_status": "not_executed_generation_failed",
+      "command": "",
+      "exit_code": null,
+      "stdout_log": "",
+      "stderr_log": "",
+      "notes": "Generation failed earlier; row remains explicit and is not executed."
+    },
+    {
+      "key": "perf_0052__pg__sqlglot_transpile_same_dialect_noop",
+      "row_status": "executed",
+      "command": "python - <<'PY' <postgres runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/perf_0052__pg__sqlglot_transpile_same_dialect_noop.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/perf_0052__pg__sqlglot_transpile_same_dialect_noop.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "perf_0052__spark__sqlglot_optimize_same_dialect",
+      "row_status": "not_executed_generation_failed",
+      "command": "",
+      "exit_code": null,
+      "stdout_log": "",
+      "stderr_log": "",
+      "notes": "Generation failed earlier; row remains explicit and is not executed."
+    },
+    {
+      "key": "perf_0052__spark__sqlglot_transpile_same_dialect_noop",
+      "row_status": "executed",
+      "command": "python - <<'PY' <spark runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/perf_0052__spark__sqlglot_transpile_same_dialect_noop.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/perf_0052__spark__sqlglot_transpile_same_dialect_noop.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "perf_0054__mysql__sqlglot_optimize_same_dialect",
+      "row_status": "not_executed_generation_failed",
+      "command": "",
+      "exit_code": null,
+      "stdout_log": "",
+      "stderr_log": "",
+      "notes": "Generation failed earlier; row remains explicit and is not executed."
+    },
+    {
+      "key": "perf_0054__mysql__sqlglot_transpile_same_dialect_noop",
+      "row_status": "noop_generated",
+      "command": "",
+      "exit_code": null,
+      "stdout_log": "",
+      "stderr_log": "",
+      "notes": "Generated SQL was an explicit no-op output; row remains explicit and is not executed."
+    },
+    {
+      "key": "perf_0054__pg__sqlglot_optimize_same_dialect",
+      "row_status": "not_executed_generation_failed",
+      "command": "",
+      "exit_code": null,
+      "stdout_log": "",
+      "stderr_log": "",
+      "notes": "Generation failed earlier; row remains explicit and is not executed."
+    },
+    {
+      "key": "perf_0054__pg__sqlglot_transpile_same_dialect_noop",
+      "row_status": "noop_generated",
+      "command": "",
+      "exit_code": null,
+      "stdout_log": "",
+      "stderr_log": "",
+      "notes": "Generated SQL was an explicit no-op output; row remains explicit and is not executed."
+    },
+    {
+      "key": "perf_0054__spark__sqlglot_optimize_same_dialect",
+      "row_status": "not_executed_generation_failed",
+      "command": "",
+      "exit_code": null,
+      "stdout_log": "",
+      "stderr_log": "",
+      "notes": "Generation failed earlier; row remains explicit and is not executed."
+    },
+    {
+      "key": "perf_0054__spark__sqlglot_transpile_same_dialect_noop",
+      "row_status": "noop_generated",
+      "command": "",
+      "exit_code": null,
+      "stdout_log": "",
+      "stderr_log": "",
+      "notes": "Generated SQL was an explicit no-op output; row remains explicit and is not executed."
+    },
+    {
+      "key": "perf_0056__mysql__sqlglot_optimize_same_dialect",
+      "row_status": "executed",
+      "command": "python - <<'PY' <mysql runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/perf_0056__mysql__sqlglot_optimize_same_dialect.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/perf_0056__mysql__sqlglot_optimize_same_dialect.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "perf_0056__mysql__sqlglot_transpile_same_dialect_noop",
+      "row_status": "executed",
+      "command": "python - <<'PY' <mysql runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/perf_0056__mysql__sqlglot_transpile_same_dialect_noop.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/perf_0056__mysql__sqlglot_transpile_same_dialect_noop.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "perf_0056__pg__sqlglot_optimize_same_dialect",
+      "row_status": "executed",
+      "command": "python - <<'PY' <postgres runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/perf_0056__pg__sqlglot_optimize_same_dialect.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/perf_0056__pg__sqlglot_optimize_same_dialect.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "perf_0056__pg__sqlglot_transpile_same_dialect_noop",
+      "row_status": "executed",
+      "command": "python - <<'PY' <postgres runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/perf_0056__pg__sqlglot_transpile_same_dialect_noop.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/perf_0056__pg__sqlglot_transpile_same_dialect_noop.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "perf_0056__spark__sqlglot_optimize_same_dialect",
+      "row_status": "executed",
+      "command": "python - <<'PY' <spark runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/perf_0056__spark__sqlglot_optimize_same_dialect.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/perf_0056__spark__sqlglot_optimize_same_dialect.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "perf_0056__spark__sqlglot_transpile_same_dialect_noop",
+      "row_status": "executed",
+      "command": "python - <<'PY' <spark runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/perf_0056__spark__sqlglot_transpile_same_dialect_noop.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/perf_0056__spark__sqlglot_transpile_same_dialect_noop.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "perf_0062__mysql__sqlglot_optimize_same_dialect",
+      "row_status": "not_executed_generation_failed",
+      "command": "",
+      "exit_code": null,
+      "stdout_log": "",
+      "stderr_log": "",
+      "notes": "Generation failed earlier; row remains explicit and is not executed."
+    },
+    {
+      "key": "perf_0062__mysql__sqlglot_transpile_same_dialect_noop",
+      "row_status": "executed",
+      "command": "python - <<'PY' <mysql runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/perf_0062__mysql__sqlglot_transpile_same_dialect_noop.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/perf_0062__mysql__sqlglot_transpile_same_dialect_noop.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "perf_0062__pg__sqlglot_optimize_same_dialect",
+      "row_status": "not_executed_generation_failed",
+      "command": "",
+      "exit_code": null,
+      "stdout_log": "",
+      "stderr_log": "",
+      "notes": "Generation failed earlier; row remains explicit and is not executed."
+    },
+    {
+      "key": "perf_0062__pg__sqlglot_transpile_same_dialect_noop",
+      "row_status": "executed",
+      "command": "python - <<'PY' <postgres runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/perf_0062__pg__sqlglot_transpile_same_dialect_noop.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/perf_0062__pg__sqlglot_transpile_same_dialect_noop.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "perf_0062__spark__sqlglot_optimize_same_dialect",
+      "row_status": "not_executed_generation_failed",
+      "command": "",
+      "exit_code": null,
+      "stdout_log": "",
+      "stderr_log": "",
+      "notes": "Generation failed earlier; row remains explicit and is not executed."
+    },
+    {
+      "key": "perf_0062__spark__sqlglot_transpile_same_dialect_noop",
+      "row_status": "executed",
+      "command": "python - <<'PY' <spark runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/perf_0062__spark__sqlglot_transpile_same_dialect_noop.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/perf_0062__spark__sqlglot_transpile_same_dialect_noop.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "perf_0077__mysql__sqlglot_optimize_same_dialect",
+      "row_status": "executed",
+      "command": "python - <<'PY' <mysql runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/perf_0077__mysql__sqlglot_optimize_same_dialect.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/perf_0077__mysql__sqlglot_optimize_same_dialect.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "perf_0077__mysql__sqlglot_transpile_same_dialect_noop",
+      "row_status": "executed",
+      "command": "python - <<'PY' <mysql runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/perf_0077__mysql__sqlglot_transpile_same_dialect_noop.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/perf_0077__mysql__sqlglot_transpile_same_dialect_noop.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "perf_0077__pg__sqlglot_optimize_same_dialect",
+      "row_status": "executed",
+      "command": "python - <<'PY' <postgres runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/perf_0077__pg__sqlglot_optimize_same_dialect.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/perf_0077__pg__sqlglot_optimize_same_dialect.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "perf_0077__pg__sqlglot_transpile_same_dialect_noop",
+      "row_status": "executed",
+      "command": "python - <<'PY' <postgres runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/perf_0077__pg__sqlglot_transpile_same_dialect_noop.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/perf_0077__pg__sqlglot_transpile_same_dialect_noop.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "perf_0077__spark__sqlglot_optimize_same_dialect",
+      "row_status": "executed",
+      "command": "python - <<'PY' <spark runner>",
+      "exit_code": 1,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/perf_0077__spark__sqlglot_optimize_same_dialect.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/perf_0077__spark__sqlglot_optimize_same_dialect.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "perf_0077__spark__sqlglot_transpile_same_dialect_noop",
+      "row_status": "executed",
+      "command": "python - <<'PY' <spark runner>",
+      "exit_code": 1,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/perf_0077__spark__sqlglot_transpile_same_dialect_noop.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/perf_0077__spark__sqlglot_transpile_same_dialect_noop.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "perf_0082__mysql__sqlglot_optimize_same_dialect",
+      "row_status": "executed",
+      "command": "python - <<'PY' <mysql runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/perf_0082__mysql__sqlglot_optimize_same_dialect.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/perf_0082__mysql__sqlglot_optimize_same_dialect.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "perf_0082__mysql__sqlglot_transpile_same_dialect_noop",
+      "row_status": "executed",
+      "command": "python - <<'PY' <mysql runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/perf_0082__mysql__sqlglot_transpile_same_dialect_noop.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/perf_0082__mysql__sqlglot_transpile_same_dialect_noop.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "perf_0082__pg__sqlglot_optimize_same_dialect",
+      "row_status": "executed",
+      "command": "python - <<'PY' <postgres runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/perf_0082__pg__sqlglot_optimize_same_dialect.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/perf_0082__pg__sqlglot_optimize_same_dialect.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "perf_0082__pg__sqlglot_transpile_same_dialect_noop",
+      "row_status": "executed",
+      "command": "python - <<'PY' <postgres runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/perf_0082__pg__sqlglot_transpile_same_dialect_noop.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/perf_0082__pg__sqlglot_transpile_same_dialect_noop.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "perf_0082__spark__sqlglot_optimize_same_dialect",
+      "row_status": "executed",
+      "command": "python - <<'PY' <spark runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/perf_0082__spark__sqlglot_optimize_same_dialect.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/perf_0082__spark__sqlglot_optimize_same_dialect.stderr.log",
+      "notes": ""
+    },
+    {
+      "key": "perf_0082__spark__sqlglot_transpile_same_dialect_noop",
+      "row_status": "executed",
+      "command": "python - <<'PY' <spark runner>",
+      "exit_code": 0,
+      "stdout_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/perf_0082__spark__sqlglot_transpile_same_dialect_noop.stdout.log",
+      "stderr_log": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_same_engine_nonport_execution_01/logs/perf_0082__spark__sqlglot_transpile_same_dialect_noop.stderr.log",
+      "notes": ""
+    }
+  ]
+}

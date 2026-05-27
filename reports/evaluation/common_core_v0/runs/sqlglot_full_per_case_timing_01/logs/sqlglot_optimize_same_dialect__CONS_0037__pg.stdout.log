@@ -1,0 +1,3 @@
+timing completed for sqlglot_optimize_same_dialect__CONS_0037__pg
+source_runtime_ms=[3.3244930673390627, 3.587146056815982, 3.2461551018059254]
+rewrite_runtime_ms=[3.437279025092721, 3.64137114956975, 3.682462964206934]

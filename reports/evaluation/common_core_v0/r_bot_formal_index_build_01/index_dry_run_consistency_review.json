@@ -1,0 +1,67 @@
+{
+  "review_artifact": "index_dry_run_consistency_review",
+  "review_timestamp_basis": "2026-05-08",
+  "scope": {
+    "dry_run_report": "reports/evaluation/common_core_v0/r_bot_formal_index_build_01/formal_chroma_index_build_report_v1.md",
+    "dry_run_identifier": "reports/evaluation/common_core_v0/r_bot_formal_index_build_01/formal_chroma_index_identifier_v1.json",
+    "substrate_manifest_summary": "reports/evaluation/common_core_v0/r_bot_formal_substrate_freeze_01/formal_zip_text_manifest_summary.md",
+    "substrate_manifest_csv": "reports/evaluation/common_core_v0/r_bot_formal_substrate_freeze_01/formal_zip_text_manifest_v1.csv",
+    "extraction_contract": "reports/evaluation/common_core_v0/r_bot_formal_substrate_freeze_01/formal_zip_text_extraction_contract.md",
+    "build_helper": "reports/evaluation/common_core_v0/r_bot_formal_index_build_01/run_manual_r_bot_formal_index_build.py"
+  },
+  "observations": {
+    "zip_sha256_verified": true,
+    "dry_run_extracted_text_row_count": 18745,
+    "frozen_manifest_extracted_text_row_count": 18744,
+    "dry_run_rules_member_row_count": 6585,
+    "frozen_manifest_rules_member_row_count": 6584,
+    "embedding_provider_base_url_family": null,
+    "build_executed": false,
+    "index_file_hashes_count": 0
+  },
+  "discrepancy_analysis": {
+    "row_count_delta": 1,
+    "is_real_extraction_contract_mismatch": false,
+    "classification": "counting_reporting_difference",
+    "root_cause": {
+      "entry_name": "stackoverflow-rewrite-rules-query-optimization.jsonl",
+      "field_selector": "schema",
+      "record_index": 385,
+      "reason": "The frozen manifest generator drops rows whose normalized text becomes empty after comment stripping, while the dry-run build helper counts raw non-empty strings without applying the same normalization gate.",
+      "example_value": "-- No CREATE TABLE statements are needed as the query generates data on-the-fly using SELECT statements from UNIONs."
+    }
+  },
+  "answers": {
+    "why_dry_run_count_is_18745_while_prior_summary_is_18744": "The dry-run helper independently recounts ZIP fields using raw strip-only non-empty checks. The frozen manifest excludes one schema field that is comment-only after normalization, so the retained manifest stays at 18744 while the helper reports 18745.",
+    "whether_this_is_real_extraction_contract_mismatch_or_counting_reporting_difference": "counting_reporting_difference",
+    "whether_build_script_should_reuse_formal_zip_text_manifest_v1_csv": true,
+    "whether_embedding_provider_base_url_family_must_be_passed_explicitly": true,
+    "whether_rerun_with_provider_family_api_gptsapi_net_is_sufficient_for_metadata": true,
+    "whether_execute_build_would_call_embedding_api_or_only_build_from_existing_vectors": "neither_in_current_implementation_it_only_creates_a_chroma_shell_and_then_fails_closed_before_embedding_population",
+    "whether_execute_build_is_safe_to_run_next": false,
+    "whether_formal_120_generation_may_start": false
+  },
+  "rationale": {
+    "reuse_manifest_reason": [
+      "The frozen manifest is the retained contract artifact.",
+      "It already captures normalization policy.",
+      "It prevents drift between substrate-freeze evidence and index-build metadata."
+    ],
+    "provider_family_reason": [
+      "The formal gate requires embedding_provider_base_url_family in retained metadata.",
+      "The current dry-run identifier leaves that field null."
+    ],
+    "execute_build_not_ready_reason": [
+      "The helper is not yet aligned with the frozen manifest row-count policy.",
+      "The provider family field is still null.",
+      "The current execute-build path does not populate embeddings or produce a formal retained index.",
+      "The formal gate still says generation may not start."
+    ]
+  },
+  "recommended_next_conditions_before_any_execute_build": [
+    "Source extracted row counts from formal_zip_text_manifest_v1.csv or formal_zip_text_hashes_v1.json.",
+    "Pass a non-null embedding_provider_base_url_family that matches the intended runtime.",
+    "Clarify whether execute-build is metadata-only shell creation or a real embedding/index build path.",
+    "Keep formal @120 generation blocked until the formal gate blockers are closed."
+  ]
+}

@@ -1,0 +1,2 @@
+{"db_id": "tpch", "rule_input": ["PROJECT_TO_CALC"]}
+{"db_id": "rewritebench_perf_0006", "rule_input": ["FILTER_REDUCE_EXPRESSIONS", "AGGREGATE_PROJECT_MERGE", "AGGREGATE_ANY_PULL_UP_CONSTANTS"]}

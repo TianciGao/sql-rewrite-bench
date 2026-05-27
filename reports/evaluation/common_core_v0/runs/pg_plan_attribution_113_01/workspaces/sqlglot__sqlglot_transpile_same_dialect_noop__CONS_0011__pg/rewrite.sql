@@ -1,0 +1,13 @@
+SELECT
+  E1.ENAME
+FROM emp AS E1
+WHERE
+  EXISTS(
+    SELECT
+      1
+    FROM dept AS D
+    LEFT JOIN bonus AS B
+      ON D.DNAME = B.ENAME AND B.JOB = E1.JOB
+    WHERE
+      B.ENAME IS NULL
+  )

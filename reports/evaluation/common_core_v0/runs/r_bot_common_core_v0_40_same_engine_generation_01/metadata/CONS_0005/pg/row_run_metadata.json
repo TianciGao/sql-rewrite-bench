@@ -1,0 +1,22 @@
+{
+  "blocker_reason": "Recovered committed PG runner currently hard-codes a supported-case subset in scripts/cli.py formal-rbot-llm4rewrite-single-case-smoke-run; keep row explicit and blocked until runner support expands.",
+  "case_id": "CONS_0005",
+  "claim_boundary": "formal_same_engine_generation_only_not_execution_timing_speedup_or_leaderboard_evidence",
+  "denominator_id": "common_core_v0_40_same_engine_120",
+  "engine": "pg",
+  "environment_snapshot_path": "reports/evaluation/common_core_v0/runs/r_bot_common_core_v0_40_same_engine_generation_01/metadata/CONS_0005/pg/environment_snapshot.json",
+  "failure_category": "",
+  "failure_summary": "",
+  "generated_sql_path": "reports/evaluation/common_core_v0/runs/r_bot_common_core_v0_40_same_engine_generation_01/generated/CONS_0005/pg/r_bot_same_engine_rewrite.sql",
+  "method_id": "r_bot",
+  "pool": "consistency",
+  "prompt_path": "reports/evaluation/common_core_v0/runs/r_bot_common_core_v0_40_same_engine_generation_01/prompts/CONS_0005/pg/prompt.txt",
+  "raw_response_path": "reports/evaluation/common_core_v0/runs/r_bot_common_core_v0_40_same_engine_generation_01/raw_responses/CONS_0005/pg/response.txt",
+  "retrieval_trace_path": "reports/evaluation/common_core_v0/runs/r_bot_common_core_v0_40_same_engine_generation_01/traces/CONS_0005/pg/retrieval_trace.json",
+  "route_id": "r_bot_same_engine_rewrite",
+  "row_status": "blocked",
+  "run_id": "r_bot_same_engine_generation_01",
+  "selected_rules_path": "reports/evaluation/common_core_v0/runs/r_bot_common_core_v0_40_same_engine_generation_01/traces/CONS_0005/pg/selected_rules.json",
+  "token_cost_provider_path": "reports/evaluation/common_core_v0/runs/r_bot_common_core_v0_40_same_engine_generation_01/metadata/CONS_0005/pg/token_cost_provider.json",
+  "unsupported_reason": ""
+}

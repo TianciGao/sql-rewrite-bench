@@ -1,0 +1,47 @@
+{
+  "claim_boundary": "llmr2_schema_contract_logical_plan_probe_only_not_execution",
+  "comment_stripped_query_probe": null,
+  "create_nested_tree_definition_found": true,
+  "edit_queries_definition_found": true,
+  "generated_sql_exists": false,
+  "get_logical_plan_definition_found": true,
+  "native_column_fields": [
+    "name",
+    "type"
+  ],
+  "native_rows_type": "int",
+  "native_schema_example_paths": [
+    "/tmp/rewritebench_llmr2_audit/LLM-R2/data/data_llmr2/schemas/tpch.json",
+    "/tmp/rewritebench_llmr2_audit/LLM-R2/data/data_llmr2/schemas/dsb.json"
+  ],
+  "native_shape": "list_of_table_dicts",
+  "native_table_fields": [
+    "columns",
+    "rows",
+    "table"
+  ],
+  "primary_diagnosis": "schema_contract_fixed_logical_plan_ready",
+  "raw_query_probe": {
+    "attempted": true,
+    "command_used": "java -cp rewriter_java.jar src/get_logical_plan.java",
+    "exit_status": 0,
+    "explain_text_produced": true,
+    "parseable_by_create_nested_tree": true,
+    "parser_failure_reason": "",
+    "stderr_path": "/tmp/rewritebench_llmr2_fast_path/PERF_0013/logical_plan_probe_stderr_schema_contract_v1.txt",
+    "stdout_path": "/tmp/rewritebench_llmr2_fast_path/PERF_0013/logical_plan_probe_stdout_schema_contract_v1.txt"
+  },
+  "recommended_next_step": "retry CPU fast-path LLM-R2 smoke",
+  "result_csv_exists": false,
+  "schema_native_contract": true,
+  "schema_patch_info": {
+    "applied": true,
+    "backup_path": "/tmp/rewritebench_llmr2_fast_path/PERF_0013/runtime_root_v1/data/data_llmr2/schemas/rewritebench_perf_0013.before_schema_native_contract_v1.json",
+    "column_count": 16,
+    "rows_value_chosen": 4,
+    "table_count": 6
+  },
+  "staged_query_csv_path": "/tmp/rewritebench_llmr2_fast_path/PERF_0013/runtime_root_v1/data/data_llmr2/queries/queries_rewritebench_perf_0013_test.csv",
+  "staged_query_text": "-- PERF_0013 source layer\n-- Source registry row: SRC_001 (TPC-H)\n-- Raw source file: datasets/raw/tpch/TPC-H V3.0.1/dbgen/queries/5.sql\n-- Seed: TPC-H Query 5, Local Supplier Volume Query\n-- Freeze method: manual freeze because local qgen executable was not present.\n-- Reference substitution file: datasets/raw/tpch/TPC-H V3.0.1/ref_data/1/subparam_5\n-- Substitutions: :1 = MIDDLE EAST; :2 = 1997-01-01; :n -1 = no row limit.\n-- No execution, equivalence, rewrite, or validation claim is made by this file.\n\n-- TPC-H/TPC-R Local Supplier Volume Query (Q5)\nselect\n\tn_name,\n\tsum(l_extendedprice * (1 - l_discount)) as revenue\nfrom\n\tcustomer,\n\torders,\n\tlineitem,\n\tsupplier,\n\tnation,\n\tregion\nwhere\n\tc_custkey = o_custkey\n\tand l_orderkey = o_orderkey\n\tand l_suppkey = s_suppkey\n\tand c_nationkey = s_nationkey\n\tand s_nationkey = n_nationkey\n\tand n_regionkey = r_regionkey\n\tand r_name = 'MIDDLE EAST'\n\tand o_orderdate >= date '1997-01-01'\n\tand o_orderdate < date '1997-01-01' + interval '1' year\ngroup by\n\tn_name\norder by\n\trevenue desc;",
+  "staged_schema_path": "/tmp/rewritebench_llmr2_fast_path/PERF_0013/runtime_root_v1/data/data_llmr2/schemas/rewritebench_perf_0013.json"
+}

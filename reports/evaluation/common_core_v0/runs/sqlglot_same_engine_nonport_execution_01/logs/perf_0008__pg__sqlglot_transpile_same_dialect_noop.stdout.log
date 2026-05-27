@@ -1,0 +1,23 @@
+DROP SCHEMA
+CREATE SCHEMA
+SET
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+SET
+INSERT 0 3
+INSERT 0 3
+INSERT 0 3
+SET
+ l_orderkey | revenue | o_orderdate | o_shippriority 
+------------+---------+-------------+----------------
+        100 | 90.0000 | 1995-03-01  |              0
+(1 row)
+
+SET
+ l_orderkey | revenue | o_orderdate | o_shippriority 
+------------+---------+-------------+----------------
+        100 | 90.0000 | 1995-03-01  |              0
+(1 row)
+
+DROP SCHEMA

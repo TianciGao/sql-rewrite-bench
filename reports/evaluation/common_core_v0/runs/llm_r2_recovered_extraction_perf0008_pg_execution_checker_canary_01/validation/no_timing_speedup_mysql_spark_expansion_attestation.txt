@@ -1,0 +1,12 @@
+LLM-R2 recovered-extraction PERF_0008 PostgreSQL execution/checker canary attestation
+
+- timing_run = no
+- speedup_run = no
+- mysql_run = no
+- spark_run = no
+- pg6_expansion_run = no
+- pg9_expansion_run = no
+- full120_run = no
+- result_card_created = no
+- proposed_row_created = no
+- method_comparison_summary_v2_updated = no

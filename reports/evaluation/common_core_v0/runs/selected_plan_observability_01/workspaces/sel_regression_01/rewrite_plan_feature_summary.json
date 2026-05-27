@@ -1,0 +1,12 @@
+{
+  "plan_format": "pg_json",
+  "top_operator": "Aggregate",
+  "scan_summary": "Seq Scan",
+  "join_summary": "none",
+  "aggregate_summary": "Aggregate",
+  "sort_limit_summary": "none",
+  "filter_summary": "Filter",
+  "node_count": "2",
+  "parse_confidence": "medium",
+  "notes": "parsed_from_pg_json"
+}

@@ -1,0 +1,11 @@
+{
+  "row_id": "CONS_0005__spark__rewrite_neg_01",
+  "case_id": "CONS_0005",
+  "engine": "spark",
+  "negative_rewrite_id": "rewrite_neg_01",
+  "validation_model": "same_engine",
+  "source_reference_engine": "spark",
+  "exact_match": false,
+  "sorted_match": false,
+  "accepted_as_equivalent": false
+}

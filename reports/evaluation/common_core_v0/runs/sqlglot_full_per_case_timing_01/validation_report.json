@@ -1,0 +1,16 @@
+{
+  "status": "ok",
+  "expected_noop_rows": 72,
+  "expected_optimize_rows": 63,
+  "timing_event_rows": 135,
+  "timing_failure_rows": 0,
+  "summary_row_count": 2,
+  "routes_present": [
+    "sqlglot_optimize_same_dialect",
+    "sqlglot_transpile_same_dialect_noop"
+  ],
+  "excluded_row_ids": [
+    "sqlglot_optimize_same_dialect__PORT_0003__pg__port_exec_only",
+    "sqlglot_optimize_same_dialect__PORT_0004__mysql__port_exec_only"
+  ]
+}

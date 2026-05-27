@@ -1,0 +1,13 @@
+注意:  模式 "ccv0_llm_repair_port_0013_pg_direct_llm_execute_repair_" 不存在
+错误:  语法错误 在 "." 或附近的
+LINE 1: COPY (SELECT CAST( SUM( `t2`.`gender` = 'F' ) AS DOUBLE ) * ...
+                                    ^
+注意:  串联删除2个其它对象
+DETAIL:  递归删除 表 ccv0_llm_repair_port_0013_pg_direct_llm_execute_repair_.district
+递归删除 表 ccv0_llm_repair_port_0013_pg_direct_llm_execute_repair_.client
+Traceback (most recent call last):
+  File "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/direct_llm_execute_repair_1shot_01/run_direct_llm_execute_repair_1shot.py", line 417, in run_postgres_row
+    subprocess.run(
+  File "/usr/lib/python3.12/subprocess.py", line 571, in run
+    raise CalledProcessError(retcode, process.args,
+subprocess.CalledProcessError: Command '['psql', '-v', 'ON_ERROR_STOP=1', '-X', '-q', '-c', 'SET search_path TO ccv0_llm_repair_port_0013_pg_direct_llm_execute_repair_;', '-c', "COPY (SELECT CAST( SUM( `t2`.`gender` = 'F' ) AS DOUBLE ) * 100 / COUNT( `t2`.`client_id` ) FROM `district` AS `t1` INNER JOIN `client` AS `t2` ON `t1`.`district_id` = `t2`.`district_id` WHERE `t1`.`a11` > 10000) TO STDOUT WITH (FORMAT CSV, DELIMITER E'\\t', NULL 'NULL');"]' returned non-zero exit status 1.

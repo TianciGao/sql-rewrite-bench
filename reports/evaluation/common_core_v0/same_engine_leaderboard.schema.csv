@@ -1,0 +1,14 @@
+column_name,data_type,required,example_or_allowed_values,description
+run_id,string,yes,<fill_me>,Run identifier linking leaderboard rows to one evaluation batch.
+method_id,string,yes,<fill_me>,Method identifier.
+engine_target,string,yes,postgresql|mysql|spark,Engine for this same-engine leaderboard slice.
+pool_scope,string,yes,all|performance|consistency|portability|longtail,Pool scope used for the aggregation.
+denominator_cases,integer,yes,40,Coverage-aware denominator count for the slice.
+valid_success_cases,integer,yes,0,Number of denominator cases with valid successful same-engine outcomes.
+speedup_eligible_cases,integer,yes,0,Number of valid rewrite cases eligible for GM_Speedup aggregation.
+gm_speedup,number,no,1.07,Geometric-mean speedup computed only on speedup-eligible valid rewrites.
+pass_rate,number,yes,0.0,Valid-success rate over the stated denominator.
+coverage_rate,number,yes,0.0,Speedup-eligible or valid-coverage rate over the stated denominator.
+result_validity_rate,number,yes,0.0,Share of denominator cases with valid result comparisons.
+plan_observability_rate,number,yes,0.0,Share of denominator cases with usable plan observability artifacts.
+notes,string,no,<fill_me>,Short explanation of scope or exclusions; failed cases must still remain in the denominator.

@@ -1,0 +1,1 @@
+drop schema if exists attr113_sqlglot_sqlglot_optimize_same_dialect_perf_0034_pg cascade;

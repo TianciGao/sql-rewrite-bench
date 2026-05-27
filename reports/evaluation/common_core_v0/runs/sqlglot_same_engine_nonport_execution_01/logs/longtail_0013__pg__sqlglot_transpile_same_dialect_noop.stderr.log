@@ -1,0 +1,6 @@
+注意:  模式 "ccv0_sqlglot_longtail_0013_sqlglot_transpile_same_diale" 不存在
+注意:  串联删除4个其它对象
+DETAIL:  递归删除 表 ccv0_sqlglot_longtail_0013_sqlglot_transpile_same_diale.users
+递归删除 表 ccv0_sqlglot_longtail_0013_sqlglot_transpile_same_diale.posts
+递归删除 表 ccv0_sqlglot_longtail_0013_sqlglot_transpile_same_diale.votes
+递归删除 表 ccv0_sqlglot_longtail_0013_sqlglot_transpile_same_diale.badges

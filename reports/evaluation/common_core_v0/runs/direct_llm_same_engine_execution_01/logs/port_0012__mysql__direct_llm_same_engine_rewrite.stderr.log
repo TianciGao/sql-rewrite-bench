@@ -1,0 +1,12 @@
+mysql: [Warning] Using a password on the command line interface can be insecure.
+mysql: [Warning] Using a password on the command line interface can be insecure.
+mysql: [Warning] Using a password on the command line interface can be insecure.
+mysql: [Warning] Using a password on the command line interface can be insecure.
+ERROR 1064 (42000) at line 1: You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near '"patient" WHERE "diagnosis" = 'RA' AND TO_CHAR( CAST( "birthday" AS TIMESTAMP ) ' at line 1
+mysql: [Warning] Using a password on the command line interface can be insecure.
+Traceback (most recent call last):
+  File "<stdin>", line 219, in run_mysql_row
+  File "<stdin>", line 211, in mysql_exec
+  File "/usr/lib/python3.12/subprocess.py", line 571, in run
+    raise CalledProcessError(retcode, process.args,
+subprocess.CalledProcessError: Command '['mysql', '--host', '127.0.0.1', '--port', '3306', '--user', 'bench', '--password=benchpass', 'bench', '--batch', '--raw', '--skip-column-names', '-e', 'SELECT CAST( SUM( CASE WHEN "sex" = \'F\' THEN 1 ELSE 0 END ) AS REAL ) * 100 / NULLIF( COUNT( "id" ) , 0 ) FROM "patient" WHERE "diagnosis" = \'RA\' AND TO_CHAR( CAST( "birthday" AS TIMESTAMP ) , \'YYYY\' ) = \'1980\'']' returned non-zero exit status 1.

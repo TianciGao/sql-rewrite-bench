@@ -1,0 +1,57 @@
+{
+  "build_script_command": "reports/evaluation/common_core_v0/r_bot_formal_index_build_01/run_manual_r_bot_formal_index_inspect.py --index-dir /tmp/rewritebench_rbot_formal_chroma_index_01 --collection-name r_bot_formal_stackoverflow --provider-family api.gptsapi.net --index-id r_bot_formal_chroma_index_01",
+  "build_timestamp": "2026-05-08T18:25:05.330392+00:00",
+  "chroma_collection_name": "r_bot_formal_stackoverflow",
+  "collection_document_count": 5507,
+  "collection_verified_dimension": 3172,
+  "corpus_artifact_uri": "https://doi.org/10.5281/zenodo.20087267",
+  "corpus_sha256": "e7e68b08a4283467f899f05a3150c485e2bf615ccdde4f4ab76e0f08734e546a",
+  "current_benchmark_gate_ready": false,
+  "embedding_model": "text-embedding-3-small",
+  "embedding_provider_base_url_family": "api.gptsapi.net",
+  "expected_zip_filename": "stackoverflow-rewrite-embed.zip",
+  "extraction_contract_version": "reports/evaluation/common_core_v0/r_bot_formal_substrate_freeze_01/formal_zip_text_extraction_contract.md",
+  "formal_generation_may_start": false,
+  "index_directory": "/tmp/rewritebench_rbot_formal_chroma_index_01",
+  "index_file_hashes": [
+    {
+      "path": "/tmp/rewritebench_rbot_formal_chroma_index_01/1d3373e2-b207-4aac-98f7-4dfee2b48486/data_level0.bin",
+      "sha256": "f10b51be06c8cfe1afbea5030faad67cd4c426fc965e68b7c372a5e11ab58d16",
+      "size_bytes": "65679360"
+    },
+    {
+      "path": "/tmp/rewritebench_rbot_formal_chroma_index_01/1d3373e2-b207-4aac-98f7-4dfee2b48486/header.bin",
+      "sha256": "c68bdcd0ce66a9593c9c8aede656a6a9e185cd83ebaa9a8f7097213715d0c206",
+      "size_bytes": "100"
+    },
+    {
+      "path": "/tmp/rewritebench_rbot_formal_chroma_index_01/1d3373e2-b207-4aac-98f7-4dfee2b48486/index_metadata.pickle",
+      "sha256": "12cdbab3220bd78ed458f64f3dd7f4fa68b34fd4ed0ce7bf1f3d4a0b90f69223",
+      "size_bytes": "757908"
+    },
+    {
+      "path": "/tmp/rewritebench_rbot_formal_chroma_index_01/1d3373e2-b207-4aac-98f7-4dfee2b48486/length.bin",
+      "sha256": "8f5cd589e1574c6a39a4b6fb18ccfb66aa643bd3a4577dff36d50758b555f196",
+      "size_bytes": "20480"
+    },
+    {
+      "path": "/tmp/rewritebench_rbot_formal_chroma_index_01/1d3373e2-b207-4aac-98f7-4dfee2b48486/link_lists.bin",
+      "sha256": "705e8007e177909cc6c7a4f2ff1537d004bca39aa705a2872f08efcb3b3fff55",
+      "size_bytes": "45980"
+    },
+    {
+      "path": "/tmp/rewritebench_rbot_formal_chroma_index_01/chroma.sqlite3",
+      "sha256": "4a0a864b130d52591a94c55f2efceac4d1ac2b8e8b0dc2d021d17598f2742ed2",
+      "size_bytes": "123506688"
+    }
+  ],
+  "index_id": "r_bot_formal_chroma_index_01",
+  "reranking_mode": "rrf",
+  "retrieval_top_k": 10,
+  "rrf_k": 60,
+  "rule_vector_width": 100,
+  "similarity_threshold": null,
+  "similarity_threshold_policy": "explicit_none_observed",
+  "status": "inspected_existing_index_gate_still_closed",
+  "total_dimension": 3172
+}

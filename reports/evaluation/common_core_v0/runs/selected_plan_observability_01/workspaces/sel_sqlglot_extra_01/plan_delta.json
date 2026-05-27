@@ -1,0 +1,17 @@
+{
+  "selected_id": "sel_sqlglot_extra_01",
+  "case_id": "PERF_0007",
+  "engine": "spark",
+  "method_id": "sqlglot",
+  "route_id": "sqlglot_optimize_same_dialect",
+  "outcome_type": "speedup",
+  "runtime_effect": "speedup_1.1844599726785x",
+  "source_plan_pattern": "top=HashAggregate; scan=Scan; join=none_visible; agg=Aggregate, HashAggregate; sort_limit=none_visible",
+  "rewrite_plan_pattern": "top=HashAggregate; scan=Scan; join=none_visible; agg=Aggregate, HashAggregate; sort_limit=none_visible",
+  "main_plan_delta": "no_major_plan_delta",
+  "attribution_confidence": "low",
+  "evidence_artifacts": "/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/sqlglot_full_per_case_timing_01/timing_event_long.csv|/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/selected_plan_observability_01/workspaces/sel_sqlglot_extra_01/source_plan.txt|/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/selected_plan_observability_01/workspaces/sel_sqlglot_extra_01/rewrite_plan.txt",
+  "paper_safe_interpretation": "the selected source/rewrite plans look broadly similar at this lightweight feature level",
+  "forbidden_overclaim": "Do not overread lightweight similarity as proof of no physical-plan difference.",
+  "notes": "best_retained_sqlglot_speedup_row_added_because_sqlglot_was_not_covered_by_base_four_selection"
+}

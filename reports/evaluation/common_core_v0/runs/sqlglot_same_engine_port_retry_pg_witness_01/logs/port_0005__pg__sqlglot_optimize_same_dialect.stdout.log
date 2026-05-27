@@ -1,0 +1,20 @@
+DROP SCHEMA
+CREATE SCHEMA
+SET
+DROP TABLE
+CREATE TABLE
+SET
+INSERT 0 4
+SET
+  nationality   
+----------------
+ japan_earliest
+(1 row)
+
+SET
+  nationality   
+----------------
+ japan_earliest
+(1 row)
+
+DROP SCHEMA

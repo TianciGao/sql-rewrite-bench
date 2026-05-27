@@ -1,0 +1,42 @@
+ c_customer_id 
+---------------
+ CUST_A
+(1 row)
+
+ c_customer_id 
+---------------
+ CUST_A
+(1 row)
+
+ c_customer_id 
+---------------
+ CUST_A
+(1 row)
+
+ c_customer_id 
+---------------
+ CUST_A
+(1 row)
+
+ c_customer_id 
+---------------
+ CUST_A
+(1 row)
+
+ c_customer_id 
+---------------
+ CUST_A
+(1 row)
+
+ c_customer_id 
+---------------
+ CUST_A
+(1 row)
+
+ c_customer_id 
+---------------
+ CUST_A
+(1 row)
+
+case_id=PERF_0052 pool=performance engine=pg route_id=r_bot_same_engine_rewrite
+warmup_count=1 repeat_count=3

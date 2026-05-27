@@ -1,0 +1,4 @@
+14:43:41,304 root INFO Input Cost: 36.37
+14:43:41,362 chromadb.config DEBUG Starting component System
+14:43:41,362 chromadb.config DEBUG Starting component Posthog
+14:43:41,551 root INFO Matched NL rewrite rules: ['can_be_optimized_by_function', 'can_be_optimized_by_constant_folding', 'can_be_optimized_by_out_of_range']

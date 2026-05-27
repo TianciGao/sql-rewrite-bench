@@ -1,0 +1,11 @@
+check_id,scope,status,evidence,notes
+selected_case_source_sql,PERF_0006+PERF_0007+CONS_0005,pass,source.sql present for all three cases,not a blocker
+selected_case_mysql_schema,PERF_0006+PERF_0007+CONS_0005,pass,ddl_mysql.sql present for all three cases,not a blocker
+selected_case_spark_schema,PERF_0006+PERF_0007+CONS_0005,pass,ddl_spark.sql present for all three cases,not a blocker
+selected_case_mysql_witness,PERF_0006+PERF_0007+CONS_0005,pass,mysql_witness_data.sql present for all three cases,metadata available for later execution package if ever justified
+selected_case_spark_witness,PERF_0006+PERF_0007+CONS_0005,pass,spark_witness_data.sql present for all three cases,metadata available for later execution package if ever justified
+existing_runner_scope,calcite_hep_pg40_generation_01,warning,retained route_id is calcite_hep_pg_rewrite,current canonical evidence is PG-only
+wrapper_parser_mode,CalciteHepRewriteSmoke.java,warning,wrapper parses with Lex.MYSQL,this does not prove Spark-safe parsing
+wrapper_output_dialect,CalciteHepRewriteSmoke.java,fail,wrapper renders with PostgresqlSqlDialect.DEFAULT,unsafe to label output as same-engine mysql or spark
+canary_justified,calcite_hep_mysql_spark_canary_01,pass,bounded six-row rewrite canary is justified,runner should fail closed on PG-dialect rendering blocker
+recommended_next_action,calcite_hep_mysql_spark_canary_01,pass,create fail-closed rewrite canary package,do not silently treat PG-shaped output as mysql/spark evidence

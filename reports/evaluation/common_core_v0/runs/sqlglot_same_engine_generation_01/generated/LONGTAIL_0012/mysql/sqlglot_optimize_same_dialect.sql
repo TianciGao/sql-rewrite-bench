@@ -1,0 +1,39 @@
+WITH `voteCount` AS (
+  SELECT
+    `Votes`.`PostId` AS `PostId`,
+    SUM(CASE WHEN `Votes`.`VoteTypeId` = 2 THEN 1 ELSE 0 END) AS `UpVotes`,
+    SUM(CASE WHEN `Votes`.`VoteTypeId` = 3 THEN 1 ELSE 0 END) AS `DownVotes`
+  FROM `Votes` AS `Votes`
+  GROUP BY
+    `Votes`.`PostId`
+)
+SELECT
+  `u`.`DisplayName` AS `UserName`,
+  COUNT(DISTINCT `p`.`Id`) AS `TotalPosts`,
+  SUM(CASE WHEN `p`.`PostTypeId` = 1 THEN 1 ELSE 0 END) AS `TotalQuestions`,
+  SUM(CASE WHEN `p`.`PostTypeId` = 2 THEN 1 ELSE 0 END) AS `TotalAnswers`,
+  `p`.`Title` AS `LastPostTitle`,
+  MAX(`p`.`CreationDate`) AS `LastPostDate`,
+  AVG(COALESCE(`voteCount`.`UpVotes`, 0)) AS `AvgUpVotes`,
+  AVG(COALESCE(`voteCount`.`DownVotes`, 0)) AS `AvgDownVotes`,
+  `u`.`Reputation` AS `Reputation`,
+  `u`.`Views` AS `Views`,
+  ROW_NUMBER() OVER (ORDER BY COUNT(DISTINCT `p`.`Id`) DESC) AS `rank_value`
+FROM `Users` AS `u`
+LEFT JOIN `Posts` AS `p`
+  ON `p`.`OwnerUserId` = `u`.`Id`
+LEFT JOIN `voteCount` AS `voteCount`
+  ON `p`.`Id` = `voteCount`.`PostId`
+WHERE
+  `u`.`Reputation` > 1000
+GROUP BY
+  `u`.`DisplayName`,
+  `p`.`Title`,
+  `u`.`Reputation`,
+  `u`.`Views`
+HAVING
+  COUNT(DISTINCT `p`.`Id`) > 0
+ORDER BY
+  `TotalPosts` DESC,
+  `LastPostDate` DESC
+LIMIT 10

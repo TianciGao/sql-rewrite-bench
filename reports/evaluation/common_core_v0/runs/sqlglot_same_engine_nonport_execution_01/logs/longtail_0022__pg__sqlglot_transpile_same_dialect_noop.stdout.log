@@ -1,0 +1,27 @@
+DROP SCHEMA
+CREATE SCHEMA
+SET
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+SET
+INSERT 0 4
+INSERT 0 5
+INSERT 0 12
+SET
+ postid |         title         | score | comment_count | distinct_commenters | ownerdisplayname 
+--------+-----------------------+-------+---------------+---------------------+------------------
+    101 | Disk cleanup tips     |    10 |             4 |                   3 | Alice
+    104 | Backup strategy       |     7 |             3 |                   3 | Dan
+    102 | Network latency issue |     8 |             3 |                   2 | Bob
+(3 rows)
+
+SET
+ postid |         title         | score | comment_count | distinct_commenters | ownerdisplayname 
+--------+-----------------------+-------+---------------+---------------------+------------------
+    101 | Disk cleanup tips     |    10 |             4 |                   3 | Alice
+    104 | Backup strategy       |     7 |             3 |                   3 | Dan
+    102 | Network latency issue |     8 |             3 |                   2 | Bob
+(3 rows)
+
+DROP SCHEMA

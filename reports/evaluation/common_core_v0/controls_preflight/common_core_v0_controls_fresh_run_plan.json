@@ -1,0 +1,38 @@
+{
+  "run_id": "common_core_v0_controls_fresh_execution_plan",
+  "denominator_id": "common_core_v0_40",
+  "method_id": "controls",
+  "method_role": "controls",
+  "attempted_cases": 40,
+  "is_leaderboard_method": false,
+  "execution_mode": "fresh_execution_preflight_only",
+  "recommended_order": "run_source_plus_human_positive_first_then_hard_negative_separately",
+  "environment_bootstrap": [
+    "source scripts/env_postgres.sh",
+    "source scripts/env_mysql.sh",
+    "source scripts/env_spark.sh"
+  ],
+  "planned_outputs": {
+    "command_matrix": "reports/evaluation/common_core_v0/controls_preflight/common_core_v0_controls_fresh_command_matrix.csv",
+    "preflight_note": "reports/evaluation/common_core_v0/controls_preflight/common_core_v0_controls_fresh_execution_preflight.md",
+    "run_plan": "reports/evaluation/common_core_v0/controls_preflight/common_core_v0_controls_fresh_run_plan.json",
+    "future_run_dir": "reports/evaluation/common_core_v0/runs/controls_<timestamp_or_version>/"
+  },
+  "validator_command": "python scripts/common_core_v0_validation.py --manifest reports/evaluation/common_core_v0/runs/controls_<timestamp_or_version>/run_manifest.json --run-event-long reports/evaluation/common_core_v0/runs/controls_<timestamp_or_version>/run_event_long.csv --controls-summary reports/evaluation/common_core_v0/runs/controls_<timestamp_or_version>/controls_summary.csv --json",
+  "summary": {
+    "matrix_rows": 360,
+    "status_counts": {
+      "ready_for_fresh_execution": 223,
+      "needs_manual_command_review": 128,
+      "skip_for_fresh_execution": 9
+    },
+    "route_status_counts": {
+      "hard_negative:needs_manual_command_review": 120,
+      "human_positive:needs_manual_command_review": 4,
+      "human_positive:ready_for_fresh_execution": 107,
+      "human_positive:skip_for_fresh_execution": 9,
+      "native_source:needs_manual_command_review": 4,
+      "native_source:ready_for_fresh_execution": 116
+    }
+  }
+}

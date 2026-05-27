@@ -1,0 +1,68 @@
+{
+  "artifact_contract_validation": {
+    "closed": true,
+    "evidence_json": "reports/evaluation/common_core_v0/r_bot_formal_artifact_contract_01/formal_artifact_contract_validation_report.json",
+    "evidence_md": "reports/evaluation/common_core_v0/r_bot_formal_artifact_contract_01/formal_artifact_contract_validation_report.md",
+    "status": "artifact_contract_definition_valid"
+  },
+  "benchmark_metrics_exist": false,
+  "blockers_closed": {
+    "artifact_contract_validation": true,
+    "contamination_checks_pre_generation": true,
+    "corpus_text_checks": true,
+    "formal_chroma_index": true,
+    "retrieval_config_freeze_pre_generation": true,
+    "rule_vector_catalog": true,
+    "runtime_dependency_lock": true,
+    "zip_provenance": true
+  },
+  "current_benchmark_gate_ready": true,
+  "decision_boundary": {
+    "allows_formal_generation_package_creation": true,
+    "allows_human_run_formal_generation": true,
+    "authorizes_benchmark_metrics": false,
+    "authorizes_leaderboard_claims": false,
+    "authorizes_timing_or_speedup_claims": false
+  },
+  "denominator": {
+    "case_count": 40,
+    "candidate_matrix_path": "reports/evaluation/common_core_v0/r_bot_formal_protocol/r_bot_common_core_v0_40_same_engine_candidate_matrix.csv",
+    "counts_by_engine": {
+      "mysql": 40,
+      "pg": 40,
+      "spark": 40
+    },
+    "denominator_id": "common_core_v0_40_same_engine_120",
+    "engines": [
+      "pg",
+      "mysql",
+      "spark"
+    ],
+    "frozen": true,
+    "planned_rows": 120,
+    "run_plan_path": "reports/evaluation/common_core_v0/r_bot_formal_protocol/r_bot_run_plan_v1.json"
+  },
+  "downstream_only_after_v13": [
+    "formal_120_row_generation_outputs",
+    "denominator_aware_formal_run_evidence",
+    "execution_validation_artifacts",
+    "timing_and_metric_artifacts"
+  ],
+  "formal_r_bot_120_generation_may_start": true,
+  "formal_rbot_same_engine_package_may_be_created_and_human_run": true,
+  "formal_run_evidence_already_exists": false,
+  "index_identifier_path": "reports/evaluation/common_core_v0/r_bot_formal_index_build_01/formal_chroma_index_identifier_v1.json",
+  "notes": [
+    "v13 closes the final pre-generation blocker only.",
+    "A future formal run must still retain denominator-aware row artifacts and run-level evidence.",
+    "Contamination guard attestation remains a required retained run artifact during the actual formal run."
+  ],
+  "parameter_freeze_path": "reports/evaluation/common_core_v0/r_bot_formal_protocol/r_bot_parameter_freeze_v2.json",
+  "runtime_lock_status_path": "reports/evaluation/common_core_v0/r_bot_formal_runtime_lock_01/runtime_lock_status_v1.md",
+  "status": "formal_pre_generation_gate_open_v13",
+  "substrate_gate_inputs": [
+    "reports/evaluation/common_core_v0/r_bot_formal_substrate_freeze_01/formal_gate_status_v11.md",
+    "reports/evaluation/common_core_v0/r_bot_formal_substrate_freeze_01/formal_gate_status_v12.md"
+  ],
+  "version": "formal_gate_status_v13"
+}

@@ -1,0 +1,22 @@
+{
+  "case_id": "PERF_0006",
+  "engine": "mysql",
+  "route_id": "sqlglot_transpile_same_dialect_noop",
+  "warmup_count": 1,
+  "repeat_count": 3,
+  "source_runtime_ms": [
+    116.59651005174965,
+    120.47299707774073,
+    118.25735599268228
+  ],
+  "generated_runtime_ms": [
+    120.81909296102822,
+    121.84847902972251,
+    117.4608200090006
+  ],
+  "median_source_ms": 118.25735599268228,
+  "median_generated_ms": 120.81909296102822,
+  "speedup_ratio": 0.9787969193811754,
+  "status": "success",
+  "notes": ""
+}

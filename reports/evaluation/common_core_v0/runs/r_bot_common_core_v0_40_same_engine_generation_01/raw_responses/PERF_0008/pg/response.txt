@@ -1,0 +1,5 @@
+capture_status=raw_response_not_captured_by_recovered_runner_use_method_stdout_log
+case_id=PERF_0008
+engine=pg
+runner_log=/home/tianci_gao/code/sql-rewrite-bench/reports/evaluation/common_core_v0/runs/r_bot_common_core_v0_40_same_engine_generation_01/logs/PERF_0008/pg/generation.stdout.log
+row_status=generated

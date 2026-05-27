@@ -1,0 +1,83 @@
+{
+  "gate_status_id": "r_bot_formal_gate_status_v11",
+  "denominator_id": "common_core_v0_40_same_engine_120",
+  "method_id": "r_bot",
+  "route_id": "r_bot_same_engine_rewrite",
+  "status_date": "2026-05-08",
+  "current_benchmark_gate_ready": false,
+  "formal_generation_may_start": false,
+  "formal_chroma_index_gate": {
+    "closed": true,
+    "built": true,
+    "inspected_successfully": true,
+    "index_id": "r_bot_formal_chroma_index_01",
+    "collection_name": "r_bot_formal_stackoverflow",
+    "collection_document_count": 5507,
+    "verified_dimension": 3172,
+    "index_file_hash_count": 6,
+    "evidence_refs": [
+      "reports/evaluation/common_core_v0/r_bot_formal_index_build_01/formal_chroma_index_identifier_v1.json",
+      "reports/evaluation/common_core_v0/r_bot_formal_index_build_01/formal_chroma_index_build_report_v1.md",
+      "reports/evaluation/common_core_v0/r_bot_formal_index_build_01/formal_chroma_index_inspect_report_v1.md"
+    ]
+  },
+  "identifier_metadata_checks": {
+    "corpus_artifact_uri_recorded": true,
+    "corpus_sha256_recorded": true,
+    "expected_zip_filename_recorded": true,
+    "extraction_contract_version_recorded": true,
+    "embedding_model_recorded": true,
+    "embedding_provider_family_recorded": true,
+    "rule_vector_width_recorded": true,
+    "total_dimension_recorded": true,
+    "index_file_hashes_recorded": true
+  },
+  "identifier_metadata_values": {
+    "corpus_artifact_uri": "https://doi.org/10.5281/zenodo.20087267",
+    "corpus_sha256": "e7e68b08a4283467f899f05a3150c485e2bf615ccdde4f4ab76e0f08734e546a",
+    "expected_zip_filename": "stackoverflow-rewrite-embed.zip",
+    "extraction_contract_version": "reports/evaluation/common_core_v0/r_bot_formal_substrate_freeze_01/formal_zip_text_extraction_contract.md",
+    "embedding_model": "text-embedding-3-small",
+    "embedding_provider_base_url_family": "api.gptsapi.net",
+    "rule_vector_width": 100,
+    "total_dimension": 3172
+  },
+  "rule_vector_catalog_checks": {
+    "catalog_retained": true,
+    "catalog_fully_frozen": true,
+    "nl_rule_count": 30,
+    "calcite_rule_count": 70,
+    "unresolved_slot_count": 0,
+    "slot_partition": {
+      "nl_vector_slots": [
+        0,
+        29
+      ],
+      "calcite_vector_slots": [
+        30,
+        99
+      ]
+    },
+    "evidence_ref": "reports/evaluation/common_core_v0/r_bot_formal_index_build_01/formal_rule_vector_catalog_v1.json"
+  },
+  "blockers_closed_in_v11": [
+    "formal Chroma index rebuild blocker",
+    "retained formal index identifier existence blocker",
+    "formal rule-vector alignment blocker at retained index materialization layer"
+  ],
+  "remaining_blockers": [
+    "runtime/dependency lock remains open",
+    "retained run-path artifact-contract validation remains open",
+    "denominator-aware formal run evidence has not yet been retained",
+    "similarity-threshold/runtime attestation layer remains unresolved outside the closed index blocker"
+  ],
+  "source_documents": [
+    "reports/evaluation/common_core_v0/r_bot_formal_index_build_01/formal_chroma_index_identifier_v1.json",
+    "reports/evaluation/common_core_v0/r_bot_formal_index_build_01/formal_chroma_index_build_report_v1.md",
+    "reports/evaluation/common_core_v0/r_bot_formal_index_build_01/formal_chroma_index_inspect_report_v1.md",
+    "reports/evaluation/common_core_v0/r_bot_formal_index_build_01/formal_rule_vector_catalog_v1.json",
+    "reports/evaluation/common_core_v0/r_bot_formal_substrate_freeze_01/formal_gate_status_v10.md",
+    "reports/evaluation/common_core_v0/r_bot_formal_substrate_freeze_01/formal_chroma_index_rebuild_gate_v1.md",
+    "reports/evaluation/common_core_v0/r_bot_formal_protocol/r_bot_parameter_freeze_v2.json"
+  ]
+}
