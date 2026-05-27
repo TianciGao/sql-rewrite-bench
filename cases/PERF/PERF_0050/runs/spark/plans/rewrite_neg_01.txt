@@ -1,0 +1,149 @@
+== Physical Plan ==
+AdaptiveSparkPlan (24)
++- TakeOrderedAndProject (23)
+   +- Project (22)
+      +- Window (21)
+         +- Sort (20)
+            +- Exchange (19)
+               +- HashAggregate (18)
+                  +- HashAggregate (17)
+                     +- HashAggregate (16)
+                        +- Exchange (15)
+                           +- HashAggregate (14)
+                              +- Project (13)
+                                 +- BroadcastHashJoin Inner BuildRight (12)
+                                    :- Project (8)
+                                    :  +- BroadcastHashJoin Inner BuildRight (7)
+                                    :     :- Filter (2)
+                                    :     :  +- Scan parquet spark_catalog.default.web_sales (1)
+                                    :     +- BroadcastExchange (6)
+                                    :        +- Project (5)
+                                    :           +- Filter (4)
+                                    :              +- Scan parquet spark_catalog.default.date_dim (3)
+                                    +- BroadcastExchange (11)
+                                       +- Filter (10)
+                                          +- Scan parquet spark_catalog.default.item (9)
+
+
+(1) Scan parquet spark_catalog.default.web_sales
+Output [3]: [ws_sold_date_sk#668, ws_item_sk#669, ws_net_paid#670]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/perf_0050_spark_plan_06j5sks5/web_sales]
+PushedFilters: [IsNotNull(ws_sold_date_sk), IsNotNull(ws_item_sk)]
+ReadSchema: struct<ws_sold_date_sk:int,ws_item_sk:int,ws_net_paid:decimal(9,2)>
+
+(2) Filter
+Input [3]: [ws_sold_date_sk#668, ws_item_sk#669, ws_net_paid#670]
+Condition : (isnotnull(ws_sold_date_sk#668) AND isnotnull(ws_item_sk#669))
+
+(3) Scan parquet spark_catalog.default.date_dim
+Output [2]: [d_date_sk#671, d_month_seq#672]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/perf_0050_spark_plan_06j5sks5/date_dim]
+PushedFilters: [IsNotNull(d_month_seq), GreaterThanOrEqual(d_month_seq,1212), LessThanOrEqual(d_month_seq,1223), IsNotNull(d_date_sk)]
+ReadSchema: struct<d_date_sk:int,d_month_seq:int>
+
+(4) Filter
+Input [2]: [d_date_sk#671, d_month_seq#672]
+Condition : (((isnotnull(d_month_seq#672) AND (d_month_seq#672 >= 1212)) AND (d_month_seq#672 <= 1223)) AND isnotnull(d_date_sk#671))
+
+(5) Project
+Output [1]: [d_date_sk#671]
+Input [2]: [d_date_sk#671, d_month_seq#672]
+
+(6) BroadcastExchange
+Input [1]: [d_date_sk#671]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, true] as bigint)),false), [plan_id=631]
+
+(7) BroadcastHashJoin
+Left keys [1]: [ws_sold_date_sk#668]
+Right keys [1]: [d_date_sk#671]
+Join type: Inner
+Join condition: None
+
+(8) Project
+Output [2]: [ws_item_sk#669, ws_net_paid#670]
+Input [4]: [ws_sold_date_sk#668, ws_item_sk#669, ws_net_paid#670, d_date_sk#671]
+
+(9) Scan parquet spark_catalog.default.item
+Output [3]: [i_item_sk#673, i_category#674, i_class#675]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/perf_0050_spark_plan_06j5sks5/item]
+PushedFilters: [IsNotNull(i_item_sk)]
+ReadSchema: struct<i_item_sk:int,i_category:string,i_class:string>
+
+(10) Filter
+Input [3]: [i_item_sk#673, i_category#674, i_class#675]
+Condition : isnotnull(i_item_sk#673)
+
+(11) BroadcastExchange
+Input [3]: [i_item_sk#673, i_category#674, i_class#675]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, false] as bigint)),false), [plan_id=635]
+
+(12) BroadcastHashJoin
+Left keys [1]: [ws_item_sk#669]
+Right keys [1]: [i_item_sk#673]
+Join type: Inner
+Join condition: None
+
+(13) Project
+Output [3]: [ws_net_paid#670, i_category#674, i_class#675]
+Input [5]: [ws_item_sk#669, ws_net_paid#670, i_item_sk#673, i_category#674, i_class#675]
+
+(14) HashAggregate
+Input [3]: [ws_net_paid#670, i_category#674, i_class#675]
+Keys [2]: [i_category#674, i_class#675]
+Functions [1]: [partial_sum(ws_net_paid#670)]
+Aggregate Attributes [2]: [sum#730, isEmpty#731]
+Results [4]: [i_category#674, i_class#675, sum#732, isEmpty#733]
+
+(15) Exchange
+Input [4]: [i_category#674, i_class#675, sum#732, isEmpty#733]
+Arguments: hashpartitioning(i_category#674, i_class#675, 1), ENSURE_REQUIREMENTS, [plan_id=640]
+
+(16) HashAggregate
+Input [4]: [i_category#674, i_class#675, sum#732, isEmpty#733]
+Keys [2]: [i_category#674, i_class#675]
+Functions [1]: [sum(ws_net_paid#670)]
+Aggregate Attributes [1]: [sum(ws_net_paid#670)#535]
+Results [6]: [cast(sum(ws_net_paid#670)#535 as decimal(29,2)) AS total_sum#680, i_category#674, i_class#675, 0 AS g_category#677, 0 AS g_class#678, 0 AS lochierarchy#679]
+
+(17) HashAggregate
+Input [6]: [total_sum#680, i_category#674, i_class#675, g_category#677, g_class#678, lochierarchy#679]
+Keys [6]: [total_sum#680, i_category#674, i_class#675, g_category#677, g_class#678, lochierarchy#679]
+Functions: []
+Aggregate Attributes: []
+Results [6]: [total_sum#680, i_category#674, i_class#675, g_category#677, g_class#678, lochierarchy#679]
+
+(18) HashAggregate
+Input [6]: [total_sum#680, i_category#674, i_class#675, g_category#677, g_class#678, lochierarchy#679]
+Keys [6]: [total_sum#680, i_category#674, i_class#675, g_category#677, g_class#678, lochierarchy#679]
+Functions: []
+Aggregate Attributes: []
+Results [5]: [total_sum#680, i_category#674, i_class#675, lochierarchy#679, CASE WHEN (g_class#678 = 0) THEN i_category#674 END AS _w0#561]
+
+(19) Exchange
+Input [5]: [total_sum#680, i_category#674, i_class#675, lochierarchy#679, _w0#561]
+Arguments: hashpartitioning(lochierarchy#679, _w0#561, 1), ENSURE_REQUIREMENTS, [plan_id=645]
+
+(20) Sort
+Input [5]: [total_sum#680, i_category#674, i_class#675, lochierarchy#679, _w0#561]
+Arguments: [lochierarchy#679 ASC NULLS FIRST, _w0#561 ASC NULLS FIRST, total_sum#680 DESC NULLS LAST], false, 0
+
+(21) Window
+Input [5]: [total_sum#680, i_category#674, i_class#675, lochierarchy#679, _w0#561]
+Arguments: [rank(total_sum#680) windowspecdefinition(lochierarchy#679, _w0#561, total_sum#680 DESC NULLS LAST, specifiedwindowframe(RowFrame, unboundedpreceding$(), currentrow$())) AS rank_within_parent#517], [lochierarchy#679, _w0#561], [total_sum#680 DESC NULLS LAST]
+
+(22) Project
+Output [5]: [total_sum#680, i_category#674, i_class#675, lochierarchy#679, rank_within_parent#517]
+Input [6]: [total_sum#680, i_category#674, i_class#675, lochierarchy#679, _w0#561, rank_within_parent#517]
+
+(23) TakeOrderedAndProject
+Input [5]: [total_sum#680, i_category#674, i_class#675, lochierarchy#679, rank_within_parent#517]
+Arguments: 100, [lochierarchy#679 DESC NULLS LAST, CASE WHEN (lochierarchy#679 = 0) THEN i_category#674 END ASC NULLS FIRST, rank_within_parent#517 ASC NULLS FIRST], [total_sum#680, i_category#674, i_class#675, lochierarchy#679, rank_within_parent#517]
+
+(24) AdaptiveSparkPlan
+Output [5]: [total_sum#680, i_category#674, i_class#675, lochierarchy#679, rank_within_parent#517]
+Arguments: isFinalPlan=false
+
+

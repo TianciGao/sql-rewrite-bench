@@ -1,0 +1,25 @@
+case_id: CONS_0034
+trial_version: "0.3"
+status: batch2b_taxonomy_draft
+candidate_primary_pool: consistency
+dataset_line_candidate: consistency-extension-candidate
+sql_feature_tags:
+  - outer_join
+  - expression_complexity
+rewrite_opportunity_tags:
+  - aggregation_rewrite
+  - expression_simplification
+portability_tags: []
+workload_realism_tags:
+  - complex_expression_density
+plan_operator_tags:
+  status: provisional_from_existing_pg_plan_artifacts
+  observed_in_postgres:
+    - scan
+    - join
+    - aggregate
+evidence_notes:
+  - Manifest tags and source.sql were inspected for this bounded Batch 2B backfill draft.
+  - Existing PostgreSQL plan artifacts show scan, join, and aggregate behavior on the witness package.
+  - CASE-expression density was retained conservatively because it is already reflected in the manifest workload_realism case_specific field.
+  - Tags are intentionally conservative and do not imply common-core admission or formal review completion.

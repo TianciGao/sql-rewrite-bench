@@ -1,0 +1,150 @@
+[
+  {
+    "Plan": {
+      "Node Type": "Hash Join",
+      "Parallel Aware": false,
+      "Async Capable": false,
+      "Join Type": "Inner",
+      "Startup Cost": 42.15,
+      "Total Cost": 46.92,
+      "Plan Rows": 2,
+      "Plan Width": 225,
+      "Inner Unique": false,
+      "Hash Cond": "(emp.deptno = emp2.deptno)",
+      "Plans": [
+        {
+          "Node Type": "Aggregate",
+          "Strategy": "Hashed",
+          "Partial Mode": "Simple",
+          "Parent Relationship": "Outer",
+          "Parallel Aware": false,
+          "Async Capable": false,
+          "Startup Cost": 14.00,
+          "Total Cost": 16.00,
+          "Plan Rows": 200,
+          "Plan Width": 9,
+          "Group Key": ["emp.deptno"],
+          "Planned Partitions": 0,
+          "Plans": [
+            {
+              "Node Type": "Seq Scan",
+              "Parent Relationship": "Outer",
+              "Parallel Aware": false,
+              "Async Capable": false,
+              "Relation Name": "emp",
+              "Alias": "emp",
+              "Startup Cost": 0.00,
+              "Total Cost": 13.20,
+              "Plan Rows": 320,
+              "Plan Width": 8
+            }
+          ]
+        },
+        {
+          "Node Type": "Hash",
+          "Parent Relationship": "Inner",
+          "Parallel Aware": false,
+          "Async Capable": false,
+          "Startup Cost": 28.13,
+          "Total Cost": 28.13,
+          "Plan Rows": 2,
+          "Plan Width": 225,
+          "Plans": [
+            {
+              "Node Type": "Hash Join",
+              "Parent Relationship": "Outer",
+              "Parallel Aware": false,
+              "Async Capable": false,
+              "Join Type": "Left",
+              "Startup Cost": 14.07,
+              "Total Cost": 28.13,
+              "Plan Rows": 2,
+              "Plan Width": 225,
+              "Inner Unique": true,
+              "Hash Cond": "((emp2.job)::text = (t9.job)::text)",
+              "Filter": "(t9.f1 IS NULL)",
+              "Plans": [
+                {
+                  "Node Type": "Seq Scan",
+                  "Parent Relationship": "Outer",
+                  "Parallel Aware": false,
+                  "Async Capable": false,
+                  "Relation Name": "emp",
+                  "Alias": "emp2",
+                  "Startup Cost": 0.00,
+                  "Total Cost": 13.20,
+                  "Plan Rows": 320,
+                  "Plan Width": 225
+                },
+                {
+                  "Node Type": "Hash",
+                  "Parent Relationship": "Inner",
+                  "Parallel Aware": false,
+                  "Async Capable": false,
+                  "Startup Cost": 14.04,
+                  "Total Cost": 14.04,
+                  "Plan Rows": 2,
+                  "Plan Width": 83,
+                  "Plans": [
+                    {
+                      "Node Type": "Subquery Scan",
+                      "Parent Relationship": "Outer",
+                      "Parallel Aware": false,
+                      "Async Capable": false,
+                      "Alias": "t9",
+                      "Startup Cost": 14.01,
+                      "Total Cost": 14.04,
+                      "Plan Rows": 2,
+                      "Plan Width": 83,
+                      "Plans": [
+                        {
+                          "Node Type": "Group",
+                          "Parent Relationship": "Subquery",
+                          "Parallel Aware": false,
+                          "Async Capable": false,
+                          "Startup Cost": 14.01,
+                          "Total Cost": 14.02,
+                          "Plan Rows": 2,
+                          "Plan Width": 83,
+                          "Group Key": ["emp_1.job"],
+                          "Plans": [
+                            {
+                              "Node Type": "Sort",
+                              "Parent Relationship": "Outer",
+                              "Parallel Aware": false,
+                              "Async Capable": false,
+                              "Startup Cost": 14.01,
+                              "Total Cost": 14.02,
+                              "Plan Rows": 2,
+                              "Plan Width": 82,
+                              "Sort Key": ["emp_1.job"],
+                              "Plans": [
+                                {
+                                  "Node Type": "Seq Scan",
+                                  "Parent Relationship": "Outer",
+                                  "Parallel Aware": false,
+                                  "Async Capable": false,
+                                  "Relation Name": "emp",
+                                  "Alias": "emp_1",
+                                  "Startup Cost": 0.00,
+                                  "Total Cost": 14.00,
+                                  "Plan Rows": 2,
+                                  "Plan Width": 82,
+                                  "Filter": "(sal = '34'::numeric)"
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  }
+]

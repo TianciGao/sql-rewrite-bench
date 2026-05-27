@@ -1,0 +1,68 @@
+case_id: CONS_0010
+primary_pool: consistency
+source_family: Calcite
+source_workload: core_sql_tests
+source_query_identity: sub-query.iq NOT EXISTS EMP/BONUS duplicate-salary seed
+source_path: "datasets/raw/calcite/calcite/core/src/test/resources/sql/sub-query.iq"
+draft_origin: CONS_CALCITE_DRAFT_0017
+consistency_focus:
+  - subquery_semantics
+expected_engines:
+  - PostgreSQL
+  - MySQL
+  - Spark
+registry_status: staged_registered
+validation_status: tracked_draft_engine_local_result_and_plan_evidence
+admission_status: staged_not_yet_admitted
+validated_engines: [pg, mysql, spark]
+tri_engine_closure: yes
+expected_line: staged
+official_case_status: staged_registered_draft_not_admitted
+source_files:
+  source: source.sql
+  positive_rewrite: rewrite_pos_01.sql
+  negative_rewrite: rewrite_neg_01.sql
+schema_files:
+  postgres: "schema/ddl_pg.sql"
+  mysql: "schema/ddl_mysql.sql"
+  spark: "schema/ddl_spark.sql"
+witness_data_files:
+  postgres: "validation/pg_witness_data.sql"
+  mysql: "validation/mysql_witness_data.sql"
+  spark: "validation/spark_witness_data.sql"
+validation_scripts:
+  postgres_validation: "validation/run_pg_validation.sh"
+  postgres_plan_collection: "validation/run_pg_plan_collection.sh"
+  mysql_validation: "validation/run_mysql_validation.sh"
+  mysql_plan_collection: "validation/run_mysql_plan_collection.sh"
+  spark_validation: "validation/run_spark_validation.sh"
+  spark_plan_collection: "validation/run_spark_plan_collection.sh"
+artifacts:
+  result_check: runs/result_check.json
+  plan_check: runs/plan_check.json
+tags:
+  sql_feature:
+    primary: [correlated_subquery]
+    secondary: []
+  rewrite_opportunity:
+    primary: [subquery_decorrelation]
+    secondary: []
+  plan_operator:
+    present: [join, materialize, scan, subquery]
+    delta_relevant: []
+  workload_realism:
+    source_inherited: []
+    case_specific: []
+  portability:
+    confirmed: []
+    suspected: []
+known_caveats:
+  - no_admission_or_promotion_claim
+  - witness_data_is_small_and_case_local
+  - not_admitted
+  - not_formally_reviewed
+  - plan_semantics_not_formally_reviewed
+  - release_grade_incomplete
+registry_note: "inventory/case_registry.csv now points to cases/CONS/CONS_0010/runs/plan_check.json; this case remains staged_not_yet_admitted."
+next_gap: "human review, later formal review, plan semantics not formally reviewed, later admission decision"
+artifact_warning: "tracked draft engine-local result and plan evidence only; not admitted; no common-core promotion, formal-review-complete, or release-grade claim"

@@ -1,0 +1,3 @@
+SELECT e1.ename
+FROM emp e1
+WHERE EXISTS (SELECT 1 FROM dept d);

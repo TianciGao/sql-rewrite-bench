@@ -1,0 +1,17 @@
+{
+  "case_id": "PORT_0023",
+  "draft_id": "PORT_DRAFT_0026",
+  "source_file_path": "datasets/raw/parrot/PARROT/benchmark/BIRD/mysql_res.json",
+  "source_record_index": 5,
+  "source_sql_field": "mysql",
+  "target_sql_field": "cracksql",
+  "source_record_subset": {
+    "mysql": "SELECT CAST( SUM( `t2`.`long_shots` ) AS DOUBLE ) / COUNT( `t2`.`date` ) FROM `player` AS `t1` INNER JOIN `player_attributes` AS `t2` ON `t1`.`player_api_id` = `t2`.`player_api_id` WHERE `t1`.`player_name` = 'Ahmed Samir Farag'\n",
+    "cracksql": "SELECT CAST( SUM( \"t2\".\"long_shots\" ) AS DOUBLE PRECISION ) / COUNT( \"t2\".\"date\" ) FROM \"player\" AS \"t1\" INNER JOIN \"player_attributes\" AS \"t2\" ON \"t1\".\"player_api_id\" = \"t2\".\"player_api_id\" WHERE \"t1\".\"player_name\" = 'Ahmed Samir Farag'",
+    "result_preview": [
+      {
+        "CAST( SUM( `t2`.`long_shots` ) AS DOUBLE ) / COUNT( `t2`.`date` )": 61.57142857142857
+      }
+    ]
+  }
+}

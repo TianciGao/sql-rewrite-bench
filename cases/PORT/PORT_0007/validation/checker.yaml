@@ -1,0 +1,16 @@
+status: draft_only
+not_executed: true
+source_vs_positive_check_required: true
+source_vs_negative_check_required: true
+engines_pending:
+  - pg
+  - mysql
+  - spark
+normalization_notes:
+  - normalize top-1 row output before comparison
+  - preserve subquery filter semantics during later checks
+  - null-aware ordering must be treated explicitly
+known_risks:
+  - ordering semantics remain central to the portability story
+  - Spark rewrite is still marked review-required
+  - witness data has not been implemented

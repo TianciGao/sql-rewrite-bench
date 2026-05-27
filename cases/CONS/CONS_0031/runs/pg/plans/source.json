@@ -1,0 +1,56 @@
+[
+  {
+    "Plan": {
+      "Node Type": "Result",
+      "Parallel Aware": false,
+      "Async Capable": false,
+      "Startup Cost": 7.04,
+      "Total Cost": 20.24,
+      "Plan Rows": 320,
+      "Plan Width": 225,
+      "One-Time Filter": "((InitPlan 1).col1 AND (NOT (InitPlan 2).col1))",
+      "Plans": [
+        {
+          "Node Type": "Seq Scan",
+          "Parent Relationship": "InitPlan",
+          "Subplan Name": "InitPlan 1",
+          "Parallel Aware": false,
+          "Async Capable": false,
+          "Relation Name": "emp",
+          "Alias": "emp_1",
+          "Startup Cost": 0.00,
+          "Total Cost": 13.20,
+          "Plan Rows": 318,
+          "Plan Width": 0,
+          "Filter": "(deptno IS NOT NULL)"
+        },
+        {
+          "Node Type": "Seq Scan",
+          "Parent Relationship": "InitPlan",
+          "Subplan Name": "InitPlan 2",
+          "Parallel Aware": false,
+          "Async Capable": false,
+          "Relation Name": "emp",
+          "Alias": "emp_2",
+          "Startup Cost": 0.00,
+          "Total Cost": 14.00,
+          "Plan Rows": 2,
+          "Plan Width": 0,
+          "Filter": "(((job)::text IS NOT NULL) AND (sal = '34'::numeric))"
+        },
+        {
+          "Node Type": "Seq Scan",
+          "Parent Relationship": "Outer",
+          "Parallel Aware": false,
+          "Async Capable": false,
+          "Relation Name": "emp",
+          "Alias": "emp",
+          "Startup Cost": 7.04,
+          "Total Cost": 20.24,
+          "Plan Rows": 320,
+          "Plan Width": 225
+        }
+      ]
+    }
+  }
+]

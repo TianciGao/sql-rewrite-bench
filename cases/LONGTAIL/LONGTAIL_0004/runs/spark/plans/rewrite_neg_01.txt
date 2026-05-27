@@ -1,0 +1,150 @@
+== Physical Plan ==
+AdaptiveSparkPlan (23)
++- TakeOrderedAndProject (22)
+   +- Project (21)
+      +- BroadcastHashJoin Inner BuildRight (20)
+         :- HashAggregate (13)
+         :  +- Exchange (12)
+         :     +- HashAggregate (11)
+         :        +- HashAggregate (10)
+         :           +- Exchange (9)
+         :              +- HashAggregate (8)
+         :                 +- Project (7)
+         :                    +- BroadcastHashJoin LeftOuter BuildRight (6)
+         :                       :- Filter (2)
+         :                       :  +- Scan parquet spark_catalog.default.users (1)
+         :                       +- BroadcastExchange (5)
+         :                          +- Filter (4)
+         :                             +- Scan parquet spark_catalog.default.posts (3)
+         +- BroadcastExchange (19)
+            +- HashAggregate (18)
+               +- Exchange (17)
+                  +- HashAggregate (16)
+                     +- Filter (15)
+                        +- Scan parquet spark_catalog.default.badges (14)
+
+
+(1) Scan parquet spark_catalog.default.users
+Output [3]: [Id#43, Reputation#44, Views#45]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/longtail_0004_spark_plan_1gean76_/users]
+PushedFilters: [IsNotNull(Id)]
+ReadSchema: struct<Id:int,Reputation:int,Views:int>
+
+(2) Filter
+Input [3]: [Id#43, Reputation#44, Views#45]
+Condition : isnotnull(Id#43)
+
+(3) Scan parquet spark_catalog.default.posts
+Output [4]: [Id#46, OwnerUserId#47, PostTypeId#48, Score#49]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/longtail_0004_spark_plan_1gean76_/posts]
+PushedFilters: [IsNotNull(OwnerUserId)]
+ReadSchema: struct<Id:int,OwnerUserId:int,PostTypeId:int,Score:int>
+
+(4) Filter
+Input [4]: [Id#46, OwnerUserId#47, PostTypeId#48, Score#49]
+Condition : isnotnull(OwnerUserId#47)
+
+(5) BroadcastExchange
+Input [4]: [Id#46, OwnerUserId#47, PostTypeId#48, Score#49]
+Arguments: HashedRelationBroadcastMode(List(cast(input[1, int, false] as bigint)),false), [plan_id=295]
+
+(6) BroadcastHashJoin
+Left keys [1]: [Id#43]
+Right keys [1]: [OwnerUserId#47]
+Join type: LeftOuter
+Join condition: None
+
+(7) Project
+Output [6]: [Id#43, Reputation#44, Views#45, Id#46, PostTypeId#48, Score#49]
+Input [7]: [Id#43, Reputation#44, Views#45, Id#46, OwnerUserId#47, PostTypeId#48, Score#49]
+
+(8) HashAggregate
+Input [6]: [Id#43, Reputation#44, Views#45, Id#46, PostTypeId#48, Score#49]
+Keys [4]: [Id#43, Reputation#44, Views#45, Id#46]
+Functions [3]: [partial_sum(CASE WHEN (PostTypeId#48 = 1) THEN 1 ELSE 0 END), partial_sum(CASE WHEN (PostTypeId#48 = 2) THEN 1 ELSE 0 END), partial_sum(CASE WHEN PostTypeId#48 IN (1,2) THEN Score#49 ELSE 0 END)]
+Aggregate Attributes [3]: [sum(CASE WHEN (PostTypeId#48 = 1) THEN 1 ELSE 0 END)#104L, sum(CASE WHEN (PostTypeId#48 = 2) THEN 1 ELSE 0 END)#105L, sum(CASE WHEN PostTypeId#48 IN (1,2) THEN Score#49 ELSE 0 END)#106L]
+Results [7]: [Id#43, Reputation#44, Views#45, Id#46, sum#109L, sum#111L, sum#113L]
+
+(9) Exchange
+Input [7]: [Id#43, Reputation#44, Views#45, Id#46, sum#109L, sum#111L, sum#113L]
+Arguments: hashpartitioning(Id#43, Reputation#44, Views#45, Id#46, 1), ENSURE_REQUIREMENTS, [plan_id=300]
+
+(10) HashAggregate
+Input [7]: [Id#43, Reputation#44, Views#45, Id#46, sum#109L, sum#111L, sum#113L]
+Keys [4]: [Id#43, Reputation#44, Views#45, Id#46]
+Functions [3]: [merge_sum(CASE WHEN (PostTypeId#48 = 1) THEN 1 ELSE 0 END), merge_sum(CASE WHEN (PostTypeId#48 = 2) THEN 1 ELSE 0 END), merge_sum(CASE WHEN PostTypeId#48 IN (1,2) THEN Score#49 ELSE 0 END)]
+Aggregate Attributes [3]: [sum(CASE WHEN (PostTypeId#48 = 1) THEN 1 ELSE 0 END)#104L, sum(CASE WHEN (PostTypeId#48 = 2) THEN 1 ELSE 0 END)#105L, sum(CASE WHEN PostTypeId#48 IN (1,2) THEN Score#49 ELSE 0 END)#106L]
+Results [7]: [Id#43, Reputation#44, Views#45, Id#46, sum#109L, sum#111L, sum#113L]
+
+(11) HashAggregate
+Input [7]: [Id#43, Reputation#44, Views#45, Id#46, sum#109L, sum#111L, sum#113L]
+Keys [3]: [Id#43, Reputation#44, Views#45]
+Functions [4]: [merge_sum(CASE WHEN (PostTypeId#48 = 1) THEN 1 ELSE 0 END), merge_sum(CASE WHEN (PostTypeId#48 = 2) THEN 1 ELSE 0 END), merge_sum(CASE WHEN PostTypeId#48 IN (1,2) THEN Score#49 ELSE 0 END), partial_count(distinct Id#46)]
+Aggregate Attributes [4]: [sum(CASE WHEN (PostTypeId#48 = 1) THEN 1 ELSE 0 END)#104L, sum(CASE WHEN (PostTypeId#48 = 2) THEN 1 ELSE 0 END)#105L, sum(CASE WHEN PostTypeId#48 IN (1,2) THEN Score#49 ELSE 0 END)#106L, count(Id#46)#103L]
+Results [7]: [Id#43, Reputation#44, Views#45, sum#109L, sum#111L, sum#113L, count#116L]
+
+(12) Exchange
+Input [7]: [Id#43, Reputation#44, Views#45, sum#109L, sum#111L, sum#113L, count#116L]
+Arguments: hashpartitioning(Id#43, Reputation#44, Views#45, 1), ENSURE_REQUIREMENTS, [plan_id=304]
+
+(13) HashAggregate
+Input [7]: [Id#43, Reputation#44, Views#45, sum#109L, sum#111L, sum#113L, count#116L]
+Keys [3]: [Id#43, Reputation#44, Views#45]
+Functions [4]: [sum(CASE WHEN (PostTypeId#48 = 1) THEN 1 ELSE 0 END), sum(CASE WHEN (PostTypeId#48 = 2) THEN 1 ELSE 0 END), sum(CASE WHEN PostTypeId#48 IN (1,2) THEN Score#49 ELSE 0 END), count(distinct Id#46)]
+Aggregate Attributes [4]: [sum(CASE WHEN (PostTypeId#48 = 1) THEN 1 ELSE 0 END)#104L, sum(CASE WHEN (PostTypeId#48 = 2) THEN 1 ELSE 0 END)#105L, sum(CASE WHEN PostTypeId#48 IN (1,2) THEN Score#49 ELSE 0 END)#106L, count(Id#46)#103L]
+Results [7]: [Id#43 AS UserId#97, Reputation#44, Views#45, count(Id#46)#103L AS PostCount#98L, sum(CASE WHEN (PostTypeId#48 = 1) THEN 1 ELSE 0 END)#104L AS QuestionCount#99L, sum(CASE WHEN (PostTypeId#48 = 2) THEN 1 ELSE 0 END)#105L AS AnswerCount#100L, sum(CASE WHEN PostTypeId#48 IN (1,2) THEN Score#49 ELSE 0 END)#106L AS TotalScore#101L]
+
+(14) Scan parquet spark_catalog.default.badges
+Output [2]: [Id#50, UserId#51]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/longtail_0004_spark_plan_1gean76_/badges]
+PushedFilters: [IsNotNull(UserId)]
+ReadSchema: struct<Id:int,UserId:int>
+
+(15) Filter
+Input [2]: [Id#50, UserId#51]
+Condition : isnotnull(UserId#51)
+
+(16) HashAggregate
+Input [2]: [Id#50, UserId#51]
+Keys [1]: [UserId#51]
+Functions [1]: [partial_count(Id#50)]
+Aggregate Attributes [1]: [count#118L]
+Results [2]: [UserId#51, count#119L]
+
+(17) Exchange
+Input [2]: [UserId#51, count#119L]
+Arguments: hashpartitioning(UserId#51, 1), ENSURE_REQUIREMENTS, [plan_id=306]
+
+(18) HashAggregate
+Input [2]: [UserId#51, count#119L]
+Keys [1]: [UserId#51]
+Functions [1]: [count(Id#50)]
+Aggregate Attributes [1]: [count(Id#50)#107L]
+Results [2]: [UserId#51, count(Id#50)#107L AS BadgeCount#102L]
+
+(19) BroadcastExchange
+Input [2]: [UserId#51, BadgeCount#102L]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, true] as bigint)),false), [plan_id=309]
+
+(20) BroadcastHashJoin
+Left keys [1]: [UserId#97]
+Right keys [1]: [UserId#51]
+Join type: Inner
+Join condition: None
+
+(21) Project
+Output [8]: [UserId#97, Reputation#44, Views#45, PostCount#98L, QuestionCount#99L, AnswerCount#100L, TotalScore#101L, BadgeCount#102L]
+Input [9]: [UserId#97, Reputation#44, Views#45, PostCount#98L, QuestionCount#99L, AnswerCount#100L, TotalScore#101L, UserId#51, BadgeCount#102L]
+
+(22) TakeOrderedAndProject
+Input [8]: [UserId#97, Reputation#44, Views#45, PostCount#98L, QuestionCount#99L, AnswerCount#100L, TotalScore#101L, BadgeCount#102L]
+Arguments: 100, [Reputation#44 DESC NULLS LAST, TotalScore#101L DESC NULLS LAST], [UserId#97, Reputation#44, Views#45, PostCount#98L, QuestionCount#99L, AnswerCount#100L, TotalScore#101L, BadgeCount#102L]
+
+(23) AdaptiveSparkPlan
+Output [8]: [UserId#97, Reputation#44, Views#45, PostCount#98L, QuestionCount#99L, AnswerCount#100L, TotalScore#101L, BadgeCount#102L]
+Arguments: isFinalPlan=false
+
+

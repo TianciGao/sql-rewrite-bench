@@ -1,0 +1,62 @@
+== Physical Plan ==
+AdaptiveSparkPlan (10)
++- Project (9)
+   +- BroadcastHashJoin Inner BuildLeft (8)
+      :- BroadcastExchange (4)
+      :  +- Project (3)
+      :     +- Filter (2)
+      :        +- Scan parquet spark_catalog.port_0010_spark_plan_collection.results (1)
+      +- Project (7)
+         +- Filter (6)
+            +- Scan parquet spark_catalog.port_0010_spark_plan_collection.drivers (5)
+
+
+(1) Scan parquet spark_catalog.port_0010_spark_plan_collection.results
+Output [2]: [driverid#20, fastestlaptime#21]
+Batched: true
+Location: InMemoryFileIndex [file:/home/tianci_gao/code/sql-rewrite-bench/cases/PORT/PORT_0010/runs/spark/plans/_tmp_spark_plan_collection/warehouse/port_0010_spark_plan_collection.db/results]
+PushedFilters: [IsNotNull(fastestlaptime), IsNotNull(driverid)]
+ReadSchema: struct<driverid:int,fastestlaptime:string>
+
+(2) Filter
+Input [2]: [driverid#20, fastestlaptime#21]
+Condition : (isnotnull(fastestlaptime#21) AND isnotnull(driverid#20))
+
+(3) Project
+Output [1]: [driverid#20]
+Input [2]: [driverid#20, fastestlaptime#21]
+
+(4) BroadcastExchange
+Input [1]: [driverid#20]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, true] as bigint)),false), [plan_id=90]
+
+(5) Scan parquet spark_catalog.port_0010_spark_plan_collection.drivers
+Output [3]: [driverid#22, code#23, dob#24]
+Batched: true
+Location: InMemoryFileIndex [file:/home/tianci_gao/code/sql-rewrite-bench/cases/PORT/PORT_0010/runs/spark/plans/_tmp_spark_plan_collection/warehouse/port_0010_spark_plan_collection.db/drivers]
+PushedFilters: [IsNotNull(dob), IsNotNull(driverid)]
+ReadSchema: struct<driverid:int,code:string,dob:date>
+
+(6) Filter
+Input [3]: [driverid#22, code#23, dob#24]
+Condition : ((isnotnull(dob#24) AND (year(dob#24) = 1972)) AND isnotnull(driverid#22))
+
+(7) Project
+Output [2]: [driverid#22, code#23]
+Input [3]: [driverid#22, code#23, dob#24]
+
+(8) BroadcastHashJoin
+Left keys [1]: [driverid#20]
+Right keys [1]: [driverid#22]
+Join type: Inner
+Join condition: None
+
+(9) Project
+Output [2]: [driverid#22, code#23]
+Input [3]: [driverid#20, driverid#22, code#23]
+
+(10) AdaptiveSparkPlan
+Output [2]: [driverid#22, code#23]
+Arguments: isFinalPlan=false
+
+

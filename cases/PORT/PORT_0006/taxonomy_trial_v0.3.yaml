@@ -1,0 +1,25 @@
+case_id: PORT_0006
+trial_version: "0.3"
+status: draft_trial_only
+candidate_primary_pool: portability
+expected_line: candidate_only
+
+sql_feature:
+  primary: expression_complexity
+  secondary: []
+
+rewrite_opportunity:
+  primary: dialect_adaptation
+  secondary:
+    - expression_simplification
+
+portability:
+  confirmed:
+    - identifier_quoting
+  suspected:
+    - boolean_semantics_gap
+    - type_semantics_gap
+
+notes:
+  - Trial tags only; no admission or common-core judgment is implied.
+  - Boolean coercion and threshold-boundary semantics remain the main portability questions to confirm later.

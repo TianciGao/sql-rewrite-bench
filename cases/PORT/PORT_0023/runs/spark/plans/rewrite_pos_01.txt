@@ -1,0 +1,78 @@
+== Physical Plan ==
+AdaptiveSparkPlan (12)
++- HashAggregate (11)
+   +- Exchange (10)
+      +- HashAggregate (9)
+         +- Project (8)
+            +- BroadcastHashJoin Inner BuildLeft (7)
+               :- BroadcastExchange (4)
+               :  +- Project (3)
+               :     +- Filter (2)
+               :        +- Scan parquet spark_catalog.port_0023_spark_plan_collection.player (1)
+               +- Filter (6)
+                  +- Scan parquet spark_catalog.port_0023_spark_plan_collection.player_attributes (5)
+
+
+(1) Scan parquet spark_catalog.port_0023_spark_plan_collection.player
+Output [2]: [player_api_id#20, player_name#21]
+Batched: true
+Location: InMemoryFileIndex [file:/home/tianci_gao/code/sql-rewrite-bench/cases/PORT/PORT_0023/runs/spark/plans/_tmp_spark_plan_collection/warehouse/port_0023_spark_plan_collection.db/player]
+PushedFilters: [IsNotNull(player_name), EqualTo(player_name,Ahmed Samir Farag), IsNotNull(player_api_id)]
+ReadSchema: struct<player_api_id:int,player_name:string>
+
+(2) Filter
+Input [2]: [player_api_id#20, player_name#21]
+Condition : ((isnotnull(player_name#21) AND (player_name#21 = Ahmed Samir Farag)) AND isnotnull(player_api_id#20))
+
+(3) Project
+Output [1]: [player_api_id#20]
+Input [2]: [player_api_id#20, player_name#21]
+
+(4) BroadcastExchange
+Input [1]: [player_api_id#20]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, true] as bigint)),false), [plan_id=74]
+
+(5) Scan parquet spark_catalog.port_0023_spark_plan_collection.player_attributes
+Output [3]: [player_api_id#22, attr_date#23, long_shots#24]
+Batched: true
+Location: InMemoryFileIndex [file:/home/tianci_gao/code/sql-rewrite-bench/cases/PORT/PORT_0023/runs/spark/plans/_tmp_spark_plan_collection/warehouse/port_0023_spark_plan_collection.db/player_attributes]
+PushedFilters: [IsNotNull(player_api_id)]
+ReadSchema: struct<player_api_id:int,attr_date:date,long_shots:int>
+
+(6) Filter
+Input [3]: [player_api_id#22, attr_date#23, long_shots#24]
+Condition : isnotnull(player_api_id#22)
+
+(7) BroadcastHashJoin
+Left keys [1]: [player_api_id#20]
+Right keys [1]: [player_api_id#22]
+Join type: Inner
+Join condition: None
+
+(8) Project
+Output [2]: [attr_date#23, long_shots#24]
+Input [4]: [player_api_id#20, player_api_id#22, attr_date#23, long_shots#24]
+
+(9) HashAggregate
+Input [2]: [attr_date#23, long_shots#24]
+Keys: []
+Functions [2]: [partial_sum(long_shots#24), partial_count(attr_date#23)]
+Aggregate Attributes [2]: [sum#30L, count#31L]
+Results [2]: [sum#32L, count#33L]
+
+(10) Exchange
+Input [2]: [sum#32L, count#33L]
+Arguments: SinglePartition, ENSURE_REQUIREMENTS, [plan_id=79]
+
+(11) HashAggregate
+Input [2]: [sum#32L, count#33L]
+Keys: []
+Functions [2]: [sum(long_shots#24), count(attr_date#23)]
+Aggregate Attributes [2]: [sum(long_shots#24)#25L, count(attr_date#23)#26L]
+Results [1]: [((1.0 * cast(sum(long_shots#24)#25L as decimal(20,0))) / cast(count(attr_date#23)#26L as decimal(20,0))) AS ((1.0 * sum(long_shots)) / count(attr_date))#29]
+
+(12) AdaptiveSparkPlan
+Output [1]: [((1.0 * sum(long_shots)) / count(attr_date))#29]
+Arguments: isFinalPlan=false
+
+

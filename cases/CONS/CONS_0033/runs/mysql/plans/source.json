@@ -1,0 +1,57 @@
+{
+  "query_block": {
+    "select_id": 1,
+    "cost_info": {
+      "query_cost": "0.45"
+    },
+    "table": {
+      "table_name": "EMP",
+      "access_type": "ALL",
+      "rows_examined_per_scan": 2,
+      "rows_produced_per_join": 2,
+      "filtered": "100.00",
+      "cost_info": {
+        "read_cost": "0.25",
+        "eval_cost": "0.20",
+        "prefix_cost": "0.45",
+        "data_read_per_join": "608"
+      },
+      "used_columns": [
+        "EMPNO",
+        "JOB",
+        "SAL"
+      ],
+      "attached_condition": "<in_optimizer>(`bench`.`EMP`.`EMPNO`,<exists>(/* select#2 */ select `bench`.`DEPT`.`DEPTNO` from `bench`.`DEPT` where ((`bench`.`EMP`.`JOB` = `bench`.`DEPT`.`NAME`) and <if>(outer_field_is_not_null, ((<cache>(`bench`.`EMP`.`EMPNO`) = `bench`.`DEPT`.`DEPTNO`) or (`bench`.`DEPT`.`DEPTNO` is null)), true)) having <if>(outer_field_is_not_null, <is_not_null_test>(`bench`.`DEPT`.`DEPTNO`), true)) is false)",
+      "attached_subqueries": [
+        {
+          "dependent": true,
+          "cacheable": false,
+          "query_block": {
+            "select_id": 2,
+            "cost_info": {
+              "query_cost": "0.45"
+            },
+            "table": {
+              "table_name": "DEPT",
+              "access_type": "ALL",
+              "rows_examined_per_scan": 2,
+              "rows_produced_per_join": 1,
+              "filtered": "50.00",
+              "cost_info": {
+                "read_cost": "0.25",
+                "eval_cost": "0.10",
+                "prefix_cost": "0.45",
+                "data_read_per_join": "272"
+              },
+              "used_columns": [
+                "DEPTNO",
+                "NAME"
+              ],
+              "attached_condition": "((`bench`.`EMP`.`JOB` = `bench`.`DEPT`.`NAME`) and <if>(outer_field_is_not_null, ((<cache>(`bench`.`EMP`.`EMPNO`) = `bench`.`DEPT`.`DEPTNO`) or (`bench`.`DEPT`.`DEPTNO` is null)), true))"
+            }
+          }
+        }
+      ]
+    }
+  }
+}

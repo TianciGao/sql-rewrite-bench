@@ -1,0 +1,59 @@
+== Physical Plan ==
+AdaptiveSparkPlan (9)
++- Project (8)
+   +- BroadcastHashJoin LeftSemi BuildRight (7)
+      :- BroadcastHashJoin LeftSemi BuildRight (4)
+      :  :- Scan parquet spark_catalog.default.dept (1)
+      :  +- BroadcastExchange (3)
+      :     +- Scan parquet spark_catalog.default.dept (2)
+      +- BroadcastExchange (6)
+         +- Scan parquet spark_catalog.default.dept (5)
+
+
+(1) Scan parquet spark_catalog.default.dept
+Output [2]: [deptno#13, dname#14]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/cons_0025_spark_plan_vl476_qe/dept]
+ReadSchema: struct<deptno:int,dname:string>
+
+(2) Scan parquet spark_catalog.default.dept
+Output [1]: [deptno#29]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/cons_0025_spark_plan_vl476_qe/dept]
+ReadSchema: struct<deptno:int>
+
+(3) BroadcastExchange
+Input [1]: [deptno#29]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, true] as bigint)),false), [plan_id=76]
+
+(4) BroadcastHashJoin
+Left keys [1]: [deptno#13]
+Right keys [1]: [deptno#29]
+Join type: LeftSemi
+Join condition: None
+
+(5) Scan parquet spark_catalog.default.dept
+Output [1]: [dname#33]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/cons_0025_spark_plan_vl476_qe/dept]
+ReadSchema: struct<dname:string>
+
+(6) BroadcastExchange
+Input [1]: [dname#33]
+Arguments: HashedRelationBroadcastMode(List(input[0, string, true]),false), [plan_id=79]
+
+(7) BroadcastHashJoin
+Left keys [1]: [dname#14]
+Right keys [1]: [dname#33]
+Join type: LeftSemi
+Join condition: None
+
+(8) Project
+Output [1]: [deptno#13]
+Input [2]: [deptno#13, dname#14]
+
+(9) AdaptiveSparkPlan
+Output [1]: [deptno#13]
+Arguments: isFinalPlan=false
+
+

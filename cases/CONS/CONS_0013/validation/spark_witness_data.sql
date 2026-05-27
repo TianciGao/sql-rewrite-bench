@@ -1,0 +1,2 @@
+INSERT INTO a VALUES (10, 'ALLEN'), (20, 'WARD'), (30, 'WARD'), (40, 'SMITH');
+INSERT INTO b VALUES (20, 'WARD'), (30, 'WARD'), (30, 'ALLEN'), (10, 'KING');

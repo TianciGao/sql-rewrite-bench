@@ -1,0 +1,8 @@
+SELECT E1.ENAME
+FROM emp E1
+WHERE EXISTS (
+  SELECT 1
+  FROM dept D
+  LEFT JOIN bonus B
+    ON D.LOC = 'NEW YORK' OR B.JOB = E1.JOB
+);

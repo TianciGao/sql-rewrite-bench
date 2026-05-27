@@ -1,0 +1,515 @@
+== Physical Plan ==
+AdaptiveSparkPlan (87)
++- TakeOrderedAndProject (86)
+   +- Project (85)
+      +- SortMergeJoin Inner (84)
+         :- Project (57)
+         :  +- SortMergeJoin Inner (56)
+         :     :- Sort (29)
+         :     :  +- Exchange (28)
+         :     :     +- Project (27)
+         :     :        +- Filter (26)
+         :     :           +- Window (25)
+         :     :              +- Filter (24)
+         :     :                 +- Window (23)
+         :     :                    +- Sort (22)
+         :     :                       +- Exchange (21)
+         :     :                          +- HashAggregate (20)
+         :     :                             +- Exchange (19)
+         :     :                                +- HashAggregate (18)
+         :     :                                   +- Project (17)
+         :     :                                      +- BroadcastHashJoin Inner BuildRight (16)
+         :     :                                         :- Project (12)
+         :     :                                         :  +- BroadcastHashJoin Inner BuildRight (11)
+         :     :                                         :     :- Project (7)
+         :     :                                         :     :  +- BroadcastHashJoin Inner BuildLeft (6)
+         :     :                                         :     :     :- BroadcastExchange (3)
+         :     :                                         :     :     :  +- Filter (2)
+         :     :                                         :     :     :     +- Scan parquet spark_catalog.default.item (1)
+         :     :                                         :     :     +- Filter (5)
+         :     :                                         :     :        +- Scan parquet spark_catalog.default.catalog_sales (4)
+         :     :                                         :     +- BroadcastExchange (10)
+         :     :                                         :        +- Filter (9)
+         :     :                                         :           +- Scan parquet spark_catalog.default.date_dim (8)
+         :     :                                         +- BroadcastExchange (15)
+         :     :                                            +- Filter (14)
+         :     :                                               +- Scan parquet spark_catalog.default.call_center (13)
+         :     +- Sort (55)
+         :        +- Exchange (54)
+         :           +- Project (53)
+         :              +- Window (52)
+         :                 +- Sort (51)
+         :                    +- Exchange (50)
+         :                       +- HashAggregate (49)
+         :                          +- Exchange (48)
+         :                             +- HashAggregate (47)
+         :                                +- Project (46)
+         :                                   +- BroadcastHashJoin Inner BuildRight (45)
+         :                                      :- Project (41)
+         :                                      :  +- BroadcastHashJoin Inner BuildRight (40)
+         :                                      :     :- Project (36)
+         :                                      :     :  +- BroadcastHashJoin Inner BuildLeft (35)
+         :                                      :     :     :- BroadcastExchange (32)
+         :                                      :     :     :  +- Filter (31)
+         :                                      :     :     :     +- Scan parquet spark_catalog.default.item (30)
+         :                                      :     :     +- Filter (34)
+         :                                      :     :        +- Scan parquet spark_catalog.default.catalog_sales (33)
+         :                                      :     +- BroadcastExchange (39)
+         :                                      :        +- Filter (38)
+         :                                      :           +- Scan parquet spark_catalog.default.date_dim (37)
+         :                                      +- BroadcastExchange (44)
+         :                                         +- Filter (43)
+         :                                            +- Scan parquet spark_catalog.default.call_center (42)
+         +- Sort (83)
+            +- Exchange (82)
+               +- Project (81)
+                  +- Window (80)
+                     +- Sort (79)
+                        +- Exchange (78)
+                           +- HashAggregate (77)
+                              +- Exchange (76)
+                                 +- HashAggregate (75)
+                                    +- Project (74)
+                                       +- BroadcastHashJoin Inner BuildRight (73)
+                                          :- Project (69)
+                                          :  +- BroadcastHashJoin Inner BuildRight (68)
+                                          :     :- Project (64)
+                                          :     :  +- BroadcastHashJoin Inner BuildLeft (63)
+                                          :     :     :- BroadcastExchange (60)
+                                          :     :     :  +- Filter (59)
+                                          :     :     :     +- Scan parquet spark_catalog.default.item (58)
+                                          :     :     +- Filter (62)
+                                          :     :        +- Scan parquet spark_catalog.default.catalog_sales (61)
+                                          :     +- BroadcastExchange (67)
+                                          :        +- Filter (66)
+                                          :           +- Scan parquet spark_catalog.default.date_dim (65)
+                                          +- BroadcastExchange (72)
+                                             +- Filter (71)
+                                                +- Scan parquet spark_catalog.default.call_center (70)
+
+
+(1) Scan parquet spark_catalog.default.item
+Output [3]: [i_item_sk#276, i_category#277, i_brand#278]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/perf_0035_spark_plan_l_nfgx5b/item]
+PushedFilters: [IsNotNull(i_item_sk), IsNotNull(i_category), IsNotNull(i_brand)]
+ReadSchema: struct<i_item_sk:int,i_category:string,i_brand:string>
+
+(2) Filter
+Input [3]: [i_item_sk#276, i_category#277, i_brand#278]
+Condition : ((isnotnull(i_item_sk#276) AND isnotnull(i_category#277)) AND isnotnull(i_brand#278))
+
+(3) BroadcastExchange
+Input [3]: [i_item_sk#276, i_category#277, i_brand#278]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, false] as bigint)),false), [plan_id=342]
+
+(4) Scan parquet spark_catalog.default.catalog_sales
+Output [4]: [cs_item_sk#279, cs_sold_date_sk#280, cs_call_center_sk#281, cs_sales_price#282]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/perf_0035_spark_plan_l_nfgx5b/catalog_sales]
+PushedFilters: [IsNotNull(cs_item_sk), IsNotNull(cs_sold_date_sk), IsNotNull(cs_call_center_sk)]
+ReadSchema: struct<cs_item_sk:int,cs_sold_date_sk:int,cs_call_center_sk:int,cs_sales_price:decimal(9,2)>
+
+(5) Filter
+Input [4]: [cs_item_sk#279, cs_sold_date_sk#280, cs_call_center_sk#281, cs_sales_price#282]
+Condition : ((isnotnull(cs_item_sk#279) AND isnotnull(cs_sold_date_sk#280)) AND isnotnull(cs_call_center_sk#281))
+
+(6) BroadcastHashJoin
+Left keys [1]: [i_item_sk#276]
+Right keys [1]: [cs_item_sk#279]
+Join type: Inner
+Join condition: None
+
+(7) Project
+Output [5]: [i_category#277, i_brand#278, cs_sold_date_sk#280, cs_call_center_sk#281, cs_sales_price#282]
+Input [7]: [i_item_sk#276, i_category#277, i_brand#278, cs_item_sk#279, cs_sold_date_sk#280, cs_call_center_sk#281, cs_sales_price#282]
+
+(8) Scan parquet spark_catalog.default.date_dim
+Output [3]: [d_date_sk#283, d_year#284, d_moy#285]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/perf_0035_spark_plan_l_nfgx5b/date_dim]
+PushedFilters: [Or(Or(EqualTo(d_year,2000),And(EqualTo(d_year,1999),EqualTo(d_moy,12))),And(EqualTo(d_year,2001),EqualTo(d_moy,1))), IsNotNull(d_date_sk)]
+ReadSchema: struct<d_date_sk:int,d_year:int,d_moy:int>
+
+(9) Filter
+Input [3]: [d_date_sk#283, d_year#284, d_moy#285]
+Condition : ((((d_year#284 = 2000) OR ((d_year#284 = 1999) AND (d_moy#285 = 12))) OR ((d_year#284 = 2001) AND (d_moy#285 = 1))) AND isnotnull(d_date_sk#283))
+
+(10) BroadcastExchange
+Input [3]: [d_date_sk#283, d_year#284, d_moy#285]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, false] as bigint)),false), [plan_id=346]
+
+(11) BroadcastHashJoin
+Left keys [1]: [cs_sold_date_sk#280]
+Right keys [1]: [d_date_sk#283]
+Join type: Inner
+Join condition: None
+
+(12) Project
+Output [6]: [i_category#277, i_brand#278, cs_call_center_sk#281, cs_sales_price#282, d_year#284, d_moy#285]
+Input [8]: [i_category#277, i_brand#278, cs_sold_date_sk#280, cs_call_center_sk#281, cs_sales_price#282, d_date_sk#283, d_year#284, d_moy#285]
+
+(13) Scan parquet spark_catalog.default.call_center
+Output [2]: [cc_call_center_sk#286, cc_name#287]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/perf_0035_spark_plan_l_nfgx5b/call_center]
+PushedFilters: [IsNotNull(cc_call_center_sk), IsNotNull(cc_name)]
+ReadSchema: struct<cc_call_center_sk:int,cc_name:string>
+
+(14) Filter
+Input [2]: [cc_call_center_sk#286, cc_name#287]
+Condition : (isnotnull(cc_call_center_sk#286) AND isnotnull(cc_name#287))
+
+(15) BroadcastExchange
+Input [2]: [cc_call_center_sk#286, cc_name#287]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, false] as bigint)),false), [plan_id=350]
+
+(16) BroadcastHashJoin
+Left keys [1]: [cs_call_center_sk#281]
+Right keys [1]: [cc_call_center_sk#286]
+Join type: Inner
+Join condition: None
+
+(17) Project
+Output [6]: [i_category#277, i_brand#278, cs_sales_price#282, d_year#284, d_moy#285, cc_name#287]
+Input [8]: [i_category#277, i_brand#278, cs_call_center_sk#281, cs_sales_price#282, d_year#284, d_moy#285, cc_call_center_sk#286, cc_name#287]
+
+(18) HashAggregate
+Input [6]: [i_category#277, i_brand#278, cs_sales_price#282, d_year#284, d_moy#285, cc_name#287]
+Keys [5]: [i_category#277, i_brand#278, cc_name#287, d_year#284, d_moy#285]
+Functions [1]: [partial_sum(cs_sales_price#282)]
+Aggregate Attributes [2]: [sum#354, isEmpty#355]
+Results [7]: [i_category#277, i_brand#278, cc_name#287, d_year#284, d_moy#285, sum#356, isEmpty#357]
+
+(19) Exchange
+Input [7]: [i_category#277, i_brand#278, cc_name#287, d_year#284, d_moy#285, sum#356, isEmpty#357]
+Arguments: hashpartitioning(i_category#277, i_brand#278, cc_name#287, d_year#284, d_moy#285, 1), ENSURE_REQUIREMENTS, [plan_id=355]
+
+(20) HashAggregate
+Input [7]: [i_category#277, i_brand#278, cc_name#287, d_year#284, d_moy#285, sum#356, isEmpty#357]
+Keys [5]: [i_category#277, i_brand#278, cc_name#287, d_year#284, d_moy#285]
+Functions [1]: [sum(cs_sales_price#282)]
+Aggregate Attributes [1]: [sum(cs_sales_price#282)#79]
+Results [7]: [i_category#277, i_brand#278, cc_name#287, d_year#284, d_moy#285, sum(cs_sales_price#282)#79 AS sum_sales#288, sum(cs_sales_price#282)#79 AS _w0#289]
+
+(21) Exchange
+Input [7]: [i_category#277, i_brand#278, cc_name#287, d_year#284, d_moy#285, sum_sales#288, _w0#289]
+Arguments: hashpartitioning(i_category#277, i_brand#278, cc_name#287, 1), ENSURE_REQUIREMENTS, [plan_id=358]
+
+(22) Sort
+Input [7]: [i_category#277, i_brand#278, cc_name#287, d_year#284, d_moy#285, sum_sales#288, _w0#289]
+Arguments: [i_category#277 ASC NULLS FIRST, i_brand#278 ASC NULLS FIRST, cc_name#287 ASC NULLS FIRST, d_year#284 ASC NULLS FIRST, d_moy#285 ASC NULLS FIRST], false, 0
+
+(23) Window
+Input [7]: [i_category#277, i_brand#278, cc_name#287, d_year#284, d_moy#285, sum_sales#288, _w0#289]
+Arguments: [rank(d_year#284, d_moy#285) windowspecdefinition(i_category#277, i_brand#278, cc_name#287, d_year#284 ASC NULLS FIRST, d_moy#285 ASC NULLS FIRST, specifiedwindowframe(RowFrame, unboundedpreceding$(), currentrow$())) AS rn#295], [i_category#277, i_brand#278, cc_name#287], [d_year#284 ASC NULLS FIRST, d_moy#285 ASC NULLS FIRST]
+
+(24) Filter
+Input [8]: [i_category#277, i_brand#278, cc_name#287, d_year#284, d_moy#285, sum_sales#288, _w0#289, rn#295]
+Condition : (isnotnull(d_year#284) AND (d_year#284 = 2000))
+
+(25) Window
+Input [8]: [i_category#277, i_brand#278, cc_name#287, d_year#284, d_moy#285, sum_sales#288, _w0#289, rn#295]
+Arguments: [avg(_w0#289) windowspecdefinition(i_category#277, i_brand#278, cc_name#287, d_year#284, specifiedwindowframe(RowFrame, unboundedpreceding$(), unboundedfollowing$())) AS avg_monthly_sales#290], [i_category#277, i_brand#278, cc_name#287, d_year#284]
+
+(26) Filter
+Input [9]: [i_category#277, i_brand#278, cc_name#287, d_year#284, d_moy#285, sum_sales#288, _w0#289, rn#295, avg_monthly_sales#290]
+Condition : ((isnotnull(avg_monthly_sales#290) AND (avg_monthly_sales#290 > 0.000000)) AND CASE WHEN (avg_monthly_sales#290 > 0.000000) THEN ((abs((sum_sales#288 - avg_monthly_sales#290)) / avg_monthly_sales#290) > 0.10000000000000) END)
+
+(27) Project
+Output [8]: [i_category#277, i_brand#278, cc_name#287, d_year#284, d_moy#285, sum_sales#288, avg_monthly_sales#290, rn#295]
+Input [9]: [i_category#277, i_brand#278, cc_name#287, d_year#284, d_moy#285, sum_sales#288, _w0#289, rn#295, avg_monthly_sales#290]
+
+(28) Exchange
+Input [8]: [i_category#277, i_brand#278, cc_name#287, d_year#284, d_moy#285, sum_sales#288, avg_monthly_sales#290, rn#295]
+Arguments: hashpartitioning(i_category#277, i_brand#278, cc_name#287, rn#295, 1), ENSURE_REQUIREMENTS, [plan_id=387]
+
+(29) Sort
+Input [8]: [i_category#277, i_brand#278, cc_name#287, d_year#284, d_moy#285, sum_sales#288, avg_monthly_sales#290, rn#295]
+Arguments: [i_category#277 ASC NULLS FIRST, i_brand#278 ASC NULLS FIRST, cc_name#287 ASC NULLS FIRST, rn#295 ASC NULLS FIRST], false, 0
+
+(30) Scan parquet spark_catalog.default.item
+Output [3]: [i_item_sk#296, i_category#297, i_brand#298]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/perf_0035_spark_plan_l_nfgx5b/item]
+PushedFilters: [IsNotNull(i_item_sk), IsNotNull(i_category), IsNotNull(i_brand)]
+ReadSchema: struct<i_item_sk:int,i_category:string,i_brand:string>
+
+(31) Filter
+Input [3]: [i_item_sk#296, i_category#297, i_brand#298]
+Condition : ((isnotnull(i_item_sk#296) AND isnotnull(i_category#297)) AND isnotnull(i_brand#298))
+
+(32) BroadcastExchange
+Input [3]: [i_item_sk#296, i_category#297, i_brand#298]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, false] as bigint)),false), [plan_id=365]
+
+(33) Scan parquet spark_catalog.default.catalog_sales
+Output [4]: [cs_item_sk#299, cs_sold_date_sk#300, cs_call_center_sk#301, cs_sales_price#302]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/perf_0035_spark_plan_l_nfgx5b/catalog_sales]
+PushedFilters: [IsNotNull(cs_item_sk), IsNotNull(cs_sold_date_sk), IsNotNull(cs_call_center_sk)]
+ReadSchema: struct<cs_item_sk:int,cs_sold_date_sk:int,cs_call_center_sk:int,cs_sales_price:decimal(9,2)>
+
+(34) Filter
+Input [4]: [cs_item_sk#299, cs_sold_date_sk#300, cs_call_center_sk#301, cs_sales_price#302]
+Condition : ((isnotnull(cs_item_sk#299) AND isnotnull(cs_sold_date_sk#300)) AND isnotnull(cs_call_center_sk#301))
+
+(35) BroadcastHashJoin
+Left keys [1]: [i_item_sk#296]
+Right keys [1]: [cs_item_sk#299]
+Join type: Inner
+Join condition: None
+
+(36) Project
+Output [5]: [i_category#297, i_brand#298, cs_sold_date_sk#300, cs_call_center_sk#301, cs_sales_price#302]
+Input [7]: [i_item_sk#296, i_category#297, i_brand#298, cs_item_sk#299, cs_sold_date_sk#300, cs_call_center_sk#301, cs_sales_price#302]
+
+(37) Scan parquet spark_catalog.default.date_dim
+Output [3]: [d_date_sk#303, d_year#304, d_moy#305]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/perf_0035_spark_plan_l_nfgx5b/date_dim]
+PushedFilters: [Or(Or(EqualTo(d_year,2000),And(EqualTo(d_year,1999),EqualTo(d_moy,12))),And(EqualTo(d_year,2001),EqualTo(d_moy,1))), IsNotNull(d_date_sk)]
+ReadSchema: struct<d_date_sk:int,d_year:int,d_moy:int>
+
+(38) Filter
+Input [3]: [d_date_sk#303, d_year#304, d_moy#305]
+Condition : ((((d_year#304 = 2000) OR ((d_year#304 = 1999) AND (d_moy#305 = 12))) OR ((d_year#304 = 2001) AND (d_moy#305 = 1))) AND isnotnull(d_date_sk#303))
+
+(39) BroadcastExchange
+Input [3]: [d_date_sk#303, d_year#304, d_moy#305]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, false] as bigint)),false), [plan_id=369]
+
+(40) BroadcastHashJoin
+Left keys [1]: [cs_sold_date_sk#300]
+Right keys [1]: [d_date_sk#303]
+Join type: Inner
+Join condition: None
+
+(41) Project
+Output [6]: [i_category#297, i_brand#298, cs_call_center_sk#301, cs_sales_price#302, d_year#304, d_moy#305]
+Input [8]: [i_category#297, i_brand#298, cs_sold_date_sk#300, cs_call_center_sk#301, cs_sales_price#302, d_date_sk#303, d_year#304, d_moy#305]
+
+(42) Scan parquet spark_catalog.default.call_center
+Output [2]: [cc_call_center_sk#306, cc_name#307]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/perf_0035_spark_plan_l_nfgx5b/call_center]
+PushedFilters: [IsNotNull(cc_call_center_sk), IsNotNull(cc_name)]
+ReadSchema: struct<cc_call_center_sk:int,cc_name:string>
+
+(43) Filter
+Input [2]: [cc_call_center_sk#306, cc_name#307]
+Condition : (isnotnull(cc_call_center_sk#306) AND isnotnull(cc_name#307))
+
+(44) BroadcastExchange
+Input [2]: [cc_call_center_sk#306, cc_name#307]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, false] as bigint)),false), [plan_id=373]
+
+(45) BroadcastHashJoin
+Left keys [1]: [cs_call_center_sk#301]
+Right keys [1]: [cc_call_center_sk#306]
+Join type: Inner
+Join condition: None
+
+(46) Project
+Output [6]: [i_category#297, i_brand#298, cs_sales_price#302, d_year#304, d_moy#305, cc_name#307]
+Input [8]: [i_category#297, i_brand#298, cs_call_center_sk#301, cs_sales_price#302, d_year#304, d_moy#305, cc_call_center_sk#306, cc_name#307]
+
+(47) HashAggregate
+Input [6]: [i_category#297, i_brand#298, cs_sales_price#302, d_year#304, d_moy#305, cc_name#307]
+Keys [5]: [i_category#297, i_brand#298, cc_name#307, d_year#304, d_moy#305]
+Functions [1]: [partial_sum(cs_sales_price#302)]
+Aggregate Attributes [2]: [sum#358, isEmpty#359]
+Results [7]: [i_category#297, i_brand#298, cc_name#307, d_year#304, d_moy#305, sum#360, isEmpty#361]
+
+(48) Exchange
+Input [7]: [i_category#297, i_brand#298, cc_name#307, d_year#304, d_moy#305, sum#360, isEmpty#361]
+Arguments: hashpartitioning(i_category#297, i_brand#298, cc_name#307, d_year#304, d_moy#305, 1), ENSURE_REQUIREMENTS, [plan_id=378]
+
+(49) HashAggregate
+Input [7]: [i_category#297, i_brand#298, cc_name#307, d_year#304, d_moy#305, sum#360, isEmpty#361]
+Keys [5]: [i_category#297, i_brand#298, cc_name#307, d_year#304, d_moy#305]
+Functions [1]: [sum(cs_sales_price#302)]
+Aggregate Attributes [1]: [sum(cs_sales_price#302)#79]
+Results [6]: [i_category#297, i_brand#298, cc_name#307, d_year#304, d_moy#305, sum(cs_sales_price#302)#79 AS sum_sales#308]
+
+(50) Exchange
+Input [6]: [i_category#297, i_brand#298, cc_name#307, d_year#304, d_moy#305, sum_sales#308]
+Arguments: hashpartitioning(i_category#297, i_brand#298, cc_name#307, 1), ENSURE_REQUIREMENTS, [plan_id=381]
+
+(51) Sort
+Input [6]: [i_category#297, i_brand#298, cc_name#307, d_year#304, d_moy#305, sum_sales#308]
+Arguments: [i_category#297 ASC NULLS FIRST, i_brand#298 ASC NULLS FIRST, cc_name#307 ASC NULLS FIRST, d_year#304 ASC NULLS FIRST, d_moy#305 ASC NULLS FIRST], false, 0
+
+(52) Window
+Input [6]: [i_category#297, i_brand#298, cc_name#307, d_year#304, d_moy#305, sum_sales#308]
+Arguments: [rank(d_year#304, d_moy#305) windowspecdefinition(i_category#297, i_brand#298, cc_name#307, d_year#304 ASC NULLS FIRST, d_moy#305 ASC NULLS FIRST, specifiedwindowframe(RowFrame, unboundedpreceding$(), currentrow$())) AS rn#315], [i_category#297, i_brand#298, cc_name#307], [d_year#304 ASC NULLS FIRST, d_moy#305 ASC NULLS FIRST]
+
+(53) Project
+Output [5]: [i_category#297, i_brand#298, cc_name#307, sum_sales#308, rn#315]
+Input [7]: [i_category#297, i_brand#298, cc_name#307, d_year#304, d_moy#305, sum_sales#308, rn#315]
+
+(54) Exchange
+Input [5]: [i_category#297, i_brand#298, cc_name#307, sum_sales#308, rn#315]
+Arguments: hashpartitioning(i_category#297, i_brand#298, cc_name#307, (rn#315 + 1), 1), ENSURE_REQUIREMENTS, [plan_id=388]
+
+(55) Sort
+Input [5]: [i_category#297, i_brand#298, cc_name#307, sum_sales#308, rn#315]
+Arguments: [i_category#297 ASC NULLS FIRST, i_brand#298 ASC NULLS FIRST, cc_name#307 ASC NULLS FIRST, (rn#315 + 1) ASC NULLS FIRST], false, 0
+
+(56) SortMergeJoin
+Left keys [4]: [i_category#277, i_brand#278, cc_name#287, rn#295]
+Right keys [4]: [i_category#297, i_brand#298, cc_name#307, (rn#315 + 1)]
+Join type: Inner
+Join condition: None
+
+(57) Project
+Output [9]: [i_category#277, i_brand#278, cc_name#287, d_year#284, d_moy#285, sum_sales#288, avg_monthly_sales#290, rn#295, sum_sales#308]
+Input [13]: [i_category#277, i_brand#278, cc_name#287, d_year#284, d_moy#285, sum_sales#288, avg_monthly_sales#290, rn#295, i_category#297, i_brand#298, cc_name#307, sum_sales#308, rn#315]
+
+(58) Scan parquet spark_catalog.default.item
+Output [3]: [i_item_sk#324, i_category#325, i_brand#326]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/perf_0035_spark_plan_l_nfgx5b/item]
+PushedFilters: [IsNotNull(i_item_sk), IsNotNull(i_category), IsNotNull(i_brand)]
+ReadSchema: struct<i_item_sk:int,i_category:string,i_brand:string>
+
+(59) Filter
+Input [3]: [i_item_sk#324, i_category#325, i_brand#326]
+Condition : ((isnotnull(i_item_sk#324) AND isnotnull(i_category#325)) AND isnotnull(i_brand#326))
+
+(60) BroadcastExchange
+Input [3]: [i_item_sk#324, i_category#325, i_brand#326]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, false] as bigint)),false), [plan_id=393]
+
+(61) Scan parquet spark_catalog.default.catalog_sales
+Output [4]: [cs_item_sk#327, cs_sold_date_sk#328, cs_call_center_sk#329, cs_sales_price#330]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/perf_0035_spark_plan_l_nfgx5b/catalog_sales]
+PushedFilters: [IsNotNull(cs_item_sk), IsNotNull(cs_sold_date_sk), IsNotNull(cs_call_center_sk)]
+ReadSchema: struct<cs_item_sk:int,cs_sold_date_sk:int,cs_call_center_sk:int,cs_sales_price:decimal(9,2)>
+
+(62) Filter
+Input [4]: [cs_item_sk#327, cs_sold_date_sk#328, cs_call_center_sk#329, cs_sales_price#330]
+Condition : ((isnotnull(cs_item_sk#327) AND isnotnull(cs_sold_date_sk#328)) AND isnotnull(cs_call_center_sk#329))
+
+(63) BroadcastHashJoin
+Left keys [1]: [i_item_sk#324]
+Right keys [1]: [cs_item_sk#327]
+Join type: Inner
+Join condition: None
+
+(64) Project
+Output [5]: [i_category#325, i_brand#326, cs_sold_date_sk#328, cs_call_center_sk#329, cs_sales_price#330]
+Input [7]: [i_item_sk#324, i_category#325, i_brand#326, cs_item_sk#327, cs_sold_date_sk#328, cs_call_center_sk#329, cs_sales_price#330]
+
+(65) Scan parquet spark_catalog.default.date_dim
+Output [3]: [d_date_sk#331, d_year#332, d_moy#333]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/perf_0035_spark_plan_l_nfgx5b/date_dim]
+PushedFilters: [Or(Or(EqualTo(d_year,2000),And(EqualTo(d_year,1999),EqualTo(d_moy,12))),And(EqualTo(d_year,2001),EqualTo(d_moy,1))), IsNotNull(d_date_sk)]
+ReadSchema: struct<d_date_sk:int,d_year:int,d_moy:int>
+
+(66) Filter
+Input [3]: [d_date_sk#331, d_year#332, d_moy#333]
+Condition : ((((d_year#332 = 2000) OR ((d_year#332 = 1999) AND (d_moy#333 = 12))) OR ((d_year#332 = 2001) AND (d_moy#333 = 1))) AND isnotnull(d_date_sk#331))
+
+(67) BroadcastExchange
+Input [3]: [d_date_sk#331, d_year#332, d_moy#333]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, false] as bigint)),false), [plan_id=397]
+
+(68) BroadcastHashJoin
+Left keys [1]: [cs_sold_date_sk#328]
+Right keys [1]: [d_date_sk#331]
+Join type: Inner
+Join condition: None
+
+(69) Project
+Output [6]: [i_category#325, i_brand#326, cs_call_center_sk#329, cs_sales_price#330, d_year#332, d_moy#333]
+Input [8]: [i_category#325, i_brand#326, cs_sold_date_sk#328, cs_call_center_sk#329, cs_sales_price#330, d_date_sk#331, d_year#332, d_moy#333]
+
+(70) Scan parquet spark_catalog.default.call_center
+Output [2]: [cc_call_center_sk#334, cc_name#335]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/perf_0035_spark_plan_l_nfgx5b/call_center]
+PushedFilters: [IsNotNull(cc_call_center_sk), IsNotNull(cc_name)]
+ReadSchema: struct<cc_call_center_sk:int,cc_name:string>
+
+(71) Filter
+Input [2]: [cc_call_center_sk#334, cc_name#335]
+Condition : (isnotnull(cc_call_center_sk#334) AND isnotnull(cc_name#335))
+
+(72) BroadcastExchange
+Input [2]: [cc_call_center_sk#334, cc_name#335]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, false] as bigint)),false), [plan_id=401]
+
+(73) BroadcastHashJoin
+Left keys [1]: [cs_call_center_sk#329]
+Right keys [1]: [cc_call_center_sk#334]
+Join type: Inner
+Join condition: None
+
+(74) Project
+Output [6]: [i_category#325, i_brand#326, cs_sales_price#330, d_year#332, d_moy#333, cc_name#335]
+Input [8]: [i_category#325, i_brand#326, cs_call_center_sk#329, cs_sales_price#330, d_year#332, d_moy#333, cc_call_center_sk#334, cc_name#335]
+
+(75) HashAggregate
+Input [6]: [i_category#325, i_brand#326, cs_sales_price#330, d_year#332, d_moy#333, cc_name#335]
+Keys [5]: [i_category#325, i_brand#326, cc_name#335, d_year#332, d_moy#333]
+Functions [1]: [partial_sum(cs_sales_price#330)]
+Aggregate Attributes [2]: [sum#362, isEmpty#363]
+Results [7]: [i_category#325, i_brand#326, cc_name#335, d_year#332, d_moy#333, sum#364, isEmpty#365]
+
+(76) Exchange
+Input [7]: [i_category#325, i_brand#326, cc_name#335, d_year#332, d_moy#333, sum#364, isEmpty#365]
+Arguments: hashpartitioning(i_category#325, i_brand#326, cc_name#335, d_year#332, d_moy#333, 1), ENSURE_REQUIREMENTS, [plan_id=406]
+
+(77) HashAggregate
+Input [7]: [i_category#325, i_brand#326, cc_name#335, d_year#332, d_moy#333, sum#364, isEmpty#365]
+Keys [5]: [i_category#325, i_brand#326, cc_name#335, d_year#332, d_moy#333]
+Functions [1]: [sum(cs_sales_price#330)]
+Aggregate Attributes [1]: [sum(cs_sales_price#330)#79]
+Results [6]: [i_category#325, i_brand#326, cc_name#335, d_year#332, d_moy#333, sum(cs_sales_price#330)#79 AS sum_sales#336]
+
+(78) Exchange
+Input [6]: [i_category#325, i_brand#326, cc_name#335, d_year#332, d_moy#333, sum_sales#336]
+Arguments: hashpartitioning(i_category#325, i_brand#326, cc_name#335, 1), ENSURE_REQUIREMENTS, [plan_id=409]
+
+(79) Sort
+Input [6]: [i_category#325, i_brand#326, cc_name#335, d_year#332, d_moy#333, sum_sales#336]
+Arguments: [i_category#325 ASC NULLS FIRST, i_brand#326 ASC NULLS FIRST, cc_name#335 ASC NULLS FIRST, d_year#332 ASC NULLS FIRST, d_moy#333 ASC NULLS FIRST], false, 0
+
+(80) Window
+Input [6]: [i_category#325, i_brand#326, cc_name#335, d_year#332, d_moy#333, sum_sales#336]
+Arguments: [rank(d_year#332, d_moy#333) windowspecdefinition(i_category#325, i_brand#326, cc_name#335, d_year#332 ASC NULLS FIRST, d_moy#333 ASC NULLS FIRST, specifiedwindowframe(RowFrame, unboundedpreceding$(), currentrow$())) AS rn#343], [i_category#325, i_brand#326, cc_name#335], [d_year#332 ASC NULLS FIRST, d_moy#333 ASC NULLS FIRST]
+
+(81) Project
+Output [5]: [i_category#325, i_brand#326, cc_name#335, sum_sales#336, rn#343]
+Input [7]: [i_category#325, i_brand#326, cc_name#335, d_year#332, d_moy#333, sum_sales#336, rn#343]
+
+(82) Exchange
+Input [5]: [i_category#325, i_brand#326, cc_name#335, sum_sales#336, rn#343]
+Arguments: hashpartitioning(i_category#325, i_brand#326, cc_name#335, (rn#343 - 1), 1), ENSURE_REQUIREMENTS, [plan_id=415]
+
+(83) Sort
+Input [5]: [i_category#325, i_brand#326, cc_name#335, sum_sales#336, rn#343]
+Arguments: [i_category#325 ASC NULLS FIRST, i_brand#326 ASC NULLS FIRST, cc_name#335 ASC NULLS FIRST, (rn#343 - 1) ASC NULLS FIRST], false, 0
+
+(84) SortMergeJoin
+Left keys [4]: [i_category#277, i_brand#278, cc_name#287, rn#295]
+Right keys [4]: [i_category#325, i_brand#326, cc_name#335, (rn#343 - 1)]
+Join type: Inner
+Join condition: None
+
+(85) Project
+Output [7]: [cc_name#287, d_year#284, d_moy#285, avg_monthly_sales#290, sum_sales#288, sum_sales#308 AS psum#116, sum_sales#336 AS nsum#117]
+Input [14]: [i_category#277, i_brand#278, cc_name#287, d_year#284, d_moy#285, sum_sales#288, avg_monthly_sales#290, rn#295, sum_sales#308, i_category#325, i_brand#326, cc_name#335, sum_sales#336, rn#343]
+
+(86) TakeOrderedAndProject
+Input [7]: [cc_name#287, d_year#284, d_moy#285, avg_monthly_sales#290, sum_sales#288, psum#116, nsum#117]
+Arguments: 100, [(sum_sales#288 - avg_monthly_sales#290) ASC NULLS FIRST, nsum#117 ASC NULLS FIRST], [cc_name#287, d_year#284, d_moy#285, avg_monthly_sales#290, sum_sales#288, psum#116, nsum#117]
+
+(87) AdaptiveSparkPlan
+Output [7]: [cc_name#287, d_year#284, d_moy#285, avg_monthly_sales#290, sum_sales#288, psum#116, nsum#117]
+Arguments: isFinalPlan=false
+
+

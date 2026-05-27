@@ -1,0 +1,59 @@
+{
+  "query_block": {
+    "select_id": 1,
+    "cost_info": {
+      "query_cost": "1.91"
+    },
+    "ordering_operation": {
+      "using_temporary_table": true,
+      "using_filesort": true,
+      "cost_info": {
+        "sort_cost": "1.00"
+      },
+      "nested_loop": [
+        {
+          "table": {
+            "table_name": "t1",
+            "access_type": "ALL",
+            "rows_examined_per_scan": 2,
+            "rows_produced_per_join": 1,
+            "filtered": "50.00",
+            "cost_info": {
+              "read_cost": "0.35",
+              "eval_cost": "0.10",
+              "prefix_cost": "0.45",
+              "data_read_per_join": "24"
+            },
+            "used_columns": [
+              "link_to_event",
+              "event_status",
+              "remaining"
+            ],
+            "attached_condition": "((`bench`.`t1`.`event_status` = 'Closed') and (`bench`.`t1`.`remaining` < 0))"
+          }
+        },
+        {
+          "table": {
+            "table_name": "t2",
+            "access_type": "ALL",
+            "rows_examined_per_scan": 2,
+            "rows_produced_per_join": 1,
+            "filtered": "50.00",
+            "using_join_buffer": "hash join",
+            "cost_info": {
+              "read_cost": "0.26",
+              "eval_cost": "0.10",
+              "prefix_cost": "0.91",
+              "data_read_per_join": "16"
+            },
+            "used_columns": [
+              "event_id",
+              "event_name"
+            ],
+            "attached_condition": "(`bench`.`t2`.`event_id` = `bench`.`t1`.`link_to_event`)"
+          }
+        }
+      ]
+    }
+  }
+}

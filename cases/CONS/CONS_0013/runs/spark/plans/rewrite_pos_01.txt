@@ -1,0 +1,56 @@
+== Physical Plan ==
+AdaptiveSparkPlan (9)
++- Project (8)
+   +- Filter (7)
+      +- BroadcastHashJoin ExistenceJoin(exists#25) BuildRight (6)
+         :- Scan parquet spark_catalog.default.b (1)
+         +- BroadcastExchange (5)
+            +- Project (4)
+               +- Filter (3)
+                  +- Scan parquet spark_catalog.default.a (2)
+
+
+(1) Scan parquet spark_catalog.default.b
+Output [2]: [deptno#17, ename#18]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/cons_0013_spark_plan___pjr0z0/b]
+ReadSchema: struct<deptno:int,ename:string>
+
+(2) Scan parquet spark_catalog.default.a
+Output [2]: [deptno#19, ename#20]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/cons_0013_spark_plan___pjr0z0/a]
+PushedFilters: [IsNotNull(ename), EqualTo(ename,WARD)]
+ReadSchema: struct<deptno:int,ename:string>
+
+(3) Filter
+Input [2]: [deptno#19, ename#20]
+Condition : (isnotnull(ename#20) AND (ename#20 = WARD))
+
+(4) Project
+Output [1]: [deptno#19]
+Input [2]: [deptno#19, ename#20]
+
+(5) BroadcastExchange
+Input [1]: [deptno#19]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, true] as bigint)),false), [plan_id=77]
+
+(6) BroadcastHashJoin
+Left keys [1]: [deptno#17]
+Right keys [1]: [deptno#19]
+Join type: ExistenceJoin(exists#25)
+Join condition: None
+
+(7) Filter
+Input [3]: [deptno#17, ename#18, exists#25]
+Condition : (NOT (ename#18 = WARD) OR NOT exists#25)
+
+(8) Project
+Output [1]: [deptno#17]
+Input [3]: [deptno#17, ename#18, exists#25]
+
+(9) AdaptiveSparkPlan
+Output [1]: [deptno#17]
+Arguments: isFinalPlan=false
+
+

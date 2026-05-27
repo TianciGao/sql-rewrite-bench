@@ -1,0 +1,101 @@
+== Physical Plan ==
+AdaptiveSparkPlan (15)
++- BroadcastHashJoin LeftSemi BuildRight (14)
+   :- Scan parquet spark_catalog.default.dept (1)
+   +- BroadcastExchange (13)
+      +- Project (12)
+         +- BroadcastHashJoin LeftOuter BuildRight (11)
+            :- HashAggregate (5)
+            :  +- Exchange (4)
+            :     +- HashAggregate (3)
+            :        +- Scan parquet spark_catalog.default.dept (2)
+            +- BroadcastExchange (10)
+               +- HashAggregate (9)
+                  +- Exchange (8)
+                     +- HashAggregate (7)
+                        +- Scan parquet spark_catalog.default.emp (6)
+
+
+(1) Scan parquet spark_catalog.default.dept
+Output [3]: [deptno#45, dname#46, loc#47]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/cons_0018_spark_plan_ehvhfmng/dept]
+ReadSchema: struct<deptno:int,dname:string,loc:string>
+
+(2) Scan parquet spark_catalog.default.dept
+Output [1]: [deptno#45]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/cons_0018_spark_plan_ehvhfmng/dept]
+ReadSchema: struct<deptno:int>
+
+(3) HashAggregate
+Input [1]: [deptno#45]
+Keys [1]: [deptno#45]
+Functions: []
+Aggregate Attributes: []
+Results [1]: [deptno#45]
+
+(4) Exchange
+Input [1]: [deptno#45]
+Arguments: hashpartitioning(deptno#45, 1), ENSURE_REQUIREMENTS, [plan_id=68]
+
+(5) HashAggregate
+Input [1]: [deptno#45]
+Keys [1]: [deptno#45]
+Functions: []
+Aggregate Attributes: []
+Results [1]: [deptno#45 AS deptno#62]
+
+(6) Scan parquet spark_catalog.default.emp
+Output [1]: [deptno#56]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/cons_0018_spark_plan_ehvhfmng/emp]
+ReadSchema: struct<deptno:int>
+
+(7) HashAggregate
+Input [1]: [deptno#56]
+Keys [1]: [deptno#56]
+Functions: []
+Aggregate Attributes: []
+Results [1]: [deptno#56]
+
+(8) Exchange
+Input [1]: [deptno#56]
+Arguments: hashpartitioning(deptno#56, 1), ENSURE_REQUIREMENTS, [plan_id=70]
+
+(9) HashAggregate
+Input [1]: [deptno#56]
+Keys [1]: [deptno#56]
+Functions: []
+Aggregate Attributes: []
+Results [1]: [deptno#56]
+
+(10) BroadcastExchange
+Input [1]: [deptno#56]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, true] as bigint)),false), [plan_id=73]
+
+(11) BroadcastHashJoin
+Left keys [1]: [deptno#62]
+Right keys [1]: [deptno#56]
+Join type: LeftOuter
+Join condition: None
+
+(12) Project
+Output [1]: [deptno#62]
+Input [2]: [deptno#62, deptno#56]
+
+(13) BroadcastExchange
+Input [1]: [deptno#62]
+Arguments: HashedRelationBroadcastMode(List(coalesce(input[0, int, true], 0), isnull(input[0, int, true])),false), [plan_id=77]
+
+(14) BroadcastHashJoin
+Left keys [2]: [coalesce(deptno#45, 0), isnull(deptno#45)]
+Right keys [2]: [coalesce(deptno#62, 0), isnull(deptno#62)]
+Join type: LeftSemi
+Join condition: None
+
+(15) AdaptiveSparkPlan
+Output [3]: [deptno#45, dname#46, loc#47]
+Arguments: isFinalPlan=false
+
+

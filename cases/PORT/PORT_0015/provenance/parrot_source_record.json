@@ -1,0 +1,44 @@
+{
+  "case_id": "PORT_0015",
+  "draft_id": "PORT_DRAFT_0017",
+  "source_file_path": "datasets/raw/parrot/PARROT/benchmark/BIRD/mysql_res.json",
+  "source_record_index": 41,
+  "source_sql_field": "mysql",
+  "target_sql_field": "cracksql",
+  "source_record_subset": {
+    "mysql": "SELECT `t1`.`name` FROM `league` AS `t1` INNER JOIN `match` AS `t2` ON `t1`.`id` = `t2`.`league_id` WHERE `t2`.`season` = '2009/2010' GROUP BY `t1`.`name` HAVING ( CAST( SUM( `t2`.`home_team_goal` ) AS DOUBLE ) / COUNT( DISTINCT `t2`.`id` ) ) - ( CAST( SUM( `t2`.`away_team_goal` ) AS DOUBLE ) / COUNT( DISTINCT `t2`.`id` ) ) > 0",
+    "cracksql": "SELECT \"t1\".\"name\" FROM \"league\" AS \"t1\" INNER JOIN \"match\" AS \"t2\" ON \"t1\".\"id\" = \"t2\".\"league_id\" WHERE \"t2\".\"season\" = '2009/2010' GROUP BY \"t1\".\"name\" HAVING ( CAST( SUM( \"t2\".\"home_team_goal\" ) AS FLOAT8 ) / COUNT( DISTINCT \"t2\".\"id\" ) ) - ( CAST( SUM( \"t2\".\"away_team_goal\" ) AS FLOAT8 ) / COUNT( DISTINCT \"t2\".\"id\" ) ) > 0",
+    "result_preview": [
+      {
+        "name": "Belgium Jupiler League"
+      },
+      {
+        "name": "England Premier League"
+      },
+      {
+        "name": "France Ligue 1"
+      },
+      {
+        "name": "Germany 1. Bundesliga"
+      },
+      {
+        "name": "Italy Serie A"
+      },
+      {
+        "name": "Netherlands Eredivisie"
+      },
+      {
+        "name": "Poland Ekstraklasa"
+      },
+      {
+        "name": "Portugal Liga ZON Sagres"
+      },
+      {
+        "name": "Scotland Premier League"
+      },
+      {
+        "name": "Spain LIGA BBVA"
+      }
+    ]
+  }
+}

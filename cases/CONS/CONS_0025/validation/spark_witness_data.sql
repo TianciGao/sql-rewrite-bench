@@ -1,0 +1,4 @@
+INSERT INTO dept VALUES
+(10, 'ACCOUNTING', 'X'),
+(20, 'SALES', 'X'),
+(30, 'RESEARCH', 'Y');

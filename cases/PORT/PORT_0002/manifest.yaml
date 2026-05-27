@@ -37,6 +37,22 @@ required_tables:
 - votes
 features:
 - date_time_function
+tags:
+  sql_feature:
+    primary: [date_time_function, expression_complexity]
+    secondary: []
+  rewrite_opportunity:
+    primary: [dialect_adaptation]
+    secondary: [function_normalization, expression_simplification]
+  plan_operator:
+    present: []
+    delta_relevant: []
+  workload_realism:
+    source_inherited: [realistic_query_style]
+    case_specific: [complex_expression_density]
+  portability:
+    confirmed: [identifier_quoting, datetime_semantics_gap, type_semantics_gap]
+    suspected: [null_semantics_gap]
 status:
   seed_localized: true
   source_frozen: true

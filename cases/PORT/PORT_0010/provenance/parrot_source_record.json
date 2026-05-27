@@ -1,0 +1,54 @@
+{
+  "case_id": "PORT_0010",
+  "draft_id": "PORT_DRAFT_0005",
+  "source_file_path": "datasets/raw/parrot/PARROT/benchmark/BIRD/pg_res.json",
+  "source_record_index": 10,
+  "source_sql_field": "pg",
+  "target_sql_field": "cracksql",
+  "source_record_subset": {
+    "pg": "SELECT \"t2\".\"driverid\" , \"t2\".\"code\" FROM \"results\" AS \"t1\" INNER JOIN \"drivers\" AS \"t2\" ON \"t1\".\"driverid\" = \"t2\".\"driverid\" WHERE TO_CHAR( CAST( \"t2\".\"dob\" AS TIMESTAMP ) , 'YYYY' ) = '1971' AND NOT \"t1\".\"fastestlaptime\" IS NULL",
+    "cracksql": "SELECT `t2`.`driverid` , `t2`.`code` FROM `results` AS `t1` INNER JOIN `drivers` AS `t2` ON `t1`.`driverid` = `t2`.`driverid` WHERE CAST(`t2`.`dob` AS DATE) LIKE '1971%' AND NOT `t1`.`fastestlaptime` IS NULL",
+    "result_preview": [
+      {
+        "driverid": 14,
+        "code": "COU"
+      },
+      {
+        "driverid": 14,
+        "code": "COU"
+      },
+      {
+        "driverid": 14,
+        "code": "COU"
+      },
+      {
+        "driverid": 14,
+        "code": "COU"
+      },
+      {
+        "driverid": 14,
+        "code": "COU"
+      },
+      {
+        "driverid": 14,
+        "code": "COU"
+      },
+      {
+        "driverid": 14,
+        "code": "COU"
+      },
+      {
+        "driverid": 14,
+        "code": "COU"
+      },
+      {
+        "driverid": 14,
+        "code": "COU"
+      },
+      {
+        "driverid": 14,
+        "code": "COU"
+      }
+    ]
+  }
+}

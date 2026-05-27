@@ -1,0 +1,381 @@
+{
+  "query_block": {
+    "select_id": 1,
+    "cost_info": {
+      "query_cost": "8.84"
+    },
+    "ordering_operation": {
+      "using_filesort": true,
+      "cost_info": {
+        "sort_cost": "3.00"
+      },
+      "windowing": {
+        "windows": [
+          {
+            "name": "<unnamed window>",
+            "using_temporary_table": true,
+            "using_filesort": true,
+            "filesort_key": [
+              "`lochierarchy`",
+              "(case when (`g_county` = 0) then `s_state` end)",
+              "`total_sum` desc"
+            ],
+            "functions": [
+              "rank"
+            ]
+          }
+        ],
+        "cost_info": {
+          "sort_cost": "3.00"
+        },
+        "table": {
+          "table_name": "results_rollup",
+          "access_type": "ALL",
+          "rows_examined_per_scan": 3,
+          "rows_produced_per_join": 3,
+          "filtered": "100.00",
+          "cost_info": {
+            "read_cost": "2.54",
+            "eval_cost": "0.30",
+            "prefix_cost": "2.84",
+            "data_read_per_join": "552"
+          },
+          "used_columns": [
+            "total_sum",
+            "s_state",
+            "s_county",
+            "g_state",
+            "g_county",
+            "lochierarchy"
+          ],
+          "materialized_from_subquery": {
+            "using_temporary_table": true,
+            "dependent": false,
+            "cacheable": true,
+            "query_block": {
+              "union_result": {
+                "using_temporary_table": true,
+                "select_id": 14,
+                "table_name": "<union2,6,10>",
+                "access_type": "ALL",
+                "query_specifications": [
+                  {
+                    "dependent": false,
+                    "cacheable": true,
+                    "query_block": {
+                      "select_id": 2,
+                      "cost_info": {
+                        "query_cost": "2.72"
+                      },
+                      "table": {
+                        "table_name": "results",
+                        "access_type": "ALL",
+                        "rows_examined_per_scan": 2,
+                        "rows_produced_per_join": 2,
+                        "filtered": "100.00",
+                        "cost_info": {
+                          "read_cost": "2.52",
+                          "eval_cost": "0.20",
+                          "prefix_cost": "2.73",
+                          "data_read_per_join": "320"
+                        },
+                        "used_columns": [
+                          "total_sum",
+                          "s_state",
+                          "s_county",
+                          "g_state",
+                          "g_county"
+                        ],
+                        "materialized_from_subquery": {
+                          "using_temporary_table": true,
+                          "dependent": false,
+                          "cacheable": true,
+                          "query_block": {
+                            "select_id": 3,
+                            "cost_info": {
+                              "query_cost": "1.75"
+                            },
+                            "grouping_operation": {
+                              "using_temporary_table": true,
+                              "using_filesort": false,
+                              "nested_loop": [
+                                {
+                                  "table": {
+                                    "table_name": "store_sales",
+                                    "access_type": "ALL",
+                                    "rows_examined_per_scan": 1,
+                                    "rows_produced_per_join": 1,
+                                    "filtered": "100.00",
+                                    "cost_info": {
+                                      "read_cost": "0.25",
+                                      "eval_cost": "0.10",
+                                      "prefix_cost": "0.35",
+                                      "data_read_per_join": "16"
+                                    },
+                                    "used_columns": [
+                                      "ss_sold_date_sk",
+                                      "ss_store_sk",
+                                      "ss_net_profit"
+                                    ],
+                                    "attached_condition": "((`bench`.`store_sales`.`ss_sold_date_sk` is not null) and (`bench`.`store_sales`.`ss_store_sk` is not null))"
+                                  }
+                                },
+                                {
+                                  "table": {
+                                    "table_name": "d1",
+                                    "access_type": "eq_ref",
+                                    "possible_keys": [
+                                      "PRIMARY"
+                                    ],
+                                    "key": "PRIMARY",
+                                    "used_key_parts": [
+                                      "d_date_sk"
+                                    ],
+                                    "key_length": "4",
+                                    "ref": [
+                                      "bench.store_sales.ss_sold_date_sk"
+                                    ],
+                                    "rows_examined_per_scan": 1,
+                                    "rows_produced_per_join": 1,
+                                    "filtered": "100.00",
+                                    "cost_info": {
+                                      "read_cost": "0.25",
+                                      "eval_cost": "0.10",
+                                      "prefix_cost": "0.70",
+                                      "data_read_per_join": "16"
+                                    },
+                                    "used_columns": [
+                                      "d_date_sk",
+                                      "d_month_seq"
+                                    ],
+                                    "attached_condition": "(`bench`.`d1`.`d_month_seq` between 1212 and <cache>((1212 + 11)))"
+                                  }
+                                },
+                                {
+                                  "table": {
+                                    "table_name": "store",
+                                    "access_type": "eq_ref",
+                                    "possible_keys": [
+                                      "PRIMARY"
+                                    ],
+                                    "key": "PRIMARY",
+                                    "used_key_parts": [
+                                      "s_store_sk"
+                                    ],
+                                    "key_length": "4",
+                                    "ref": [
+                                      "bench.store_sales.ss_store_sk"
+                                    ],
+                                    "rows_examined_per_scan": 1,
+                                    "rows_produced_per_join": 1,
+                                    "filtered": "100.00",
+                                    "cost_info": {
+                                      "read_cost": "0.25",
+                                      "eval_cost": "0.10",
+                                      "prefix_cost": "1.05",
+                                      "data_read_per_join": "136"
+                                    },
+                                    "used_columns": [
+                                      "s_store_sk",
+                                      "s_state",
+                                      "s_county"
+                                    ],
+                                    "attached_condition": "(`bench`.`store`.`s_state` is not null)"
+                                  }
+                                },
+                                {
+                                  "table": {
+                                    "table_name": "tmp1",
+                                    "access_type": "ref",
+                                    "possible_keys": [
+                                      "<auto_key0>"
+                                    ],
+                                    "key": "<auto_key0>",
+                                    "used_key_parts": [
+                                      "s_state"
+                                    ],
+                                    "key_length": "11",
+                                    "ref": [
+                                      "bench.store.s_state"
+                                    ],
+                                    "rows_examined_per_scan": 2,
+                                    "rows_produced_per_join": 1,
+                                    "filtered": "50.00",
+                                    "using_index": true,
+                                    "first_match": "store",
+                                    "cost_info": {
+                                      "read_cost": "0.50",
+                                      "eval_cost": "0.10",
+                                      "prefix_cost": "1.75",
+                                      "data_read_per_join": "24"
+                                    },
+                                    "used_columns": [
+                                      "s_state",
+                                      "ranking"
+                                    ],
+                                    "attached_condition": "(`tmp1`.`ranking` <= 5)",
+                                    "materialized_from_subquery": {
+                                      "using_temporary_table": true,
+                                      "dependent": false,
+                                      "cacheable": true,
+                                      "query_block": {
+                                        "select_id": 5,
+                                        "cost_info": {
+                                          "query_cost": "2.05"
+                                        },
+                                        "windowing": {
+                                          "windows": [
+                                            {
+                                              "name": "<unnamed window>",
+                                              "using_filesort": true,
+                                              "filesort_key": [
+                                                "`s_state`",
+                                                "sum(`ss_net_profit`) desc"
+                                              ],
+                                              "functions": [
+                                                "rank"
+                                              ]
+                                            }
+                                          ],
+                                          "cost_info": {
+                                            "sort_cost": "1.00"
+                                          },
+                                          "grouping_operation": {
+                                            "using_temporary_table": true,
+                                            "using_filesort": false,
+                                            "nested_loop": [
+                                              {
+                                                "table": {
+                                                  "table_name": "store_sales",
+                                                  "access_type": "ALL",
+                                                  "rows_examined_per_scan": 1,
+                                                  "rows_produced_per_join": 1,
+                                                  "filtered": "100.00",
+                                                  "cost_info": {
+                                                    "read_cost": "0.25",
+                                                    "eval_cost": "0.10",
+                                                    "prefix_cost": "0.35",
+                                                    "data_read_per_join": "16"
+                                                  },
+                                                  "used_columns": [
+                                                    "ss_sold_date_sk",
+                                                    "ss_store_sk",
+                                                    "ss_net_profit"
+                                                  ],
+                                                  "attached_condition": "((`bench`.`store_sales`.`ss_store_sk` is not null) and (`bench`.`store_sales`.`ss_sold_date_sk` is not null))"
+                                                }
+                                              },
+                                              {
+                                                "table": {
+                                                  "table_name": "store",
+                                                  "access_type": "eq_ref",
+                                                  "possible_keys": [
+                                                    "PRIMARY"
+                                                  ],
+                                                  "key": "PRIMARY",
+                                                  "used_key_parts": [
+                                                    "s_store_sk"
+                                                  ],
+                                                  "key_length": "4",
+                                                  "ref": [
+                                                    "bench.store_sales.ss_store_sk"
+                                                  ],
+                                                  "rows_examined_per_scan": 1,
+                                                  "rows_produced_per_join": 1,
+                                                  "filtered": "100.00",
+                                                  "cost_info": {
+                                                    "read_cost": "0.25",
+                                                    "eval_cost": "0.10",
+                                                    "prefix_cost": "0.70",
+                                                    "data_read_per_join": "136"
+                                                  },
+                                                  "used_columns": [
+                                                    "s_store_sk",
+                                                    "s_state"
+                                                  ]
+                                                }
+                                              },
+                                              {
+                                                "table": {
+                                                  "table_name": "date_dim",
+                                                  "access_type": "eq_ref",
+                                                  "possible_keys": [
+                                                    "PRIMARY"
+                                                  ],
+                                                  "key": "PRIMARY",
+                                                  "used_key_parts": [
+                                                    "d_date_sk"
+                                                  ],
+                                                  "key_length": "4",
+                                                  "ref": [
+                                                    "bench.store_sales.ss_sold_date_sk"
+                                                  ],
+                                                  "rows_examined_per_scan": 1,
+                                                  "rows_produced_per_join": 1,
+                                                  "filtered": "100.00",
+                                                  "cost_info": {
+                                                    "read_cost": "0.25",
+                                                    "eval_cost": "0.10",
+                                                    "prefix_cost": "1.05",
+                                                    "data_read_per_join": "16"
+                                                  },
+                                                  "used_columns": [
+                                                    "d_date_sk",
+                                                    "d_month_seq"
+                                                  ],
+                                                  "attached_condition": "(`bench`.`date_dim`.`d_month_seq` between 1212 and <cache>((1212 + 11)))"
+                                                }
+                                              }
+                                            ]
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "dependent": false,
+                    "cacheable": true,
+                    "query_block": {
+                      "select_id": 6,
+                      "message": "Impossible HAVING",
+                      "table": {
+                        "materialized_from_subquery": {
+                          "sharing_temporary_table_with": {
+                            "select_id": 3
+                          }
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "dependent": false,
+                    "cacheable": true,
+                    "query_block": {
+                      "select_id": 10,
+                      "message": "Impossible HAVING",
+                      "table": {
+                        "materialized_from_subquery": {
+                          "sharing_temporary_table_with": {
+                            "select_id": 3
+                          }
+                        }
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

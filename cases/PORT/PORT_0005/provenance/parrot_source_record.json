@@ -1,0 +1,17 @@
+{
+  "case_id": "PORT_0005",
+  "draft_id": "PORT_PARROT_DRAFT_0006",
+  "source_file_path": "datasets/raw/parrot/PARROT/benchmark/BIRD/pg_res.json",
+  "source_record_index": 9,
+  "source_sql_field": "pg",
+  "target_sql_field": "cracksql",
+  "source_record_subset": {
+    "pg": "SELECT \"nationality\" FROM \"drivers\" WHERE NOT \"dob\" IS NULL ORDER BY \"dob\" ASC NULLS FIRST LIMIT 1 \n",
+    "cracksql": "SELECT `nationality` FROM `drivers` WHERE NOT `dob` IS NULL ORDER BY `dob` IS NULL, `dob` ASC LIMIT 1",
+    "result_preview": [
+      {
+        "nationality": "French"
+      }
+    ]
+  }
+}

@@ -1,0 +1,65 @@
+case_id: PORT_0024
+primary_pool: portability
+source_family: PARROT
+source_id: SRC_009
+source_subset: BIRD
+source_entry_pointer: datasets/raw/parrot/PARROT/benchmark/BIRD/mysql_res.json[18]
+source_dialect: mysql_like_candidate
+portability_focus:
+  - boolean_semantics
+target_engines:
+  - pg
+  - mysql
+  - spark
+official_case_status: draft_constructed
+registry_status: staged_registered
+validation_status: tracked_draft_cross_dialect_result_evidence
+admission_status: staged_not_yet_admitted
+package_engineering_status: draft package with tracked result evidence and tracked draft plan evidence; release hardening incomplete
+draft_origin: PORT_DRAFT_0027
+validated_engines:
+  - mysql
+  - pg
+  - spark
+tri_engine_closure: yes
+tags:
+  sql_feature:
+    primary: [expression_complexity]
+    secondary: []
+  rewrite_opportunity:
+    primary: [dialect_adaptation]
+    secondary: [expression_simplification]
+  plan_operator:
+    present: [scan, aggregate]
+    delta_relevant: []
+  workload_realism:
+    source_inherited: [realistic_query_style]
+    case_specific: [complex_expression_density]
+  portability:
+    confirmed: [identifier_quoting, boolean_semantics_gap, type_semantics_gap]
+    suspected: []
+expected_line: staged
+required_tables:
+  - cards
+artifacts:
+  source_sql: source.sql
+  rewrite_pos_01: rewrite_pos_01.sql
+  rewrite_neg_01: rewrite_neg_01.sql
+  provenance_record: provenance/parrot_source_record.json
+  provenance_notes: provenance/provenance_notes.txt
+  pg_schema: schema/ddl_pg.sql
+  mysql_schema: schema/ddl_mysql.sql
+  spark_schema: schema/ddl_spark.sql
+  pg_witness_data: validation/pg_witness_data.sql
+  mysql_witness_data: validation/mysql_witness_data.sql
+  spark_witness_data: validation/spark_witness_data.sql
+  run_pg_validation: validation/run_pg_validation.sh
+  run_pg_plan_collection: validation/run_pg_plan_collection.sh
+  run_mysql_validation: validation/run_mysql_validation.sh
+  run_mysql_plan_collection: validation/run_mysql_plan_collection.sh
+  run_spark_validation: validation/run_spark_validation.sh
+  run_spark_plan_collection: validation/run_spark_plan_collection.sh
+  result_check: runs/result_check.json
+  plan_check: runs/plan_check.json
+next_gap: human review, portability review-prep / later formal review, later admission decision, and plan semantics not formally reviewed
+artifact_warning: tracked draft cross-dialect result evidence and tracked draft plan evidence only; not admitted, not under formal review, and no release-grade claim

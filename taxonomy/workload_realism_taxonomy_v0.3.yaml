@@ -1,0 +1,165 @@
+taxonomy_name: workload_realism_taxonomy
+version: '0.3'
+status: draft_for_freeze
+scope:
+  engines:
+  - spark
+  - postgres
+  - mysql
+  applies_to:
+  - source
+  - case_package
+  intent: 'Capture why a source or case is representative of realistic, non-trivial, or hard-to-benchmark SQL behavior. These tags are not about SQL syntax itself but about workload shape and realism properties.
+
+    '
+design_principles:
+- Use broad realism tags in v0.3 rather than exact numeric thresholds.
+- Apply at source level first, then refine at case level later.
+- Keep realism tags orthogonal to primary_pool assignment.
+- Prefer evidence-backed realism tags over subjective impressions.
+tag_schema:
+  required_fields:
+  - tag_id
+  - label
+  - definition
+  - applies_to
+  - examples
+  - notes
+  optional_fields:
+  - related_tags
+  - report_bucket
+  - review_hints
+  - evidence_signals
+allowed_applies_to_values:
+- source
+- case_package
+- both
+tags:
+- tag_id: classic_analytical_baseline
+  label: Classic Analytical Baseline
+  definition: Represents stable, widely reused analytical benchmark structure suitable for comparison against prior systems.
+  applies_to: both
+  examples:
+  - TPC-H style decision-support queries
+  - TPC-DS style BI queries
+  notes: Useful for performance baselines, even if not fully realistic.
+  report_bucket: benchmark_baseline
+  review_hints: Use for stable benchmark-style SQL even if it is not highly realistic.
+  evidence_signals:
+  - TPC-H/TPC-DS style benchmark origin
+  - stable analytical template provenance
+- tag_id: dynamic_workload_characteristic
+  label: Dynamic Workload Characteristic
+  definition: Source or case reflects workload variability over time, changing distributions, or non-static execution context.
+  applies_to: source
+  examples:
+  - DSB-like workload notions
+  notes: Usually attached at source level first.
+  report_bucket: dynamic_behavior
+  review_hints: Prefer source-level tagging when workload variability comes from generator or workload process.
+  evidence_signals:
+  - workload generator semantics
+  - time-varying workload notes
+- tag_id: real_data_correlation
+  label: Real Data Correlation
+  definition: Source or case is valued because it captures realistic join/predicate correlation rather than synthetic independence assumptions.
+  applies_to: both
+  examples:
+  - JOB-like real-data join behavior
+  notes: Important for realism, cardinality stress, and rewrite evaluation.
+  report_bucket: data_correlation
+  review_hints: Use when realistic correlation / skew is part of why the case matters, not merely because data is non-synthetic.
+  evidence_signals:
+  - real-data provenance
+  - documented join/predicate correlation
+- tag_id: realistic_query_style
+  label: Realistic Query Style
+  definition: Query form resembles real application or analyst-authored SQL rather than tightly curated benchmark templates.
+  applies_to: both
+  examples:
+  - Stack query patterns
+  - manually observed BI-style SQL
+  notes: Distinct from long SQL length alone.
+  report_bucket: query_style
+  review_hints: Use when the SQL resembles analyst/application-authored style rather than curated benchmark templates.
+  evidence_signals:
+  - Stack/SQLStorm/manual BI-style provenance
+  - non-template surface style
+- tag_id: long_tail_structure
+  label: Long-tail Structural Coverage
+  definition: Source or case contributes structures that are infrequent in classic benchmarks but important in practice.
+  applies_to: both
+  examples:
+  - unusual combinations of joins, windows, and nesting
+  notes: Often overlaps with longtail pool but is a realism tag, not a pool.
+  report_bucket: long_tail
+  review_hints: Use when structure rarity itself is a realism contribution.
+  evidence_signals:
+  - rare feature combination
+  - coverage-gap rationale
+- tag_id: high_join_count
+  label: High Join Count
+  definition: Query includes enough joins that join graph complexity becomes part of its realism.
+  applies_to: case_package
+  examples:
+  - many-table analytical joins
+  notes: Exact thresholds can be maintained elsewhere.
+  report_bucket: join_complexity
+  review_hints: Use when join graph complexity is visibly part of the case, not merely because there are two joins.
+  evidence_signals:
+  - join count visibly above common template cases
+- tag_id: deep_nesting_realism
+  label: Deep Nesting Realism
+  definition: Query depth is itself a realism-relevant property, not just a syntactic curiosity.
+  applies_to: case_package
+  examples:
+  - deeply nested derived tables or subqueries
+  notes: Use in addition to SQL feature tag deep_nesting where appropriate.
+  report_bucket: nesting_complexity
+  review_hints: Use when nesting depth contributes to realism, not just syntax variety.
+  evidence_signals:
+  - multi-level nesting materially present
+- tag_id: complex_expression_density
+  label: Complex Expression Density
+  definition: Query contains many non-trivial expressions, conditional logic, or function-heavy projections/predicates.
+  applies_to: both
+  examples:
+  - expression-heavy analyst SQL
+  notes: Useful for long-tail and portability analyses.
+  report_bucket: expression_complexity
+  review_hints: Use when expression-heavy logic is central to realism or maintainability stress.
+  evidence_signals:
+  - heavy CASE/cast/function density in source SQL
+- tag_id: result_size_sensitivity
+  label: Result Size Sensitivity
+  definition: Case meaningfully depends on output cardinality, limit style, or large intermediate result behavior.
+  applies_to: case_package
+  examples:
+  - queries where LIMIT semantics or output scale matter
+  notes: Can matter for both performance and portability.
+  report_bucket: result_shape
+  review_hints: Use when output/intermediate size meaningfully affects workload behavior.
+  evidence_signals:
+  - LIMIT/cardinality-dependent semantics or performance behavior
+- tag_id: manual_gap_fill_realism
+  label: Manual Gap-Fill Realism
+  definition: Case or source was manually introduced to fill an identified realism or coverage hole not addressed by public sources.
+  applies_to: both
+  examples:
+  - team-authored long-tail cases
+  notes: This is not a formal pool; it is a realism/channel tag.
+  report_bucket: curation_channel
+  review_hints: Use when the team intentionally authored the case to fill a realism or coverage hole.
+  evidence_signals:
+  - team-authored gap-fill provenance
+- tag_id: long_query_text
+  label: Long Query Text
+  definition: Query text length itself is materially large enough to contribute to workload realism, maintenance burden, or human interpretability difficulty.
+  applies_to: case_package
+  examples:
+  - multi-line BI-style SQL with many clauses and repeated expressions
+  notes: Use as a coarse realism signal rather than a strict numeric threshold.
+  report_bucket: query_length
+  review_hints: Use when unusually long text is itself part of why the case feels realistic or operationally costly.
+  evidence_signals:
+  - query length visibly large relative to nearby benchmark-style cases

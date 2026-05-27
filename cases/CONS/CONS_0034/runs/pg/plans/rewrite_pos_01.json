@@ -1,0 +1,70 @@
+[
+  {
+    "Plan": {
+      "Node Type": "Aggregate",
+      "Strategy": "Hashed",
+      "Partial Mode": "Simple",
+      "Parallel Aware": false,
+      "Async Capable": false,
+      "Startup Cost": 56.74,
+      "Total Cost": 58.74,
+      "Plan Rows": 200,
+      "Plan Width": 40,
+      "Group Key": ["(CASE WHEN (emp.sal < '11'::numeric) THEN ('-1'::numeric * emp.sal) ELSE emp.sal END)"],
+      "Planned Partitions": 0,
+      "Plans": [
+        {
+          "Node Type": "Hash Join",
+          "Parent Relationship": "Outer",
+          "Parallel Aware": false,
+          "Async Capable": false,
+          "Join Type": "Right",
+          "Startup Cost": 18.10,
+          "Total Cost": 53.86,
+          "Plan Rows": 576,
+          "Plan Width": 32,
+          "Inner Unique": false,
+          "Hash Cond": "((emp.ename)::text = (bonus.ename)::text)",
+          "Plans": [
+            {
+              "Node Type": "Seq Scan",
+              "Parent Relationship": "Outer",
+              "Parallel Aware": false,
+              "Async Capable": false,
+              "Relation Name": "emp",
+              "Alias": "emp",
+              "Startup Cost": 0.00,
+              "Total Cost": 14.80,
+              "Plan Rows": 320,
+              "Plan Width": 114
+            },
+            {
+              "Node Type": "Hash",
+              "Parent Relationship": "Inner",
+              "Parallel Aware": false,
+              "Async Capable": false,
+              "Startup Cost": 13.60,
+              "Total Cost": 13.60,
+              "Plan Rows": 360,
+              "Plan Width": 82,
+              "Plans": [
+                {
+                  "Node Type": "Seq Scan",
+                  "Parent Relationship": "Outer",
+                  "Parallel Aware": false,
+                  "Async Capable": false,
+                  "Relation Name": "bonus",
+                  "Alias": "bonus",
+                  "Startup Cost": 0.00,
+                  "Total Cost": 13.60,
+                  "Plan Rows": 360,
+                  "Plan Width": 82
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  }
+]

@@ -20,6 +20,8 @@ variants:
 targets:
   engines:
     - postgres
+    - mysql
+    - spark
 required_tables:
   - store_sales
   - catalog_sales
@@ -36,9 +38,9 @@ features:
 status:
   parse_checked: true
   exec_checked_pg: true
-  exec_checked_mysql: false
-  exec_checked_spark: false
-  plan_checked: false
+  exec_checked_mysql: true
+  exec_checked_spark: true
+  plan_checked: true
   schema_ready: true
   validation_ready: true
   release_grade: false
@@ -59,9 +61,41 @@ artifacts:
   pg_positive_plan: runs/pg/plans/rewrite_pos_01.json
   pg_negative_plan: runs/pg/plans/rewrite_neg_01.json
   pg_plan_check: runs/pg/plans/plan_check.json
+  result_check: runs/result_check.json
+  plan_check: runs/plan_check.json
+tags:
+  sql_feature:
+    primary:
+      - cte
+      - date_time_function
+    secondary:
+      - expression_complexity
+  rewrite_opportunity:
+    primary:
+      - materialization_strategy
+    secondary:
+      - aggregation_rewrite
+  plan_operator:
+    present:
+      - scan
+      - join
+      - aggregate
+      - sort
+      - limit
+    delta_relevant: []
+  workload_realism:
+    source_inherited:
+      - classic_analytical_baseline
+    case_specific:
+      - complex_expression_density
+  portability:
+    confirmed: []
+    suspected:
+      - datetime_semantics_gap
+      - type_semantics_gap
 notes:
   - Materialized from human-frozen TPC-DS query58.tpl with repaired repo-local dsqgen.
   - source.sql is PostgreSQL-normalized from the exact generated SQL preserved in provenance.
   - PostgreSQL witness validation passed for source/positive equality and source/negative divergence.
   - PostgreSQL EXPLAIN JSON plans were collected for source, positive rewrite, and negative rewrite.
-  - No MySQL, Spark, admission, promotion, common-core, or registry facts are claimed.
+  - Tracked tri-engine draft result and plan evidence exists; registry remains staged_not_yet_admitted; plan semantics are not formally reviewed; no admission, common-core promotion, formal-review-complete, or release-grade claim is made.

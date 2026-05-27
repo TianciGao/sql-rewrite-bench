@@ -1,0 +1,53 @@
+== Physical Plan ==
+AdaptiveSparkPlan (7)
++- HashAggregate (6)
+   +- HashAggregate (5)
+      +- HashAggregate (4)
+         +- Exchange (3)
+            +- HashAggregate (2)
+               +- Scan parquet spark_catalog.default.emp (1)
+
+
+(1) Scan parquet spark_catalog.default.emp
+Output [3]: [deptno#23, sal#24, job#25]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/cons_0006_spark_plan_u8towp8d/emp]
+ReadSchema: struct<deptno:int,sal:decimal(12,2),job:string>
+
+(2) HashAggregate
+Input [3]: [deptno#23, sal#24, job#25]
+Keys [1]: [CASE WHEN (job#25 = CLERK) THEN deptno#23 END AS CASE WHEN (job#25 = CLERK) THEN deptno#23 END#38]
+Functions [10]: [partial_sum(sal#24), partial_sum(CASE WHEN (deptno#23 = 10) THEN sal#24 END), partial_sum(CASE WHEN (deptno#23 = 20) THEN sal#24 ELSE 0.00 END), partial_sum(CASE WHEN (deptno#23 = 30) THEN 1 ELSE 0 END), partial_count(CASE WHEN (deptno#23 = 40) THEN x END), partial_sum(CASE WHEN (deptno#23 = 45) THEN 1 END), partial_sum(CASE WHEN (deptno#23 = 50) THEN 1 END), partial_sum(null), partial_sum(CASE WHEN (deptno#23 = 70) THEN null ELSE 1 END), partial_count(CASE WHEN (deptno#23 = 20) THEN 1 END)]
+Aggregate Attributes [10]: [sum(sal#24)#26, sum(CASE WHEN (deptno#23 = 10) THEN sal#24 END)#27, sum(CASE WHEN (deptno#23 = 20) THEN sal#24 ELSE 0.00 END)#34, sum(CASE WHEN (deptno#23 = 30) THEN 1 ELSE 0 END)#28L, count(CASE WHEN (deptno#23 = 40) THEN x END)#29L, sum(CASE WHEN (deptno#23 = 45) THEN 1 END)#30L, sum(CASE WHEN (deptno#23 = 50) THEN 1 END)#35L, sum(null)#31, sum(CASE WHEN (deptno#23 = 70) THEN null ELSE 1 END)#36L, count(CASE WHEN (deptno#23 = 20) THEN 1 END)#32L]
+Results [15]: [CASE WHEN (job#25 = CLERK) THEN deptno#23 END#38, sum#41, isEmpty#42, sum#45, isEmpty#46, sum#49, isEmpty#50, sum#52L, count#54L, sum#56L, sum#58L, sum#61, isEmpty#62, sum#64L, count#66L]
+
+(3) Exchange
+Input [15]: [CASE WHEN (job#25 = CLERK) THEN deptno#23 END#38, sum#41, isEmpty#42, sum#45, isEmpty#46, sum#49, isEmpty#50, sum#52L, count#54L, sum#56L, sum#58L, sum#61, isEmpty#62, sum#64L, count#66L]
+Arguments: hashpartitioning(CASE WHEN (job#25 = CLERK) THEN deptno#23 END#38, 1), ENSURE_REQUIREMENTS, [plan_id=32]
+
+(4) HashAggregate
+Input [15]: [CASE WHEN (job#25 = CLERK) THEN deptno#23 END#38, sum#41, isEmpty#42, sum#45, isEmpty#46, sum#49, isEmpty#50, sum#52L, count#54L, sum#56L, sum#58L, sum#61, isEmpty#62, sum#64L, count#66L]
+Keys [1]: [CASE WHEN (job#25 = CLERK) THEN deptno#23 END#38]
+Functions [10]: [merge_sum(sal#24), merge_sum(CASE WHEN (deptno#23 = 10) THEN sal#24 END), merge_sum(CASE WHEN (deptno#23 = 20) THEN sal#24 ELSE 0.00 END), merge_sum(CASE WHEN (deptno#23 = 30) THEN 1 ELSE 0 END), merge_count(CASE WHEN (deptno#23 = 40) THEN x END), merge_sum(CASE WHEN (deptno#23 = 45) THEN 1 END), merge_sum(CASE WHEN (deptno#23 = 50) THEN 1 END), merge_sum(null), merge_sum(CASE WHEN (deptno#23 = 70) THEN null ELSE 1 END), merge_count(CASE WHEN (deptno#23 = 20) THEN 1 END)]
+Aggregate Attributes [10]: [sum(sal#24)#26, sum(CASE WHEN (deptno#23 = 10) THEN sal#24 END)#27, sum(CASE WHEN (deptno#23 = 20) THEN sal#24 ELSE 0.00 END)#34, sum(CASE WHEN (deptno#23 = 30) THEN 1 ELSE 0 END)#28L, count(CASE WHEN (deptno#23 = 40) THEN x END)#29L, sum(CASE WHEN (deptno#23 = 45) THEN 1 END)#30L, sum(CASE WHEN (deptno#23 = 50) THEN 1 END)#35L, sum(null)#31, sum(CASE WHEN (deptno#23 = 70) THEN null ELSE 1 END)#36L, count(CASE WHEN (deptno#23 = 20) THEN 1 END)#32L]
+Results [15]: [CASE WHEN (job#25 = CLERK) THEN deptno#23 END#38, sum#41, isEmpty#42, sum#45, isEmpty#46, sum#49, isEmpty#50, sum#52L, count#54L, sum#56L, sum#58L, sum#61, isEmpty#62, sum#64L, count#66L]
+
+(5) HashAggregate
+Input [15]: [CASE WHEN (job#25 = CLERK) THEN deptno#23 END#38, sum#41, isEmpty#42, sum#45, isEmpty#46, sum#49, isEmpty#50, sum#52L, count#54L, sum#56L, sum#58L, sum#61, isEmpty#62, sum#64L, count#66L]
+Keys: []
+Functions [11]: [merge_sum(sal#24), merge_sum(CASE WHEN (deptno#23 = 10) THEN sal#24 END), merge_sum(CASE WHEN (deptno#23 = 20) THEN sal#24 ELSE 0.00 END), merge_sum(CASE WHEN (deptno#23 = 30) THEN 1 ELSE 0 END), merge_count(CASE WHEN (deptno#23 = 40) THEN x END), merge_sum(CASE WHEN (deptno#23 = 45) THEN 1 END), merge_sum(CASE WHEN (deptno#23 = 50) THEN 1 END), merge_sum(null), merge_sum(CASE WHEN (deptno#23 = 70) THEN null ELSE 1 END), merge_count(CASE WHEN (deptno#23 = 20) THEN 1 END), partial_count(distinct CASE WHEN (job#25 = CLERK) THEN deptno#23 END#38)]
+Aggregate Attributes [11]: [sum(sal#24)#26, sum(CASE WHEN (deptno#23 = 10) THEN sal#24 END)#27, sum(CASE WHEN (deptno#23 = 20) THEN sal#24 ELSE 0.00 END)#34, sum(CASE WHEN (deptno#23 = 30) THEN 1 ELSE 0 END)#28L, count(CASE WHEN (deptno#23 = 40) THEN x END)#29L, sum(CASE WHEN (deptno#23 = 45) THEN 1 END)#30L, sum(CASE WHEN (deptno#23 = 50) THEN 1 END)#35L, sum(null)#31, sum(CASE WHEN (deptno#23 = 70) THEN null ELSE 1 END)#36L, count(CASE WHEN (deptno#23 = 20) THEN 1 END)#32L, count(CASE WHEN (job#25 = CLERK) THEN deptno#23 END)#33L]
+Results [15]: [sum#41, isEmpty#42, sum#45, isEmpty#46, sum#49, isEmpty#50, sum#52L, count#54L, sum#56L, sum#58L, sum#61, isEmpty#62, sum#64L, count#66L, count#69L]
+
+(6) HashAggregate
+Input [15]: [sum#41, isEmpty#42, sum#45, isEmpty#46, sum#49, isEmpty#50, sum#52L, count#54L, sum#56L, sum#58L, sum#61, isEmpty#62, sum#64L, count#66L, count#69L]
+Keys: []
+Functions [11]: [sum(sal#24), sum(CASE WHEN (deptno#23 = 10) THEN sal#24 END), sum(CASE WHEN (deptno#23 = 20) THEN sal#24 ELSE 0.00 END), sum(CASE WHEN (deptno#23 = 30) THEN 1 ELSE 0 END), count(CASE WHEN (deptno#23 = 40) THEN x END), sum(CASE WHEN (deptno#23 = 45) THEN 1 END), sum(CASE WHEN (deptno#23 = 50) THEN 1 END), sum(null), sum(CASE WHEN (deptno#23 = 70) THEN null ELSE 1 END), count(CASE WHEN (deptno#23 = 20) THEN 1 END), count(distinct CASE WHEN (job#25 = CLERK) THEN deptno#23 END#38)]
+Aggregate Attributes [11]: [sum(sal#24)#26, sum(CASE WHEN (deptno#23 = 10) THEN sal#24 END)#27, sum(CASE WHEN (deptno#23 = 20) THEN sal#24 ELSE 0.00 END)#34, sum(CASE WHEN (deptno#23 = 30) THEN 1 ELSE 0 END)#28L, count(CASE WHEN (deptno#23 = 40) THEN x END)#29L, sum(CASE WHEN (deptno#23 = 45) THEN 1 END)#30L, sum(CASE WHEN (deptno#23 = 50) THEN 1 END)#35L, sum(null)#31, sum(CASE WHEN (deptno#23 = 70) THEN null ELSE 1 END)#36L, count(CASE WHEN (deptno#23 = 20) THEN 1 END)#32L, count(CASE WHEN (job#25 = CLERK) THEN deptno#23 END)#33L]
+Results [11]: [sum(sal#24)#26 AS sum_sal#12, count(CASE WHEN (job#25 = CLERK) THEN deptno#23 END)#33L AS count_distinct_clerk#13L, sum(CASE WHEN (deptno#23 = 10) THEN sal#24 END)#27 AS sum_sal_d10#14, sum(CASE WHEN (deptno#23 = 20) THEN sal#24 ELSE 0.00 END)#34 AS sum_sal_d20#15, sum(CASE WHEN (deptno#23 = 30) THEN 1 ELSE 0 END)#28L AS count_d30#16L, count(CASE WHEN (deptno#23 = 40) THEN x END)#29L AS count_d40#17L, sum(CASE WHEN (deptno#23 = 45) THEN 1 END)#30L AS count_d45#18L, sum(CASE WHEN (deptno#23 = 50) THEN 1 END)#35L AS count_d50#19L, sum(null)#31 AS sum_null_d60#20, sum(CASE WHEN (deptno#23 = 70) THEN null ELSE 1 END)#36L AS sum_null_d70#21L, count(CASE WHEN (deptno#23 = 20) THEN 1 END)#32L AS count_d20#22L]
+
+(7) AdaptiveSparkPlan
+Output [11]: [sum_sal#12, count_distinct_clerk#13L, sum_sal_d10#14, sum_sal_d20#15, count_d30#16L, count_d40#17L, count_d45#18L, count_d50#19L, sum_null_d60#20, sum_null_d70#21L, count_d20#22L]
+Arguments: isFinalPlan=false
+
+

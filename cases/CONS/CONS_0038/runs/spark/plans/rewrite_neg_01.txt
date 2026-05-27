@@ -1,0 +1,55 @@
+== Physical Plan ==
+AdaptiveSparkPlan (3)
++- Project (2)
+   +- Scan parquet spark_catalog.default.emp (1)
+
+
+(1) Scan parquet spark_catalog.default.emp
+Output [1]: [EMPNO#6L]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/cons_0038_spark_plan_ssh_4x2m/emp]
+ReadSchema: struct<EMPNO:bigint>
+
+(2) Project
+Output [2]: [EMPNO#6L, isnotnull(Subquery subquery#14, [id=#83]) AS D#15]
+Input [1]: [EMPNO#6L]
+
+(3) AdaptiveSparkPlan
+Output [2]: [EMPNO#6L, D#15]
+Arguments: isFinalPlan=false
+
+===== Subqueries =====
+
+Subquery:1 Hosting operator id = 2 Hosting Expression = Subquery subquery#14, [id=#83]
+AdaptiveSparkPlan (8)
++- CollectLimit (7)
+   +- Project (6)
+      +- Filter (5)
+         +- Scan parquet spark_catalog.default.emp (4)
+
+
+(4) Scan parquet spark_catalog.default.emp
+Output [1]: [EMPNO#16L]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/cons_0038_spark_plan_ssh_4x2m/emp]
+PushedFilters: [IsNotNull(EMPNO), LessThan(EMPNO,10)]
+ReadSchema: struct<EMPNO:bigint>
+
+(5) Filter
+Input [1]: [EMPNO#16L]
+Condition : (isnotnull(EMPNO#16L) AND (EMPNO#16L < 10))
+
+(6) Project
+Output [1]: [1 AS col#17]
+Input [1]: [EMPNO#16L]
+
+(7) CollectLimit
+Input [1]: [col#17]
+Arguments: 1
+
+(8) AdaptiveSparkPlan
+Output [1]: [col#17]
+Arguments: isFinalPlan=false
+
+
+

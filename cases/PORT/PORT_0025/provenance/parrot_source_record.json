@@ -1,0 +1,17 @@
+{
+  "case_id": "PORT_0025",
+  "draft_id": "PORT_DRAFT_0028",
+  "source_file_path": "datasets/raw/parrot/PARROT/benchmark/BIRD/mysql_res.json",
+  "source_record_index": 47,
+  "source_sql_field": "mysql",
+  "target_sql_field": "cracksql",
+  "source_record_subset": {
+    "mysql": "SELECT `t1`.`account_id` FROM `loan` AS `t1` INNER JOIN `account` AS `t2` ON `t1`.`account_id` = `t2`.`account_id` WHERE DATE_FORMAT( CAST( `t2`.`date` AS DATETIME ) , '%Y' ) = '1993' AND `t1`.`duration` > 12 ORDER BY `t1`.`amount` DESC LIMIT 1\n",
+    "cracksql": "SELECT \"t1\".\"account_id\" FROM \"loan\" AS \"t1\" INNER JOIN \"account\" AS \"t2\" ON \"t1\".\"account_id\" = \"t2\".\"account_id\" WHERE EXTRACT(YEAR FROM CAST( \"t2\".\"date\" AS TIMESTAMP )) = '1993' AND \"t1\".\"duration\" > 12 ORDER BY \"t1\".\"amount\" DESC LIMIT 1",
+    "result_preview": [
+      {
+        "account_id": 10451
+      }
+    ]
+  }
+}

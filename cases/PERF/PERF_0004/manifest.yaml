@@ -43,6 +43,31 @@ features:
   - aggregate
   - like_predicate
 
+tags:
+  sql_feature:
+    primary: []
+    secondary: []
+  rewrite_opportunity:
+    primary:
+      - join_reorder
+    secondary:
+      - predicate_pushdown
+  plan_operator:
+    present:
+      - scan
+      - filter
+      - join
+      - aggregate
+    delta_relevant: []
+  workload_realism:
+    source_inherited:
+      - realistic_query_style
+    case_specific:
+      - high_join_count
+  portability:
+    confirmed: []
+    suspected: []
+
 status:
   seed_localized: true
   source_frozen: true

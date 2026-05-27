@@ -1,0 +1,62 @@
+== Physical Plan ==
+AdaptiveSparkPlan (10)
++- TakeOrderedAndProject (9)
+   +- Project (8)
+      +- BroadcastHashJoin Inner BuildLeft (7)
+         :- BroadcastExchange (4)
+         :  +- Project (3)
+         :     +- Filter (2)
+         :        +- Scan parquet spark_catalog.port_0011_spark_plan_collection.budget (1)
+         +- Filter (6)
+            +- Scan parquet spark_catalog.port_0011_spark_plan_collection.event (5)
+
+
+(1) Scan parquet spark_catalog.port_0011_spark_plan_collection.budget
+Output [3]: [link_to_event#20, event_status#21, remaining#22]
+Batched: true
+Location: InMemoryFileIndex [file:/home/tianci_gao/code/sql-rewrite-bench/cases/PORT/PORT_0011/runs/spark/plans/_tmp_spark_plan_collection/warehouse/port_0011_spark_plan_collection.db/budget]
+PushedFilters: [IsNotNull(event_status), IsNotNull(remaining), EqualTo(event_status,Closed), LessThan(remaining,0.0), IsNotNull(link_to_event)]
+ReadSchema: struct<link_to_event:int,event_status:string,remaining:double>
+
+(2) Filter
+Input [3]: [link_to_event#20, event_status#21, remaining#22]
+Condition : ((((isnotnull(event_status#21) AND isnotnull(remaining#22)) AND (event_status#21 = Closed)) AND (remaining#22 < 0.0)) AND isnotnull(link_to_event#20))
+
+(3) Project
+Output [2]: [link_to_event#20, remaining#22]
+Input [3]: [link_to_event#20, event_status#21, remaining#22]
+
+(4) BroadcastExchange
+Input [2]: [link_to_event#20, remaining#22]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, true] as bigint)),false), [plan_id=103]
+
+(5) Scan parquet spark_catalog.port_0011_spark_plan_collection.event
+Output [2]: [event_id#23, event_name#24]
+Batched: true
+Location: InMemoryFileIndex [file:/home/tianci_gao/code/sql-rewrite-bench/cases/PORT/PORT_0011/runs/spark/plans/_tmp_spark_plan_collection/warehouse/port_0011_spark_plan_collection.db/event]
+PushedFilters: [IsNotNull(event_id)]
+ReadSchema: struct<event_id:int,event_name:string>
+
+(6) Filter
+Input [2]: [event_id#23, event_name#24]
+Condition : isnotnull(event_id#23)
+
+(7) BroadcastHashJoin
+Left keys [1]: [link_to_event#20]
+Right keys [1]: [event_id#23]
+Join type: Inner
+Join condition: None
+
+(8) Project
+Output [2]: [event_name#24, remaining#22]
+Input [4]: [link_to_event#20, remaining#22, event_id#23, event_name#24]
+
+(9) TakeOrderedAndProject
+Input [2]: [event_name#24, remaining#22]
+Arguments: 1, [remaining#22 DESC NULLS LAST], [event_name#24]
+
+(10) AdaptiveSparkPlan
+Output [1]: [event_name#24]
+Arguments: isFinalPlan=false
+
+

@@ -1,0 +1,163 @@
+== Physical Plan ==
+AdaptiveSparkPlan (26)
++- SortAggregate (25)
+   +- Exchange (24)
+      +- SortAggregate (23)
+         +- Project (22)
+            +- BroadcastHashJoin Cross BuildRight (21)
+               :- Project (17)
+               :  +- BroadcastHashJoin Inner BuildRight (16)
+               :     :- Project (11)
+               :     :  +- BroadcastHashJoin Inner BuildRight (10)
+               :     :     :- BroadcastHashJoin Inner BuildLeft (6)
+               :     :     :  :- BroadcastExchange (3)
+               :     :     :  :  +- Filter (2)
+               :     :     :  :     +- Scan parquet spark_catalog.default.cast_info (1)
+               :     :     :  +- Filter (5)
+               :     :     :     +- Scan parquet spark_catalog.default.movie_keyword (4)
+               :     :     +- BroadcastExchange (9)
+               :     :        +- Filter (8)
+               :     :           +- Scan parquet spark_catalog.default.keyword (7)
+               :     +- BroadcastExchange (15)
+               :        +- Project (14)
+               :           +- Filter (13)
+               :              +- Scan parquet spark_catalog.default.title (12)
+               +- BroadcastExchange (20)
+                  +- Filter (19)
+                     +- Scan parquet spark_catalog.default.name (18)
+
+
+(1) Scan parquet spark_catalog.default.cast_info
+Output [2]: [movie_id#157, person_id#158]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/perf_0083_spark_plan_k66wozat/cast_info]
+PushedFilters: [IsNotNull(movie_id), IsNotNull(person_id)]
+ReadSchema: struct<movie_id:int,person_id:int>
+
+(2) Filter
+Input [2]: [movie_id#157, person_id#158]
+Condition : (isnotnull(movie_id#157) AND isnotnull(person_id#158))
+
+(3) BroadcastExchange
+Input [2]: [movie_id#157, person_id#158]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, false] as bigint)),false), [plan_id=357]
+
+(4) Scan parquet spark_catalog.default.movie_keyword
+Output [2]: [keyword_id#162, movie_id#163]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/perf_0083_spark_plan_k66wozat/movie_keyword]
+PushedFilters: [IsNotNull(movie_id), IsNotNull(keyword_id)]
+ReadSchema: struct<keyword_id:int,movie_id:int>
+
+(5) Filter
+Input [2]: [keyword_id#162, movie_id#163]
+Condition : (isnotnull(movie_id#163) AND isnotnull(keyword_id#162))
+
+(6) BroadcastHashJoin
+Left keys [1]: [movie_id#157]
+Right keys [1]: [movie_id#163]
+Join type: Inner
+Join condition: None
+
+(7) Scan parquet spark_catalog.default.keyword
+Output [2]: [id#159, keyword#160]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/perf_0083_spark_plan_k66wozat/keyword]
+PushedFilters: [IsNotNull(keyword), EqualTo(keyword,marvel-cinematic-universe), IsNotNull(id)]
+ReadSchema: struct<id:int,keyword:string>
+
+(8) Filter
+Input [2]: [id#159, keyword#160]
+Condition : ((isnotnull(keyword#160) AND (keyword#160 = marvel-cinematic-universe)) AND isnotnull(id#159))
+
+(9) BroadcastExchange
+Input [2]: [id#159, keyword#160]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, false] as bigint)),false), [plan_id=360]
+
+(10) BroadcastHashJoin
+Left keys [1]: [keyword_id#162]
+Right keys [1]: [id#159]
+Join type: Inner
+Join condition: None
+
+(11) Project
+Output [4]: [movie_id#157, person_id#158, movie_id#163, keyword#160]
+Input [6]: [movie_id#157, person_id#158, keyword_id#162, movie_id#163, id#159, keyword#160]
+
+(12) Scan parquet spark_catalog.default.title
+Output [3]: [id#166, production_year#167, title#168]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/perf_0083_spark_plan_k66wozat/title]
+PushedFilters: [IsNotNull(production_year), GreaterThan(production_year,2010), IsNotNull(id)]
+ReadSchema: struct<id:int,production_year:int,title:string>
+
+(13) Filter
+Input [3]: [id#166, production_year#167, title#168]
+Condition : ((isnotnull(production_year#167) AND (production_year#167 > 2010)) AND isnotnull(id#166))
+
+(14) Project
+Output [2]: [id#166, title#168]
+Input [3]: [id#166, production_year#167, title#168]
+
+(15) BroadcastExchange
+Input [2]: [id#166, title#168]
+Arguments: HashedRelationBroadcastMode(List((shiftleft(cast(input[0, int, true] as bigint), 32) | (cast(input[0, int, true] as bigint) & 4294967295))),false), [plan_id=364]
+
+(16) BroadcastHashJoin
+Left keys [2]: [movie_id#163, movie_id#157]
+Right keys [2]: [id#166, id#166]
+Join type: Inner
+Join condition: None
+
+(17) Project
+Output [3]: [person_id#158, keyword#160, title#168]
+Input [6]: [movie_id#157, person_id#158, movie_id#163, keyword#160, id#166, title#168]
+
+(18) Scan parquet spark_catalog.default.name
+Output [2]: [id#164, name#165]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/perf_0083_spark_plan_k66wozat/name]
+PushedFilters: [IsNotNull(name), IsNotNull(id)]
+ReadSchema: struct<id:int,name:string>
+
+(19) Filter
+Input [2]: [id#164, name#165]
+Condition : ((isnotnull(name#165) AND name#165 LIKE %Downey%Robert%) AND isnotnull(id#164))
+
+(20) BroadcastExchange
+Input [2]: [id#164, name#165]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, false] as bigint)),false), [plan_id=368]
+
+(21) BroadcastHashJoin
+Left keys [1]: [person_id#158]
+Right keys [1]: [id#164]
+Join type: Cross
+Join condition: None
+
+(22) Project
+Output [3]: [keyword#160, title#168, name#165]
+Input [5]: [person_id#158, keyword#160, title#168, id#164, name#165]
+
+(23) SortAggregate
+Input [3]: [keyword#160, title#168, name#165]
+Keys: []
+Functions [3]: [partial_min(keyword#160), partial_min(name#165), partial_min(title#168)]
+Aggregate Attributes [3]: [min#189, min#190, min#191]
+Results [3]: [min#192, min#193, min#194]
+
+(24) Exchange
+Input [3]: [min#192, min#193, min#194]
+Arguments: SinglePartition, ENSURE_REQUIREMENTS, [plan_id=373]
+
+(25) SortAggregate
+Input [3]: [min#192, min#193, min#194]
+Keys: []
+Functions [3]: [min(keyword#160), min(name#165), min(title#168)]
+Aggregate Attributes [3]: [min(keyword#160)#186, min(name#165)#187, min(title#168)#188]
+Results [3]: [min(keyword#160)#186 AS movie_keyword#183, min(name#165)#187 AS actor_name#184, min(title#168)#188 AS marvel_movie#185]
+
+(26) AdaptiveSparkPlan
+Output [3]: [movie_keyword#183, actor_name#184, marvel_movie#185]
+Arguments: isFinalPlan=false
+
+

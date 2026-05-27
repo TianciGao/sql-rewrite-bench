@@ -1,0 +1,80 @@
+{
+  "query_block": {
+    "select_id": 1,
+    "cost_info": {
+      "query_cost": "0.45"
+    },
+    "table": {
+      "table_name": "E1",
+      "access_type": "ALL",
+      "rows_examined_per_scan": 2,
+      "rows_produced_per_join": 2,
+      "filtered": "100.00",
+      "cost_info": {
+        "read_cost": "0.25",
+        "eval_cost": "0.20",
+        "prefix_cost": "0.45",
+        "data_read_per_join": "576"
+      },
+      "used_columns": [
+        "empno",
+        "sal",
+        "comm"
+      ],
+      "attached_condition": "(`bench`.`E1`.`comm` > (/* select#2 */ select count(0) from `bench`.`bonus` `B` join `bench`.`dept` `D` where ((`bench`.`D`.`deptno` = 10) and (`bench`.`B`.`sal` > `bench`.`E1`.`sal`))))",
+      "attached_subqueries": [
+        {
+          "dependent": true,
+          "cacheable": false,
+          "query_block": {
+            "select_id": 2,
+            "cost_info": {
+              "query_cost": "1.00"
+            },
+            "nested_loop": [
+              {
+                "table": {
+                  "table_name": "B",
+                  "access_type": "ALL",
+                  "rows_examined_per_scan": 2,
+                  "rows_produced_per_join": 1,
+                  "filtered": "50.00",
+                  "cost_info": {
+                    "read_cost": "0.25",
+                    "eval_cost": "0.10",
+                    "prefix_cost": "0.45",
+                    "data_read_per_join": "272"
+                  },
+                  "used_columns": [
+                    "sal"
+                  ],
+                  "attached_condition": "(`bench`.`B`.`sal` > `bench`.`E1`.`sal`)"
+                }
+              },
+              {
+                "table": {
+                  "table_name": "D",
+                  "access_type": "ALL",
+                  "rows_examined_per_scan": 3,
+                  "rows_produced_per_join": 1,
+                  "filtered": "33.33",
+                  "using_join_buffer": "hash join",
+                  "cost_info": {
+                    "read_cost": "0.45",
+                    "eval_cost": "0.10",
+                    "prefix_cost": "1.00",
+                    "data_read_per_join": "264"
+                  },
+                  "used_columns": [
+                    "deptno"
+                  ],
+                  "attached_condition": "(`bench`.`D`.`deptno` = 10)"
+                }
+              }
+            ]
+          }
+        }
+      ]
+    }
+  }
+}

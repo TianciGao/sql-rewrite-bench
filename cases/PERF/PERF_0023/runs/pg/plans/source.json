@@ -1,0 +1,60 @@
+[
+  {
+    "Plan": {
+      "Node Type": "Aggregate",
+      "Strategy": "Plain",
+      "Partial Mode": "Simple",
+      "Parallel Aware": false,
+      "Async Capable": false,
+      "Startup Cost": 30.87,
+      "Total Cost": 30.88,
+      "Plan Rows": 1,
+      "Plan Width": 32,
+      "Plans": [
+        {
+          "Node Type": "Nested Loop",
+          "Parent Relationship": "Outer",
+          "Parallel Aware": false,
+          "Async Capable": false,
+          "Join Type": "Inner",
+          "Startup Cost": 0.15,
+          "Total Cost": 30.86,
+          "Plan Rows": 1,
+          "Plan Width": 36,
+          "Inner Unique": true,
+          "Plans": [
+            {
+              "Node Type": "Seq Scan",
+              "Parent Relationship": "Outer",
+              "Parallel Aware": false,
+              "Async Capable": false,
+              "Relation Name": "lineitem",
+              "Alias": "lineitem",
+              "Startup Cost": 0.00,
+              "Total Cost": 22.60,
+              "Plan Rows": 1,
+              "Plan Width": 58,
+              "Filter": "(((l_shipmode)::text = ANY ('{AIR,\"AIR REG\"}'::text[])) AND ((l_shipinstruct)::text = 'DELIVER IN PERSON'::text) AND (((l_quantity >= '5'::numeric) AND (l_quantity <= '15'::numeric)) OR ((l_quantity >= '17'::numeric) AND (l_quantity <= '27'::numeric)) OR ((l_quantity >= '29'::numeric) AND (l_quantity <= '39'::numeric))))"
+            },
+            {
+              "Node Type": "Index Scan",
+              "Parent Relationship": "Inner",
+              "Parallel Aware": false,
+              "Async Capable": false,
+              "Scan Direction": "Forward",
+              "Index Name": "part_pkey",
+              "Relation Name": "part",
+              "Alias": "part",
+              "Startup Cost": 0.15,
+              "Total Cost": 8.25,
+              "Plan Rows": 1,
+              "Plan Width": 84,
+              "Index Cond": "(p_partkey = lineitem.l_partkey)",
+              "Filter": "((p_size >= 1) AND ((((p_brand)::text = 'Brand#14'::text) AND ((p_container)::text = ANY ('{\"SM CASE\",\"SM BOX\",\"SM PACK\",\"SM PKG\"}'::text[])) AND (p_size <= 5)) OR (((p_brand)::text = 'Brand#13'::text) AND ((p_container)::text = ANY ('{\"MED BAG\",\"MED BOX\",\"MED PKG\",\"MED PACK\"}'::text[])) AND (p_size <= 10)) OR (((p_brand)::text = 'Brand#22'::text) AND ((p_container)::text = ANY ('{\"LG CASE\",\"LG BOX\",\"LG PACK\",\"LG PKG\"}'::text[])) AND (p_size <= 15))) AND ((((p_brand)::text = 'Brand#14'::text) AND ((p_container)::text = ANY ('{\"SM CASE\",\"SM BOX\",\"SM PACK\",\"SM PKG\"}'::text[])) AND (lineitem.l_quantity >= '5'::numeric) AND (lineitem.l_quantity <= '15'::numeric) AND (p_size <= 5)) OR (((p_brand)::text = 'Brand#13'::text) AND ((p_container)::text = ANY ('{\"MED BAG\",\"MED BOX\",\"MED PKG\",\"MED PACK\"}'::text[])) AND (lineitem.l_quantity >= '17'::numeric) AND (lineitem.l_quantity <= '27'::numeric) AND (p_size <= 10)) OR (((p_brand)::text = 'Brand#22'::text) AND ((p_container)::text = ANY ('{\"LG CASE\",\"LG BOX\",\"LG PACK\",\"LG PKG\"}'::text[])) AND (lineitem.l_quantity >= '29'::numeric) AND (lineitem.l_quantity <= '39'::numeric) AND (p_size <= 15))))"
+            }
+          ]
+        }
+      ]
+    }
+  }
+]

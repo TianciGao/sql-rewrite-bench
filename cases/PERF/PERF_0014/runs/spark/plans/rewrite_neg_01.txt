@@ -1,0 +1,409 @@
+== Physical Plan ==
+AdaptiveSparkPlan (71)
++- == Final Plan ==
+   ResultQueryStage (44)
+   +- * HashAggregate (43)
+      +- AQEShuffleRead (42)
+         +- ShuffleQueryStage (41), Statistics(sizeInBytes=80.0 B, rowCount=1)
+            +- Exchange (40)
+               +- * HashAggregate (39)
+                  +- * Project (38)
+                     +- * BroadcastHashJoin Inner BuildRight (37)
+                        :- * Project (31)
+                        :  +- * BroadcastHashJoin Inner BuildRight (30)
+                        :     :- * Project (24)
+                        :     :  +- * BroadcastHashJoin Inner BuildRight (23)
+                        :     :     :- * Project (17)
+                        :     :     :  +- * BroadcastHashJoin Inner BuildRight (16)
+                        :     :     :     :- * Project (10)
+                        :     :     :     :  +- * BroadcastHashJoin Inner BuildLeft (9)
+                        :     :     :     :     :- BroadcastQueryStage (5), Statistics(sizeInBytes=1024.8 KiB, rowCount=2)
+                        :     :     :     :     :  +- BroadcastExchange (4)
+                        :     :     :     :     :     +- * Filter (3)
+                        :     :     :     :     :        +- * ColumnarToRow (2)
+                        :     :     :     :     :           +- Scan parquet spark_catalog.default.supplier (1)
+                        :     :     :     :     +- * Filter (8)
+                        :     :     :     :        +- * ColumnarToRow (7)
+                        :     :     :     :           +- Scan parquet spark_catalog.default.lineitem (6)
+                        :     :     :     +- BroadcastQueryStage (15), Statistics(sizeInBytes=1031.8 KiB, rowCount=2)
+                        :     :     :        +- BroadcastExchange (14)
+                        :     :     :           +- * Filter (13)
+                        :     :     :              +- * ColumnarToRow (12)
+                        :     :     :                 +- Scan parquet spark_catalog.default.orders (11)
+                        :     :     +- BroadcastQueryStage (22), Statistics(sizeInBytes=1024.1 KiB, rowCount=2)
+                        :     :        +- BroadcastExchange (21)
+                        :     :           +- * Filter (20)
+                        :     :              +- * ColumnarToRow (19)
+                        :     :                 +- Scan parquet spark_catalog.default.customer (18)
+                        :     +- BroadcastQueryStage (29), Statistics(sizeInBytes=1024.0 KiB, rowCount=1)
+                        :        +- BroadcastExchange (28)
+                        :           +- * Filter (27)
+                        :              +- * ColumnarToRow (26)
+                        :                 +- Scan parquet spark_catalog.default.nation (25)
+                        +- BroadcastQueryStage (36), Statistics(sizeInBytes=1024.0 KiB, rowCount=1)
+                           +- BroadcastExchange (35)
+                              +- * Filter (34)
+                                 +- * ColumnarToRow (33)
+                                    +- Scan parquet spark_catalog.default.nation (32)
++- == Initial Plan ==
+   Sort (70)
+   +- Exchange (69)
+      +- HashAggregate (68)
+         +- Exchange (67)
+            +- HashAggregate (66)
+               +- Project (65)
+                  +- BroadcastHashJoin Inner BuildRight (64)
+                     :- Project (61)
+                     :  +- BroadcastHashJoin Inner BuildRight (60)
+                     :     :- Project (57)
+                     :     :  +- BroadcastHashJoin Inner BuildRight (56)
+                     :     :     :- Project (53)
+                     :     :     :  +- BroadcastHashJoin Inner BuildRight (52)
+                     :     :     :     :- Project (49)
+                     :     :     :     :  +- BroadcastHashJoin Inner BuildLeft (48)
+                     :     :     :     :     :- BroadcastExchange (46)
+                     :     :     :     :     :  +- Filter (45)
+                     :     :     :     :     :     +- Scan parquet spark_catalog.default.supplier (1)
+                     :     :     :     :     +- Filter (47)
+                     :     :     :     :        +- Scan parquet spark_catalog.default.lineitem (6)
+                     :     :     :     +- BroadcastExchange (51)
+                     :     :     :        +- Filter (50)
+                     :     :     :           +- Scan parquet spark_catalog.default.orders (11)
+                     :     :     +- BroadcastExchange (55)
+                     :     :        +- Filter (54)
+                     :     :           +- Scan parquet spark_catalog.default.customer (18)
+                     :     +- BroadcastExchange (59)
+                     :        +- Filter (58)
+                     :           +- Scan parquet spark_catalog.default.nation (25)
+                     +- BroadcastExchange (63)
+                        +- Filter (62)
+                           +- Scan parquet spark_catalog.default.nation (32)
+
+
+(1) Scan parquet spark_catalog.default.supplier
+Output [2]: [s_suppkey#1178, s_nationkey#1179]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/sql_rewrite_spark_warehouse/supplier]
+PushedFilters: [IsNotNull(s_suppkey), IsNotNull(s_nationkey)]
+ReadSchema: struct<s_suppkey:int,s_nationkey:int>
+
+(2) ColumnarToRow [codegen id : 1]
+Input [2]: [s_suppkey#1178, s_nationkey#1179]
+
+(3) Filter [codegen id : 1]
+Input [2]: [s_suppkey#1178, s_nationkey#1179]
+Condition : (isnotnull(s_suppkey#1178) AND isnotnull(s_nationkey#1179))
+
+(4) BroadcastExchange
+Input [2]: [s_suppkey#1178, s_nationkey#1179]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, false] as bigint)),false), [plan_id=9883]
+
+(5) BroadcastQueryStage
+Output [2]: [s_suppkey#1178, s_nationkey#1179]
+Arguments: 0
+
+(6) Scan parquet spark_catalog.default.lineitem
+Output [5]: [l_orderkey#1180, l_suppkey#1181, l_shipdate#1182, l_extendedprice#1183, l_discount#1184]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/sql_rewrite_spark_warehouse/lineitem]
+PushedFilters: [IsNotNull(l_shipdate), GreaterThanOrEqual(l_shipdate,1995-01-01), LessThanOrEqual(l_shipdate,1996-12-31), IsNotNull(l_suppkey), IsNotNull(l_orderkey)]
+ReadSchema: struct<l_orderkey:int,l_suppkey:int,l_shipdate:date,l_extendedprice:decimal(15,2),l_discount:decimal(15,2)>
+
+(7) ColumnarToRow
+Input [5]: [l_orderkey#1180, l_suppkey#1181, l_shipdate#1182, l_extendedprice#1183, l_discount#1184]
+
+(8) Filter
+Input [5]: [l_orderkey#1180, l_suppkey#1181, l_shipdate#1182, l_extendedprice#1183, l_discount#1184]
+Condition : ((((isnotnull(l_shipdate#1182) AND (l_shipdate#1182 >= 1995-01-01)) AND (l_shipdate#1182 <= 1996-12-31)) AND isnotnull(l_suppkey#1181)) AND isnotnull(l_orderkey#1180))
+
+(9) BroadcastHashJoin [codegen id : 6]
+Left keys [1]: [s_suppkey#1178]
+Right keys [1]: [l_suppkey#1181]
+Join type: Inner
+Join condition: None
+
+(10) Project [codegen id : 6]
+Output [5]: [s_nationkey#1179, l_orderkey#1180, l_shipdate#1182, l_extendedprice#1183, l_discount#1184]
+Input [7]: [s_suppkey#1178, s_nationkey#1179, l_orderkey#1180, l_suppkey#1181, l_shipdate#1182, l_extendedprice#1183, l_discount#1184]
+
+(11) Scan parquet spark_catalog.default.orders
+Output [2]: [o_orderkey#1185, o_custkey#1186]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/sql_rewrite_spark_warehouse/orders]
+PushedFilters: [IsNotNull(o_orderkey), IsNotNull(o_custkey)]
+ReadSchema: struct<o_orderkey:int,o_custkey:int>
+
+(12) ColumnarToRow [codegen id : 2]
+Input [2]: [o_orderkey#1185, o_custkey#1186]
+
+(13) Filter [codegen id : 2]
+Input [2]: [o_orderkey#1185, o_custkey#1186]
+Condition : (isnotnull(o_orderkey#1185) AND isnotnull(o_custkey#1186))
+
+(14) BroadcastExchange
+Input [2]: [o_orderkey#1185, o_custkey#1186]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, false] as bigint)),false), [plan_id=9900]
+
+(15) BroadcastQueryStage
+Output [2]: [o_orderkey#1185, o_custkey#1186]
+Arguments: 1
+
+(16) BroadcastHashJoin [codegen id : 6]
+Left keys [1]: [l_orderkey#1180]
+Right keys [1]: [o_orderkey#1185]
+Join type: Inner
+Join condition: None
+
+(17) Project [codegen id : 6]
+Output [5]: [s_nationkey#1179, l_shipdate#1182, l_extendedprice#1183, l_discount#1184, o_custkey#1186]
+Input [7]: [s_nationkey#1179, l_orderkey#1180, l_shipdate#1182, l_extendedprice#1183, l_discount#1184, o_orderkey#1185, o_custkey#1186]
+
+(18) Scan parquet spark_catalog.default.customer
+Output [2]: [c_custkey#1187, c_nationkey#1188]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/sql_rewrite_spark_warehouse/customer]
+PushedFilters: [IsNotNull(c_custkey), IsNotNull(c_nationkey)]
+ReadSchema: struct<c_custkey:int,c_nationkey:int>
+
+(19) ColumnarToRow [codegen id : 3]
+Input [2]: [c_custkey#1187, c_nationkey#1188]
+
+(20) Filter [codegen id : 3]
+Input [2]: [c_custkey#1187, c_nationkey#1188]
+Condition : (isnotnull(c_custkey#1187) AND isnotnull(c_nationkey#1188))
+
+(21) BroadcastExchange
+Input [2]: [c_custkey#1187, c_nationkey#1188]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, false] as bigint)),false), [plan_id=9917]
+
+(22) BroadcastQueryStage
+Output [2]: [c_custkey#1187, c_nationkey#1188]
+Arguments: 2
+
+(23) BroadcastHashJoin [codegen id : 6]
+Left keys [1]: [o_custkey#1186]
+Right keys [1]: [c_custkey#1187]
+Join type: Inner
+Join condition: None
+
+(24) Project [codegen id : 6]
+Output [5]: [s_nationkey#1179, l_shipdate#1182, l_extendedprice#1183, l_discount#1184, c_nationkey#1188]
+Input [7]: [s_nationkey#1179, l_shipdate#1182, l_extendedprice#1183, l_discount#1184, o_custkey#1186, c_custkey#1187, c_nationkey#1188]
+
+(25) Scan parquet spark_catalog.default.nation
+Output [2]: [n_nationkey#1189, n_name#1190]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/sql_rewrite_spark_warehouse/nation]
+PushedFilters: [IsNotNull(n_name), EqualTo(n_name,BRAZIL), IsNotNull(n_nationkey)]
+ReadSchema: struct<n_nationkey:int,n_name:string>
+
+(26) ColumnarToRow [codegen id : 4]
+Input [2]: [n_nationkey#1189, n_name#1190]
+
+(27) Filter [codegen id : 4]
+Input [2]: [n_nationkey#1189, n_name#1190]
+Condition : ((isnotnull(n_name#1190) AND (n_name#1190 = BRAZIL)) AND isnotnull(n_nationkey#1189))
+
+(28) BroadcastExchange
+Input [2]: [n_nationkey#1189, n_name#1190]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, false] as bigint)),false), [plan_id=9934]
+
+(29) BroadcastQueryStage
+Output [2]: [n_nationkey#1189, n_name#1190]
+Arguments: 3
+
+(30) BroadcastHashJoin [codegen id : 6]
+Left keys [1]: [s_nationkey#1179]
+Right keys [1]: [n_nationkey#1189]
+Join type: Inner
+Join condition: None
+
+(31) Project [codegen id : 6]
+Output [5]: [l_shipdate#1182, l_extendedprice#1183, l_discount#1184, c_nationkey#1188, n_name#1190]
+Input [7]: [s_nationkey#1179, l_shipdate#1182, l_extendedprice#1183, l_discount#1184, c_nationkey#1188, n_nationkey#1189, n_name#1190]
+
+(32) Scan parquet spark_catalog.default.nation
+Output [2]: [n_nationkey#1242, n_name#1243]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/sql_rewrite_spark_warehouse/nation]
+PushedFilters: [IsNotNull(n_name), EqualTo(n_name,MOROCCO), IsNotNull(n_nationkey)]
+ReadSchema: struct<n_nationkey:int,n_name:string>
+
+(33) ColumnarToRow [codegen id : 5]
+Input [2]: [n_nationkey#1242, n_name#1243]
+
+(34) Filter [codegen id : 5]
+Input [2]: [n_nationkey#1242, n_name#1243]
+Condition : ((isnotnull(n_name#1243) AND (n_name#1243 = MOROCCO)) AND isnotnull(n_nationkey#1242))
+
+(35) BroadcastExchange
+Input [2]: [n_nationkey#1242, n_name#1243]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, false] as bigint)),false), [plan_id=9951]
+
+(36) BroadcastQueryStage
+Output [2]: [n_nationkey#1242, n_name#1243]
+Arguments: 4
+
+(37) BroadcastHashJoin [codegen id : 6]
+Left keys [1]: [c_nationkey#1188]
+Right keys [1]: [n_nationkey#1242]
+Join type: Inner
+Join condition: None
+
+(38) Project [codegen id : 6]
+Output [4]: [n_name#1190 AS supp_nation#1237, n_name#1243 AS cust_nation#1238, year(l_shipdate#1182) AS l_year#1239, (l_extendedprice#1183 * (1 - l_discount#1184)) AS volume#1240]
+Input [7]: [l_shipdate#1182, l_extendedprice#1183, l_discount#1184, c_nationkey#1188, n_name#1190, n_nationkey#1242, n_name#1243]
+
+(39) HashAggregate [codegen id : 6]
+Input [4]: [supp_nation#1237, cust_nation#1238, l_year#1239, volume#1240]
+Keys [3]: [supp_nation#1237, cust_nation#1238, l_year#1239]
+Functions [1]: [partial_sum(volume#1240)]
+Aggregate Attributes [2]: [sum#1246, isEmpty#1247]
+Results [5]: [supp_nation#1237, cust_nation#1238, l_year#1239, sum#1248, isEmpty#1249]
+
+(40) Exchange
+Input [5]: [supp_nation#1237, cust_nation#1238, l_year#1239, sum#1248, isEmpty#1249]
+Arguments: hashpartitioning(supp_nation#1237, cust_nation#1238, l_year#1239, 8), ENSURE_REQUIREMENTS, [plan_id=10308]
+
+(41) ShuffleQueryStage
+Output [5]: [supp_nation#1237, cust_nation#1238, l_year#1239, sum#1248, isEmpty#1249]
+Arguments: 5
+
+(42) AQEShuffleRead
+Input [5]: [supp_nation#1237, cust_nation#1238, l_year#1239, sum#1248, isEmpty#1249]
+Arguments: coalesced
+
+(43) HashAggregate [codegen id : 7]
+Input [5]: [supp_nation#1237, cust_nation#1238, l_year#1239, sum#1248, isEmpty#1249]
+Keys [3]: [supp_nation#1237, cust_nation#1238, l_year#1239]
+Functions [1]: [sum(volume#1240)]
+Aggregate Attributes [1]: [sum(volume#1240)#1245]
+Results [4]: [supp_nation#1237, cust_nation#1238, l_year#1239, sum(volume#1240)#1245 AS revenue#1241]
+
+(44) ResultQueryStage
+Output [4]: [supp_nation#1237, cust_nation#1238, l_year#1239, revenue#1241]
+Arguments: 6
+
+(45) Filter
+Input [2]: [s_suppkey#1178, s_nationkey#1179]
+Condition : (isnotnull(s_suppkey#1178) AND isnotnull(s_nationkey#1179))
+
+(46) BroadcastExchange
+Input [2]: [s_suppkey#1178, s_nationkey#1179]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, false] as bigint)),false), [plan_id=9799]
+
+(47) Filter
+Input [5]: [l_orderkey#1180, l_suppkey#1181, l_shipdate#1182, l_extendedprice#1183, l_discount#1184]
+Condition : ((((isnotnull(l_shipdate#1182) AND (l_shipdate#1182 >= 1995-01-01)) AND (l_shipdate#1182 <= 1996-12-31)) AND isnotnull(l_suppkey#1181)) AND isnotnull(l_orderkey#1180))
+
+(48) BroadcastHashJoin
+Left keys [1]: [s_suppkey#1178]
+Right keys [1]: [l_suppkey#1181]
+Join type: Inner
+Join condition: None
+
+(49) Project
+Output [5]: [s_nationkey#1179, l_orderkey#1180, l_shipdate#1182, l_extendedprice#1183, l_discount#1184]
+Input [7]: [s_suppkey#1178, s_nationkey#1179, l_orderkey#1180, l_suppkey#1181, l_shipdate#1182, l_extendedprice#1183, l_discount#1184]
+
+(50) Filter
+Input [2]: [o_orderkey#1185, o_custkey#1186]
+Condition : (isnotnull(o_orderkey#1185) AND isnotnull(o_custkey#1186))
+
+(51) BroadcastExchange
+Input [2]: [o_orderkey#1185, o_custkey#1186]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, false] as bigint)),false), [plan_id=9803]
+
+(52) BroadcastHashJoin
+Left keys [1]: [l_orderkey#1180]
+Right keys [1]: [o_orderkey#1185]
+Join type: Inner
+Join condition: None
+
+(53) Project
+Output [5]: [s_nationkey#1179, l_shipdate#1182, l_extendedprice#1183, l_discount#1184, o_custkey#1186]
+Input [7]: [s_nationkey#1179, l_orderkey#1180, l_shipdate#1182, l_extendedprice#1183, l_discount#1184, o_orderkey#1185, o_custkey#1186]
+
+(54) Filter
+Input [2]: [c_custkey#1187, c_nationkey#1188]
+Condition : (isnotnull(c_custkey#1187) AND isnotnull(c_nationkey#1188))
+
+(55) BroadcastExchange
+Input [2]: [c_custkey#1187, c_nationkey#1188]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, false] as bigint)),false), [plan_id=9807]
+
+(56) BroadcastHashJoin
+Left keys [1]: [o_custkey#1186]
+Right keys [1]: [c_custkey#1187]
+Join type: Inner
+Join condition: None
+
+(57) Project
+Output [5]: [s_nationkey#1179, l_shipdate#1182, l_extendedprice#1183, l_discount#1184, c_nationkey#1188]
+Input [7]: [s_nationkey#1179, l_shipdate#1182, l_extendedprice#1183, l_discount#1184, o_custkey#1186, c_custkey#1187, c_nationkey#1188]
+
+(58) Filter
+Input [2]: [n_nationkey#1189, n_name#1190]
+Condition : ((isnotnull(n_name#1190) AND (n_name#1190 = BRAZIL)) AND isnotnull(n_nationkey#1189))
+
+(59) BroadcastExchange
+Input [2]: [n_nationkey#1189, n_name#1190]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, false] as bigint)),false), [plan_id=9811]
+
+(60) BroadcastHashJoin
+Left keys [1]: [s_nationkey#1179]
+Right keys [1]: [n_nationkey#1189]
+Join type: Inner
+Join condition: None
+
+(61) Project
+Output [5]: [l_shipdate#1182, l_extendedprice#1183, l_discount#1184, c_nationkey#1188, n_name#1190]
+Input [7]: [s_nationkey#1179, l_shipdate#1182, l_extendedprice#1183, l_discount#1184, c_nationkey#1188, n_nationkey#1189, n_name#1190]
+
+(62) Filter
+Input [2]: [n_nationkey#1242, n_name#1243]
+Condition : ((isnotnull(n_name#1243) AND (n_name#1243 = MOROCCO)) AND isnotnull(n_nationkey#1242))
+
+(63) BroadcastExchange
+Input [2]: [n_nationkey#1242, n_name#1243]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, false] as bigint)),false), [plan_id=9815]
+
+(64) BroadcastHashJoin
+Left keys [1]: [c_nationkey#1188]
+Right keys [1]: [n_nationkey#1242]
+Join type: Inner
+Join condition: None
+
+(65) Project
+Output [4]: [n_name#1190 AS supp_nation#1237, n_name#1243 AS cust_nation#1238, year(l_shipdate#1182) AS l_year#1239, (l_extendedprice#1183 * (1 - l_discount#1184)) AS volume#1240]
+Input [7]: [l_shipdate#1182, l_extendedprice#1183, l_discount#1184, c_nationkey#1188, n_name#1190, n_nationkey#1242, n_name#1243]
+
+(66) HashAggregate
+Input [4]: [supp_nation#1237, cust_nation#1238, l_year#1239, volume#1240]
+Keys [3]: [supp_nation#1237, cust_nation#1238, l_year#1239]
+Functions [1]: [partial_sum(volume#1240)]
+Aggregate Attributes [2]: [sum#1246, isEmpty#1247]
+Results [5]: [supp_nation#1237, cust_nation#1238, l_year#1239, sum#1248, isEmpty#1249]
+
+(67) Exchange
+Input [5]: [supp_nation#1237, cust_nation#1238, l_year#1239, sum#1248, isEmpty#1249]
+Arguments: hashpartitioning(supp_nation#1237, cust_nation#1238, l_year#1239, 8), ENSURE_REQUIREMENTS, [plan_id=9820]
+
+(68) HashAggregate
+Input [5]: [supp_nation#1237, cust_nation#1238, l_year#1239, sum#1248, isEmpty#1249]
+Keys [3]: [supp_nation#1237, cust_nation#1238, l_year#1239]
+Functions [1]: [sum(volume#1240)]
+Aggregate Attributes [1]: [sum(volume#1240)#1245]
+Results [4]: [supp_nation#1237, cust_nation#1238, l_year#1239, sum(volume#1240)#1245 AS revenue#1241]
+
+(69) Exchange
+Input [4]: [supp_nation#1237, cust_nation#1238, l_year#1239, revenue#1241]
+Arguments: rangepartitioning(supp_nation#1237 ASC NULLS FIRST, cust_nation#1238 ASC NULLS FIRST, l_year#1239 ASC NULLS FIRST, 8), ENSURE_REQUIREMENTS, [plan_id=9823]
+
+(70) Sort
+Input [4]: [supp_nation#1237, cust_nation#1238, l_year#1239, revenue#1241]
+Arguments: [supp_nation#1237 ASC NULLS FIRST, cust_nation#1238 ASC NULLS FIRST, l_year#1239 ASC NULLS FIRST], true, 0
+
+(71) AdaptiveSparkPlan
+Output [4]: [supp_nation#1237, cust_nation#1238, l_year#1239, revenue#1241]
+Arguments: isFinalPlan=true

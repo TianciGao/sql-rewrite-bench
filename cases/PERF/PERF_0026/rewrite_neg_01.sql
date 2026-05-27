@@ -2,15 +2,14 @@
 -- Strategy: keep the positive rewrite shape but change one country-code prefix from '19' to '18'.
 -- Non-equivalence is not yet proven.
 
-with eligible_prefixes(cntrycode) as (
-    values
-        ('18'),
-        ('29'),
-        ('21'),
-        ('25'),
-        ('16'),
-        ('10'),
-        ('14')
+with eligible_prefixes as (
+    select '18' as cntrycode
+    union all select '29'
+    union all select '21'
+    union all select '25'
+    union all select '16'
+    union all select '10'
+    union all select '14'
 ),
 eligible_avg as (
     select

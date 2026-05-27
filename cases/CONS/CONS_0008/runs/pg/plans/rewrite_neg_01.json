@@ -1,0 +1,125 @@
+[
+  {
+    "Plan": {
+      "Node Type": "Hash Join",
+      "Parallel Aware": false,
+      "Async Capable": false,
+      "Join Type": "Inner",
+      "Startup Cost": 85.70,
+      "Total Cost": 141.71,
+      "Plan Rows": 282,
+      "Plan Width": 4,
+      "Inner Unique": true,
+      "Hash Cond": "(d.t1a = b.t2a)",
+      "Plans": [
+        {
+          "Node Type": "Hash Join",
+          "Parent Relationship": "Outer",
+          "Parallel Aware": false,
+          "Async Capable": false,
+          "Join Type": "Inner",
+          "Startup Cost": 45.70,
+          "Total Cost": 97.09,
+          "Plan Rows": 565,
+          "Plan Width": 8,
+          "Inner Unique": true,
+          "Hash Cond": "((e.t0a = d.t1a) AND (e.t0b = d.t1b))",
+          "Plans": [
+            {
+              "Node Type": "Seq Scan",
+              "Parent Relationship": "Outer",
+              "Parallel Aware": false,
+              "Async Capable": false,
+              "Relation Name": "t0",
+              "Alias": "e",
+              "Startup Cost": 0.00,
+              "Total Cost": 32.60,
+              "Plan Rows": 2260,
+              "Plan Width": 8
+            },
+            {
+              "Node Type": "Hash",
+              "Parent Relationship": "Inner",
+              "Parallel Aware": false,
+              "Async Capable": false,
+              "Startup Cost": 42.64,
+              "Total Cost": 42.64,
+              "Plan Rows": 204,
+              "Plan Width": 8,
+              "Plans": [
+                {
+                  "Node Type": "Aggregate",
+                  "Strategy": "Hashed",
+                  "Partial Mode": "Simple",
+                  "Parent Relationship": "Outer",
+                  "Parallel Aware": false,
+                  "Async Capable": false,
+                  "Startup Cost": 40.60,
+                  "Total Cost": 42.64,
+                  "Plan Rows": 204,
+                  "Plan Width": 8,
+                  "Group Key": ["d.t1a", "d.t1b"],
+                  "Planned Partitions": 0,
+                  "Plans": [
+                    {
+                      "Node Type": "Seq Scan",
+                      "Parent Relationship": "Outer",
+                      "Parallel Aware": false,
+                      "Async Capable": false,
+                      "Relation Name": "t1",
+                      "Alias": "d",
+                      "Startup Cost": 0.00,
+                      "Total Cost": 30.40,
+                      "Plan Rows": 2040,
+                      "Plan Width": 8
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "Node Type": "Hash",
+          "Parent Relationship": "Inner",
+          "Parallel Aware": false,
+          "Async Capable": false,
+          "Startup Cost": 37.50,
+          "Total Cost": 37.50,
+          "Plan Rows": 200,
+          "Plan Width": 4,
+          "Plans": [
+            {
+              "Node Type": "Aggregate",
+              "Strategy": "Hashed",
+              "Partial Mode": "Simple",
+              "Parent Relationship": "Outer",
+              "Parallel Aware": false,
+              "Async Capable": false,
+              "Startup Cost": 35.50,
+              "Total Cost": 37.50,
+              "Plan Rows": 200,
+              "Plan Width": 4,
+              "Group Key": ["b.t2a"],
+              "Planned Partitions": 0,
+              "Plans": [
+                {
+                  "Node Type": "Seq Scan",
+                  "Parent Relationship": "Outer",
+                  "Parallel Aware": false,
+                  "Async Capable": false,
+                  "Relation Name": "t2",
+                  "Alias": "b",
+                  "Startup Cost": 0.00,
+                  "Total Cost": 30.40,
+                  "Plan Rows": 2040,
+                  "Plan Width": 4
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  }
+]

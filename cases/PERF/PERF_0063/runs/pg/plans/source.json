@@ -1,0 +1,154 @@
+[
+  {
+    "Plan": {
+      "Node Type": "Limit",
+      "Parallel Aware": false,
+      "Async Capable": false,
+      "Startup Cost": 66.23,
+      "Total Cost": 66.25,
+      "Plan Rows": 1,
+      "Plan Width": 64,
+      "Plans": [
+        {
+          "Node Type": "Aggregate",
+          "Strategy": "Sorted",
+          "Partial Mode": "Simple",
+          "Parent Relationship": "Outer",
+          "Parallel Aware": false,
+          "Async Capable": false,
+          "Startup Cost": 66.23,
+          "Total Cost": 66.25,
+          "Plan Rows": 1,
+          "Plan Width": 64,
+          "Group Key": ["customer_address.ca_zip"],
+          "Plans": [
+            {
+              "Node Type": "Sort",
+              "Parent Relationship": "Outer",
+              "Parallel Aware": false,
+              "Async Capable": false,
+              "Startup Cost": 66.23,
+              "Total Cost": 66.24,
+              "Plan Rows": 1,
+              "Plan Width": 64,
+              "Sort Key": ["customer_address.ca_zip"],
+              "Plans": [
+                {
+                  "Node Type": "Nested Loop",
+                  "Parent Relationship": "Outer",
+                  "Parallel Aware": false,
+                  "Async Capable": false,
+                  "Join Type": "Inner",
+                  "Startup Cost": 40.94,
+                  "Total Cost": 66.22,
+                  "Plan Rows": 1,
+                  "Plan Width": 64,
+                  "Inner Unique": true,
+                  "Join Filter": "((substr(customer_address.ca_zip, 1, 5) = ANY ('{85669,86197,88274,83405,86475,85392,85460,80348,81792}'::text[])) OR (customer_address.ca_state = ANY ('{CA,WA,GA}'::text[])) OR (catalog_sales.cs_sales_price > '500'::numeric))",
+                  "Plans": [
+                    {
+                      "Node Type": "Nested Loop",
+                      "Parent Relationship": "Outer",
+                      "Parallel Aware": false,
+                      "Async Capable": false,
+                      "Join Type": "Inner",
+                      "Startup Cost": 40.77,
+                      "Total Cost": 65.99,
+                      "Plan Rows": 1,
+                      "Plan Width": 36,
+                      "Inner Unique": true,
+                      "Plans": [
+                        {
+                          "Node Type": "Hash Join",
+                          "Parent Relationship": "Outer",
+                          "Parallel Aware": false,
+                          "Async Capable": false,
+                          "Join Type": "Inner",
+                          "Startup Cost": 40.61,
+                          "Total Cost": 65.77,
+                          "Plan Rows": 1,
+                          "Plan Width": 36,
+                          "Inner Unique": true,
+                          "Hash Cond": "(catalog_sales.cs_sold_date_sk = date_dim.d_date_sk)",
+                          "Plans": [
+                            {
+                              "Node Type": "Seq Scan",
+                              "Parent Relationship": "Outer",
+                              "Parallel Aware": false,
+                              "Async Capable": false,
+                              "Relation Name": "catalog_sales",
+                              "Alias": "catalog_sales",
+                              "Startup Cost": 0.00,
+                              "Total Cost": 22.00,
+                              "Plan Rows": 1200,
+                              "Plan Width": 40
+                            },
+                            {
+                              "Node Type": "Hash",
+                              "Parent Relationship": "Inner",
+                              "Parallel Aware": false,
+                              "Async Capable": false,
+                              "Startup Cost": 40.60,
+                              "Total Cost": 40.60,
+                              "Plan Rows": 1,
+                              "Plan Width": 4,
+                              "Plans": [
+                                {
+                                  "Node Type": "Seq Scan",
+                                  "Parent Relationship": "Outer",
+                                  "Parallel Aware": false,
+                                  "Async Capable": false,
+                                  "Relation Name": "date_dim",
+                                  "Alias": "date_dim",
+                                  "Startup Cost": 0.00,
+                                  "Total Cost": 40.60,
+                                  "Plan Rows": 1,
+                                  "Plan Width": 4,
+                                  "Filter": "((d_qoy = 2) AND (d_year = 2000))"
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "Node Type": "Index Scan",
+                          "Parent Relationship": "Inner",
+                          "Parallel Aware": false,
+                          "Async Capable": false,
+                          "Scan Direction": "Forward",
+                          "Index Name": "customer_pkey",
+                          "Relation Name": "customer",
+                          "Alias": "customer",
+                          "Startup Cost": 0.15,
+                          "Total Cost": 0.21,
+                          "Plan Rows": 1,
+                          "Plan Width": 8,
+                          "Index Cond": "(c_customer_sk = catalog_sales.cs_bill_customer_sk)"
+                        }
+                      ]
+                    },
+                    {
+                      "Node Type": "Index Scan",
+                      "Parent Relationship": "Inner",
+                      "Parallel Aware": false,
+                      "Async Capable": false,
+                      "Scan Direction": "Forward",
+                      "Index Name": "customer_address_pkey",
+                      "Relation Name": "customer_address",
+                      "Alias": "customer_address",
+                      "Startup Cost": 0.15,
+                      "Total Cost": 0.19,
+                      "Plan Rows": 1,
+                      "Plan Width": 68,
+                      "Index Cond": "(ca_address_sk = customer.c_current_addr_sk)"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  }
+]

@@ -1,0 +1,9 @@
+SELECT E1.EMPNO, E1.SAL
+FROM emp E1
+WHERE E1.COMM > (
+  SELECT COUNT(*)
+  FROM bonus B
+  JOIN dept D
+    ON B.SAL > E1.SAL
+   AND D.DEPTNO = 10
+);

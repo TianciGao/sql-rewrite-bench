@@ -1,0 +1,69 @@
+== Physical Plan ==
+AdaptiveSparkPlan (4)
++- Project (3)
+   +- Filter (2)
+      +- Scan parquet spark_catalog.default.emp (1)
+
+
+(1) Scan parquet spark_catalog.default.emp
+Output [2]: [EMPNO#9L, SAL#10]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/cons_0039_spark_plan_5y7m5k_z/emp]
+PushedFilters: [IsNotNull(SAL), LessThan(SAL,100.00)]
+ReadSchema: struct<EMPNO:bigint,SAL:decimal(10,2)>
+
+(2) Filter
+Input [2]: [EMPNO#9L, SAL#10]
+Condition : ((isnotnull(SAL#10) AND isnotnull(Subquery subquery#19, [id=#89])) AND (SAL#10 < 100.00))
+
+(3) Project
+Output [1]: [EMPNO#9L]
+Input [2]: [EMPNO#9L, SAL#10]
+
+(4) AdaptiveSparkPlan
+Output [1]: [EMPNO#9L]
+Arguments: isFinalPlan=false
+
+===== Subqueries =====
+
+Subquery:1 Hosting operator id = 2 Hosting Expression = Subquery subquery#19, [id=#89]
+AdaptiveSparkPlan (9)
++- CollectLimit (8)
+   +- Project (7)
+      +- Filter (6)
+         +- Scan parquet spark_catalog.default.emp (5)
+
+
+(5) Scan parquet spark_catalog.default.emp
+Output [1]: [EMPNO#20L]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/cons_0039_spark_plan_5y7m5k_z/emp]
+PushedFilters: [IsNotNull(EMPNO), LessThan(EMPNO,20)]
+ReadSchema: struct<EMPNO:bigint>
+
+(6) Filter
+Input [1]: [EMPNO#20L]
+Condition : (isnotnull(EMPNO#20L) AND (EMPNO#20L < 20))
+
+(7) Project
+Output [1]: [1 AS col#22]
+Input [1]: [EMPNO#20L]
+
+(8) CollectLimit
+Input [1]: [col#22]
+Arguments: 1
+
+(9) AdaptiveSparkPlan
+Output [1]: [col#22]
+Arguments: isFinalPlan=false
+
+Subquery:2 Hosting operator id = 1 Hosting Expression = Subquery subquery#19, [id=#91]
+AdaptiveSparkPlan (9)
++- CollectLimit (8)
+   +- Project (7)
+      +- Filter (6)
+         +- Scan parquet spark_catalog.default.emp (5)
+
+
+
+

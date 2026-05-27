@@ -1,0 +1,48 @@
+{
+  "case_id": "LONGTAIL_0024",
+  "validation_model": "engine_local_plan_artifacts",
+  "engines": [
+    "pg",
+    "mysql",
+    "spark"
+  ],
+  "status": "complete",
+  "draft_only": true,
+  "expected_plan_files": [
+    "runs/pg/plans/source.json",
+    "runs/pg/plans/rewrite_pos_01.json",
+    "runs/pg/plans/rewrite_neg_01.json",
+    "runs/pg/plans/plan_check.json",
+    "runs/mysql/plans/source.json",
+    "runs/mysql/plans/rewrite_pos_01.json",
+    "runs/mysql/plans/rewrite_neg_01.json",
+    "runs/mysql/plans/plan_check.json",
+    "runs/spark/plans/source.txt",
+    "runs/spark/plans/rewrite_pos_01.txt",
+    "runs/spark/plans/rewrite_neg_01.txt",
+    "runs/spark/plans/plan_check.json"
+  ],
+  "existing_plan_files": [
+    "runs/pg/plans/source.json",
+    "runs/pg/plans/rewrite_pos_01.json",
+    "runs/pg/plans/rewrite_neg_01.json",
+    "runs/pg/plans/plan_check.json",
+    "runs/mysql/plans/source.json",
+    "runs/mysql/plans/rewrite_pos_01.json",
+    "runs/mysql/plans/rewrite_neg_01.json",
+    "runs/mysql/plans/plan_check.json",
+    "runs/spark/plans/source.txt",
+    "runs/spark/plans/rewrite_pos_01.txt",
+    "runs/spark/plans/rewrite_neg_01.txt",
+    "runs/spark/plans/plan_check.json"
+  ],
+  "missing_plan_files": [],
+  "notes": [
+    "Existing per-engine plan artifacts checked only.",
+    "Plan-artifact presence checking only.",
+    "No plan semantics review is claimed.",
+    "Engine-local plan evidence model; not a cross-dialect source-reference plan claim.",
+    "No registry validation, admission, formal-review completion, or release-grade claim is implied.",
+    "These cases remain Stack-substrate manual/hybrid draft anchors, not direct SEDE query-derived cases."
+  ]
+}

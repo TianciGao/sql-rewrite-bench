@@ -1,0 +1,21 @@
+{
+  "case_id": "LONGTAIL_0024",
+  "source_registry_line": "SRC_006",
+  "source_name": "Stack Queries",
+  "source_site_subset": "superuser",
+  "source_storage_path": "datasets/raw/stack_queries/staged/superuser/",
+  "grounding_entities": [
+    "Posts",
+    "PostHistory"
+  ],
+  "query_derivation": "manual_hybrid_stack_substrate_anchor",
+  "direct_sede_query_derived": false,
+  "sqlstorm_derived": false,
+  "notes": [
+    "This case is manually engineered.",
+    "It is grounded in StackExchange / SuperUser XML dump entity structure.",
+    "It is not extracted from SEDE query text.",
+    "SRC_006 Stack Queries is used as schema/data substrate only.",
+    "Formal registry writeback is still required before any official registration."
+  ]
+}

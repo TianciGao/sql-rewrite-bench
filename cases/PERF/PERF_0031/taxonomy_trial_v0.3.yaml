@@ -1,0 +1,31 @@
+status: batch3b_taxonomy_draft
+candidate_primary_pool: performance
+dataset_line_candidate: common-core-candidate
+source_family: TPC-H
+sql_feature_tags:
+  primary:
+    - cte
+rewrite_opportunity_tags:
+  primary:
+    - materialization_strategy
+  secondary:
+    - cte_strategy
+plan_operator_tags:
+  present:
+    - scan
+    - join
+    - aggregate
+    - sort
+    - materialize
+portability_tags:
+  suspected:
+    - datetime_semantics_gap
+evidence_notes:
+  - Derived conservatively from manifest.yaml, source.sql, validation/checker.yaml, and existing PostgreSQL plan artifacts.
+  - PostgreSQL witness result evidence exists for source, positive rewrite, and negative rewrite.
+  - No tri-engine closure or admission claim is made by this taxonomy draft.
+claim_boundaries:
+  - draft_only
+  - postgres_evidence_supporting_only
+  - not_tri_engine_closure
+  - not_admission

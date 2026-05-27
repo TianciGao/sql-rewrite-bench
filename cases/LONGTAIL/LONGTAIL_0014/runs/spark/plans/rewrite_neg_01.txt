@@ -1,0 +1,225 @@
+== Physical Plan ==
+AdaptiveSparkPlan (37)
++- Sort (36)
+   +- Exchange (35)
+      +- Project (34)
+         +- Filter (33)
+            +- HashAggregate (32)
+               +- Exchange (31)
+                  +- HashAggregate (30)
+                     +- HashAggregate (29)
+                        +- Exchange (28)
+                           +- HashAggregate (27)
+                              +- Expand (26)
+                                 +- Project (25)
+                                    +- BroadcastHashJoin Inner BuildRight (24)
+                                       :- HashAggregate (15)
+                                       :  +- Exchange (14)
+                                       :     +- HashAggregate (13)
+                                       :        +- Project (12)
+                                       :           +- BroadcastHashJoin LeftOuter BuildRight (11)
+                                       :              :- Project (7)
+                                       :              :  +- BroadcastHashJoin LeftOuter BuildRight (6)
+                                       :              :     :- Filter (2)
+                                       :              :     :  +- Scan parquet spark_catalog.default.users (1)
+                                       :              :     +- BroadcastExchange (5)
+                                       :              :        +- Filter (4)
+                                       :              :           +- Scan parquet spark_catalog.default.votes (3)
+                                       :              +- BroadcastExchange (10)
+                                       :                 +- Filter (9)
+                                       :                    +- Scan parquet spark_catalog.default.badges (8)
+                                       +- BroadcastExchange (23)
+                                          +- Project (22)
+                                             +- Window (21)
+                                                +- Sort (20)
+                                                   +- Exchange (19)
+                                                      +- Project (18)
+                                                         +- Filter (17)
+                                                            +- Scan parquet spark_catalog.default.posts (16)
+
+
+(1) Scan parquet spark_catalog.default.users
+Output [2]: [Id#78, DisplayName#79]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/longtail_0014_spark_plan_ta9kl3t_/users]
+PushedFilters: [IsNotNull(Id)]
+ReadSchema: struct<Id:int,DisplayName:string>
+
+(2) Filter
+Input [2]: [Id#78, DisplayName#79]
+Condition : isnotnull(Id#78)
+
+(3) Scan parquet spark_catalog.default.votes
+Output [2]: [UserId#81, VoteTypeId#82]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/longtail_0014_spark_plan_ta9kl3t_/votes]
+PushedFilters: [IsNotNull(UserId)]
+ReadSchema: struct<UserId:int,VoteTypeId:int>
+
+(4) Filter
+Input [2]: [UserId#81, VoteTypeId#82]
+Condition : isnotnull(UserId#81)
+
+(5) BroadcastExchange
+Input [2]: [UserId#81, VoteTypeId#82]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, false] as bigint)),false), [plan_id=469]
+
+(6) BroadcastHashJoin
+Left keys [1]: [Id#78]
+Right keys [1]: [UserId#81]
+Join type: LeftOuter
+Join condition: None
+
+(7) Project
+Output [3]: [Id#78, DisplayName#79, VoteTypeId#82]
+Input [4]: [Id#78, DisplayName#79, UserId#81, VoteTypeId#82]
+
+(8) Scan parquet spark_catalog.default.badges
+Output [2]: [UserId#84, Class#85]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/longtail_0014_spark_plan_ta9kl3t_/badges]
+PushedFilters: [IsNotNull(UserId)]
+ReadSchema: struct<UserId:int,Class:int>
+
+(9) Filter
+Input [2]: [UserId#84, Class#85]
+Condition : isnotnull(UserId#84)
+
+(10) BroadcastExchange
+Input [2]: [UserId#84, Class#85]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, false] as bigint)),false), [plan_id=473]
+
+(11) BroadcastHashJoin
+Left keys [1]: [Id#78]
+Right keys [1]: [UserId#84]
+Join type: LeftOuter
+Join condition: None
+
+(12) Project
+Output [4]: [Id#78, DisplayName#79, VoteTypeId#82, Class#85]
+Input [5]: [Id#78, DisplayName#79, VoteTypeId#82, UserId#84, Class#85]
+
+(13) HashAggregate
+Input [4]: [Id#78, DisplayName#79, VoteTypeId#82, Class#85]
+Keys [2]: [Id#78, DisplayName#79]
+Functions [5]: [partial_sum(CASE WHEN (VoteTypeId#82 = 2) THEN 1 ELSE 0 END), partial_sum(CASE WHEN (VoteTypeId#82 = 3) THEN 1 ELSE 0 END), partial_sum(CASE WHEN (Class#85 = 1) THEN 1 ELSE 0 END), partial_sum(CASE WHEN (Class#85 = 2) THEN 1 ELSE 0 END), partial_sum(CASE WHEN (Class#85 = 3) THEN 1 ELSE 0 END)]
+Aggregate Attributes [5]: [sum#240L, sum#241L, sum#242L, sum#243L, sum#244L]
+Results [7]: [Id#78, DisplayName#79, sum#245L, sum#246L, sum#247L, sum#248L, sum#249L]
+
+(14) Exchange
+Input [7]: [Id#78, DisplayName#79, sum#245L, sum#246L, sum#247L, sum#248L, sum#249L]
+Arguments: hashpartitioning(Id#78, DisplayName#79, 1), ENSURE_REQUIREMENTS, [plan_id=478]
+
+(15) HashAggregate
+Input [7]: [Id#78, DisplayName#79, sum#245L, sum#246L, sum#247L, sum#248L, sum#249L]
+Keys [2]: [Id#78, DisplayName#79]
+Functions [5]: [sum(CASE WHEN (VoteTypeId#82 = 2) THEN 1 ELSE 0 END), sum(CASE WHEN (VoteTypeId#82 = 3) THEN 1 ELSE 0 END), sum(CASE WHEN (Class#85 = 1) THEN 1 ELSE 0 END), sum(CASE WHEN (Class#85 = 2) THEN 1 ELSE 0 END), sum(CASE WHEN (Class#85 = 3) THEN 1 ELSE 0 END)]
+Aggregate Attributes [5]: [sum(CASE WHEN (VoteTypeId#82 = 2) THEN 1 ELSE 0 END)#204L, sum(CASE WHEN (VoteTypeId#82 = 3) THEN 1 ELSE 0 END)#205L, sum(CASE WHEN (Class#85 = 1) THEN 1 ELSE 0 END)#206L, sum(CASE WHEN (Class#85 = 2) THEN 1 ELSE 0 END)#207L, sum(CASE WHEN (Class#85 = 3) THEN 1 ELSE 0 END)#208L]
+Results [7]: [Id#78 AS UserId#197, DisplayName#79, coalesce(sum(CASE WHEN (VoteTypeId#82 = 2) THEN 1 ELSE 0 END)#204L, 0) AS UpVoteCount#198L, coalesce(sum(CASE WHEN (VoteTypeId#82 = 3) THEN 1 ELSE 0 END)#205L, 0) AS DownVoteCount#199L, coalesce(sum(CASE WHEN (Class#85 = 1) THEN 1 ELSE 0 END)#206L, 0) AS GoldBadges#200L, coalesce(sum(CASE WHEN (Class#85 = 2) THEN 1 ELSE 0 END)#207L, 0) AS SilverBadges#201L, coalesce(sum(CASE WHEN (Class#85 = 3) THEN 1 ELSE 0 END)#208L, 0) AS BronzeBadges#202L]
+
+(16) Scan parquet spark_catalog.default.posts
+Output [4]: [Id#71, Score#74, OwnerUserId#76, PostTypeId#77]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/longtail_0014_spark_plan_ta9kl3t_/posts]
+PushedFilters: [IsNotNull(PostTypeId), IsNotNull(Score), EqualTo(PostTypeId,1), GreaterThan(Score,0), IsNotNull(OwnerUserId)]
+ReadSchema: struct<Id:int,Score:int,OwnerUserId:int,PostTypeId:int>
+
+(17) Filter
+Input [4]: [Id#71, Score#74, OwnerUserId#76, PostTypeId#77]
+Condition : ((((isnotnull(PostTypeId#77) AND isnotnull(Score#74)) AND (PostTypeId#77 = 1)) AND (Score#74 > 0)) AND isnotnull(OwnerUserId#76))
+
+(18) Project
+Output [3]: [Id#71, Score#74, OwnerUserId#76]
+Input [4]: [Id#71, Score#74, OwnerUserId#76, PostTypeId#77]
+
+(19) Exchange
+Input [3]: [Id#71, Score#74, OwnerUserId#76]
+Arguments: hashpartitioning(OwnerUserId#76, 1), ENSURE_REQUIREMENTS, [plan_id=480]
+
+(20) Sort
+Input [3]: [Id#71, Score#74, OwnerUserId#76]
+Arguments: [OwnerUserId#76 ASC NULLS FIRST, Score#74 DESC NULLS LAST], false, 0
+
+(21) Window
+Input [3]: [Id#71, Score#74, OwnerUserId#76]
+Arguments: [row_number() windowspecdefinition(OwnerUserId#76, Score#74 DESC NULLS LAST, specifiedwindowframe(RowFrame, unboundedpreceding$(), currentrow$())) AS rn#196], [OwnerUserId#76], [Score#74 DESC NULLS LAST]
+
+(22) Project
+Output [4]: [Id#71, Score#74, rn#196, OwnerUserId#76]
+Input [4]: [Id#71, Score#74, OwnerUserId#76, rn#196]
+
+(23) BroadcastExchange
+Input [4]: [Id#71, Score#74, rn#196, OwnerUserId#76]
+Arguments: HashedRelationBroadcastMode(List(cast(input[3, int, true] as bigint)),false), [plan_id=485]
+
+(24) BroadcastHashJoin
+Left keys [1]: [UserId#197]
+Right keys [1]: [OwnerUserId#76]
+Join type: Inner
+Join condition: None
+
+(25) Project
+Output [9]: [DisplayName#79, UpVoteCount#198L, DownVoteCount#199L, GoldBadges#200L, SilverBadges#201L, BronzeBadges#202L, Id#71, Score#74, rn#196]
+Input [11]: [UserId#197, DisplayName#79, UpVoteCount#198L, DownVoteCount#199L, GoldBadges#200L, SilverBadges#201L, BronzeBadges#202L, Id#71, Score#74, rn#196, OwnerUserId#76]
+
+(26) Expand
+Input [9]: [DisplayName#79, UpVoteCount#198L, DownVoteCount#199L, GoldBadges#200L, SilverBadges#201L, BronzeBadges#202L, Id#71, Score#74, rn#196]
+Arguments: [[DisplayName#79, UpVoteCount#198L, DownVoteCount#199L, GoldBadges#200L, SilverBadges#201L, BronzeBadges#202L, null, null, 0, Score#74, UpVoteCount#198L], [DisplayName#79, UpVoteCount#198L, DownVoteCount#199L, GoldBadges#200L, SilverBadges#201L, BronzeBadges#202L, CASE WHEN (rn#196 = 1) THEN Id#71 END, null, 1, null, null], [DisplayName#79, UpVoteCount#198L, DownVoteCount#199L, GoldBadges#200L, SilverBadges#201L, BronzeBadges#202L, null, Id#71, 2, null, null]], [DisplayName#79, UpVoteCount#198L, DownVoteCount#199L, GoldBadges#200L, SilverBadges#201L, BronzeBadges#202L, CASE WHEN (rp.rn = 1) THEN rp.Id END#216, rp.Id#217, gid#215, rp.Score#218, us.UpVoteCount#219L]
+
+(27) HashAggregate
+Input [11]: [DisplayName#79, UpVoteCount#198L, DownVoteCount#199L, GoldBadges#200L, SilverBadges#201L, BronzeBadges#202L, CASE WHEN (rp.rn = 1) THEN rp.Id END#216, rp.Id#217, gid#215, rp.Score#218, us.UpVoteCount#219L]
+Keys [9]: [DisplayName#79, UpVoteCount#198L, DownVoteCount#199L, GoldBadges#200L, SilverBadges#201L, BronzeBadges#202L, CASE WHEN (rp.rn = 1) THEN rp.Id END#216, rp.Id#217, gid#215]
+Functions [2]: [partial_max(rp.Score#218), partial_sum(us.UpVoteCount#219L)]
+Aggregate Attributes [2]: [max#236, sum#237L]
+Results [11]: [DisplayName#79, UpVoteCount#198L, DownVoteCount#199L, GoldBadges#200L, SilverBadges#201L, BronzeBadges#202L, CASE WHEN (rp.rn = 1) THEN rp.Id END#216, rp.Id#217, gid#215, max#238, sum#239L]
+
+(28) Exchange
+Input [11]: [DisplayName#79, UpVoteCount#198L, DownVoteCount#199L, GoldBadges#200L, SilverBadges#201L, BronzeBadges#202L, CASE WHEN (rp.rn = 1) THEN rp.Id END#216, rp.Id#217, gid#215, max#238, sum#239L]
+Arguments: hashpartitioning(DisplayName#79, UpVoteCount#198L, DownVoteCount#199L, GoldBadges#200L, SilverBadges#201L, BronzeBadges#202L, CASE WHEN (rp.rn = 1) THEN rp.Id END#216, rp.Id#217, gid#215, 1), ENSURE_REQUIREMENTS, [plan_id=491]
+
+(29) HashAggregate
+Input [11]: [DisplayName#79, UpVoteCount#198L, DownVoteCount#199L, GoldBadges#200L, SilverBadges#201L, BronzeBadges#202L, CASE WHEN (rp.rn = 1) THEN rp.Id END#216, rp.Id#217, gid#215, max#238, sum#239L]
+Keys [9]: [DisplayName#79, UpVoteCount#198L, DownVoteCount#199L, GoldBadges#200L, SilverBadges#201L, BronzeBadges#202L, CASE WHEN (rp.rn = 1) THEN rp.Id END#216, rp.Id#217, gid#215]
+Functions [2]: [max(rp.Score#218), sum(us.UpVoteCount#219L)]
+Aggregate Attributes [2]: [max(rp.Score#218)#210, sum(us.UpVoteCount#219L)#213L]
+Results [11]: [DisplayName#79, UpVoteCount#198L, DownVoteCount#199L, GoldBadges#200L, SilverBadges#201L, BronzeBadges#202L, CASE WHEN (rp.rn = 1) THEN rp.Id END#216, rp.Id#217, gid#215, max(rp.Score#218)#210 AS max(rp.Score)#220, sum(us.UpVoteCount#219L)#213L AS sum(us.UpVoteCount)#222L]
+
+(30) HashAggregate
+Input [11]: [DisplayName#79, UpVoteCount#198L, DownVoteCount#199L, GoldBadges#200L, SilverBadges#201L, BronzeBadges#202L, CASE WHEN (rp.rn = 1) THEN rp.Id END#216, rp.Id#217, gid#215, max(rp.Score)#220, sum(us.UpVoteCount)#222L]
+Keys [6]: [DisplayName#79, UpVoteCount#198L, DownVoteCount#199L, GoldBadges#200L, SilverBadges#201L, BronzeBadges#202L]
+Functions [4]: [partial_count(rp.Id#217) FILTER (WHERE (gid#215 = 2)), partial_first(max(rp.Score)#220, true) FILTER (WHERE (gid#215 = 0)), partial_count(CASE WHEN (rp.rn = 1) THEN rp.Id END#216) FILTER (WHERE (gid#215 = 1)), partial_first(sum(us.UpVoteCount)#222L, true) FILTER (WHERE (gid#215 = 0))]
+Aggregate Attributes [6]: [count#224L, first#225, valueSet#226, count#227L, first#228L, valueSet#229]
+Results [12]: [DisplayName#79, UpVoteCount#198L, DownVoteCount#199L, GoldBadges#200L, SilverBadges#201L, BronzeBadges#202L, count#230L, first#231, valueSet#232, count#233L, first#234L, valueSet#235]
+
+(31) Exchange
+Input [12]: [DisplayName#79, UpVoteCount#198L, DownVoteCount#199L, GoldBadges#200L, SilverBadges#201L, BronzeBadges#202L, count#230L, first#231, valueSet#232, count#233L, first#234L, valueSet#235]
+Arguments: hashpartitioning(DisplayName#79, UpVoteCount#198L, DownVoteCount#199L, GoldBadges#200L, SilverBadges#201L, BronzeBadges#202L, 1), ENSURE_REQUIREMENTS, [plan_id=495]
+
+(32) HashAggregate
+Input [12]: [DisplayName#79, UpVoteCount#198L, DownVoteCount#199L, GoldBadges#200L, SilverBadges#201L, BronzeBadges#202L, count#230L, first#231, valueSet#232, count#233L, first#234L, valueSet#235]
+Keys [6]: [DisplayName#79, UpVoteCount#198L, DownVoteCount#199L, GoldBadges#200L, SilverBadges#201L, BronzeBadges#202L]
+Functions [4]: [count(rp.Id#217), first(max(rp.Score)#220, true), count(CASE WHEN (rp.rn = 1) THEN rp.Id END#216), first(sum(us.UpVoteCount)#222L, true)]
+Aggregate Attributes [4]: [count(rp.Id#217)#209L, first(max(rp.Score)#220) ignore nulls#221, count(CASE WHEN (rp.rn = 1) THEN rp.Id END#216)#211L, first(sum(us.UpVoteCount)#222L) ignore nulls#223L]
+Results [10]: [DisplayName#79, UpVoteCount#198L, DownVoteCount#199L, GoldBadges#200L, SilverBadges#201L, BronzeBadges#202L, count(rp.Id#217)#209L AS PostCount#193L, first(max(rp.Score)#220) ignore nulls#221 AS HighestPostScore#194, count(CASE WHEN (rp.rn = 1) THEN rp.Id END#216)#211L AS TopPostsCount#195L, first(sum(us.UpVoteCount)#222L) ignore nulls#223L AS sum(UpVoteCount)#214L]
+
+(33) Filter
+Input [10]: [DisplayName#79, UpVoteCount#198L, DownVoteCount#199L, GoldBadges#200L, SilverBadges#201L, BronzeBadges#202L, PostCount#193L, HighestPostScore#194, TopPostsCount#195L, sum(UpVoteCount)#214L]
+Condition : ((PostCount#193L > 5) OR (sum(UpVoteCount)#214L > 100))
+
+(34) Project
+Output [9]: [DisplayName#79, UpVoteCount#198L, DownVoteCount#199L, GoldBadges#200L, SilverBadges#201L, BronzeBadges#202L, PostCount#193L, HighestPostScore#194, TopPostsCount#195L]
+Input [10]: [DisplayName#79, UpVoteCount#198L, DownVoteCount#199L, GoldBadges#200L, SilverBadges#201L, BronzeBadges#202L, PostCount#193L, HighestPostScore#194, TopPostsCount#195L, sum(UpVoteCount)#214L]
+
+(35) Exchange
+Input [9]: [DisplayName#79, UpVoteCount#198L, DownVoteCount#199L, GoldBadges#200L, SilverBadges#201L, BronzeBadges#202L, PostCount#193L, HighestPostScore#194, TopPostsCount#195L]
+Arguments: rangepartitioning(UpVoteCount#198L DESC NULLS LAST, HighestPostScore#194 DESC NULLS LAST, 1), ENSURE_REQUIREMENTS, [plan_id=500]
+
+(36) Sort
+Input [9]: [DisplayName#79, UpVoteCount#198L, DownVoteCount#199L, GoldBadges#200L, SilverBadges#201L, BronzeBadges#202L, PostCount#193L, HighestPostScore#194, TopPostsCount#195L]
+Arguments: [UpVoteCount#198L DESC NULLS LAST, HighestPostScore#194 DESC NULLS LAST], true, 0
+
+(37) AdaptiveSparkPlan
+Output [9]: [DisplayName#79, UpVoteCount#198L, DownVoteCount#199L, GoldBadges#200L, SilverBadges#201L, BronzeBadges#202L, PostCount#193L, HighestPostScore#194, TopPostsCount#195L]
+Arguments: isFinalPlan=false
+
+

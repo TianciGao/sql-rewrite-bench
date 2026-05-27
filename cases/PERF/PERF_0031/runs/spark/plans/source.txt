@@ -1,0 +1,164 @@
+== Physical Plan ==
+AdaptiveSparkPlan (16)
++- Sort (15)
+   +- Exchange (14)
+      +- Project (13)
+         +- BroadcastHashJoin Inner BuildLeft (12)
+            :- BroadcastExchange (3)
+            :  +- Filter (2)
+            :     +- Scan parquet spark_catalog.default.supplier (1)
+            +- Project (11)
+               +- Filter (10)
+                  +- HashAggregate (9)
+                     +- Exchange (8)
+                        +- HashAggregate (7)
+                           +- Project (6)
+                              +- Filter (5)
+                                 +- Scan parquet spark_catalog.default.lineitem (4)
+
+
+(1) Scan parquet spark_catalog.default.supplier
+Output [4]: [s_suppkey#45, s_name#46, s_address#47, s_phone#48]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/perf_0031_spark_plan_z496uhbq/supplier]
+PushedFilters: [IsNotNull(s_suppkey)]
+ReadSchema: struct<s_suppkey:int,s_name:string,s_address:string,s_phone:string>
+
+(2) Filter
+Input [4]: [s_suppkey#45, s_name#46, s_address#47, s_phone#48]
+Condition : isnotnull(s_suppkey#45)
+
+(3) BroadcastExchange
+Input [4]: [s_suppkey#45, s_name#46, s_address#47, s_phone#48]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, false] as bigint)),false), [plan_id=106]
+
+(4) Scan parquet spark_catalog.default.lineitem
+Output [4]: [l_suppkey#41, l_extendedprice#42, l_discount#43, l_shipdate#44]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/perf_0031_spark_plan_z496uhbq/lineitem]
+PushedFilters: [IsNotNull(l_shipdate), GreaterThanOrEqual(l_shipdate,1994-06-01), LessThan(l_shipdate,1994-09-01), IsNotNull(l_suppkey)]
+ReadSchema: struct<l_suppkey:int,l_extendedprice:decimal(12,2),l_discount:decimal(12,2),l_shipdate:date>
+
+(5) Filter
+Input [4]: [l_suppkey#41, l_extendedprice#42, l_discount#43, l_shipdate#44]
+Condition : (((isnotnull(l_shipdate#44) AND (l_shipdate#44 >= 1994-06-01)) AND (l_shipdate#44 < 1994-09-01)) AND isnotnull(l_suppkey#41))
+
+(6) Project
+Output [3]: [l_suppkey#41, l_extendedprice#42, l_discount#43]
+Input [4]: [l_suppkey#41, l_extendedprice#42, l_discount#43, l_shipdate#44]
+
+(7) HashAggregate
+Input [3]: [l_suppkey#41, l_extendedprice#42, l_discount#43]
+Keys [1]: [l_suppkey#41]
+Functions [1]: [partial_sum((l_extendedprice#42 * (1 - l_discount#43)))]
+Aggregate Attributes [2]: [sum#73, isEmpty#74]
+Results [3]: [l_suppkey#41, sum#75, isEmpty#76]
+
+(8) Exchange
+Input [3]: [l_suppkey#41, sum#75, isEmpty#76]
+Arguments: hashpartitioning(l_suppkey#41, 1), ENSURE_REQUIREMENTS, [plan_id=101]
+
+(9) HashAggregate
+Input [3]: [l_suppkey#41, sum#75, isEmpty#76]
+Keys [1]: [l_suppkey#41]
+Functions [1]: [sum((l_extendedprice#42 * (1 - l_discount#43)))]
+Aggregate Attributes [1]: [sum((l_extendedprice#42 * (1 - l_discount#43)))#50]
+Results [2]: [l_suppkey#41, sum((l_extendedprice#42 * (1 - l_discount#43)))#50 AS sum((l_extendedprice * (1 - l_discount)))#51]
+
+(10) Filter
+Input [2]: [l_suppkey#41, sum((l_extendedprice * (1 - l_discount)))#51]
+Condition : (isnotnull(sum((l_extendedprice * (1 - l_discount)))#51) AND (sum((l_extendedprice * (1 - l_discount)))#51 = Subquery subquery#40, [id=#91]))
+
+(11) Project
+Output [2]: [l_suppkey#41 AS supplier_no#52, sum((l_extendedprice * (1 - l_discount)))#51 AS total_revenue#53]
+Input [2]: [l_suppkey#41, sum((l_extendedprice * (1 - l_discount)))#51]
+
+(12) BroadcastHashJoin
+Left keys [1]: [s_suppkey#45]
+Right keys [1]: [supplier_no#52]
+Join type: Inner
+Join condition: None
+
+(13) Project
+Output [5]: [s_suppkey#45, s_name#46, s_address#47, s_phone#48, total_revenue#53]
+Input [6]: [s_suppkey#45, s_name#46, s_address#47, s_phone#48, supplier_no#52, total_revenue#53]
+
+(14) Exchange
+Input [5]: [s_suppkey#45, s_name#46, s_address#47, s_phone#48, total_revenue#53]
+Arguments: rangepartitioning(s_suppkey#45 ASC NULLS FIRST, 1), ENSURE_REQUIREMENTS, [plan_id=110]
+
+(15) Sort
+Input [5]: [s_suppkey#45, s_name#46, s_address#47, s_phone#48, total_revenue#53]
+Arguments: [s_suppkey#45 ASC NULLS FIRST], true, 0
+
+(16) AdaptiveSparkPlan
+Output [5]: [s_suppkey#45, s_name#46, s_address#47, s_phone#48, total_revenue#53]
+Arguments: isFinalPlan=false
+
+===== Subqueries =====
+
+Subquery:1 Hosting operator id = 10 Hosting Expression = Subquery subquery#40, [id=#91]
+AdaptiveSparkPlan (25)
++- HashAggregate (24)
+   +- HashAggregate (23)
+      +- HashAggregate (22)
+         +- Exchange (21)
+            +- HashAggregate (20)
+               +- Project (19)
+                  +- Filter (18)
+                     +- Scan parquet spark_catalog.default.lineitem (17)
+
+
+(17) Scan parquet spark_catalog.default.lineitem
+Output [4]: [l_suppkey#66, l_extendedprice#67, l_discount#68, l_shipdate#69]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/perf_0031_spark_plan_z496uhbq/lineitem]
+PushedFilters: [IsNotNull(l_shipdate), GreaterThanOrEqual(l_shipdate,1994-06-01), LessThan(l_shipdate,1994-09-01)]
+ReadSchema: struct<l_suppkey:int,l_extendedprice:decimal(12,2),l_discount:decimal(12,2),l_shipdate:date>
+
+(18) Filter
+Input [4]: [l_suppkey#66, l_extendedprice#67, l_discount#68, l_shipdate#69]
+Condition : ((isnotnull(l_shipdate#69) AND (l_shipdate#69 >= 1994-06-01)) AND (l_shipdate#69 < 1994-09-01))
+
+(19) Project
+Output [3]: [l_suppkey#66, l_extendedprice#67, l_discount#68]
+Input [4]: [l_suppkey#66, l_extendedprice#67, l_discount#68, l_shipdate#69]
+
+(20) HashAggregate
+Input [3]: [l_suppkey#66, l_extendedprice#67, l_discount#68]
+Keys [1]: [l_suppkey#66]
+Functions [1]: [partial_sum((l_extendedprice#67 * (1 - l_discount#68)))]
+Aggregate Attributes [2]: [sum#79, isEmpty#80]
+Results [3]: [l_suppkey#66, sum#81, isEmpty#82]
+
+(21) Exchange
+Input [3]: [l_suppkey#66, sum#81, isEmpty#82]
+Arguments: hashpartitioning(l_suppkey#66, 1), ENSURE_REQUIREMENTS, [plan_id=87]
+
+(22) HashAggregate
+Input [3]: [l_suppkey#66, sum#81, isEmpty#82]
+Keys [1]: [l_suppkey#66]
+Functions [1]: [sum((l_extendedprice#67 * (1 - l_discount#68)))]
+Aggregate Attributes [1]: [sum((l_extendedprice#67 * (1 - l_discount#68)))#50]
+Results [1]: [sum((l_extendedprice#67 * (1 - l_discount#68)))#50 AS total_revenue#55]
+
+(23) HashAggregate
+Input [1]: [total_revenue#55]
+Keys: []
+Functions [1]: [partial_max(total_revenue#55)]
+Aggregate Attributes [1]: [max#77]
+Results [1]: [max#78]
+
+(24) HashAggregate
+Input [1]: [max#78]
+Keys: []
+Functions [1]: [max(total_revenue#55)]
+Aggregate Attributes [1]: [max(total_revenue#55)#56]
+Results [1]: [max(total_revenue#55)#56 AS max(total_revenue)#57]
+
+(25) AdaptiveSparkPlan
+Output [1]: [max(total_revenue)#57]
+Arguments: isFinalPlan=false
+
+
+

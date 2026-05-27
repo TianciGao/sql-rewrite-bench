@@ -1,0 +1,118 @@
+== Physical Plan ==
+AdaptiveSparkPlan (19)
++- Project (18)
+   +- Sort (17)
+      +- Exchange (16)
+         +- Project (15)
+            +- BroadcastHashJoin LeftOuter BuildRight (14)
+               :- Project (7)
+               :  +- BroadcastHashJoin Inner BuildLeft (6)
+               :     :- BroadcastExchange (3)
+               :     :  +- Filter (2)
+               :     :     +- Scan parquet spark_catalog.default.users (1)
+               :     +- Filter (5)
+               :        +- Scan parquet spark_catalog.default.posts (4)
+               +- BroadcastExchange (13)
+                  +- HashAggregate (12)
+                     +- Exchange (11)
+                        +- HashAggregate (10)
+                           +- Filter (9)
+                              +- Scan parquet spark_catalog.default.votes (8)
+
+
+(1) Scan parquet spark_catalog.default.users
+Output [3]: [Id#59, DisplayName#60, Reputation#61]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/longtail_0008_spark_plan_vifpfyn8/users]
+PushedFilters: [IsNotNull(Id)]
+ReadSchema: struct<Id:int,DisplayName:string,Reputation:int>
+
+(2) Filter
+Input [3]: [Id#59, DisplayName#60, Reputation#61]
+Condition : isnotnull(Id#59)
+
+(3) BroadcastExchange
+Input [3]: [Id#59, DisplayName#60, Reputation#61]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, false] as bigint)),false), [plan_id=184]
+
+(4) Scan parquet spark_catalog.default.posts
+Output [6]: [Id#62, OwnerUserId#63, Title#64, CreationDate#65, Score#66, ViewCount#67]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/longtail_0008_spark_plan_vifpfyn8/posts]
+PushedFilters: [IsNotNull(Id), IsNotNull(OwnerUserId)]
+ReadSchema: struct<Id:int,OwnerUserId:int,Title:string,CreationDate:timestamp,Score:int,ViewCount:int>
+
+(5) Filter
+Input [6]: [Id#62, OwnerUserId#63, Title#64, CreationDate#65, Score#66, ViewCount#67]
+Condition : (isnotnull(Id#62) AND isnotnull(OwnerUserId#63))
+
+(6) BroadcastHashJoin
+Left keys [1]: [Id#59]
+Right keys [1]: [OwnerUserId#63]
+Join type: Inner
+Join condition: None
+
+(7) Project
+Output [8]: [Id#59, DisplayName#60, Reputation#61, Id#62, Title#64, CreationDate#65, Score#66, ViewCount#67]
+Input [9]: [Id#59, DisplayName#60, Reputation#61, Id#62, OwnerUserId#63, Title#64, CreationDate#65, Score#66, ViewCount#67]
+
+(8) Scan parquet spark_catalog.default.votes
+Output [2]: [PostId#69, VoteTypeId#70]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/longtail_0008_spark_plan_vifpfyn8/votes]
+PushedFilters: [IsNotNull(PostId)]
+ReadSchema: struct<PostId:int,VoteTypeId:int>
+
+(9) Filter
+Input [2]: [PostId#69, VoteTypeId#70]
+Condition : isnotnull(PostId#69)
+
+(10) HashAggregate
+Input [2]: [PostId#69, VoteTypeId#70]
+Keys [1]: [PostId#69]
+Functions [3]: [partial_sum(CASE WHEN (VoteTypeId#70 = 2) THEN 1 ELSE 0 END), partial_sum(CASE WHEN (VoteTypeId#70 = 3) THEN 1 ELSE 0 END), partial_count(1)]
+Aggregate Attributes [3]: [sum#95L, sum#96L, count#97L]
+Results [4]: [PostId#69, sum#98L, sum#99L, count#100L]
+
+(11) Exchange
+Input [4]: [PostId#69, sum#98L, sum#99L, count#100L]
+Arguments: hashpartitioning(PostId#69, 1), ENSURE_REQUIREMENTS, [plan_id=187]
+
+(12) HashAggregate
+Input [4]: [PostId#69, sum#98L, sum#99L, count#100L]
+Keys [1]: [PostId#69]
+Functions [3]: [sum(CASE WHEN (VoteTypeId#70 = 2) THEN 1 ELSE 0 END), sum(CASE WHEN (VoteTypeId#70 = 3) THEN 1 ELSE 0 END), count(1)]
+Aggregate Attributes [3]: [sum(CASE WHEN (VoteTypeId#70 = 2) THEN 1 ELSE 0 END)#93L, sum(CASE WHEN (VoteTypeId#70 = 3) THEN 1 ELSE 0 END)#94L, count(1)#92L]
+Results [4]: [PostId#69, sum(CASE WHEN (VoteTypeId#70 = 2) THEN 1 ELSE 0 END)#93L AS UpVotes#82L, sum(CASE WHEN (VoteTypeId#70 = 3) THEN 1 ELSE 0 END)#94L AS DownVotes#83L, count(1)#92L AS TotalVotes#84L]
+
+(13) BroadcastExchange
+Input [4]: [PostId#69, UpVotes#82L, DownVotes#83L, TotalVotes#84L]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, true] as bigint)),false), [plan_id=190]
+
+(14) BroadcastHashJoin
+Left keys [1]: [Id#62]
+Right keys [1]: [PostId#69]
+Join type: LeftOuter
+Join condition: None
+
+(15) Project
+Output [12]: [Id#59 AS UserId#85, DisplayName#60, Reputation#61, Id#62 AS PostId#86, Title#64, CreationDate#65 AS PostCreationDate#87, Score#66 AS PostScore#88, ViewCount#67, coalesce(UpVotes#82L, 0) AS UpVotes#89L, coalesce(DownVotes#83L, 0) AS DownVotes#90L, coalesce(TotalVotes#84L, 0) AS TotalVotes#91L, CreationDate#65]
+Input [12]: [Id#59, DisplayName#60, Reputation#61, Id#62, Title#64, CreationDate#65, Score#66, ViewCount#67, PostId#69, UpVotes#82L, DownVotes#83L, TotalVotes#84L]
+
+(16) Exchange
+Input [12]: [UserId#85, DisplayName#60, Reputation#61, PostId#86, Title#64, PostCreationDate#87, PostScore#88, ViewCount#67, UpVotes#89L, DownVotes#90L, TotalVotes#91L, CreationDate#65]
+Arguments: rangepartitioning(Reputation#61 DESC NULLS LAST, CreationDate#65 DESC NULLS LAST, 1), ENSURE_REQUIREMENTS, [plan_id=194]
+
+(17) Sort
+Input [12]: [UserId#85, DisplayName#60, Reputation#61, PostId#86, Title#64, PostCreationDate#87, PostScore#88, ViewCount#67, UpVotes#89L, DownVotes#90L, TotalVotes#91L, CreationDate#65]
+Arguments: [Reputation#61 DESC NULLS LAST, CreationDate#65 DESC NULLS LAST], true, 0
+
+(18) Project
+Output [11]: [UserId#85, DisplayName#60, Reputation#61, PostId#86, Title#64, PostCreationDate#87, PostScore#88, ViewCount#67, UpVotes#89L, DownVotes#90L, TotalVotes#91L]
+Input [12]: [UserId#85, DisplayName#60, Reputation#61, PostId#86, Title#64, PostCreationDate#87, PostScore#88, ViewCount#67, UpVotes#89L, DownVotes#90L, TotalVotes#91L, CreationDate#65]
+
+(19) AdaptiveSparkPlan
+Output [11]: [UserId#85, DisplayName#60, Reputation#61, PostId#86, Title#64, PostCreationDate#87, PostScore#88, ViewCount#67, UpVotes#89L, DownVotes#90L, TotalVotes#91L]
+Arguments: isFinalPlan=false
+
+

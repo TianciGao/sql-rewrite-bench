@@ -1,0 +1,222 @@
+{
+  "query_block": {
+    "select_id": 1,
+    "cost_info": {
+      "query_cost": "4.51"
+    },
+    "nested_loop": [
+      {
+        "table": {
+          "table_name": "kt",
+          "access_type": "ALL",
+          "rows_examined_per_scan": 1,
+          "rows_produced_per_join": 1,
+          "filtered": "100.00",
+          "cost_info": {
+            "read_cost": "0.25",
+            "eval_cost": "0.10",
+            "prefix_cost": "0.35",
+            "data_read_per_join": "136"
+          },
+          "used_columns": [
+            "id",
+            "kind"
+          ],
+          "attached_condition": "(`bench`.`kt`.`kind` = 'movie')"
+        }
+      },
+      {
+        "table": {
+          "table_name": "k",
+          "access_type": "ALL",
+          "rows_examined_per_scan": 1,
+          "rows_produced_per_join": 1,
+          "filtered": "100.00",
+          "using_join_buffer": "hash join",
+          "cost_info": {
+            "read_cost": "0.25",
+            "eval_cost": "0.10",
+            "prefix_cost": "0.70",
+            "data_read_per_join": "16"
+          },
+          "used_columns": [
+            "id",
+            "keyword"
+          ],
+          "attached_condition": "(`bench`.`k`.`keyword` in ('superhero','sequel','second-part','marvel-comics','based-on-comic','tv-special','fight','violence'))"
+        }
+      },
+      {
+        "table": {
+          "table_name": "mk",
+          "access_type": "ALL",
+          "rows_examined_per_scan": 2,
+          "rows_produced_per_join": 1,
+          "filtered": "50.00",
+          "using_join_buffer": "hash join",
+          "cost_info": {
+            "read_cost": "0.27",
+            "eval_cost": "0.10",
+            "prefix_cost": "1.17",
+            "data_read_per_join": "16"
+          },
+          "used_columns": [
+            "movie_id",
+            "keyword_id"
+          ],
+          "attached_condition": "(`bench`.`mk`.`keyword_id` = `bench`.`k`.`id`)"
+        }
+      },
+      {
+        "table": {
+          "table_name": "ci",
+          "access_type": "ALL",
+          "rows_examined_per_scan": 2,
+          "rows_produced_per_join": 1,
+          "filtered": "50.00",
+          "using_join_buffer": "hash join",
+          "cost_info": {
+            "read_cost": "0.27",
+            "eval_cost": "0.10",
+            "prefix_cost": "1.63",
+            "data_read_per_join": "16"
+          },
+          "used_columns": [
+            "movie_id",
+            "person_role_id",
+            "person_id"
+          ],
+          "attached_condition": "(`bench`.`ci`.`movie_id` = `bench`.`mk`.`movie_id`)"
+        }
+      },
+      {
+        "table": {
+          "table_name": "n",
+          "access_type": "ALL",
+          "rows_examined_per_scan": 2,
+          "rows_produced_per_join": 1,
+          "filtered": "50.00",
+          "using_join_buffer": "hash join",
+          "cost_info": {
+            "read_cost": "0.27",
+            "eval_cost": "0.10",
+            "prefix_cost": "2.10",
+            "data_read_per_join": "8"
+          },
+          "used_columns": [
+            "id"
+          ],
+          "attached_condition": "(`bench`.`n`.`id` = `bench`.`ci`.`person_id`)"
+        }
+      },
+      {
+        "table": {
+          "table_name": "cc",
+          "access_type": "ALL",
+          "rows_examined_per_scan": 2,
+          "rows_produced_per_join": 1,
+          "filtered": "50.00",
+          "using_join_buffer": "hash join",
+          "cost_info": {
+            "read_cost": "0.27",
+            "eval_cost": "0.10",
+            "prefix_cost": "2.56",
+            "data_read_per_join": "16"
+          },
+          "used_columns": [
+            "movie_id",
+            "subject_id",
+            "status_id"
+          ],
+          "attached_condition": "(`bench`.`cc`.`movie_id` = `bench`.`mk`.`movie_id`)"
+        }
+      },
+      {
+        "table": {
+          "table_name": "t",
+          "access_type": "ALL",
+          "rows_examined_per_scan": 2,
+          "rows_produced_per_join": 1,
+          "filtered": "50.00",
+          "using_join_buffer": "hash join",
+          "cost_info": {
+            "read_cost": "0.37",
+            "eval_cost": "0.10",
+            "prefix_cost": "3.04",
+            "data_read_per_join": "24"
+          },
+          "used_columns": [
+            "id",
+            "title",
+            "production_year",
+            "kind_id"
+          ],
+          "attached_condition": "((`bench`.`t`.`kind_id` = `bench`.`kt`.`id`) and (`bench`.`t`.`id` = `bench`.`mk`.`movie_id`) and (`bench`.`t`.`production_year` > 1950))"
+        }
+      },
+      {
+        "table": {
+          "table_name": "chn",
+          "access_type": "ALL",
+          "rows_examined_per_scan": 2,
+          "rows_produced_per_join": 1,
+          "filtered": "50.00",
+          "using_join_buffer": "hash join",
+          "cost_info": {
+            "read_cost": "0.38",
+            "eval_cost": "0.10",
+            "prefix_cost": "3.52",
+            "data_read_per_join": "16"
+          },
+          "used_columns": [
+            "id",
+            "name"
+          ],
+          "attached_condition": "((`bench`.`chn`.`id` = `bench`.`ci`.`person_role_id`) and (not((`bench`.`chn`.`name` like '%Sherlock%'))) and ((`bench`.`chn`.`name` like '%Tony%Stark%') or (`bench`.`chn`.`name` like '%Iron%Man%')))"
+        }
+      },
+      {
+        "table": {
+          "table_name": "cct1",
+          "access_type": "ALL",
+          "rows_examined_per_scan": 2,
+          "rows_produced_per_join": 1,
+          "filtered": "50.00",
+          "using_join_buffer": "hash join",
+          "cost_info": {
+            "read_cost": "0.39",
+            "eval_cost": "0.10",
+            "prefix_cost": "4.01",
+            "data_read_per_join": "264"
+          },
+          "used_columns": [
+            "id",
+            "kind"
+          ],
+          "attached_condition": "((`bench`.`cct1`.`id` = `bench`.`cc`.`subject_id`) and (`bench`.`cct1`.`kind` = 'cast'))"
+        }
+      },
+      {
+        "table": {
+          "table_name": "cct2",
+          "access_type": "ALL",
+          "rows_examined_per_scan": 2,
+          "rows_produced_per_join": 1,
+          "filtered": "50.00",
+          "using_join_buffer": "hash join",
+          "cost_info": {
+            "read_cost": "0.39",
+            "eval_cost": "0.10",
+            "prefix_cost": "4.51",
+            "data_read_per_join": "264"
+          },
+          "used_columns": [
+            "id",
+            "kind"
+          ],
+          "attached_condition": "((`bench`.`cct2`.`id` = `bench`.`cc`.`status_id`) and (`bench`.`cct2`.`kind` like '%complete%'))"
+        }
+      }
+    ]
+  }
+}

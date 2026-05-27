@@ -1,0 +1,17 @@
+{
+  "case_id": "PORT_0009",
+  "draft_id": "PORT_DRAFT_0003",
+  "source_file_path": "datasets/raw/parrot/PARROT/benchmark/BIRD/pg_res.json",
+  "source_record_index": 6,
+  "source_sql_field": "pg",
+  "target_sql_field": "cracksql",
+  "source_record_subset": {
+    "pg": "SELECT \"t1\".\"account_id\" FROM \"loan\" AS \"t1\" INNER JOIN \"account\" AS \"t2\" ON \"t1\".\"account_id\" = \"t2\".\"account_id\" WHERE TO_CHAR( CAST( \"t2\".\"date\" AS TIMESTAMP ) , 'YYYY' ) = '1993' AND \"t1\".\"duration\" > 12 ORDER BY \"t1\".\"amount\" DESC NULLS LAST LIMIT 1",
+    "cracksql": "SELECT `t1`.`account_id` FROM `loan` AS `t1` INNER JOIN `account` AS `t2` ON `t1`.`account_id` = `t2`.`account_id` WHERE YEAR(CAST(`t2`.`date` AS DATE)) = 1993 AND `t1`.`duration` > 12 ORDER BY `t1`.`amount` DESC LIMIT 1",
+    "result_preview": [
+      {
+        "account_id": 10451
+      }
+    ]
+  }
+}

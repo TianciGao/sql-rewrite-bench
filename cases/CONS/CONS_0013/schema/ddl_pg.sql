@@ -1,0 +1,2 @@
+CREATE TABLE a (deptno INTEGER, ename VARCHAR(32));
+CREATE TABLE b (deptno INTEGER, ename VARCHAR(32));

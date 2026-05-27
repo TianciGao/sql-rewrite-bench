@@ -1,0 +1,3 @@
+SELECT *
+FROM dept AS d
+WHERE NOT EXISTS (SELECT COUNT(*) FROM emp e);

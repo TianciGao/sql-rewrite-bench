@@ -1,0 +1,30 @@
+[
+  {
+    "Plan": {
+      "Node Type": "Aggregate",
+      "Strategy": "Plain",
+      "Partial Mode": "Simple",
+      "Parallel Aware": false,
+      "Async Capable": false,
+      "Startup Cost": 26.95,
+      "Total Cost": 26.97,
+      "Plan Rows": 1,
+      "Plan Width": 8,
+      "Plans": [
+        {
+          "Node Type": "Seq Scan",
+          "Parent Relationship": "Outer",
+          "Parallel Aware": false,
+          "Async Capable": false,
+          "Relation Name": "loan",
+          "Alias": "loan",
+          "Startup Cost": 0.00,
+          "Total Cost": 24.12,
+          "Plan Rows": 377,
+          "Plan Width": 36,
+          "Filter": "(amount <= '100000'::double precision)"
+        }
+      ]
+    }
+  }
+]

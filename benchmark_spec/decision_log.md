@@ -214,3 +214,63 @@ The previously identified Spark-side consistency gap for the VeriEQL-derived sta
 - Both cases remain staged / not_yet_admitted
 - Immediate next work should shift from engine-closure repair to small pilot evaluation and selective next-step planning
 - DSB remains unresolved and should not be silently frozen without an explicit human decision
+
+---
+
+## DL-018
+### Decision
+The case-registry blocker label `missing_formal_review_only` is approved for use in `inventory/case_registry.csv` rows when all of the following are true:
+- PostgreSQL witness validation and PostgreSQL plan artifacts exist
+- MySQL witness validation and MySQL plan artifacts exist
+- Spark witness validation and Spark plan artifacts exist
+- formal review has not yet been performed
+
+### Rationale
+Some staged cases may have complete tri-engine execution and plan evidence while still lacking a formal review. In that situation, older blocker wording such as `missing_spark_closure_or_formal_review` is semantically stale because it still mentions missing Spark closure.
+
+### Consequence
+`missing_formal_review_only` may replace stale blocker wording such as `missing_spark_closure_or_formal_review` only when Spark closure is already evidenced.
+
+This label is neutral. By itself it does not imply:
+- admitted
+- promoted
+- common-core
+- extended
+- under review
+- any reporting-line movement
+
+No new tri-engine staged performance `current_role` vocabulary is frozen by this decision. Existing `current_role` labels remain unchanged until a later separate governance decision explicitly freezes such vocabulary.
+
+---
+
+## DL-019
+### Decision
+The following post-MySQL / pre-Spark performance live-facts vocabulary is approved for use in `inventory/case_registry.csv` rows when all of the following are true:
+- PostgreSQL witness validation and PostgreSQL plan artifacts exist
+- MySQL witness validation and MySQL plan artifacts exist
+- Spark closure has not yet been completed
+
+Approved `current_maturity` phrase:
+- `PG + MySQL witness-validated performance draft with positive/negative pair and PG/MySQL plan artifacts`
+
+Approved `package_engineering_status` phrase:
+- `formal skeleton complete；release-grade incomplete（PG + MySQL witness validated + PG/MySQL plans；Spark not closed）`
+
+### Rationale
+Some performance rows now have stronger evidence than a generic `PG + MySQL validated` label, because they include both witness validation and plan artifacts on PostgreSQL and MySQL, while Spark closure is still open.
+The registry therefore needs a narrower live-facts phrase for this exact post-MySQL / pre-Spark state.
+
+### Consequence
+These phrases are live-facts vocabulary only.
+By themselves they do **not** imply:
+- admitted
+- promoted
+- common-core
+- extended
+- under review
+- any reporting-line movement
+
+No new `current_role` vocabulary is frozen by this decision.
+Existing `current_role` values remain unchanged until a later separate governance decision explicitly freezes such a role label.
+
+These phrases may be used in later narrow `inventory/case_registry.csv` writebacks for post-MySQL / pre-Spark rows once supported by case-local evidence.

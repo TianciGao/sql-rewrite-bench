@@ -1,0 +1,32 @@
+[
+  {
+    "Plan": {
+      "Node Type": "Seq Scan",
+      "Parallel Aware": false,
+      "Async Capable": false,
+      "Relation Name": "b",
+      "Alias": "b1",
+      "Startup Cost": 0.00,
+      "Total Cost": 14680.38,
+      "Plan Rows": 708,
+      "Plan Width": 4,
+      "Filter": "(((ename)::text <> 'WARD'::text) OR (NOT (ANY (deptno = (hashed SubPlan 2).col1))))",
+      "Plans": [
+        {
+          "Node Type": "Seq Scan",
+          "Parent Relationship": "SubPlan",
+          "Subplan Name": "SubPlan 2",
+          "Parallel Aware": false,
+          "Async Capable": false,
+          "Relation Name": "a",
+          "Alias": "a",
+          "Startup Cost": 0.00,
+          "Total Cost": 18.88,
+          "Plan Rows": 4,
+          "Plan Width": 4,
+          "Filter": "((ename)::text = 'WARD'::text)"
+        }
+      ]
+    }
+  }
+]

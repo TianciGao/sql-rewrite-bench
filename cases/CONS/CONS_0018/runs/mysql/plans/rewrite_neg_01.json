@@ -1,0 +1,59 @@
+{
+  "query_block": {
+    "select_id": 1,
+    "cost_info": {
+      "query_cost": "2.10"
+    },
+    "nested_loop": [
+      {
+        "table": {
+          "table_name": "<subquery2>",
+          "access_type": "ALL",
+          "materialized_from_subquery": {
+            "using_temporary_table": true,
+            "query_block": {
+              "table": {
+                "table_name": "e",
+                "access_type": "ALL",
+                "rows_examined_per_scan": 1,
+                "rows_produced_per_join": 1,
+                "filtered": "100.00",
+                "cost_info": {
+                  "read_cost": "0.25",
+                  "eval_cost": "0.10",
+                  "prefix_cost": "0.35",
+                  "data_read_per_join": "288"
+                },
+                "used_columns": [
+                  "deptno"
+                ]
+              }
+            }
+          }
+        }
+      },
+      {
+        "table": {
+          "table_name": "d",
+          "access_type": "ALL",
+          "rows_examined_per_scan": 3,
+          "rows_produced_per_join": 1,
+          "filtered": "33.33",
+          "using_join_buffer": "hash join",
+          "cost_info": {
+            "read_cost": "0.25",
+            "eval_cost": "0.10",
+            "prefix_cost": "2.10",
+            "data_read_per_join": "264"
+          },
+          "used_columns": [
+            "deptno",
+            "dname",
+            "loc"
+          ],
+          "attached_condition": "(`bench`.`d`.`deptno` = `<subquery2>`.`deptno`)"
+        }
+      }
+    ]
+  }
+}

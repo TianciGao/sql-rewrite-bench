@@ -1,0 +1,264 @@
+# FORMAL_PORT_CURRENT_RESULTS_SNAPSHOT_v0
+
+## 1. Status
+
+This is a tracked scratch summary of the current formal PORT results snapshot.
+
+This snapshot is for the current PORT / RQ3 line only and is built from existing smoke and canary artifacts.
+
+## 2. Input Reports / References
+
+Primary snapshot command:
+
+- `python -m scripts.cli formal-port-results-snapshot`
+
+Reports and references used:
+
+- `reports/baseline_smoke/sqlglot_transpile_preflight_v0.json`
+- `reports/baseline_smoke/sqlglot_transpile_pg_canary_v0.json`
+- `reports/baseline_smoke/sqlglot_transpile_pg_summary_v0.json`
+- `reports/baseline_smoke/llm_direct_translate_prompt_packages_v0.json`
+- `reports/baseline_smoke/llm_direct_translate_call_port_0004_v0.json`
+- `reports/baseline_smoke/llm_direct_translate_pg_port_0004_v0.json`
+- `reports/baseline_smoke/llm_direct_translate_summary_port_0004_v0.json`
+- `reports/baseline_smoke/llm_direct_translate_call_port_0022_v0.json`
+- `reports/baseline_smoke/llm_direct_translate_pg_port_0022_v0.json`
+- `reports/baseline_smoke/llm_direct_translate_summary_port_0022_v0.json`
+- `reports/baseline_smoke/llm_direct_translate_2case_rollup_v0.json`
+- `reports/formal_port/llm_translate_port_0012_targeted_call_v0.json`
+- `reports/formal_port/llm_translate_port_0012_targeted_pg_v0.json`
+- `reports/formal_port/llm_translate_port_0012_targeted_summary_v0.json`
+- `reports/formal_port/port_pg_route_matrix_v0.json`
+- `reports/formal_port/port_pg_translation_consistency_preflight_v0.json`
+- `reports/formal_port/port_pg_translation_consistency_run_v0.json`
+- `reports/formal_port/port_0012_pg_reference_normalization_check_v0.json`
+- `reports/formal_expansion/batch2c_port_pg_matrix_consistency_v0.json`
+- `docs/_scratch/FORMAL_PORT_PG_TRANSLATION_CONSISTENCY_SUMMARY_v0.md`
+- `docs/_scratch/BATCH2C_PORT_PG_MATRIX_CONSISTENCY_SUMMARY_v0.md`
+- `docs/_scratch/PORT_0012_PG_REFERENCE_NORMALIZATION_CHECK_v0.md`
+- `docs/_scratch/PORT_0012_FAILURE_ANALYSIS_PACKET_v0.md`
+- `docs/_scratch/PORT_0012_LLM_TRANSLATE_TARGETED_CANARY_v0.md`
+- `docs/_scratch/PAPER_EXPERIMENT_DENOMINATOR_FREEZE_PLAN_v0.md`
+- `reports/formal_port/port_current_results_snapshot_v0.json`
+
+## 3. Current Clean PORT Denominator
+
+The current clean PORT denominator remains:
+
+- `PORT_0004`
+- `PORT_0022`
+
+Held-out failure-analysis case:
+
+- `PORT_0012`
+
+Current denominator implication:
+
+- the clean PORT denominator remains `PORT_0004 / PORT_0022`
+- `PORT_0012` remains holdout failure-analysis / stress case
+- the clean `2`-case subset should not be described as full PORT closure
+
+## 4. SQLGlot Transpile Current Snapshot
+
+Current SQLGlot same-target portability snapshot:
+
+- preflight parse + transpile: `3 / 3`
+- PostgreSQL execution: `2 / 3`
+- failure case:
+  - `PORT_0012`
+- failure category:
+  - `InvalidDatetimeFormat`
+- failure note:
+  - quoted identifier literal `'birthday'` was treated as timestamp input
+
+Interpretation:
+
+- SQLGlot transpile currently shows one concrete translation failure on the bounded PORT smoke set
+- this is useful route evidence, but it is not translation correctness scoring
+- the latest bounded PostgreSQL route matrix preserves the same SQLGlot outcome: `2 / 3` PG success with `PORT_0012` failing on `InvalidDatetimeFormat`
+- PG reference consistency check:
+  - executable cases checked: `2 / 2`
+  - consistent: `0`
+  - inconsistent: `2`
+  - `PORT_0012` remained blocked because SQLGlot PG execution had already failed
+
+## 5. LLM Translate Current Snapshot
+
+Current LLM translate bounded snapshot:
+
+- prompt dry-run ready: `3 / 3`
+- clean subset execution passed: `2 / 2`
+- passed clean cases:
+  - `PORT_0004`
+  - `PORT_0022`
+- total token usage:
+  - `912`
+- `PORT_0012`:
+  - prompt-ready in the earlier bounded smoke route
+  - targeted canary command now exists
+  - latest targeted canary execute-path result: `success`
+  - model call succeeded
+  - SQL extraction succeeded
+  - PostgreSQL execution succeeded
+  - row count: `1`
+  - runtime: `63 ms`
+  - token usage: `480`
+- latest bounded PostgreSQL route matrix:
+  - model call success: `3 / 3`
+  - SQL extraction success: `3 / 3`
+  - PostgreSQL execution success: `3 / 3`
+  - total token usage: `1317`
+  - `PORT_0012` matrix token usage: `455`
+  - `PORT_0012` matrix row count: `1`
+- PG reference consistency run:
+  - route executable from existing PG evidence: `3 / 3`
+  - consistent: `1`
+  - inconsistent: `1`
+  - execution failed: `1`
+  - checked-record consistency rate: `0.5`
+- `PORT_0012` normalized-reference follow-up:
+  - report-local PostgreSQL reference variant executed successfully
+  - Direct LLM candidate executed successfully
+  - row count: `1 / 1`
+  - byte equal: `true`
+  - normalized equal: `true`
+  - checker status: `consistent`
+
+Interpretation:
+
+- the current clean LLM translate line is the `2`-case subset only
+- the latest PG-only route matrix adds bounded three-case PostgreSQL execution evidence for Direct LLM translate
+- the PG reference-consistency layer is still mixed:
+  - `PORT_0004` matched exactly
+  - `PORT_0022` executed but mismatched the current PG reference output
+  - `PORT_0012` did not close because the current PG reference SQL failed during the checker run
+- a bounded `PORT_0012` follow-up with a report-local PostgreSQL-normalized reference variant now succeeds:
+  - the normalized reference executed
+  - the existing Direct LLM candidate executed
+  - the resulting TSVs matched exactly
+- this is still route evidence only, not translation correctness or denominator expansion by itself
+- the latest Batch 2C bounded PostgreSQL slice extends that route evidence:
+  - Direct LLM translate succeeded on `PORT_0013`, `PORT_0024`, and `PORT_0025`
+  - total Batch 2C LLM token usage: `1278`
+  - SQLGlot route evidence on the same slice remains mixed:
+    - `PORT_0013` PG failed with `UndefinedFunction` from `SUM(boolean)`
+    - `PORT_0024` PG succeeded and closed under normalized TSV policy
+    - `PORT_0025` PG succeeded and closed under exact TSV policy
+
+## 6. PORT_0012 Holdout / Failure-Analysis Status
+
+Current `PORT_0012` status:
+
+- holdout role:
+  - failure-analysis / stress case
+- SQLGlot preflight:
+  - success
+- SQLGlot PG execution:
+  - failed
+- failure category:
+  - `InvalidDatetimeFormat`
+- failure bucket:
+  - quoted identifier vs string literal confusion
+  - datetime / timestamp formatting
+  - dialect normalization failure
+  - portability translation failure
+- LLM prompt status:
+  - ready
+- targeted LLM canary:
+  - attempted at command level
+  - model call succeeded
+  - `model_call_status=success`
+  - `extraction_status=extracted`
+  - `pg_execution_status=success`
+- bounded PG route matrix:
+  - `model_call_status=success`
+  - `extraction_status=extracted`
+  - `pg_execution_status=success`
+  - `row_count=1`
+  - `token_usage_total=455`
+- PG reference consistency run:
+  - `checker_status=execution_failed`
+  - failure category: `UndefinedObject`
+  - blocker moved to the current PostgreSQL reference SQL layer, not the LLM route execution layer
+- PG normalized-reference follow-up:
+  - report-local PostgreSQL reference variant status: `success`
+  - Direct LLM candidate status: `success`
+  - `byte_equal=true`
+  - `normalized_equal=true`
+  - this resolves the PostgreSQL reference-layer blocker for the bounded report-local check only
+- clean subset inclusion:
+  - false
+
+## 7. Current Interpretation For RQ3
+
+Current RQ3-facing interpretation:
+
+- SQLGlot Transpile:
+  - bounded portability smoke evidence exists
+  - one concrete failure remains on `PORT_0012`
+- LLM Translate:
+  - clean `2`-case execution evidence exists on `PORT_0004` and `PORT_0022`
+  - a targeted `PORT_0012` Direct LLM canary path now exists
+  - the latest targeted run succeeded on PostgreSQL for this one-case stress canary
+  - the latest bounded PostgreSQL route matrix also succeeded for Direct LLM translate on all three selected PORT cases
+  - this suggests the targeted LLM route avoided the SQLGlot identifier-literal / datetime failure on this case
+  - the PG reference-consistency layer did not fully close:
+    - `PORT_0004` matched exactly
+    - `PORT_0022` mismatched under exact TSV comparison
+    - `PORT_0012` reference checking failed because the current positive reference SQL was not PostgreSQL-executable
+  - a narrower `PORT_0012` PostgreSQL-normalized-reference follow-up now shows:
+    - report-local normalized reference execution success
+    - Direct LLM candidate execution success
+    - exact TSV consistency success
+  - the newer bounded Batch 2C PostgreSQL slice adds:
+    - Direct LLM translate `3 / 3` call success
+    - Direct LLM translate `3 / 3` extraction success
+    - Direct LLM translate `3 / 3` PostgreSQL success
+    - Direct LLM translate `3 / 3` checker-consistent under the approved Batch 2C policies
+    - `PORT_0013` / `PORT_0024` / `PORT_0025` token usage:
+      - `442`
+      - `388`
+      - `448`
+    - total token usage: `1278`
+    - preserved SQLGlot Batch 2C route evidence:
+      - PG success `2 / 3`
+      - policy-consistent `2 / 3`
+      - `PORT_0013` failed with `UndefinedFunction` due to `SUM(boolean)`
+  - `PORT_0012` therefore remains intentionally outside the clean denominator
+
+This means:
+
+- the current clean PORT denominator is still `PORT_0004 / PORT_0022`
+- the clean-denominator policy may need revisit in a later decision packet, but it should not be expanded automatically from the current matrix alone
+- the current PG reference-consistency packet is useful route/reference evidence, but it is not enough to justify denominator expansion
+- the current snapshot is useful for formal route-status reporting
+- it is not enough to claim full PORT closure
+
+## 8. Claim Boundaries
+
+- not translation correctness
+- PG-only
+- report-local PostgreSQL-normalized reference used for the `PORT_0012` follow-up
+- not cross-engine matrix
+- exact TSV PG reference checks only
+- not speedup
+- not final PORT leaderboard
+- not registry writeback
+- not formal review update
+
+## 9. Recommended Next Action
+
+- decide whether targeted `PORT_0012` LLM success evidence should remain a failure-analysis note only, or whether a separate denominator-expansion decision is warranted while still keeping the current clean `2`-case subset unchanged by default
+
+## 10. Verification / Non-Modification Note
+
+- only this note was created
+- no database workloads were run
+- no SQL was executed
+- no SQLGlot was run
+- no checker was run
+- no new LLM calls were made while updating this note
+- no registry changes were made
+- `docs/EXECUTION_STATUS.md` was not changed
+- no formal review files were changed
+- taxonomy calibration notes were untouched

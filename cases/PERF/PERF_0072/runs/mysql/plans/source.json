@@ -1,0 +1,171 @@
+{
+  "query_block": {
+    "select_id": 1,
+    "cost_info": {
+      "query_cost": "2.75"
+    },
+    "ordering_operation": {
+      "using_filesort": false,
+      "grouping_operation": {
+        "using_temporary_table": true,
+        "using_filesort": true,
+        "cost_info": {
+          "sort_cost": "1.00"
+        },
+        "nested_loop": [
+          {
+            "table": {
+              "table_name": "catalog_sales",
+              "access_type": "ALL",
+              "rows_examined_per_scan": 1,
+              "rows_produced_per_join": 1,
+              "filtered": "100.00",
+              "cost_info": {
+                "read_cost": "0.25",
+                "eval_cost": "0.10",
+                "prefix_cost": "0.35",
+                "data_read_per_join": "48"
+              },
+              "used_columns": [
+                "cs_item_sk",
+                "cs_sold_date_sk",
+                "cs_bill_cdemo_sk",
+                "cs_promo_sk",
+                "cs_quantity",
+                "cs_list_price",
+                "cs_coupon_amt",
+                "cs_sales_price"
+              ]
+            }
+          },
+          {
+            "table": {
+              "table_name": "customer_demographics",
+              "access_type": "eq_ref",
+              "possible_keys": [
+                "PRIMARY"
+              ],
+              "key": "PRIMARY",
+              "used_key_parts": [
+                "cd_demo_sk"
+              ],
+              "key_length": "4",
+              "ref": [
+                "bench.catalog_sales.cs_bill_cdemo_sk"
+              ],
+              "rows_examined_per_scan": 1,
+              "rows_produced_per_join": 1,
+              "filtered": "100.00",
+              "cost_info": {
+                "read_cost": "0.25",
+                "eval_cost": "0.10",
+                "prefix_cost": "0.70",
+                "data_read_per_join": "432"
+              },
+              "used_columns": [
+                "cd_demo_sk",
+                "cd_gender",
+                "cd_marital_status",
+                "cd_education_status"
+              ],
+              "attached_condition": "((`bench`.`customer_demographics`.`cd_education_status` = 'Primary') and (`bench`.`customer_demographics`.`cd_marital_status` = 'W') and (`bench`.`customer_demographics`.`cd_gender` = 'F'))"
+            }
+          },
+          {
+            "table": {
+              "table_name": "date_dim",
+              "access_type": "eq_ref",
+              "possible_keys": [
+                "PRIMARY"
+              ],
+              "key": "PRIMARY",
+              "used_key_parts": [
+                "d_date_sk"
+              ],
+              "key_length": "4",
+              "ref": [
+                "bench.catalog_sales.cs_sold_date_sk"
+              ],
+              "rows_examined_per_scan": 1,
+              "rows_produced_per_join": 1,
+              "filtered": "100.00",
+              "cost_info": {
+                "read_cost": "0.25",
+                "eval_cost": "0.10",
+                "prefix_cost": "1.05",
+                "data_read_per_join": "16"
+              },
+              "used_columns": [
+                "d_date_sk",
+                "d_year"
+              ],
+              "attached_condition": "(`bench`.`date_dim`.`d_year` = 1998)"
+            }
+          },
+          {
+            "table": {
+              "table_name": "item",
+              "access_type": "eq_ref",
+              "possible_keys": [
+                "PRIMARY"
+              ],
+              "key": "PRIMARY",
+              "used_key_parts": [
+                "i_item_sk"
+              ],
+              "key_length": "4",
+              "ref": [
+                "bench.catalog_sales.cs_item_sk"
+              ],
+              "rows_examined_per_scan": 1,
+              "rows_produced_per_join": 1,
+              "filtered": "100.00",
+              "cost_info": {
+                "read_cost": "0.25",
+                "eval_cost": "0.10",
+                "prefix_cost": "1.40",
+                "data_read_per_join": "1K"
+              },
+              "used_columns": [
+                "i_item_sk",
+                "i_item_id"
+              ]
+            }
+          },
+          {
+            "table": {
+              "table_name": "promotion",
+              "access_type": "eq_ref",
+              "possible_keys": [
+                "PRIMARY"
+              ],
+              "key": "PRIMARY",
+              "used_key_parts": [
+                "p_promo_sk"
+              ],
+              "key_length": "4",
+              "ref": [
+                "bench.catalog_sales.cs_promo_sk"
+              ],
+              "rows_examined_per_scan": 1,
+              "rows_produced_per_join": 1,
+              "filtered": "100.00",
+              "cost_info": {
+                "read_cost": "0.25",
+                "eval_cost": "0.10",
+                "prefix_cost": "1.75",
+                "data_read_per_join": "48"
+              },
+              "used_columns": [
+                "p_promo_sk",
+                "p_channel_email",
+                "p_channel_event"
+              ],
+              "attached_condition": "((`bench`.`promotion`.`p_channel_email` = 'N') or (`bench`.`promotion`.`p_channel_event` = 'N'))"
+            }
+          }
+        ]
+      }
+    }
+  }
+}

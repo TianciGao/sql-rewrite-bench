@@ -1,0 +1,190 @@
+[
+  {
+    "Plan": {
+      "Node Type": "Limit",
+      "Parallel Aware": false,
+      "Async Capable": false,
+      "Startup Cost": 1956.03,
+      "Total Cost": 1956.28,
+      "Plan Rows": 100,
+      "Plan Width": 52,
+      "Plans": [
+        {
+          "Node Type": "Sort",
+          "Parent Relationship": "Outer",
+          "Parallel Aware": false,
+          "Async Capable": false,
+          "Startup Cost": 1956.03,
+          "Total Cost": 1956.54,
+          "Plan Rows": 204,
+          "Plan Width": 52,
+          "Sort Key": ["u.reputation DESC", "(sum(CASE WHEN (p.posttypeid = ANY ('{1,2}'::integer[])) THEN p.score ELSE 0 END)) DESC"],
+          "Plans": [
+            {
+              "Node Type": "Hash Join",
+              "Parent Relationship": "Outer",
+              "Parallel Aware": false,
+              "Async Capable": false,
+              "Join Type": "Left",
+              "Startup Cost": 326.40,
+              "Total Cost": 1948.23,
+              "Plan Rows": 204,
+              "Plan Width": 52,
+              "Inner Unique": true,
+              "Hash Cond": "(u.id = b.userid)",
+              "Plans": [
+                {
+                  "Node Type": "Aggregate",
+                  "Strategy": "Sorted",
+                  "Partial Mode": "Simple",
+                  "Parent Relationship": "Outer",
+                  "Parallel Aware": false,
+                  "Async Capable": false,
+                  "Startup Cost": 276.00,
+                  "Total Cost": 1897.28,
+                  "Plan Rows": 204,
+                  "Plan Width": 44,
+                  "Group Key": ["u.id", "u.reputation", "u.views"],
+                  "Plans": [
+                    {
+                      "Node Type": "Incremental Sort",
+                      "Parent Relationship": "Outer",
+                      "Parallel Aware": false,
+                      "Async Capable": false,
+                      "Startup Cost": 276.00,
+                      "Total Cost": 1423.49,
+                      "Plan Rows": 18870,
+                      "Plan Width": 24,
+                      "Sort Key": ["u.id", "u.reputation", "u.views", "p.id"],
+                      "Presorted Key": ["u.id"],
+                      "Plans": [
+                        {
+                          "Node Type": "Merge Join",
+                          "Parent Relationship": "Outer",
+                          "Parallel Aware": false,
+                          "Async Capable": false,
+                          "Join Type": "Left",
+                          "Startup Cost": 271.44,
+                          "Total Cost": 564.69,
+                          "Plan Rows": 18870,
+                          "Plan Width": 24,
+                          "Inner Unique": false,
+                          "Merge Cond": "(u.id = p.owneruserid)",
+                          "Plans": [
+                            {
+                              "Node Type": "Sort",
+                              "Parent Relationship": "Outer",
+                              "Parallel Aware": false,
+                              "Async Capable": false,
+                              "Startup Cost": 142.54,
+                              "Total Cost": 147.64,
+                              "Plan Rows": 2040,
+                              "Plan Width": 12,
+                              "Sort Key": ["u.id"],
+                              "Plans": [
+                                {
+                                  "Node Type": "Seq Scan",
+                                  "Parent Relationship": "Outer",
+                                  "Parallel Aware": false,
+                                  "Async Capable": false,
+                                  "Relation Name": "users",
+                                  "Alias": "u",
+                                  "Startup Cost": 0.00,
+                                  "Total Cost": 30.40,
+                                  "Plan Rows": 2040,
+                                  "Plan Width": 12
+                                }
+                              ]
+                            },
+                            {
+                              "Node Type": "Sort",
+                              "Parent Relationship": "Inner",
+                              "Parallel Aware": false,
+                              "Async Capable": false,
+                              "Startup Cost": 128.89,
+                              "Total Cost": 133.52,
+                              "Plan Rows": 1850,
+                              "Plan Width": 16,
+                              "Sort Key": ["p.owneruserid"],
+                              "Plans": [
+                                {
+                                  "Node Type": "Seq Scan",
+                                  "Parent Relationship": "Outer",
+                                  "Parallel Aware": false,
+                                  "Async Capable": false,
+                                  "Relation Name": "posts",
+                                  "Alias": "p",
+                                  "Startup Cost": 0.00,
+                                  "Total Cost": 28.50,
+                                  "Plan Rows": 1850,
+                                  "Plan Width": 16
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "Node Type": "Hash",
+                  "Parent Relationship": "Inner",
+                  "Parallel Aware": false,
+                  "Async Capable": false,
+                  "Startup Cost": 47.90,
+                  "Total Cost": 47.90,
+                  "Plan Rows": 200,
+                  "Plan Width": 12,
+                  "Plans": [
+                    {
+                      "Node Type": "Subquery Scan",
+                      "Parent Relationship": "Outer",
+                      "Parallel Aware": false,
+                      "Async Capable": false,
+                      "Alias": "b",
+                      "Startup Cost": 43.90,
+                      "Total Cost": 47.90,
+                      "Plan Rows": 200,
+                      "Plan Width": 12,
+                      "Plans": [
+                        {
+                          "Node Type": "Aggregate",
+                          "Strategy": "Hashed",
+                          "Partial Mode": "Simple",
+                          "Parent Relationship": "Subquery",
+                          "Parallel Aware": false,
+                          "Async Capable": false,
+                          "Startup Cost": 43.90,
+                          "Total Cost": 45.90,
+                          "Plan Rows": 200,
+                          "Plan Width": 12,
+                          "Group Key": ["b_1.userid"],
+                          "Planned Partitions": 0,
+                          "Plans": [
+                            {
+                              "Node Type": "Seq Scan",
+                              "Parent Relationship": "Outer",
+                              "Parallel Aware": false,
+                              "Async Capable": false,
+                              "Relation Name": "badges",
+                              "Alias": "b_1",
+                              "Startup Cost": 0.00,
+                              "Total Cost": 32.60,
+                              "Plan Rows": 2260,
+                              "Plan Width": 8
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  }
+]

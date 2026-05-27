@@ -1,0 +1,114 @@
+== Physical Plan ==
+AdaptiveSparkPlan (18)
++- Filter (17)
+   +- Window (16)
+      +- WindowGroupLimit (15)
+         +- Sort (14)
+            +- HashAggregate (13)
+               +- Exchange (12)
+                  +- HashAggregate (11)
+                     +- HashAggregate (10)
+                        +- Exchange (9)
+                           +- HashAggregate (8)
+                              +- Project (7)
+                                 +- BroadcastHashJoin Inner BuildLeft (6)
+                                    :- BroadcastExchange (3)
+                                    :  +- Filter (2)
+                                    :     +- Scan parquet spark_catalog.default.users (1)
+                                    +- Filter (5)
+                                       +- Scan parquet spark_catalog.default.posts (4)
+
+
+(1) Scan parquet spark_catalog.default.users
+Output [3]: [Id#198, DisplayName#199, Reputation#200]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/longtail_0015_spark_plan_uo03cls0/users]
+PushedFilters: [IsNotNull(Id)]
+ReadSchema: struct<Id:int,DisplayName:string,Reputation:int>
+
+(2) Filter
+Input [3]: [Id#198, DisplayName#199, Reputation#200]
+Condition : isnotnull(Id#198)
+
+(3) BroadcastExchange
+Input [3]: [Id#198, DisplayName#199, Reputation#200]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, false] as bigint)),false), [plan_id=248]
+
+(4) Scan parquet spark_catalog.default.posts
+Output [5]: [Id#201, OwnerUserId#202, PostTypeId#203, ViewCount#204, Score#205]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/longtail_0015_spark_plan_uo03cls0/posts]
+PushedFilters: [IsNotNull(OwnerUserId)]
+ReadSchema: struct<Id:int,OwnerUserId:int,PostTypeId:int,ViewCount:int,Score:int>
+
+(5) Filter
+Input [5]: [Id#201, OwnerUserId#202, PostTypeId#203, ViewCount#204, Score#205]
+Condition : isnotnull(OwnerUserId#202)
+
+(6) BroadcastHashJoin
+Left keys [1]: [Id#198]
+Right keys [1]: [OwnerUserId#202]
+Join type: Inner
+Join condition: None
+
+(7) Project
+Output [7]: [Id#198, DisplayName#199, Reputation#200, Id#201, PostTypeId#203, ViewCount#204, Score#205]
+Input [8]: [Id#198, DisplayName#199, Reputation#200, Id#201, OwnerUserId#202, PostTypeId#203, ViewCount#204, Score#205]
+
+(8) HashAggregate
+Input [7]: [Id#198, DisplayName#199, Reputation#200, Id#201, PostTypeId#203, ViewCount#204, Score#205]
+Keys [4]: [Id#198, DisplayName#199, Reputation#200, Id#201]
+Functions [4]: [partial_sum(CASE WHEN (PostTypeId#203 = 1) THEN 1 ELSE 0 END), partial_sum(CASE WHEN (PostTypeId#203 = 2) THEN 1 ELSE 0 END), partial_sum(ViewCount#204), partial_sum(Score#205)]
+Aggregate Attributes [4]: [sum(CASE WHEN (PostTypeId#203 = 1) THEN 1 ELSE 0 END)#161L, sum(CASE WHEN (PostTypeId#203 = 2) THEN 1 ELSE 0 END)#162L, sum(ViewCount#204)#163L, sum(Score#205)#164L]
+Results [8]: [Id#198, DisplayName#199, Reputation#200, Id#201, sum#217L, sum#219L, sum#221L, sum#223L]
+
+(9) Exchange
+Input [8]: [Id#198, DisplayName#199, Reputation#200, Id#201, sum#217L, sum#219L, sum#221L, sum#223L]
+Arguments: hashpartitioning(Id#198, DisplayName#199, Reputation#200, Id#201, 1), ENSURE_REQUIREMENTS, [plan_id=253]
+
+(10) HashAggregate
+Input [8]: [Id#198, DisplayName#199, Reputation#200, Id#201, sum#217L, sum#219L, sum#221L, sum#223L]
+Keys [4]: [Id#198, DisplayName#199, Reputation#200, Id#201]
+Functions [4]: [merge_sum(CASE WHEN (PostTypeId#203 = 1) THEN 1 ELSE 0 END), merge_sum(CASE WHEN (PostTypeId#203 = 2) THEN 1 ELSE 0 END), merge_sum(ViewCount#204), merge_sum(Score#205)]
+Aggregate Attributes [4]: [sum(CASE WHEN (PostTypeId#203 = 1) THEN 1 ELSE 0 END)#161L, sum(CASE WHEN (PostTypeId#203 = 2) THEN 1 ELSE 0 END)#162L, sum(ViewCount#204)#163L, sum(Score#205)#164L]
+Results [8]: [Id#198, DisplayName#199, Reputation#200, Id#201, sum#217L, sum#219L, sum#221L, sum#223L]
+
+(11) HashAggregate
+Input [8]: [Id#198, DisplayName#199, Reputation#200, Id#201, sum#217L, sum#219L, sum#221L, sum#223L]
+Keys [3]: [Id#198, DisplayName#199, Reputation#200]
+Functions [5]: [merge_sum(CASE WHEN (PostTypeId#203 = 1) THEN 1 ELSE 0 END), merge_sum(CASE WHEN (PostTypeId#203 = 2) THEN 1 ELSE 0 END), merge_sum(ViewCount#204), merge_sum(Score#205), partial_count(distinct Id#201)]
+Aggregate Attributes [5]: [sum(CASE WHEN (PostTypeId#203 = 1) THEN 1 ELSE 0 END)#161L, sum(CASE WHEN (PostTypeId#203 = 2) THEN 1 ELSE 0 END)#162L, sum(ViewCount#204)#163L, sum(Score#205)#164L, count(Id#201)#160L]
+Results [8]: [Id#198, DisplayName#199, Reputation#200, sum#217L, sum#219L, sum#221L, sum#223L, count#226L]
+
+(12) Exchange
+Input [8]: [Id#198, DisplayName#199, Reputation#200, sum#217L, sum#219L, sum#221L, sum#223L, count#226L]
+Arguments: hashpartitioning(Id#198, DisplayName#199, Reputation#200, 1), ENSURE_REQUIREMENTS, [plan_id=257]
+
+(13) HashAggregate
+Input [8]: [Id#198, DisplayName#199, Reputation#200, sum#217L, sum#219L, sum#221L, sum#223L, count#226L]
+Keys [3]: [Id#198, DisplayName#199, Reputation#200]
+Functions [5]: [sum(CASE WHEN (PostTypeId#203 = 1) THEN 1 ELSE 0 END), sum(CASE WHEN (PostTypeId#203 = 2) THEN 1 ELSE 0 END), sum(ViewCount#204), sum(Score#205), count(distinct Id#201)]
+Aggregate Attributes [5]: [sum(CASE WHEN (PostTypeId#203 = 1) THEN 1 ELSE 0 END)#161L, sum(CASE WHEN (PostTypeId#203 = 2) THEN 1 ELSE 0 END)#162L, sum(ViewCount#204)#163L, sum(Score#205)#164L, count(Id#201)#160L]
+Results [8]: [Id#198 AS UserId#206, DisplayName#199, Reputation#200, count(Id#201)#160L AS PostCount#207L, sum(CASE WHEN (PostTypeId#203 = 1) THEN 1 ELSE 0 END)#161L AS QuestionCount#208L, sum(CASE WHEN (PostTypeId#203 = 2) THEN 1 ELSE 0 END)#162L AS AnswerCount#209L, sum(ViewCount#204)#163L AS TotalViews#210L, sum(Score#205)#164L AS TotalScore#211L]
+
+(14) Sort
+Input [8]: [UserId#206, DisplayName#199, Reputation#200, PostCount#207L, QuestionCount#208L, AnswerCount#209L, TotalViews#210L, TotalScore#211L]
+Arguments: [TotalScore#211L DESC NULLS LAST], false, 0
+
+(15) WindowGroupLimit
+Input [8]: [UserId#206, DisplayName#199, Reputation#200, PostCount#207L, QuestionCount#208L, AnswerCount#209L, TotalViews#210L, TotalScore#211L]
+Arguments: [TotalScore#211L DESC NULLS LAST], rank(TotalScore#211L), 10, Final
+
+(16) Window
+Input [8]: [UserId#206, DisplayName#199, Reputation#200, PostCount#207L, QuestionCount#208L, AnswerCount#209L, TotalViews#210L, TotalScore#211L]
+Arguments: [rank(TotalScore#211L) windowspecdefinition(TotalScore#211L DESC NULLS LAST, specifiedwindowframe(RowFrame, unboundedpreceding$(), currentrow$())) AS ScoreRank#215], [TotalScore#211L DESC NULLS LAST]
+
+(17) Filter
+Input [9]: [UserId#206, DisplayName#199, Reputation#200, PostCount#207L, QuestionCount#208L, AnswerCount#209L, TotalViews#210L, TotalScore#211L, ScoreRank#215]
+Condition : (ScoreRank#215 <= 10)
+
+(18) AdaptiveSparkPlan
+Output [9]: [UserId#206, DisplayName#199, Reputation#200, PostCount#207L, QuestionCount#208L, AnswerCount#209L, TotalViews#210L, TotalScore#211L, ScoreRank#215]
+Arguments: isFinalPlan=false
+
+

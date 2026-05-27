@@ -1,0 +1,17 @@
+{
+  "case_id": "PORT_0027",
+  "draft_id": "PORT_DRAFT_0030",
+  "source_file_path": "datasets/raw/parrot/PARROT/benchmark/BIRD/mysql_res.json",
+  "source_record_index": 13,
+  "source_sql_field": "mysql",
+  "target_sql_field": "cracksql",
+  "source_record_subset": {
+    "mysql": "SELECT CAST( COUNT( DISTINCT `t2`.`id` ) AS DOUBLE ) / COUNT( DISTINCT `t1`.`id` ) FROM `votes` AS `t1` INNER JOIN `posts` AS `t2` ON `t1`.`userid` = `t2`.`owneruserid` WHERE `t1`.`userid` = 24\n",
+    "cracksql": "SELECT CAST( COUNT( DISTINCT \"t2\".\"id\" ) AS FLOAT8 ) / COUNT(DISTINCT \"t1\".\"id\") FROM \"votes\" AS \"t1\" INNER JOIN \"posts\" AS \"t2\" ON \"t1\".\"userid\" = \"t2\".\"owneruserid\" WHERE \"t1\".\"userid\" = 24",
+    "result_preview": [
+      {
+        "CAST( COUNT( DISTINCT `t2`.`id` ) AS DOUBLE ) / COUNT( DISTINCT `t1`.`id` )": 0.375
+      }
+    ]
+  }
+}

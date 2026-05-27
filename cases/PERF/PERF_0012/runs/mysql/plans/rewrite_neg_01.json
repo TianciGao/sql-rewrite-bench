@@ -1,0 +1,289 @@
+{
+  "query_block": {
+    "select_id": 1,
+    "cost_info": {
+      "query_cost": "2.78"
+    },
+    "ordering_operation": {
+      "using_temporary_table": true,
+      "using_filesort": true,
+      "nested_loop": [
+        {
+          "table": {
+            "table_name": "region",
+            "access_type": "ALL",
+            "possible_keys": [
+              "PRIMARY"
+            ],
+            "rows_examined_per_scan": 2,
+            "rows_produced_per_join": 1,
+            "filtered": "50.00",
+            "cost_info": {
+              "read_cost": "0.35",
+              "eval_cost": "0.10",
+              "prefix_cost": "0.45",
+              "data_read_per_join": "112"
+            },
+            "used_columns": [
+              "r_regionkey",
+              "r_name"
+            ],
+            "attached_condition": "(`bench`.`region`.`r_name` = 'MIDDLE EAST')"
+          }
+        },
+        {
+          "table": {
+            "table_name": "nation",
+            "access_type": "ALL",
+            "possible_keys": [
+              "PRIMARY"
+            ],
+            "rows_examined_per_scan": 2,
+            "rows_produced_per_join": 1,
+            "filtered": "50.00",
+            "using_join_buffer": "hash join",
+            "cost_info": {
+              "read_cost": "0.25",
+              "eval_cost": "0.10",
+              "prefix_cost": "0.90",
+              "data_read_per_join": "112"
+            },
+            "used_columns": [
+              "n_nationkey",
+              "n_name",
+              "n_regionkey"
+            ],
+            "attached_condition": "(`bench`.`nation`.`n_regionkey` = `bench`.`region`.`r_regionkey`)"
+          }
+        },
+        {
+          "table": {
+            "table_name": "part",
+            "access_type": "ALL",
+            "possible_keys": [
+              "PRIMARY"
+            ],
+            "rows_examined_per_scan": 3,
+            "rows_produced_per_join": 1,
+            "filtered": "33.33",
+            "using_join_buffer": "hash join",
+            "cost_info": {
+              "read_cost": "0.45",
+              "eval_cost": "0.10",
+              "prefix_cost": "1.45",
+              "data_read_per_join": "336"
+            },
+            "used_columns": [
+              "p_partkey",
+              "p_mfgr",
+              "p_size",
+              "p_type"
+            ],
+            "attached_condition": "((`bench`.`part`.`p_size` = 26) and (`bench`.`part`.`p_type` like '%TIN'))"
+          }
+        },
+        {
+          "table": {
+            "table_name": "partsupp",
+            "access_type": "ALL",
+            "rows_examined_per_scan": 5,
+            "rows_produced_per_join": 1,
+            "filtered": "20.00",
+            "using_join_buffer": "hash join",
+            "cost_info": {
+              "read_cost": "0.25",
+              "eval_cost": "0.10",
+              "prefix_cost": "2.20",
+              "data_read_per_join": "24"
+            },
+            "used_columns": [
+              "ps_partkey",
+              "ps_suppkey",
+              "ps_supplycost"
+            ],
+            "attached_condition": "((`bench`.`partsupp`.`ps_partkey` = `bench`.`part`.`p_partkey`) and ((`bench`.`partsupp`.`ps_suppkey` is not null) and (`bench`.`partsupp`.`ps_supplycost` is not null)))"
+          }
+        },
+        {
+          "table": {
+            "table_name": "supplier",
+            "access_type": "eq_ref",
+            "possible_keys": [
+              "PRIMARY"
+            ],
+            "key": "PRIMARY",
+            "used_key_parts": [
+              "s_suppkey"
+            ],
+            "key_length": "4",
+            "ref": [
+              "bench.partsupp.ps_suppkey"
+            ],
+            "rows_examined_per_scan": 1,
+            "rows_produced_per_join": 0,
+            "filtered": "33.33",
+            "cost_info": {
+              "read_cost": "0.25",
+              "eval_cost": "0.03",
+              "prefix_cost": "2.55",
+              "data_read_per_join": "250"
+            },
+            "used_columns": [
+              "s_suppkey",
+              "s_name",
+              "s_address",
+              "s_nationkey",
+              "s_phone",
+              "s_acctbal",
+              "s_comment"
+            ],
+            "attached_condition": "(`bench`.`supplier`.`s_nationkey` = `bench`.`nation`.`n_nationkey`)"
+          }
+        },
+        {
+          "table": {
+            "table_name": "regional_min_supply",
+            "access_type": "ref",
+            "possible_keys": [
+              "<auto_key0>"
+            ],
+            "key": "<auto_key0>",
+            "used_key_parts": [
+              "ps_partkey",
+              "min_supplycost"
+            ],
+            "key_length": "13",
+            "ref": [
+              "bench.part.p_partkey",
+              "bench.partsupp.ps_supplycost"
+            ],
+            "rows_examined_per_scan": 2,
+            "rows_produced_per_join": 0,
+            "filtered": "100.00",
+            "using_index": true,
+            "cost_info": {
+              "read_cost": "0.17",
+              "eval_cost": "0.07",
+              "prefix_cost": "2.78",
+              "data_read_per_join": "16"
+            },
+            "used_columns": [
+              "ps_partkey",
+              "min_supplycost"
+            ],
+            "materialized_from_subquery": {
+              "using_temporary_table": true,
+              "dependent": false,
+              "cacheable": true,
+              "query_block": {
+                "select_id": 2,
+                "cost_info": {
+                  "query_cost": "2.20"
+                },
+                "grouping_operation": {
+                  "using_temporary_table": true,
+                  "using_filesort": false,
+                  "nested_loop": [
+                    {
+                      "table": {
+                        "table_name": "region",
+                        "access_type": "ALL",
+                        "possible_keys": [
+                          "PRIMARY"
+                        ],
+                        "rows_examined_per_scan": 2,
+                        "rows_produced_per_join": 1,
+                        "filtered": "50.00",
+                        "cost_info": {
+                          "read_cost": "0.35",
+                          "eval_cost": "0.10",
+                          "prefix_cost": "0.45",
+                          "data_read_per_join": "112"
+                        },
+                        "used_columns": [
+                          "r_regionkey",
+                          "r_name"
+                        ],
+                        "attached_condition": "(`bench`.`region`.`r_name` = 'MIDDLE EAST')"
+                      }
+                    },
+                    {
+                      "table": {
+                        "table_name": "nation",
+                        "access_type": "ALL",
+                        "possible_keys": [
+                          "PRIMARY"
+                        ],
+                        "rows_examined_per_scan": 2,
+                        "rows_produced_per_join": 1,
+                        "filtered": "50.00",
+                        "using_join_buffer": "hash join",
+                        "cost_info": {
+                          "read_cost": "0.25",
+                          "eval_cost": "0.10",
+                          "prefix_cost": "0.90",
+                          "data_read_per_join": "112"
+                        },
+                        "used_columns": [
+                          "n_nationkey",
+                          "n_regionkey"
+                        ],
+                        "attached_condition": "(`bench`.`nation`.`n_regionkey` = `bench`.`region`.`r_regionkey`)"
+                      }
+                    },
+                    {
+                      "table": {
+                        "table_name": "supplier",
+                        "access_type": "ALL",
+                        "possible_keys": [
+                          "PRIMARY"
+                        ],
+                        "rows_examined_per_scan": 3,
+                        "rows_produced_per_join": 1,
+                        "filtered": "33.33",
+                        "using_join_buffer": "hash join",
+                        "cost_info": {
+                          "read_cost": "0.25",
+                          "eval_cost": "0.10",
+                          "prefix_cost": "1.45",
+                          "data_read_per_join": "752"
+                        },
+                        "used_columns": [
+                          "s_suppkey",
+                          "s_nationkey"
+                        ],
+                        "attached_condition": "(`bench`.`supplier`.`s_nationkey` = `bench`.`nation`.`n_nationkey`)"
+                      }
+                    },
+                    {
+                      "table": {
+                        "table_name": "partsupp",
+                        "access_type": "ALL",
+                        "rows_examined_per_scan": 5,
+                        "rows_produced_per_join": 1,
+                        "filtered": "20.00",
+                        "using_join_buffer": "hash join",
+                        "cost_info": {
+                          "read_cost": "0.25",
+                          "eval_cost": "0.10",
+                          "prefix_cost": "2.20",
+                          "data_read_per_join": "24"
+                        },
+                        "used_columns": [
+                          "ps_partkey",
+                          "ps_suppkey",
+                          "ps_supplycost"
+                        ],
+                        "attached_condition": "(`bench`.`partsupp`.`ps_suppkey` = `bench`.`supplier`.`s_suppkey`)"
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

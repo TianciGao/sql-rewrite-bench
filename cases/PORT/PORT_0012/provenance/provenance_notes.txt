@@ -1,0 +1,5 @@
+Local source pointer: datasets/raw/parrot/PARROT/benchmark/BIRD/pg_res.json[12]
+Draft id: PORT_DRAFT_0007
+Source engine orientation: pg
+Extraction notes: source.sql preserves the local PARROT source entry; rewrite_pos_01.sql is a shared draft target rewrite intended for later pg/mysql/spark witness execution.
+This package is draft-only and carries no registry, admission, promotion, common-core, or formal-review claim.

@@ -1,0 +1,16 @@
+cd datasets/raw/tpcds/DSGen-software-code-4.0.0/tools
+
+mkdir -p /tmp/tpcds_query_variants_perf_0042_0046_work
+cp ../query_variants/query35a.tpl /tmp/tpcds_query_variants_perf_0042_0046_work/
+cp ../query_templates/ansi.tpl /tmp/tpcds_query_variants_perf_0042_0046_work/
+mkdir -p /tmp/tpcds_perf_0043_q35a
+
+./dsqgen \
+  -DIRECTORY /tmp/tpcds_query_variants_perf_0042_0046_work \
+  -TEMPLATE query35a.tpl \
+  -COUNT 1 \
+  -QUALIFY Y \
+  -SCALE 1 \
+  -DIALECT ansi \
+  -OUTPUT_DIR /tmp/tpcds_perf_0043_q35a \
+  -VERBOSE Y

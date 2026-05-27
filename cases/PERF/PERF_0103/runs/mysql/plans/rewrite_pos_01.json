@@ -1,0 +1,160 @@
+{
+  "query_block": {
+    "select_id": 1,
+    "cost_info": {
+      "query_cost": "3.28"
+    },
+    "nested_loop": [
+      {
+        "table": {
+          "table_name": "it1",
+          "access_type": "ALL",
+          "rows_examined_per_scan": 2,
+          "rows_produced_per_join": 1,
+          "filtered": "50.00",
+          "cost_info": {
+            "read_cost": "0.35",
+            "eval_cost": "0.10",
+            "prefix_cost": "0.45",
+            "data_read_per_join": "264"
+          },
+          "used_columns": [
+            "id",
+            "info"
+          ],
+          "attached_condition": "(`bench`.`it1`.`info` = 'budget')"
+        }
+      },
+      {
+        "table": {
+          "table_name": "mi",
+          "access_type": "ALL",
+          "rows_examined_per_scan": 2,
+          "rows_produced_per_join": 1,
+          "filtered": "50.00",
+          "using_join_buffer": "hash join",
+          "cost_info": {
+            "read_cost": "0.25",
+            "eval_cost": "0.10",
+            "prefix_cost": "0.90",
+            "data_read_per_join": "24"
+          },
+          "used_columns": [
+            "movie_id",
+            "info_type_id",
+            "info"
+          ],
+          "attached_condition": "(`bench`.`mi`.`info_type_id` = `bench`.`it1`.`id`)"
+        }
+      },
+      {
+        "table": {
+          "table_name": "t",
+          "access_type": "ALL",
+          "rows_examined_per_scan": 2,
+          "rows_produced_per_join": 1,
+          "filtered": "50.00",
+          "using_join_buffer": "hash join",
+          "cost_info": {
+            "read_cost": "0.26",
+            "eval_cost": "0.10",
+            "prefix_cost": "1.36",
+            "data_read_per_join": "16"
+          },
+          "used_columns": [
+            "id",
+            "title"
+          ],
+          "attached_condition": "(`bench`.`t`.`id` = `bench`.`mi`.`movie_id`)"
+        }
+      },
+      {
+        "table": {
+          "table_name": "mi_idx",
+          "access_type": "ALL",
+          "rows_examined_per_scan": 2,
+          "rows_produced_per_join": 1,
+          "filtered": "50.00",
+          "using_join_buffer": "hash join",
+          "cost_info": {
+            "read_cost": "0.27",
+            "eval_cost": "0.10",
+            "prefix_cost": "1.82",
+            "data_read_per_join": "24"
+          },
+          "used_columns": [
+            "movie_id",
+            "info_type_id",
+            "info"
+          ],
+          "attached_condition": "(`bench`.`mi_idx`.`movie_id` = `bench`.`mi`.`movie_id`)"
+        }
+      },
+      {
+        "table": {
+          "table_name": "it2",
+          "access_type": "ALL",
+          "rows_examined_per_scan": 2,
+          "rows_produced_per_join": 1,
+          "filtered": "50.00",
+          "using_join_buffer": "hash join",
+          "cost_info": {
+            "read_cost": "0.38",
+            "eval_cost": "0.10",
+            "prefix_cost": "2.31",
+            "data_read_per_join": "264"
+          },
+          "used_columns": [
+            "id",
+            "info"
+          ],
+          "attached_condition": "((`bench`.`it2`.`id` = `bench`.`mi_idx`.`info_type_id`) and (`bench`.`it2`.`info` = 'votes'))"
+        }
+      },
+      {
+        "table": {
+          "table_name": "ci",
+          "access_type": "ALL",
+          "rows_examined_per_scan": 2,
+          "rows_produced_per_join": 1,
+          "filtered": "50.00",
+          "using_join_buffer": "hash join",
+          "cost_info": {
+            "read_cost": "0.38",
+            "eval_cost": "0.10",
+            "prefix_cost": "2.79",
+            "data_read_per_join": "24"
+          },
+          "used_columns": [
+            "movie_id",
+            "person_id",
+            "note"
+          ],
+          "attached_condition": "((`bench`.`ci`.`movie_id` = `bench`.`mi`.`movie_id`) and (`bench`.`ci`.`note` in ('(producer)','(executive producer)')))"
+        }
+      },
+      {
+        "table": {
+          "table_name": "n",
+          "access_type": "ALL",
+          "rows_examined_per_scan": 2,
+          "rows_produced_per_join": 1,
+          "filtered": "50.00",
+          "using_join_buffer": "hash join",
+          "cost_info": {
+            "read_cost": "0.39",
+            "eval_cost": "0.10",
+            "prefix_cost": "3.29",
+            "data_read_per_join": "40"
+          },
+          "used_columns": [
+            "id",
+            "name",
+            "gender"
+          ],
+          "attached_condition": "((`bench`.`n`.`id` = `bench`.`ci`.`person_id`) and (`bench`.`n`.`gender` = 'm') and (`bench`.`n`.`name` like '%Tim%'))"
+        }
+      }
+    ]
+  }
+}

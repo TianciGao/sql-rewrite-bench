@@ -1,0 +1,370 @@
+[
+  {
+    "Plan": {
+      "Node Type": "Nested Loop",
+      "Parallel Aware": false,
+      "Async Capable": false,
+      "Join Type": "Inner",
+      "Startup Cost": 327.53,
+      "Total Cost": 563.13,
+      "Plan Rows": 1,
+      "Plan Width": 164,
+      "Inner Unique": false,
+      "Join Filter": "((ss1.ca_county = ws3.ca_county) AND (CASE WHEN (ws2.web_sales > '0'::numeric) THEN (ws3.web_sales / ws2.web_sales) ELSE NULL::numeric END > CASE WHEN (ss2.store_sales > '0'::numeric) THEN (ss3.store_sales / ss2.store_sales) ELSE NULL::numeric END))",
+      "Plans": [
+        {
+          "Node Type": "Aggregate",
+          "Strategy": "Hashed",
+          "Partial Mode": "Simple",
+          "Parent Relationship": "InitPlan",
+          "Subplan Name": "CTE ss",
+          "Parallel Aware": false,
+          "Async Capable": false,
+          "Startup Cost": 144.14,
+          "Total Cost": 163.76,
+          "Plan Rows": 1570,
+          "Plan Width": 72,
+          "Group Key": ["customer_address.ca_county", "date_dim.d_qoy", "date_dim.d_year"],
+          "Planned Partitions": 0,
+          "Plans": [
+            {
+              "Node Type": "Hash Join",
+              "Parent Relationship": "Outer",
+              "Parallel Aware": false,
+              "Async Capable": false,
+              "Join Type": "Inner",
+              "Startup Cost": 94.48,
+              "Total Cost": 128.44,
+              "Plan Rows": 1570,
+              "Plan Width": 56,
+              "Inner Unique": true,
+              "Hash Cond": "(store_sales.ss_addr_sk = customer_address.ca_address_sk)",
+              "Plans": [
+                {
+                  "Node Type": "Hash Join",
+                  "Parent Relationship": "Outer",
+                  "Parallel Aware": false,
+                  "Async Capable": false,
+                  "Join Type": "Inner",
+                  "Startup Cost": 55.90,
+                  "Total Cost": 85.73,
+                  "Plan Rows": 1570,
+                  "Plan Width": 28,
+                  "Inner Unique": true,
+                  "Hash Cond": "(store_sales.ss_sold_date_sk = date_dim.d_date_sk)",
+                  "Plans": [
+                    {
+                      "Node Type": "Seq Scan",
+                      "Parent Relationship": "Outer",
+                      "Parallel Aware": false,
+                      "Async Capable": false,
+                      "Relation Name": "store_sales",
+                      "Alias": "store_sales",
+                      "Startup Cost": 0.00,
+                      "Total Cost": 25.70,
+                      "Plan Rows": 1570,
+                      "Plan Width": 24
+                    },
+                    {
+                      "Node Type": "Hash",
+                      "Parent Relationship": "Inner",
+                      "Parallel Aware": false,
+                      "Async Capable": false,
+                      "Startup Cost": 30.40,
+                      "Total Cost": 30.40,
+                      "Plan Rows": 2040,
+                      "Plan Width": 12,
+                      "Plans": [
+                        {
+                          "Node Type": "Seq Scan",
+                          "Parent Relationship": "Outer",
+                          "Parallel Aware": false,
+                          "Async Capable": false,
+                          "Relation Name": "date_dim",
+                          "Alias": "date_dim",
+                          "Startup Cost": 0.00,
+                          "Total Cost": 30.40,
+                          "Plan Rows": 2040,
+                          "Plan Width": 12
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "Node Type": "Hash",
+                  "Parent Relationship": "Inner",
+                  "Parallel Aware": false,
+                  "Async Capable": false,
+                  "Startup Cost": 22.70,
+                  "Total Cost": 22.70,
+                  "Plan Rows": 1270,
+                  "Plan Width": 36,
+                  "Plans": [
+                    {
+                      "Node Type": "Seq Scan",
+                      "Parent Relationship": "Outer",
+                      "Parallel Aware": false,
+                      "Async Capable": false,
+                      "Relation Name": "customer_address",
+                      "Alias": "customer_address",
+                      "Startup Cost": 0.00,
+                      "Total Cost": 22.70,
+                      "Plan Rows": 1270,
+                      "Plan Width": 36
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "Node Type": "Aggregate",
+          "Strategy": "Hashed",
+          "Partial Mode": "Simple",
+          "Parent Relationship": "InitPlan",
+          "Subplan Name": "CTE ws",
+          "Parallel Aware": false,
+          "Async Capable": false,
+          "Startup Cost": 144.14,
+          "Total Cost": 163.76,
+          "Plan Rows": 1570,
+          "Plan Width": 72,
+          "Group Key": ["customer_address_1.ca_county", "date_dim_1.d_qoy", "date_dim_1.d_year"],
+          "Planned Partitions": 0,
+          "Plans": [
+            {
+              "Node Type": "Hash Join",
+              "Parent Relationship": "Outer",
+              "Parallel Aware": false,
+              "Async Capable": false,
+              "Join Type": "Inner",
+              "Startup Cost": 94.48,
+              "Total Cost": 128.44,
+              "Plan Rows": 1570,
+              "Plan Width": 56,
+              "Inner Unique": true,
+              "Hash Cond": "(web_sales.ws_bill_addr_sk = customer_address_1.ca_address_sk)",
+              "Plans": [
+                {
+                  "Node Type": "Hash Join",
+                  "Parent Relationship": "Outer",
+                  "Parallel Aware": false,
+                  "Async Capable": false,
+                  "Join Type": "Inner",
+                  "Startup Cost": 55.90,
+                  "Total Cost": 85.73,
+                  "Plan Rows": 1570,
+                  "Plan Width": 28,
+                  "Inner Unique": true,
+                  "Hash Cond": "(web_sales.ws_sold_date_sk = date_dim_1.d_date_sk)",
+                  "Plans": [
+                    {
+                      "Node Type": "Seq Scan",
+                      "Parent Relationship": "Outer",
+                      "Parallel Aware": false,
+                      "Async Capable": false,
+                      "Relation Name": "web_sales",
+                      "Alias": "web_sales",
+                      "Startup Cost": 0.00,
+                      "Total Cost": 25.70,
+                      "Plan Rows": 1570,
+                      "Plan Width": 24
+                    },
+                    {
+                      "Node Type": "Hash",
+                      "Parent Relationship": "Inner",
+                      "Parallel Aware": false,
+                      "Async Capable": false,
+                      "Startup Cost": 30.40,
+                      "Total Cost": 30.40,
+                      "Plan Rows": 2040,
+                      "Plan Width": 12,
+                      "Plans": [
+                        {
+                          "Node Type": "Seq Scan",
+                          "Parent Relationship": "Outer",
+                          "Parallel Aware": false,
+                          "Async Capable": false,
+                          "Relation Name": "date_dim",
+                          "Alias": "date_dim_1",
+                          "Startup Cost": 0.00,
+                          "Total Cost": 30.40,
+                          "Plan Rows": 2040,
+                          "Plan Width": 12
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "Node Type": "Hash",
+                  "Parent Relationship": "Inner",
+                  "Parallel Aware": false,
+                  "Async Capable": false,
+                  "Startup Cost": 22.70,
+                  "Total Cost": 22.70,
+                  "Plan Rows": 1270,
+                  "Plan Width": 36,
+                  "Plans": [
+                    {
+                      "Node Type": "Seq Scan",
+                      "Parent Relationship": "Outer",
+                      "Parallel Aware": false,
+                      "Async Capable": false,
+                      "Relation Name": "customer_address",
+                      "Alias": "customer_address_1",
+                      "Startup Cost": 0.00,
+                      "Total Cost": 22.70,
+                      "Plan Rows": 1270,
+                      "Plan Width": 36
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "Node Type": "Nested Loop",
+          "Parent Relationship": "Outer",
+          "Parallel Aware": false,
+          "Async Capable": false,
+          "Join Type": "Inner",
+          "Startup Cost": 0.00,
+          "Total Cost": 196.31,
+          "Plan Rows": 1,
+          "Plan Width": 324,
+          "Inner Unique": false,
+          "Join Filter": "((ss1.ca_county = ws2.ca_county) AND (CASE WHEN (ws1.web_sales > '0'::numeric) THEN (ws2.web_sales / ws1.web_sales) ELSE NULL::numeric END > CASE WHEN (ss1.store_sales > '0'::numeric) THEN (ss2.store_sales / ss1.store_sales) ELSE NULL::numeric END))",
+          "Plans": [
+            {
+              "Node Type": "Nested Loop",
+              "Parent Relationship": "Outer",
+              "Parallel Aware": false,
+              "Async Capable": false,
+              "Join Type": "Inner",
+              "Startup Cost": 0.00,
+              "Total Cost": 157.04,
+              "Plan Rows": 1,
+              "Plan Width": 260,
+              "Inner Unique": false,
+              "Join Filter": "(ss1.ca_county = ws1.ca_county)",
+              "Plans": [
+                {
+                  "Node Type": "Nested Loop",
+                  "Parent Relationship": "Outer",
+                  "Parallel Aware": false,
+                  "Async Capable": false,
+                  "Join Type": "Inner",
+                  "Startup Cost": 0.00,
+                  "Total Cost": 117.78,
+                  "Plan Rows": 1,
+                  "Plan Width": 196,
+                  "Inner Unique": false,
+                  "Join Filter": "(ss1.ca_county = ss3.ca_county)",
+                  "Plans": [
+                    {
+                      "Node Type": "Nested Loop",
+                      "Parent Relationship": "Outer",
+                      "Parallel Aware": false,
+                      "Async Capable": false,
+                      "Join Type": "Inner",
+                      "Startup Cost": 0.00,
+                      "Total Cost": 78.51,
+                      "Plan Rows": 1,
+                      "Plan Width": 132,
+                      "Inner Unique": false,
+                      "Join Filter": "(ss1.ca_county = ss2.ca_county)",
+                      "Plans": [
+                        {
+                          "Node Type": "CTE Scan",
+                          "Parent Relationship": "Outer",
+                          "Parallel Aware": false,
+                          "Async Capable": false,
+                          "CTE Name": "ss",
+                          "Alias": "ss1",
+                          "Startup Cost": 0.00,
+                          "Total Cost": 39.25,
+                          "Plan Rows": 1,
+                          "Plan Width": 68,
+                          "Filter": "((d_qoy = 1) AND (d_year = 2000))"
+                        },
+                        {
+                          "Node Type": "CTE Scan",
+                          "Parent Relationship": "Inner",
+                          "Parallel Aware": false,
+                          "Async Capable": false,
+                          "CTE Name": "ss",
+                          "Alias": "ss2",
+                          "Startup Cost": 0.00,
+                          "Total Cost": 39.25,
+                          "Plan Rows": 1,
+                          "Plan Width": 64,
+                          "Filter": "((d_year = 2000) AND (d_qoy = 2))"
+                        }
+                      ]
+                    },
+                    {
+                      "Node Type": "CTE Scan",
+                      "Parent Relationship": "Inner",
+                      "Parallel Aware": false,
+                      "Async Capable": false,
+                      "CTE Name": "ss",
+                      "Alias": "ss3",
+                      "Startup Cost": 0.00,
+                      "Total Cost": 39.25,
+                      "Plan Rows": 1,
+                      "Plan Width": 64,
+                      "Filter": "((d_year = 2000) AND (d_qoy = 3))"
+                    }
+                  ]
+                },
+                {
+                  "Node Type": "CTE Scan",
+                  "Parent Relationship": "Inner",
+                  "Parallel Aware": false,
+                  "Async Capable": false,
+                  "CTE Name": "ws",
+                  "Alias": "ws1",
+                  "Startup Cost": 0.00,
+                  "Total Cost": 39.25,
+                  "Plan Rows": 1,
+                  "Plan Width": 64,
+                  "Filter": "((d_qoy = 1) AND (d_year = 2000))"
+                }
+              ]
+            },
+            {
+              "Node Type": "CTE Scan",
+              "Parent Relationship": "Inner",
+              "Parallel Aware": false,
+              "Async Capable": false,
+              "CTE Name": "ws",
+              "Alias": "ws2",
+              "Startup Cost": 0.00,
+              "Total Cost": 39.25,
+              "Plan Rows": 1,
+              "Plan Width": 64,
+              "Filter": "((d_year = 2000) AND (d_qoy = 2))"
+            }
+          ]
+        },
+        {
+          "Node Type": "CTE Scan",
+          "Parent Relationship": "Inner",
+          "Parallel Aware": false,
+          "Async Capable": false,
+          "CTE Name": "ws",
+          "Alias": "ws3",
+          "Startup Cost": 0.00,
+          "Total Cost": 39.25,
+          "Plan Rows": 1,
+          "Plan Width": 64,
+          "Filter": "((d_year = 2000) AND (d_qoy = 3))"
+        }
+      ]
+    }
+  }
+]

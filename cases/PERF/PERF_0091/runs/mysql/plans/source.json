@@ -1,0 +1,202 @@
+{
+  "query_block": {
+    "select_id": 1,
+    "cost_info": {
+      "query_cost": "3.91"
+    },
+    "nested_loop": [
+      {
+        "table": {
+          "table_name": "cn",
+          "access_type": "ALL",
+          "rows_examined_per_scan": 1,
+          "rows_produced_per_join": 1,
+          "filtered": "100.00",
+          "cost_info": {
+            "read_cost": "0.25",
+            "eval_cost": "0.10",
+            "prefix_cost": "0.35",
+            "data_read_per_join": "56"
+          },
+          "used_columns": [
+            "id",
+            "country_code",
+            "name"
+          ],
+          "attached_condition": "(`bench`.`cn`.`country_code` = '[us]')"
+        }
+      },
+      {
+        "table": {
+          "table_name": "ct",
+          "access_type": "ALL",
+          "rows_examined_per_scan": 1,
+          "rows_produced_per_join": 1,
+          "filtered": "100.00",
+          "using_join_buffer": "hash join",
+          "cost_info": {
+            "read_cost": "0.27",
+            "eval_cost": "0.10",
+            "prefix_cost": "0.72",
+            "data_read_per_join": "264"
+          },
+          "used_columns": [
+            "id",
+            "kind"
+          ],
+          "attached_condition": "(`bench`.`ct`.`kind` = 'production companies')"
+        }
+      },
+      {
+        "table": {
+          "table_name": "kt",
+          "access_type": "ALL",
+          "rows_examined_per_scan": 1,
+          "rows_produced_per_join": 1,
+          "filtered": "100.00",
+          "using_join_buffer": "hash join",
+          "cost_info": {
+            "read_cost": "0.27",
+            "eval_cost": "0.10",
+            "prefix_cost": "1.08",
+            "data_read_per_join": "136"
+          },
+          "used_columns": [
+            "id",
+            "kind"
+          ],
+          "attached_condition": "(`bench`.`kt`.`kind` = 'movie')"
+        }
+      },
+      {
+        "table": {
+          "table_name": "it",
+          "access_type": "ALL",
+          "rows_examined_per_scan": 2,
+          "rows_produced_per_join": 1,
+          "filtered": "50.00",
+          "using_join_buffer": "hash join",
+          "cost_info": {
+            "read_cost": "0.37",
+            "eval_cost": "0.10",
+            "prefix_cost": "1.55",
+            "data_read_per_join": "264"
+          },
+          "used_columns": [
+            "id",
+            "info"
+          ],
+          "attached_condition": "(`bench`.`it`.`info` = 'rating')"
+        }
+      },
+      {
+        "table": {
+          "table_name": "it2",
+          "access_type": "ALL",
+          "rows_examined_per_scan": 2,
+          "rows_produced_per_join": 1,
+          "filtered": "50.00",
+          "using_join_buffer": "hash join",
+          "cost_info": {
+            "read_cost": "0.37",
+            "eval_cost": "0.10",
+            "prefix_cost": "2.03",
+            "data_read_per_join": "264"
+          },
+          "used_columns": [
+            "id",
+            "info"
+          ],
+          "attached_condition": "(`bench`.`it2`.`info` = 'release dates')"
+        }
+      },
+      {
+        "table": {
+          "table_name": "mc",
+          "access_type": "ALL",
+          "rows_examined_per_scan": 2,
+          "rows_produced_per_join": 1,
+          "filtered": "50.00",
+          "using_join_buffer": "hash join",
+          "cost_info": {
+            "read_cost": "0.27",
+            "eval_cost": "0.10",
+            "prefix_cost": "2.49",
+            "data_read_per_join": "16"
+          },
+          "used_columns": [
+            "movie_id",
+            "company_id",
+            "company_type_id"
+          ],
+          "attached_condition": "((`bench`.`mc`.`company_type_id` = `bench`.`ct`.`id`) and (`bench`.`mc`.`company_id` = `bench`.`cn`.`id`))"
+        }
+      },
+      {
+        "table": {
+          "table_name": "mi",
+          "access_type": "ALL",
+          "rows_examined_per_scan": 2,
+          "rows_produced_per_join": 1,
+          "filtered": "50.00",
+          "using_join_buffer": "hash join",
+          "cost_info": {
+            "read_cost": "0.27",
+            "eval_cost": "0.10",
+            "prefix_cost": "2.96",
+            "data_read_per_join": "16"
+          },
+          "used_columns": [
+            "movie_id",
+            "info_type_id"
+          ],
+          "attached_condition": "((`bench`.`mi`.`info_type_id` = `bench`.`it2`.`id`) and (`bench`.`mi`.`movie_id` = `bench`.`mc`.`movie_id`))"
+        }
+      },
+      {
+        "table": {
+          "table_name": "miidx",
+          "access_type": "ALL",
+          "rows_examined_per_scan": 2,
+          "rows_produced_per_join": 1,
+          "filtered": "50.00",
+          "using_join_buffer": "hash join",
+          "cost_info": {
+            "read_cost": "0.27",
+            "eval_cost": "0.10",
+            "prefix_cost": "3.43",
+            "data_read_per_join": "24"
+          },
+          "used_columns": [
+            "movie_id",
+            "info_type_id",
+            "info"
+          ],
+          "attached_condition": "((`bench`.`miidx`.`info_type_id` = `bench`.`it`.`id`) and (`bench`.`miidx`.`movie_id` = `bench`.`mc`.`movie_id`))"
+        }
+      },
+      {
+        "table": {
+          "table_name": "t",
+          "access_type": "ALL",
+          "rows_examined_per_scan": 2,
+          "rows_produced_per_join": 1,
+          "filtered": "50.00",
+          "using_join_buffer": "hash join",
+          "cost_info": {
+            "read_cost": "0.38",
+            "eval_cost": "0.10",
+            "prefix_cost": "3.91",
+            "data_read_per_join": "24"
+          },
+          "used_columns": [
+            "id",
+            "title",
+            "kind_id"
+          ],
+          "attached_condition": "((`bench`.`t`.`kind_id` = `bench`.`kt`.`id`) and (`bench`.`t`.`id` = `bench`.`mc`.`movie_id`) and (`bench`.`t`.`title` <> '') and ((`bench`.`t`.`title` like '%Champion%') or (`bench`.`t`.`title` like '%Loser%')))"
+        }
+      }
+    ]
+  }
+}

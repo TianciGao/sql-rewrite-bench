@@ -1,0 +1,107 @@
+== Physical Plan ==
+AdaptiveSparkPlan (18)
++- Sort (17)
+   +- Exchange (16)
+      +- Project (15)
+         +- Filter (14)
+            +- Window (13)
+               +- Sort (12)
+                  +- Window (11)
+                     +- Sort (10)
+                        +- HashAggregate (9)
+                           +- Exchange (8)
+                              +- HashAggregate (7)
+                                 +- Project (6)
+                                    +- BroadcastHashJoin LeftOuter BuildRight (5)
+                                       :- Scan parquet spark_catalog.default.users (1)
+                                       +- BroadcastExchange (4)
+                                          +- Filter (3)
+                                             +- Scan parquet spark_catalog.default.posts (2)
+
+
+(1) Scan parquet spark_catalog.default.users
+Output [2]: [Id#42, DisplayName#43]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/longtail_0003_spark_plan_wrstsca5/users]
+ReadSchema: struct<Id:int,DisplayName:string>
+
+(2) Scan parquet spark_catalog.default.posts
+Output [5]: [Id#44, OwnerUserId#45, PostTypeId#46, Score#47, ViewCount#48]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/longtail_0003_spark_plan_wrstsca5/posts]
+PushedFilters: [IsNotNull(OwnerUserId)]
+ReadSchema: struct<Id:int,OwnerUserId:int,PostTypeId:int,Score:int,ViewCount:int>
+
+(3) Filter
+Input [5]: [Id#44, OwnerUserId#45, PostTypeId#46, Score#47, ViewCount#48]
+Condition : isnotnull(OwnerUserId#45)
+
+(4) BroadcastExchange
+Input [5]: [Id#44, OwnerUserId#45, PostTypeId#46, Score#47, ViewCount#48]
+Arguments: HashedRelationBroadcastMode(List(cast(input[1, int, false] as bigint)),false), [plan_id=160]
+
+(5) BroadcastHashJoin
+Left keys [1]: [Id#42]
+Right keys [1]: [OwnerUserId#45]
+Join type: LeftOuter
+Join condition: None
+
+(6) Project
+Output [6]: [Id#42, DisplayName#43, Id#44, PostTypeId#46, Score#47, ViewCount#48]
+Input [7]: [Id#42, DisplayName#43, Id#44, OwnerUserId#45, PostTypeId#46, Score#47, ViewCount#48]
+
+(7) HashAggregate
+Input [6]: [Id#42, DisplayName#43, Id#44, PostTypeId#46, Score#47, ViewCount#48]
+Keys [2]: [Id#42, DisplayName#43]
+Functions [6]: [partial_count(Id#44), partial_sum(CASE WHEN (PostTypeId#46 = 1) THEN 1 ELSE 0 END), partial_sum(CASE WHEN (PostTypeId#46 = 2) THEN 1 ELSE 0 END), partial_sum(CASE WHEN (Score#47 > 0) THEN 1 ELSE 0 END), partial_sum(CASE WHEN (Score#47 < 0) THEN 1 ELSE 0 END), partial_sum(ViewCount#48)]
+Aggregate Attributes [6]: [count#167L, sum#168L, sum#169L, sum#170L, sum#171L, sum#172L]
+Results [8]: [Id#42, DisplayName#43, count#173L, sum#174L, sum#175L, sum#176L, sum#177L, sum#178L]
+
+(8) Exchange
+Input [8]: [Id#42, DisplayName#43, count#173L, sum#174L, sum#175L, sum#176L, sum#177L, sum#178L]
+Arguments: hashpartitioning(Id#42, DisplayName#43, 1), ENSURE_REQUIREMENTS, [plan_id=165]
+
+(9) HashAggregate
+Input [8]: [Id#42, DisplayName#43, count#173L, sum#174L, sum#175L, sum#176L, sum#177L, sum#178L]
+Keys [2]: [Id#42, DisplayName#43]
+Functions [6]: [count(Id#44), sum(CASE WHEN (PostTypeId#46 = 1) THEN 1 ELSE 0 END), sum(CASE WHEN (PostTypeId#46 = 2) THEN 1 ELSE 0 END), sum(CASE WHEN (Score#47 > 0) THEN 1 ELSE 0 END), sum(CASE WHEN (Score#47 < 0) THEN 1 ELSE 0 END), sum(ViewCount#48)]
+Aggregate Attributes [6]: [count(Id#44)#149L, sum(CASE WHEN (PostTypeId#46 = 1) THEN 1 ELSE 0 END)#150L, sum(CASE WHEN (PostTypeId#46 = 2) THEN 1 ELSE 0 END)#151L, sum(CASE WHEN (Score#47 > 0) THEN 1 ELSE 0 END)#152L, sum(CASE WHEN (Score#47 < 0) THEN 1 ELSE 0 END)#153L, sum(ViewCount#48)#154L]
+Results [7]: [DisplayName#43, count(Id#44)#149L AS TotalPosts#136L, sum(CASE WHEN (PostTypeId#46 = 1) THEN 1 ELSE 0 END)#150L AS TotalQuestions#137L, sum(CASE WHEN (PostTypeId#46 = 2) THEN 1 ELSE 0 END)#151L AS TotalAnswers#138L, sum(CASE WHEN (Score#47 > 0) THEN 1 ELSE 0 END)#152L AS PositivePosts#139L, sum(CASE WHEN (Score#47 < 0) THEN 1 ELSE 0 END)#153L AS NegativePosts#140L, sum(ViewCount#48)#154L AS TotalViews#141L]
+
+(10) Sort
+Input [7]: [DisplayName#43, TotalPosts#136L, TotalQuestions#137L, TotalAnswers#138L, PositivePosts#139L, NegativePosts#140L, TotalViews#141L]
+Arguments: [TotalPosts#136L DESC NULLS LAST], false, 0
+
+(11) Window
+Input [7]: [DisplayName#43, TotalPosts#136L, TotalQuestions#137L, TotalAnswers#138L, PositivePosts#139L, NegativePosts#140L, TotalViews#141L]
+Arguments: [rank(TotalPosts#136L) windowspecdefinition(TotalPosts#136L DESC NULLS LAST, specifiedwindowframe(RowFrame, unboundedpreceding$(), currentrow$())) AS RankByPosts#142], [TotalPosts#136L DESC NULLS LAST]
+
+(12) Sort
+Input [8]: [DisplayName#43, TotalPosts#136L, TotalQuestions#137L, TotalAnswers#138L, PositivePosts#139L, NegativePosts#140L, TotalViews#141L, RankByPosts#142]
+Arguments: [TotalViews#141L DESC NULLS LAST], false, 0
+
+(13) Window
+Input [8]: [DisplayName#43, TotalPosts#136L, TotalQuestions#137L, TotalAnswers#138L, PositivePosts#139L, NegativePosts#140L, TotalViews#141L, RankByPosts#142]
+Arguments: [rank(TotalViews#141L) windowspecdefinition(TotalViews#141L DESC NULLS LAST, specifiedwindowframe(RowFrame, unboundedpreceding$(), currentrow$())) AS RankByViews#143], [TotalViews#141L DESC NULLS LAST]
+
+(14) Filter
+Input [9]: [DisplayName#43, TotalPosts#136L, TotalQuestions#137L, TotalAnswers#138L, PositivePosts#139L, NegativePosts#140L, TotalViews#141L, RankByPosts#142, RankByViews#143]
+Condition : ((TotalPosts#136L > 50) OR (TotalViews#141L > 1000))
+
+(15) Project
+Output [8]: [DisplayName#43, TotalPosts#136L, TotalQuestions#137L, TotalAnswers#138L, PositivePosts#139L, NegativePosts#140L, TotalViews#141L, CASE WHEN (RankByPosts#142 <= 10) THEN Top Contributor WHEN (RankByViews#143 <= 10) THEN Popular User ELSE Regular User END AS UserCategory#144]
+Input [9]: [DisplayName#43, TotalPosts#136L, TotalQuestions#137L, TotalAnswers#138L, PositivePosts#139L, NegativePosts#140L, TotalViews#141L, RankByPosts#142, RankByViews#143]
+
+(16) Exchange
+Input [8]: [DisplayName#43, TotalPosts#136L, TotalQuestions#137L, TotalAnswers#138L, PositivePosts#139L, NegativePosts#140L, TotalViews#141L, UserCategory#144]
+Arguments: rangepartitioning(TotalPosts#136L DESC NULLS LAST, TotalViews#141L DESC NULLS LAST, 1), ENSURE_REQUIREMENTS, [plan_id=176]
+
+(17) Sort
+Input [8]: [DisplayName#43, TotalPosts#136L, TotalQuestions#137L, TotalAnswers#138L, PositivePosts#139L, NegativePosts#140L, TotalViews#141L, UserCategory#144]
+Arguments: [TotalPosts#136L DESC NULLS LAST, TotalViews#141L DESC NULLS LAST], true, 0
+
+(18) AdaptiveSparkPlan
+Output [8]: [DisplayName#43, TotalPosts#136L, TotalQuestions#137L, TotalAnswers#138L, PositivePosts#139L, NegativePosts#140L, TotalViews#141L, UserCategory#144]
+Arguments: isFinalPlan=false
+
+

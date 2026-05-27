@@ -1,0 +1,75 @@
+case_id: LONGTAIL_0022
+primary_pool: longtail
+source_family: Stack Queries
+source_workload: superuser_dump_substrate
+source_query_identity: manual_comments_posts_interaction_anchor
+source_path: "datasets/raw/stack_queries/staged/superuser/"
+source_basis_entities:
+  - Posts
+  - Comments
+  - Users
+query_derivation: manual_hybrid_stack_substrate_anchor
+direct_sede_query_derived: false
+sqlstorm_derived: false
+draft_origin: LONGTAIL_STACK_SUBSTRATE_DRAFT_0001
+expected_engines:
+  - PostgreSQL
+  - MySQL
+  - Spark
+official_case_status: staged_registered_draft_not_admitted
+registry_status: staged_registered
+validation_status: tracked_draft_engine_local_result_and_plan_evidence
+admission_status: staged_not_yet_admitted
+tri_engine_closure: yes
+validated_engines: [pg, mysql, spark]
+expected_line: staged
+current_maturity: staged_draft_with_tracked_engine_local_evidence
+source_files:
+  source: source.sql
+  positive_rewrite: rewrite_pos_01.sql
+  negative_rewrite: rewrite_neg_01.sql
+schema_files:
+  postgres: "schema/ddl_pg.sql"
+  mysql: "schema/ddl_mysql.sql"
+  spark: "schema/ddl_spark.sql"
+witness_data_files:
+  postgres: "validation/pg_witness_data.sql"
+  mysql: "validation/mysql_witness_data.sql"
+  spark: "validation/spark_witness_data.sql"
+validation_scripts:
+  postgres_validation: "validation/run_pg_validation.sh"
+  postgres_plan_collection: "validation/run_pg_plan_collection.sh"
+  mysql_validation: "validation/run_mysql_validation.sh"
+  mysql_plan_collection: "validation/run_mysql_plan_collection.sh"
+  spark_validation: "validation/run_spark_validation.sh"
+  spark_plan_collection: "validation/run_spark_plan_collection.sh"
+artifacts:
+  result_check: "runs/result_check.json"
+  plan_check: "runs/plan_check.json"
+tags:
+  sql_feature:
+    primary: ['cte', 'outer_join']
+    secondary: []
+  rewrite_opportunity:
+    primary: ['cte_strategy']
+    secondary: ['aggregation_rewrite']
+  plan_operator:
+    present: ['scan', 'join', 'aggregate', 'sort', 'subquery']
+    delta_relevant: []
+  workload_realism:
+    source_inherited: ['realistic_query_style', 'manual_gap_fill_realism']
+    case_specific: ['long_tail_structure']
+  portability:
+    confirmed: []
+    suspected: ['null_semantics_gap']
+known_caveats:
+  - manually_engineered_stack_substrate_anchor
+  - manual_hybrid_stack_substrate_anchor
+  - not_direct_sede_query_derived
+  - not_sqlstorm_derived
+  - no_admission_or_promotion_claim
+  - not_admitted
+  - not_formally_reviewed
+  - plan_semantics_not_formally_reviewed
+  - release_grade_incomplete
+registry_note: "inventory/case_registry.csv now points to cases/LONGTAIL/LONGTAIL_0022/runs/plan_check.json; this case remains staged_not_yet_admitted."

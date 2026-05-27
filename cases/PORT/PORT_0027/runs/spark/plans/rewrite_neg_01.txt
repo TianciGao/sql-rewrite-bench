@@ -1,0 +1,94 @@
+== Physical Plan ==
+AdaptiveSparkPlan (14)
++- HashAggregate (13)
+   +- HashAggregate (12)
+      +- HashAggregate (11)
+         +- Exchange (10)
+            +- HashAggregate (9)
+               +- Expand (8)
+                  +- Project (7)
+                     +- BroadcastHashJoin Inner BuildRight (6)
+                        :- Filter (2)
+                        :  +- Scan parquet spark_catalog.port_0027_spark_plan_collection.votes (1)
+                        +- BroadcastExchange (5)
+                           +- Filter (4)
+                              +- Scan parquet spark_catalog.port_0027_spark_plan_collection.posts (3)
+
+
+(1) Scan parquet spark_catalog.port_0027_spark_plan_collection.votes
+Output [2]: [id#16, userid#17]
+Batched: true
+Location: InMemoryFileIndex [file:/home/tianci_gao/code/sql-rewrite-bench/cases/PORT/PORT_0027/runs/spark/plans/_tmp_spark_plan_collection/warehouse/port_0027_spark_plan_collection.db/votes]
+PushedFilters: [IsNotNull(userid), EqualTo(userid,25)]
+ReadSchema: struct<id:int,userid:int>
+
+(2) Filter
+Input [2]: [id#16, userid#17]
+Condition : (isnotnull(userid#17) AND (userid#17 = 25))
+
+(3) Scan parquet spark_catalog.port_0027_spark_plan_collection.posts
+Output [2]: [id#18, owneruserid#19]
+Batched: true
+Location: InMemoryFileIndex [file:/home/tianci_gao/code/sql-rewrite-bench/cases/PORT/PORT_0027/runs/spark/plans/_tmp_spark_plan_collection/warehouse/port_0027_spark_plan_collection.db/posts]
+PushedFilters: [EqualTo(owneruserid,25), IsNotNull(owneruserid)]
+ReadSchema: struct<id:int,owneruserid:int>
+
+(4) Filter
+Input [2]: [id#18, owneruserid#19]
+Condition : ((owneruserid#19 = 25) AND isnotnull(owneruserid#19))
+
+(5) BroadcastExchange
+Input [2]: [id#18, owneruserid#19]
+Arguments: HashedRelationBroadcastMode(List(cast(input[1, int, false] as bigint)),false), [plan_id=147]
+
+(6) BroadcastHashJoin
+Left keys [1]: [userid#17]
+Right keys [1]: [owneruserid#19]
+Join type: Inner
+Join condition: None
+
+(7) Project
+Output [2]: [id#16, id#18]
+Input [4]: [id#16, userid#17, id#18, owneruserid#19]
+
+(8) Expand
+Input [2]: [id#16, id#18]
+Arguments: [[id#18, null, 1], [null, id#16, 2]], [t2.id#36, t1.id#37, gid#35]
+
+(9) HashAggregate
+Input [3]: [t2.id#36, t1.id#37, gid#35]
+Keys [3]: [t2.id#36, t1.id#37, gid#35]
+Functions: []
+Aggregate Attributes: []
+Results [3]: [t2.id#36, t1.id#37, gid#35]
+
+(10) Exchange
+Input [3]: [t2.id#36, t1.id#37, gid#35]
+Arguments: hashpartitioning(t2.id#36, t1.id#37, gid#35, 1), ENSURE_REQUIREMENTS, [plan_id=153]
+
+(11) HashAggregate
+Input [3]: [t2.id#36, t1.id#37, gid#35]
+Keys [3]: [t2.id#36, t1.id#37, gid#35]
+Functions: []
+Aggregate Attributes: []
+Results [3]: [t2.id#36, t1.id#37, gid#35]
+
+(12) HashAggregate
+Input [3]: [t2.id#36, t1.id#37, gid#35]
+Keys: []
+Functions [2]: [partial_count(t2.id#36) FILTER (WHERE (gid#35 = 1)), partial_count(t1.id#37) FILTER (WHERE (gid#35 = 2))]
+Aggregate Attributes [2]: [count#38L, count#39L]
+Results [2]: [count#40L, count#41L]
+
+(13) HashAggregate
+Input [2]: [count#40L, count#41L]
+Keys: []
+Functions [2]: [count(t2.id#36), count(t1.id#37)]
+Aggregate Attributes [2]: [count(t2.id#36)#32L, count(t1.id#37)#33L]
+Results [1]: [((1.0 * cast(count(t2.id#36)#32L as decimal(20,0))) / cast(count(t1.id#37)#33L as decimal(20,0))) AS ((1.0 * count(DISTINCT id)) / count(DISTINCT id))#34]
+
+(14) AdaptiveSparkPlan
+Output [1]: [((1.0 * count(DISTINCT id)) / count(DISTINCT id))#34]
+Arguments: isFinalPlan=false
+
+

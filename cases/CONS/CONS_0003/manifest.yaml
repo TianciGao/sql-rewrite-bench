@@ -32,6 +32,22 @@ features:
 - group_by
 - count
 - distinct
+tags:
+  sql_feature:
+    primary: [outer_join]
+    secondary: []
+  rewrite_opportunity:
+    primary: [aggregation_rewrite]
+    secondary: []
+  plan_operator:
+    present: []
+    delta_relevant: []
+  workload_realism:
+    source_inherited: []
+    case_specific: []
+  portability:
+    confirmed: []
+    suspected: []
 status:
   seed_localized: true
   source_frozen: true

@@ -1,0 +1,55 @@
+{
+  "query_block": {
+    "select_id": 1,
+    "cost_info": {
+      "query_cost": "0.55"
+    },
+    "table": {
+      "table_name": "t1",
+      "access_type": "ALL",
+      "rows_examined_per_scan": 3,
+      "rows_produced_per_join": 3,
+      "filtered": "100.00",
+      "cost_info": {
+        "read_cost": "0.25",
+        "eval_cost": "0.30",
+        "prefix_cost": "0.55",
+        "data_read_per_join": "48"
+      },
+      "used_columns": [
+        "i",
+        "j"
+      ],
+      "attached_condition": "((`bench`.`t1`.`i` = 1) or exists(/* select#2 */ select 1 from `bench`.`table2` `t2` where ((`bench`.`t2`.`i` = `bench`.`t1`.`j`) or (`bench`.`t2`.`i` is null))) is false)",
+      "attached_subqueries": [
+        {
+          "dependent": true,
+          "cacheable": false,
+          "query_block": {
+            "select_id": 2,
+            "cost_info": {
+              "query_cost": "0.45"
+            },
+            "table": {
+              "table_name": "t2",
+              "access_type": "ALL",
+              "rows_examined_per_scan": 2,
+              "rows_produced_per_join": 1,
+              "filtered": "75.00",
+              "cost_info": {
+                "read_cost": "0.25",
+                "eval_cost": "0.15",
+                "prefix_cost": "0.45",
+                "data_read_per_join": "24"
+              },
+              "used_columns": [
+                "i"
+              ],
+              "attached_condition": "((`bench`.`t2`.`i` = `bench`.`t1`.`j`) or (`bench`.`t2`.`i` is null))"
+            }
+          }
+        }
+      ]
+    }
+  }
+}

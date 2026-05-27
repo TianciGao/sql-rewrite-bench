@@ -1,0 +1,17 @@
+{
+  "case_id": "PORT_0013",
+  "draft_id": "PORT_DRAFT_0013",
+  "source_file_path": "datasets/raw/parrot/PARROT/benchmark/BIRD/mysql_res.json",
+  "source_record_index": 23,
+  "source_sql_field": "mysql",
+  "target_sql_field": "cracksql",
+  "source_record_subset": {
+    "mysql": "SELECT CAST( SUM( `t2`.`gender` = 'F' ) AS DOUBLE ) * 100 / COUNT( `t2`.`client_id` ) FROM `district` AS `t1` INNER JOIN `client` AS `t2` ON `t1`.`district_id` = `t2`.`district_id` WHERE `t1`.`a11` > 10000",
+    "cracksql": "SELECT CAST(COUNT(CASE WHEN \"t2\".\"gender\" = 'F' THEN 1 END) AS DOUBLE PRECISION) * 100 / COUNT( t2.client_id ) FROM \"district\" AS \"t1\" INNER JOIN \"client\" AS \"t2\" ON \"t1\".\"district_id\" = \"t2\".\"district_id\" WHERE \"t1\".\"a11\" > 10000",
+    "result_preview": [
+      {
+        "CAST( SUM( `t2`.`gender` = 'F' ) AS DOUBLE ) * 100 / COUNT( `t2`.`client_id` )": 49.609984399375975
+      }
+    ]
+  }
+}

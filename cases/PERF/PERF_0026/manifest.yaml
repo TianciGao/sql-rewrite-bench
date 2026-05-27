@@ -23,6 +23,8 @@ artifacts:
     spark: schema/ddl_spark.sql
   data_profile: data_profile.json
   checker: validation/checker.yaml
+  result_check: runs/result_check.json
+  plan_check: runs/plan_check.json
 validation:
   status: pg_witness_validated
   engines:
@@ -31,10 +33,39 @@ validation:
     spark: not_run
   notes:
     - "Source is frozen from the TPC-H Q22 template using the recorded ref_data substitution values."
-    - "Rewrite layer has PostgreSQL witness validation only."
-    - "PostgreSQL witness validation result is stored under runs/pg/result_check.json."
-    - "PostgreSQL plan collection result is stored under runs/pg/plans/plan_check.json."
-    - "No MySQL/Spark validation, registry row, admission claim, or review claim is included."
+    - "Tracked tri-engine draft result and plan evidence exists."
+    - "Registry remains staged_not_yet_admitted."
+    - "Plan semantics are not formally reviewed."
+    - "No admission, common-core promotion, formal-review-complete, or release-grade claim is made."
+tags:
+  sql_feature:
+    primary:
+      - cte
+      - correlated_subquery
+      - string_function
+    secondary:
+      - subquery_in_from
+  rewrite_opportunity:
+    primary:
+      - materialization_strategy
+    secondary:
+      - cte_strategy
+  plan_operator:
+    present:
+      - scan
+      - join
+      - aggregate
+      - sort
+      - materialize
+    delta_relevant: []
+  workload_realism:
+    source_inherited:
+      - classic_analytical_baseline
+    case_specific: []
+  portability:
+    confirmed: []
+    suspected:
+      - string_function_gap
 classification:
   dataset_line: TPC-H
   archetype: performance

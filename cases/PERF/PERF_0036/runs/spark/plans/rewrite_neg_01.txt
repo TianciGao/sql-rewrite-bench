@@ -1,0 +1,429 @@
+== Physical Plan ==
+AdaptiveSparkPlan (60)
++- TakeOrderedAndProject (59)
+   +- Project (58)
+      +- SortMergeJoin Inner (57)
+         :- Project (38)
+         :  +- SortMergeJoin Inner (37)
+         :     :- Sort (18)
+         :     :  +- Filter (17)
+         :     :     +- HashAggregate (16)
+         :     :        +- Exchange (15)
+         :     :           +- HashAggregate (14)
+         :     :              +- Project (13)
+         :     :                 +- BroadcastHashJoin Inner BuildRight (12)
+         :     :                    :- Project (7)
+         :     :                    :  +- BroadcastHashJoin Inner BuildRight (6)
+         :     :                    :     :- Filter (2)
+         :     :                    :     :  +- Scan parquet spark_catalog.default.store_sales (1)
+         :     :                    :     +- BroadcastExchange (5)
+         :     :                    :        +- Filter (4)
+         :     :                    :           +- Scan parquet spark_catalog.default.item (3)
+         :     :                    +- BroadcastExchange (11)
+         :     :                       +- Project (10)
+         :     :                          +- Filter (9)
+         :     :                             +- Scan parquet spark_catalog.default.date_dim (8)
+         :     +- Sort (36)
+         :        +- Filter (35)
+         :           +- HashAggregate (34)
+         :              +- Exchange (33)
+         :                 +- HashAggregate (32)
+         :                    +- Project (31)
+         :                       +- BroadcastHashJoin Inner BuildRight (30)
+         :                          :- Project (25)
+         :                          :  +- BroadcastHashJoin Inner BuildRight (24)
+         :                          :     :- Filter (20)
+         :                          :     :  +- Scan parquet spark_catalog.default.catalog_sales (19)
+         :                          :     +- BroadcastExchange (23)
+         :                          :        +- Filter (22)
+         :                          :           +- Scan parquet spark_catalog.default.item (21)
+         :                          +- BroadcastExchange (29)
+         :                             +- Project (28)
+         :                                +- Filter (27)
+         :                                   +- Scan parquet spark_catalog.default.date_dim (26)
+         +- Sort (56)
+            +- Filter (55)
+               +- HashAggregate (54)
+                  +- Exchange (53)
+                     +- HashAggregate (52)
+                        +- Project (51)
+                           +- BroadcastHashJoin Inner BuildRight (50)
+                              :- Project (45)
+                              :  +- BroadcastHashJoin Inner BuildRight (44)
+                              :     :- Filter (40)
+                              :     :  +- Scan parquet spark_catalog.default.web_sales (39)
+                              :     +- BroadcastExchange (43)
+                              :        +- Filter (42)
+                              :           +- Scan parquet spark_catalog.default.item (41)
+                              +- BroadcastExchange (49)
+                                 +- Project (48)
+                                    +- Filter (47)
+                                       +- Scan parquet spark_catalog.default.date_dim (46)
+
+
+(1) Scan parquet spark_catalog.default.store_sales
+Output [3]: [ss_item_sk#86, ss_sold_date_sk#87, ss_ext_sales_price#88]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/perf_0036_spark_plan_823qsz5c/store_sales]
+PushedFilters: [IsNotNull(ss_item_sk), IsNotNull(ss_sold_date_sk)]
+ReadSchema: struct<ss_item_sk:int,ss_sold_date_sk:int,ss_ext_sales_price:decimal(9,2)>
+
+(2) Filter
+Input [3]: [ss_item_sk#86, ss_sold_date_sk#87, ss_ext_sales_price#88]
+Condition : (isnotnull(ss_item_sk#86) AND isnotnull(ss_sold_date_sk#87))
+
+(3) Scan parquet spark_catalog.default.item
+Output [2]: [i_item_sk#89, i_item_id#90]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/perf_0036_spark_plan_823qsz5c/item]
+PushedFilters: [IsNotNull(i_item_sk), IsNotNull(i_item_id)]
+ReadSchema: struct<i_item_sk:int,i_item_id:string>
+
+(4) Filter
+Input [2]: [i_item_sk#89, i_item_id#90]
+Condition : (isnotnull(i_item_sk#89) AND isnotnull(i_item_id#90))
+
+(5) BroadcastExchange
+Input [2]: [i_item_sk#89, i_item_id#90]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, false] as bigint)),false), [plan_id=973]
+
+(6) BroadcastHashJoin
+Left keys [1]: [ss_item_sk#86]
+Right keys [1]: [i_item_sk#89]
+Join type: Inner
+Join condition: None
+
+(7) Project
+Output [3]: [ss_sold_date_sk#87, ss_ext_sales_price#88, i_item_id#90]
+Input [5]: [ss_item_sk#86, ss_sold_date_sk#87, ss_ext_sales_price#88, i_item_sk#89, i_item_id#90]
+
+(8) Scan parquet spark_catalog.default.date_dim
+Output [2]: [d_date_sk#91, d_week_seq#93]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/perf_0036_spark_plan_823qsz5c/date_dim]
+PushedFilters: [IsNotNull(d_week_seq), EqualTo(d_week_seq,ScalarSubquery#217), IsNotNull(d_date_sk)]
+ReadSchema: struct<d_date_sk:int,d_week_seq:int>
+
+(9) Filter
+Input [2]: [d_date_sk#91, d_week_seq#93]
+Condition : ((isnotnull(d_week_seq#93) AND (d_week_seq#93 = Subquery subquery#217, [id=#908])) AND isnotnull(d_date_sk#91))
+
+(10) Project
+Output [1]: [d_date_sk#91]
+Input [2]: [d_date_sk#91, d_week_seq#93]
+
+(11) BroadcastExchange
+Input [1]: [d_date_sk#91]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, true] as bigint)),false), [plan_id=977]
+
+(12) BroadcastHashJoin
+Left keys [1]: [ss_sold_date_sk#87]
+Right keys [1]: [d_date_sk#91]
+Join type: Inner
+Join condition: None
+
+(13) Project
+Output [2]: [ss_ext_sales_price#88, i_item_id#90]
+Input [4]: [ss_sold_date_sk#87, ss_ext_sales_price#88, i_item_id#90, d_date_sk#91]
+
+(14) HashAggregate
+Input [2]: [ss_ext_sales_price#88, i_item_id#90]
+Keys [1]: [i_item_id#90]
+Functions [1]: [partial_sum(ss_ext_sales_price#88)]
+Aggregate Attributes [2]: [sum#262, isEmpty#263]
+Results [3]: [i_item_id#90, sum#264, isEmpty#265]
+
+(15) Exchange
+Input [3]: [i_item_id#90, sum#264, isEmpty#265]
+Arguments: hashpartitioning(i_item_id#90, 1), ENSURE_REQUIREMENTS, [plan_id=982]
+
+(16) HashAggregate
+Input [3]: [i_item_id#90, sum#264, isEmpty#265]
+Keys [1]: [i_item_id#90]
+Functions [1]: [sum(ss_ext_sales_price#88)]
+Aggregate Attributes [1]: [sum(ss_ext_sales_price#88)#235]
+Results [2]: [i_item_id#90 AS item_id#218, sum(ss_ext_sales_price#88)#235 AS ss_item_rev#219]
+
+(17) Filter
+Input [2]: [item_id#218, ss_item_rev#219]
+Condition : isnotnull(ss_item_rev#219)
+
+(18) Sort
+Input [2]: [item_id#218, ss_item_rev#219]
+Arguments: [item_id#218 ASC NULLS FIRST], false, 0
+
+(19) Scan parquet spark_catalog.default.catalog_sales
+Output [3]: [cs_item_sk#94, cs_sold_date_sk#95, cs_ext_sales_price#96]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/perf_0036_spark_plan_823qsz5c/catalog_sales]
+PushedFilters: [IsNotNull(cs_item_sk), IsNotNull(cs_sold_date_sk)]
+ReadSchema: struct<cs_item_sk:int,cs_sold_date_sk:int,cs_ext_sales_price:decimal(9,2)>
+
+(20) Filter
+Input [3]: [cs_item_sk#94, cs_sold_date_sk#95, cs_ext_sales_price#96]
+Condition : (isnotnull(cs_item_sk#94) AND isnotnull(cs_sold_date_sk#95))
+
+(21) Scan parquet spark_catalog.default.item
+Output [2]: [i_item_sk#224, i_item_id#225]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/perf_0036_spark_plan_823qsz5c/item]
+PushedFilters: [IsNotNull(i_item_sk), IsNotNull(i_item_id)]
+ReadSchema: struct<i_item_sk:int,i_item_id:string>
+
+(22) Filter
+Input [2]: [i_item_sk#224, i_item_id#225]
+Condition : (isnotnull(i_item_sk#224) AND isnotnull(i_item_id#225))
+
+(23) BroadcastExchange
+Input [2]: [i_item_sk#224, i_item_id#225]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, false] as bigint)),false), [plan_id=985]
+
+(24) BroadcastHashJoin
+Left keys [1]: [cs_item_sk#94]
+Right keys [1]: [i_item_sk#224]
+Join type: Inner
+Join condition: None
+
+(25) Project
+Output [3]: [cs_sold_date_sk#95, cs_ext_sales_price#96, i_item_id#225]
+Input [5]: [cs_item_sk#94, cs_sold_date_sk#95, cs_ext_sales_price#96, i_item_sk#224, i_item_id#225]
+
+(26) Scan parquet spark_catalog.default.date_dim
+Output [2]: [d_date_sk#250, d_week_seq#252]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/perf_0036_spark_plan_823qsz5c/date_dim]
+PushedFilters: [IsNotNull(d_week_seq), EqualTo(d_week_seq,ScalarSubquery#217), IsNotNull(d_date_sk)]
+ReadSchema: struct<d_date_sk:int,d_week_seq:int>
+
+(27) Filter
+Input [2]: [d_date_sk#250, d_week_seq#252]
+Condition : ((isnotnull(d_week_seq#252) AND (d_week_seq#252 = Subquery subquery#217, [id=#919])) AND isnotnull(d_date_sk#250))
+
+(28) Project
+Output [1]: [d_date_sk#250]
+Input [2]: [d_date_sk#250, d_week_seq#252]
+
+(29) BroadcastExchange
+Input [1]: [d_date_sk#250]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, true] as bigint)),false), [plan_id=989]
+
+(30) BroadcastHashJoin
+Left keys [1]: [cs_sold_date_sk#95]
+Right keys [1]: [d_date_sk#250]
+Join type: Inner
+Join condition: None
+
+(31) Project
+Output [2]: [cs_ext_sales_price#96, i_item_id#225]
+Input [4]: [cs_sold_date_sk#95, cs_ext_sales_price#96, i_item_id#225, d_date_sk#250]
+
+(32) HashAggregate
+Input [2]: [cs_ext_sales_price#96, i_item_id#225]
+Keys [1]: [i_item_id#225]
+Functions [1]: [partial_sum(cs_ext_sales_price#96)]
+Aggregate Attributes [2]: [sum#266, isEmpty#267]
+Results [3]: [i_item_id#225, sum#268, isEmpty#269]
+
+(33) Exchange
+Input [3]: [i_item_id#225, sum#268, isEmpty#269]
+Arguments: hashpartitioning(i_item_id#225, 1), ENSURE_REQUIREMENTS, [plan_id=994]
+
+(34) HashAggregate
+Input [3]: [i_item_id#225, sum#268, isEmpty#269]
+Keys [1]: [i_item_id#225]
+Functions [1]: [sum(cs_ext_sales_price#96)]
+Aggregate Attributes [1]: [sum(cs_ext_sales_price#96)#236]
+Results [2]: [i_item_id#225 AS item_id#220, sum(cs_ext_sales_price#96)#236 AS cs_item_rev#221]
+
+(35) Filter
+Input [2]: [item_id#220, cs_item_rev#221]
+Condition : isnotnull(cs_item_rev#221)
+
+(36) Sort
+Input [2]: [item_id#220, cs_item_rev#221]
+Arguments: [item_id#220 ASC NULLS FIRST], false, 0
+
+(37) SortMergeJoin
+Left keys [1]: [item_id#218]
+Right keys [1]: [item_id#220]
+Join type: Inner
+Join condition: ((((cast(ss_item_rev#219 as decimal(21,3)) >= (0.9 * cs_item_rev#221)) AND (cast(ss_item_rev#219 as decimal(22,3)) <= (1.1 * cs_item_rev#221))) AND (cast(cs_item_rev#221 as decimal(21,3)) >= (0.9 * ss_item_rev#219))) AND (cast(cs_item_rev#221 as decimal(22,3)) <= (1.1 * ss_item_rev#219)))
+
+(38) Project
+Output [3]: [item_id#218, ss_item_rev#219, cs_item_rev#221]
+Input [4]: [item_id#218, ss_item_rev#219, item_id#220, cs_item_rev#221]
+
+(39) Scan parquet spark_catalog.default.web_sales
+Output [3]: [ws_item_sk#97, ws_sold_date_sk#98, ws_ext_sales_price#99]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/perf_0036_spark_plan_823qsz5c/web_sales]
+PushedFilters: [IsNotNull(ws_item_sk), IsNotNull(ws_sold_date_sk)]
+ReadSchema: struct<ws_item_sk:int,ws_sold_date_sk:int,ws_ext_sales_price:decimal(9,2)>
+
+(40) Filter
+Input [3]: [ws_item_sk#97, ws_sold_date_sk#98, ws_ext_sales_price#99]
+Condition : (isnotnull(ws_item_sk#97) AND isnotnull(ws_sold_date_sk#98))
+
+(41) Scan parquet spark_catalog.default.item
+Output [2]: [i_item_sk#226, i_item_id#227]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/perf_0036_spark_plan_823qsz5c/item]
+PushedFilters: [IsNotNull(i_item_sk), IsNotNull(i_item_id)]
+ReadSchema: struct<i_item_sk:int,i_item_id:string>
+
+(42) Filter
+Input [2]: [i_item_sk#226, i_item_id#227]
+Condition : (isnotnull(i_item_sk#226) AND isnotnull(i_item_id#227))
+
+(43) BroadcastExchange
+Input [2]: [i_item_sk#226, i_item_id#227]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, false] as bigint)),false), [plan_id=1003]
+
+(44) BroadcastHashJoin
+Left keys [1]: [ws_item_sk#97]
+Right keys [1]: [i_item_sk#226]
+Join type: Inner
+Join condition: None
+
+(45) Project
+Output [3]: [ws_sold_date_sk#98, ws_ext_sales_price#99, i_item_id#227]
+Input [5]: [ws_item_sk#97, ws_sold_date_sk#98, ws_ext_sales_price#99, i_item_sk#226, i_item_id#227]
+
+(46) Scan parquet spark_catalog.default.date_dim
+Output [2]: [d_date_sk#256, d_week_seq#258]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/perf_0036_spark_plan_823qsz5c/date_dim]
+PushedFilters: [IsNotNull(d_week_seq), EqualTo(d_week_seq,ScalarSubquery#217), IsNotNull(d_date_sk)]
+ReadSchema: struct<d_date_sk:int,d_week_seq:int>
+
+(47) Filter
+Input [2]: [d_date_sk#256, d_week_seq#258]
+Condition : ((isnotnull(d_week_seq#258) AND (d_week_seq#258 = Subquery subquery#217, [id=#932])) AND isnotnull(d_date_sk#256))
+
+(48) Project
+Output [1]: [d_date_sk#256]
+Input [2]: [d_date_sk#256, d_week_seq#258]
+
+(49) BroadcastExchange
+Input [1]: [d_date_sk#256]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, true] as bigint)),false), [plan_id=1007]
+
+(50) BroadcastHashJoin
+Left keys [1]: [ws_sold_date_sk#98]
+Right keys [1]: [d_date_sk#256]
+Join type: Inner
+Join condition: None
+
+(51) Project
+Output [2]: [ws_ext_sales_price#99, i_item_id#227]
+Input [4]: [ws_sold_date_sk#98, ws_ext_sales_price#99, i_item_id#227, d_date_sk#256]
+
+(52) HashAggregate
+Input [2]: [ws_ext_sales_price#99, i_item_id#227]
+Keys [1]: [i_item_id#227]
+Functions [1]: [partial_sum(ws_ext_sales_price#99)]
+Aggregate Attributes [2]: [sum#270, isEmpty#271]
+Results [3]: [i_item_id#227, sum#272, isEmpty#273]
+
+(53) Exchange
+Input [3]: [i_item_id#227, sum#272, isEmpty#273]
+Arguments: hashpartitioning(i_item_id#227, 1), ENSURE_REQUIREMENTS, [plan_id=1012]
+
+(54) HashAggregate
+Input [3]: [i_item_id#227, sum#272, isEmpty#273]
+Keys [1]: [i_item_id#227]
+Functions [1]: [sum(ws_ext_sales_price#99)]
+Aggregate Attributes [1]: [sum(ws_ext_sales_price#99)#237]
+Results [2]: [i_item_id#227 AS item_id#222, sum(ws_ext_sales_price#99)#237 AS ws_item_rev#223]
+
+(55) Filter
+Input [2]: [item_id#222, ws_item_rev#223]
+Condition : isnotnull(ws_item_rev#223)
+
+(56) Sort
+Input [2]: [item_id#222, ws_item_rev#223]
+Arguments: [item_id#222 ASC NULLS FIRST], false, 0
+
+(57) SortMergeJoin
+Left keys [1]: [item_id#218]
+Right keys [1]: [item_id#222]
+Join type: Inner
+Join condition: ((((((((cast(ss_item_rev#219 as decimal(21,3)) >= (0.9 * ws_item_rev#223)) AND (cast(ss_item_rev#219 as decimal(22,3)) <= (1.1 * ws_item_rev#223))) AND (cast(cs_item_rev#221 as decimal(21,3)) >= (0.9 * ws_item_rev#223))) AND (cast(cs_item_rev#221 as decimal(22,3)) <= (1.1 * ws_item_rev#223))) AND (cast(ws_item_rev#223 as decimal(21,3)) >= (0.9 * ss_item_rev#219))) AND (cast(ws_item_rev#223 as decimal(22,3)) <= (1.1 * ss_item_rev#219))) AND (cast(ws_item_rev#223 as decimal(21,3)) >= (0.9 * cs_item_rev#221))) AND (cast(ws_item_rev#223 as decimal(22,3)) <= (1.1 * cs_item_rev#221)))
+
+(58) Project
+Output [8]: [item_id#218, ss_item_rev#219, ((ss_item_rev#219 / (((ss_item_rev#219 + cs_item_rev#221) + ws_item_rev#223) / 3)) * 100) AS ss_dev#213, cs_item_rev#221, ((cs_item_rev#221 / (((ss_item_rev#219 + cs_item_rev#221) + ws_item_rev#223) / 3)) * 100) AS cs_dev#214, ws_item_rev#223, ((ws_item_rev#223 / (((ss_item_rev#219 + cs_item_rev#221) + ws_item_rev#223) / 3)) * 100) AS ws_dev#215, (((ss_item_rev#219 + cs_item_rev#221) + ws_item_rev#223) / 3) AS average#216]
+Input [5]: [item_id#218, ss_item_rev#219, cs_item_rev#221, item_id#222, ws_item_rev#223]
+
+(59) TakeOrderedAndProject
+Input [8]: [item_id#218, ss_item_rev#219, ss_dev#213, cs_item_rev#221, cs_dev#214, ws_item_rev#223, ws_dev#215, average#216]
+Arguments: 100, [item_id#218 ASC NULLS FIRST, ss_item_rev#219 ASC NULLS FIRST], [item_id#218, ss_item_rev#219, ss_dev#213, cs_item_rev#221, cs_dev#214, ws_item_rev#223, ws_dev#215, average#216]
+
+(60) AdaptiveSparkPlan
+Output [8]: [item_id#218, ss_item_rev#219, ss_dev#213, cs_item_rev#221, cs_dev#214, ws_item_rev#223, ws_dev#215, average#216]
+Arguments: isFinalPlan=false
+
+===== Subqueries =====
+
+Subquery:1 Hosting operator id = 9 Hosting Expression = Subquery subquery#217, [id=#908]
+AdaptiveSparkPlan (64)
++- Project (63)
+   +- Filter (62)
+      +- Scan parquet spark_catalog.default.date_dim (61)
+
+
+(61) Scan parquet spark_catalog.default.date_dim
+Output [2]: [d_date#231, d_week_seq#232]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/perf_0036_spark_plan_823qsz5c/date_dim]
+PushedFilters: [IsNotNull(d_date), EqualTo(d_date,1998-02-26)]
+ReadSchema: struct<d_date:date,d_week_seq:int>
+
+(62) Filter
+Input [2]: [d_date#231, d_week_seq#232]
+Condition : (isnotnull(d_date#231) AND (d_date#231 = 1998-02-26))
+
+(63) Project
+Output [1]: [d_week_seq#232]
+Input [2]: [d_date#231, d_week_seq#232]
+
+(64) AdaptiveSparkPlan
+Output [1]: [d_week_seq#232]
+Arguments: isFinalPlan=false
+
+Subquery:2 Hosting operator id = 8 Hosting Expression = Subquery subquery#217, [id=#910]
+AdaptiveSparkPlan (64)
++- Project (63)
+   +- Filter (62)
+      +- Scan parquet spark_catalog.default.date_dim (61)
+
+
+Subquery:3 Hosting operator id = 27 Hosting Expression = Subquery subquery#217, [id=#919]
+AdaptiveSparkPlan (64)
++- Project (63)
+   +- Filter (62)
+      +- Scan parquet spark_catalog.default.date_dim (61)
+
+
+Subquery:4 Hosting operator id = 26 Hosting Expression = Subquery subquery#217, [id=#921]
+AdaptiveSparkPlan (64)
++- Project (63)
+   +- Filter (62)
+      +- Scan parquet spark_catalog.default.date_dim (61)
+
+
+Subquery:5 Hosting operator id = 47 Hosting Expression = Subquery subquery#217, [id=#932]
+AdaptiveSparkPlan (64)
++- Project (63)
+   +- Filter (62)
+      +- Scan parquet spark_catalog.default.date_dim (61)
+
+
+Subquery:6 Hosting operator id = 46 Hosting Expression = Subquery subquery#217, [id=#934]
+AdaptiveSparkPlan (64)
++- Project (63)
+   +- Filter (62)
+      +- Scan parquet spark_catalog.default.date_dim (61)
+
+
+
+

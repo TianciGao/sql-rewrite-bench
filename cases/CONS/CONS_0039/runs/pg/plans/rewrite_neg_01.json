@@ -1,0 +1,43 @@
+[
+  {
+    "Plan": {
+      "Node Type": "Result",
+      "Parallel Aware": false,
+      "Async Capable": false,
+      "Startup Cost": 0.06,
+      "Total Cost": 29.68,
+      "Plan Rows": 523,
+      "Plan Width": 8,
+      "One-Time Filter": "(InitPlan 1).col1",
+      "Plans": [
+        {
+          "Node Type": "Seq Scan",
+          "Parent Relationship": "InitPlan",
+          "Subplan Name": "InitPlan 1",
+          "Parallel Aware": false,
+          "Async Capable": false,
+          "Relation Name": "emp",
+          "Alias": "emp_1",
+          "Startup Cost": 0.00,
+          "Total Cost": 29.62,
+          "Plan Rows": 523,
+          "Plan Width": 0,
+          "Filter": "(empno < 20)"
+        },
+        {
+          "Node Type": "Seq Scan",
+          "Parent Relationship": "Outer",
+          "Parallel Aware": false,
+          "Async Capable": false,
+          "Relation Name": "emp",
+          "Alias": "emp",
+          "Startup Cost": 0.06,
+          "Total Cost": 29.68,
+          "Plan Rows": 523,
+          "Plan Width": 8,
+          "Filter": "(sal < '100'::numeric)"
+        }
+      ]
+    }
+  }
+]

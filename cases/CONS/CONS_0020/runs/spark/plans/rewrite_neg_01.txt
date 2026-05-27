@@ -1,0 +1,68 @@
+== Physical Plan ==
+AdaptiveSparkPlan (3)
++- Filter (2)
+   +- Scan parquet spark_catalog.default.dept (1)
+
+
+(1) Scan parquet spark_catalog.default.dept
+Output [3]: [deptno#45, dname#46, loc#47]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/cons_0020_spark_plan_kxqtqjl7/dept]
+ReadSchema: struct<deptno:int,dname:string,loc:string>
+
+(2) Filter
+Input [3]: [deptno#45, dname#46, loc#47]
+Condition : isnull(Subquery subquery#60, [id=#59])
+
+(3) AdaptiveSparkPlan
+Output [3]: [deptno#45, dname#46, loc#47]
+Arguments: isFinalPlan=false
+
+===== Subqueries =====
+
+Subquery:1 Hosting operator id = 2 Hosting Expression = Subquery subquery#60, [id=#59]
+AdaptiveSparkPlan (8)
++- HashAggregate (7)
+   +- Exchange (6)
+      +- HashAggregate (5)
+         +- Scan parquet spark_catalog.default.emp (4)
+
+
+(4) Scan parquet spark_catalog.default.emp
+Output: []
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/cons_0020_spark_plan_kxqtqjl7/emp]
+ReadSchema: struct<>
+
+(5) HashAggregate
+Input: []
+Keys: []
+Functions: []
+Aggregate Attributes: []
+Results: []
+
+(6) Exchange
+Input: []
+Arguments: SinglePartition, ENSURE_REQUIREMENTS, [plan_id=57]
+
+(7) HashAggregate
+Input: []
+Keys: []
+Functions: []
+Aggregate Attributes: []
+Results [1]: [1 AS col#63]
+
+(8) AdaptiveSparkPlan
+Output [1]: [col#63]
+Arguments: isFinalPlan=false
+
+Subquery:2 Hosting operator id = 1 Hosting Expression = Subquery subquery#60, [id=#61]
+AdaptiveSparkPlan (8)
++- HashAggregate (7)
+   +- Exchange (6)
+      +- HashAggregate (5)
+         +- Scan parquet spark_catalog.default.emp (4)
+
+
+
+

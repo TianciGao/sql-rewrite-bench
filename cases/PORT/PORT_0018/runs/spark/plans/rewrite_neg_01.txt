@@ -1,0 +1,87 @@
+== Physical Plan ==
+AdaptiveSparkPlan (14)
++- TakeOrderedAndProject (13)
+   +- Project (12)
+      +- BroadcastHashJoin Inner BuildRight (11)
+         :- Project (7)
+         :  +- BroadcastHashJoin Inner BuildRight (6)
+         :     :- Filter (2)
+         :     :  +- Scan parquet spark_catalog.port_0018_spark_plan_collection.drivers (1)
+         :     +- BroadcastExchange (5)
+         :        +- Filter (4)
+         :           +- Scan parquet spark_catalog.port_0018_spark_plan_collection.driverstandings (3)
+         +- BroadcastExchange (10)
+            +- Filter (9)
+               +- Scan parquet spark_catalog.port_0018_spark_plan_collection.races (8)
+
+
+(1) Scan parquet spark_catalog.port_0018_spark_plan_collection.drivers
+Output [5]: [driver_id#66, forename#67, surname#68, nationality#69, dob#70]
+Batched: true
+Location: InMemoryFileIndex [file:/home/tianci_gao/code/sql-rewrite-bench/cases/PORT/PORT_0018/runs/spark/plans/_tmp_spark_plan_collection/warehouse/port_0018_spark_plan_collection.db/drivers]
+PushedFilters: [IsNotNull(dob), IsNotNull(driver_id)]
+ReadSchema: struct<driver_id:int,forename:string,surname:string,nationality:string,dob:date>
+
+(2) Filter
+Input [5]: [driver_id#66, forename#67, surname#68, nationality#69, dob#70]
+Condition : (isnotnull(dob#70) AND isnotnull(driver_id#66))
+
+(3) Scan parquet spark_catalog.port_0018_spark_plan_collection.driverstandings
+Output [2]: [driver_id#71, race_id#72]
+Batched: true
+Location: InMemoryFileIndex [file:/home/tianci_gao/code/sql-rewrite-bench/cases/PORT/PORT_0018/runs/spark/plans/_tmp_spark_plan_collection/warehouse/port_0018_spark_plan_collection.db/driverstandings]
+PushedFilters: [IsNotNull(driver_id), IsNotNull(race_id)]
+ReadSchema: struct<driver_id:int,race_id:int>
+
+(4) Filter
+Input [2]: [driver_id#71, race_id#72]
+Condition : (isnotnull(driver_id#71) AND isnotnull(race_id#72))
+
+(5) BroadcastExchange
+Input [2]: [driver_id#71, race_id#72]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, false] as bigint)),false), [plan_id=182]
+
+(6) BroadcastHashJoin
+Left keys [1]: [driver_id#66]
+Right keys [1]: [driver_id#71]
+Join type: Inner
+Join condition: None
+
+(7) Project
+Output [5]: [forename#67, surname#68, nationality#69, dob#70, race_id#72]
+Input [7]: [driver_id#66, forename#67, surname#68, nationality#69, dob#70, driver_id#71, race_id#72]
+
+(8) Scan parquet spark_catalog.port_0018_spark_plan_collection.races
+Output [2]: [race_id#73, name#74]
+Batched: true
+Location: InMemoryFileIndex [file:/home/tianci_gao/code/sql-rewrite-bench/cases/PORT/PORT_0018/runs/spark/plans/_tmp_spark_plan_collection/warehouse/port_0018_spark_plan_collection.db/races]
+PushedFilters: [IsNotNull(race_id)]
+ReadSchema: struct<race_id:int,name:string>
+
+(9) Filter
+Input [2]: [race_id#73, name#74]
+Condition : isnotnull(race_id#73)
+
+(10) BroadcastExchange
+Input [2]: [race_id#73, name#74]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, false] as bigint)),false), [plan_id=186]
+
+(11) BroadcastHashJoin
+Left keys [1]: [race_id#72]
+Right keys [1]: [race_id#73]
+Join type: Inner
+Join condition: None
+
+(12) Project
+Output [5]: [forename#67, surname#68, nationality#69, name#74, dob#70]
+Input [7]: [forename#67, surname#68, nationality#69, dob#70, race_id#72, race_id#73, name#74]
+
+(13) TakeOrderedAndProject
+Input [5]: [forename#67, surname#68, nationality#69, name#74, dob#70]
+Arguments: 1, [dob#70 ASC NULLS FIRST], [forename#67, surname#68, nationality#69, name#74]
+
+(14) AdaptiveSparkPlan
+Output [4]: [forename#67, surname#68, nationality#69, name#74]
+Arguments: isFinalPlan=false
+
+

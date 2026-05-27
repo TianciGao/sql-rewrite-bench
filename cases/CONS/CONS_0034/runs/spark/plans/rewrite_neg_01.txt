@@ -1,0 +1,73 @@
+== Physical Plan ==
+AdaptiveSparkPlan (11)
++- HashAggregate (10)
+   +- Exchange (9)
+      +- HashAggregate (8)
+         +- Project (7)
+            +- BroadcastHashJoin Inner BuildLeft (6)
+               :- BroadcastExchange (3)
+               :  +- Filter (2)
+               :     +- Scan parquet spark_catalog.default.bonus (1)
+               +- Filter (5)
+                  +- Scan parquet spark_catalog.default.emp (4)
+
+
+(1) Scan parquet spark_catalog.default.bonus
+Output [1]: [ENAME#49]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/cons_0034_spark_plan_hdds03v6/bonus]
+PushedFilters: [IsNotNull(ENAME)]
+ReadSchema: struct<ENAME:string>
+
+(2) Filter
+Input [1]: [ENAME#49]
+Condition : isnotnull(ENAME#49)
+
+(3) BroadcastExchange
+Input [1]: [ENAME#49]
+Arguments: HashedRelationBroadcastMode(List(input[0, string, false]),false), [plan_id=143]
+
+(4) Scan parquet spark_catalog.default.emp
+Output [2]: [ENAME#54, SAL#58]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/cons_0034_spark_plan_hdds03v6/emp]
+PushedFilters: [IsNotNull(ENAME)]
+ReadSchema: struct<ENAME:string,SAL:decimal(10,2)>
+
+(5) Filter
+Input [2]: [ENAME#54, SAL#58]
+Condition : isnotnull(ENAME#54)
+
+(6) BroadcastHashJoin
+Left keys [1]: [ENAME#49]
+Right keys [1]: [ENAME#54]
+Join type: Inner
+Join condition: None
+
+(7) Project
+Output [1]: [CASE WHEN (SAL#58 < 11.00) THEN (-1 * SAL#58) ELSE cast(SAL#58 as decimal(12,2)) END AS _groupingexpression#76]
+Input [3]: [ENAME#49, ENAME#54, SAL#58]
+
+(8) HashAggregate
+Input [1]: [_groupingexpression#76]
+Keys [1]: [_groupingexpression#76]
+Functions [1]: [partial_count(1)]
+Aggregate Attributes [1]: [count#77L]
+Results [2]: [_groupingexpression#76, count#78L]
+
+(9) Exchange
+Input [2]: [_groupingexpression#76, count#78L]
+Arguments: hashpartitioning(_groupingexpression#76, 1), ENSURE_REQUIREMENTS, [plan_id=148]
+
+(10) HashAggregate
+Input [2]: [_groupingexpression#76, count#78L]
+Keys [1]: [_groupingexpression#76]
+Functions [1]: [count(1)]
+Aggregate Attributes [1]: [count(1)#73L]
+Results [2]: [count(1)#73L AS count(1)#74L, _groupingexpression#76 AS CASE WHEN (SAL < 11) THEN (-1 * SAL) ELSE SAL END#75]
+
+(11) AdaptiveSparkPlan
+Output [2]: [count(1)#74L, CASE WHEN (SAL < 11) THEN (-1 * SAL) ELSE SAL END#75]
+Arguments: isFinalPlan=false
+
+

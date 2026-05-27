@@ -21,6 +21,22 @@ variants:
 validation:
   witness_dataset: longtail_0001_v1
   requires_manual_review: true
+tags:
+  sql_feature:
+    primary: ['cte', 'window_function']
+    secondary: []
+  rewrite_opportunity:
+    primary: ['cte_strategy']
+    secondary: []
+  plan_operator:
+    present: []
+    delta_relevant: []
+  workload_realism:
+    source_inherited: ['manual_gap_fill_realism']
+    case_specific: ['long_tail_structure']
+  portability:
+    confirmed: []
+    suspected: []
 status:
   parse_checked: false
   exec_checked: false

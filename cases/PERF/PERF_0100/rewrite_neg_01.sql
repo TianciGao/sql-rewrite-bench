@@ -1,0 +1,20 @@
+SELECT min(chn.name) AS CHARACTER,
+       min(t.title) AS movie_with_american_producer
+FROM title AS t
+JOIN movie_companies AS mc
+  ON mc.movie_id = t.id
+JOIN cast_info AS ci
+  ON ci.movie_id = t.id
+JOIN char_name AS chn
+  ON chn.id = ci.person_role_id
+JOIN role_type AS rt
+  ON rt.id = ci.role_id
+JOIN company_name AS cn
+  ON cn.id = mc.company_id
+JOIN company_type AS ct
+  ON ct.id = mc.company_type_id
+WHERE ci.note LIKE '%(producer)%'
+  AND cn.country_code = '[us]'
+  AND t.production_year > 2005
+  AND t.id = ci.movie_id
+  AND ci.movie_id = mc.movie_id;

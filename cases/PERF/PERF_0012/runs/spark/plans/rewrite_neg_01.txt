@@ -1,0 +1,649 @@
+== Physical Plan ==
+AdaptiveSparkPlan (115)
++- == Final Plan ==
+   ResultQueryStage (69)
+   +- TakeOrderedAndProject (68)
+      +- * Project (67)
+         +- * BroadcastHashJoin Inner BuildRight (66)
+            :- AQEShuffleRead (36)
+            :  +- ShuffleQueryStage (35), Statistics(sizeInBytes=152.0 B, rowCount=1)
+            :     +- Exchange (34)
+            :        +- * Project (33)
+            :           +- * BroadcastHashJoin Inner BuildRight (32)
+            :              :- * Project (25)
+            :              :  +- * BroadcastHashJoin Inner BuildRight (24)
+            :              :     :- * Project (18)
+            :              :     :  +- * BroadcastHashJoin Inner BuildRight (17)
+            :              :     :     :- * Project (11)
+            :              :     :     :  +- * BroadcastHashJoin Inner BuildLeft (10)
+            :              :     :     :     :- BroadcastQueryStage (6), Statistics(sizeInBytes=1024.0 KiB, rowCount=1)
+            :              :     :     :     :  +- BroadcastExchange (5)
+            :              :     :     :     :     +- * Project (4)
+            :              :     :     :     :        +- * Filter (3)
+            :              :     :     :     :           +- * ColumnarToRow (2)
+            :              :     :     :     :              +- Scan parquet spark_catalog.default.part (1)
+            :              :     :     :     +- * Filter (9)
+            :              :     :     :        +- * ColumnarToRow (8)
+            :              :     :     :           +- Scan parquet spark_catalog.default.partsupp (7)
+            :              :     :     +- BroadcastQueryStage (16), Statistics(sizeInBytes=1024.8 KiB, rowCount=3)
+            :              :     :        +- BroadcastExchange (15)
+            :              :     :           +- * Filter (14)
+            :              :     :              +- * ColumnarToRow (13)
+            :              :     :                 +- Scan parquet spark_catalog.default.supplier (12)
+            :              :     +- BroadcastQueryStage (23), Statistics(sizeInBytes=1024.1 KiB, rowCount=2)
+            :              :        +- BroadcastExchange (22)
+            :              :           +- * Filter (21)
+            :              :              +- * ColumnarToRow (20)
+            :              :                 +- Scan parquet spark_catalog.default.nation (19)
+            :              +- BroadcastQueryStage (31), Statistics(sizeInBytes=1024.0 KiB, rowCount=1)
+            :                 +- BroadcastExchange (30)
+            :                    +- * Project (29)
+            :                       +- * Filter (28)
+            :                          +- * ColumnarToRow (27)
+            :                             +- Scan parquet spark_catalog.default.region (26)
+            +- BroadcastQueryStage (65), Statistics(sizeInBytes=64.0 MiB, rowCount=3)
+               +- BroadcastExchange (64)
+                  +- * Filter (63)
+                     +- * HashAggregate (62)
+                        +- AQEShuffleRead (61)
+                           +- ShuffleQueryStage (60), Statistics(sizeInBytes=96.0 B, rowCount=4)
+                              +- Exchange (59)
+                                 +- * HashAggregate (58)
+                                    +- * Project (57)
+                                       +- * BroadcastHashJoin Inner BuildRight (56)
+                                          :- * Project (53)
+                                          :  +- * BroadcastHashJoin Inner BuildRight (52)
+                                          :     :- * Project (46)
+                                          :     :  +- * BroadcastHashJoin Inner BuildRight (45)
+                                          :     :     :- * Filter (39)
+                                          :     :     :  +- * ColumnarToRow (38)
+                                          :     :     :     +- Scan parquet spark_catalog.default.partsupp (37)
+                                          :     :     +- BroadcastQueryStage (44), Statistics(sizeInBytes=1024.8 KiB, rowCount=3)
+                                          :     :        +- BroadcastExchange (43)
+                                          :     :           +- * Filter (42)
+                                          :     :              +- * ColumnarToRow (41)
+                                          :     :                 +- Scan parquet spark_catalog.default.supplier (40)
+                                          :     +- BroadcastQueryStage (51), Statistics(sizeInBytes=1024.1 KiB, rowCount=2)
+                                          :        +- BroadcastExchange (50)
+                                          :           +- * Filter (49)
+                                          :              +- * ColumnarToRow (48)
+                                          :                 +- Scan parquet spark_catalog.default.nation (47)
+                                          +- BroadcastQueryStage (55), Statistics(sizeInBytes=1024.0 KiB, rowCount=1)
+                                             +- ReusedExchange (54)
++- == Initial Plan ==
+   TakeOrderedAndProject (114)
+   +- Project (113)
+      +- SortMergeJoin Inner (112)
+         :- Sort (90)
+         :  +- Exchange (89)
+         :     +- Project (88)
+         :        +- BroadcastHashJoin Inner BuildRight (87)
+         :           :- Project (83)
+         :           :  +- BroadcastHashJoin Inner BuildRight (82)
+         :           :     :- Project (79)
+         :           :     :  +- BroadcastHashJoin Inner BuildRight (78)
+         :           :     :     :- Project (75)
+         :           :     :     :  +- BroadcastHashJoin Inner BuildLeft (74)
+         :           :     :     :     :- BroadcastExchange (72)
+         :           :     :     :     :  +- Project (71)
+         :           :     :     :     :     +- Filter (70)
+         :           :     :     :     :        +- Scan parquet spark_catalog.default.part (1)
+         :           :     :     :     +- Filter (73)
+         :           :     :     :        +- Scan parquet spark_catalog.default.partsupp (7)
+         :           :     :     +- BroadcastExchange (77)
+         :           :     :        +- Filter (76)
+         :           :     :           +- Scan parquet spark_catalog.default.supplier (12)
+         :           :     +- BroadcastExchange (81)
+         :           :        +- Filter (80)
+         :           :           +- Scan parquet spark_catalog.default.nation (19)
+         :           +- BroadcastExchange (86)
+         :              +- Project (85)
+         :                 +- Filter (84)
+         :                    +- Scan parquet spark_catalog.default.region (26)
+         +- Sort (111)
+            +- Exchange (110)
+               +- Filter (109)
+                  +- HashAggregate (108)
+                     +- Exchange (107)
+                        +- HashAggregate (106)
+                           +- Project (105)
+                              +- BroadcastHashJoin Inner BuildRight (104)
+                                 :- Project (99)
+                                 :  +- BroadcastHashJoin Inner BuildRight (98)
+                                 :     :- Project (95)
+                                 :     :  +- BroadcastHashJoin Inner BuildRight (94)
+                                 :     :     :- Filter (91)
+                                 :     :     :  +- Scan parquet spark_catalog.default.partsupp (37)
+                                 :     :     +- BroadcastExchange (93)
+                                 :     :        +- Filter (92)
+                                 :     :           +- Scan parquet spark_catalog.default.supplier (40)
+                                 :     +- BroadcastExchange (97)
+                                 :        +- Filter (96)
+                                 :           +- Scan parquet spark_catalog.default.nation (47)
+                                 +- BroadcastExchange (103)
+                                    +- Project (102)
+                                       +- Filter (101)
+                                          +- Scan parquet spark_catalog.default.region (100)
+
+
+(1) Scan parquet spark_catalog.default.part
+Output [4]: [p_partkey#856, p_mfgr#857, p_size#858, p_type#859]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/sql_rewrite_spark_warehouse/part]
+PushedFilters: [IsNotNull(p_size), IsNotNull(p_type), EqualTo(p_size,26), StringEndsWith(p_type,TIN), IsNotNull(p_partkey)]
+ReadSchema: struct<p_partkey:int,p_mfgr:string,p_size:int,p_type:string>
+
+(2) ColumnarToRow [codegen id : 1]
+Input [4]: [p_partkey#856, p_mfgr#857, p_size#858, p_type#859]
+
+(3) Filter [codegen id : 1]
+Input [4]: [p_partkey#856, p_mfgr#857, p_size#858, p_type#859]
+Condition : ((((isnotnull(p_size#858) AND isnotnull(p_type#859)) AND (p_size#858 = 26)) AND EndsWith(p_type#859, TIN)) AND isnotnull(p_partkey#856))
+
+(4) Project [codegen id : 1]
+Output [2]: [p_partkey#856, p_mfgr#857]
+Input [4]: [p_partkey#856, p_mfgr#857, p_size#858, p_type#859]
+
+(5) BroadcastExchange
+Input [2]: [p_partkey#856, p_mfgr#857]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, true] as bigint)),false), [plan_id=5572]
+
+(6) BroadcastQueryStage
+Output [2]: [p_partkey#856, p_mfgr#857]
+Arguments: 0
+
+(7) Scan parquet spark_catalog.default.partsupp
+Output [3]: [ps_partkey#867, ps_suppkey#868, ps_supplycost#869]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/sql_rewrite_spark_warehouse/partsupp]
+PushedFilters: [IsNotNull(ps_partkey), IsNotNull(ps_suppkey), IsNotNull(ps_supplycost)]
+ReadSchema: struct<ps_partkey:int,ps_suppkey:int,ps_supplycost:decimal(15,2)>
+
+(8) ColumnarToRow
+Input [3]: [ps_partkey#867, ps_suppkey#868, ps_supplycost#869]
+
+(9) Filter
+Input [3]: [ps_partkey#867, ps_suppkey#868, ps_supplycost#869]
+Condition : ((isnotnull(ps_partkey#867) AND isnotnull(ps_suppkey#868)) AND isnotnull(ps_supplycost#869))
+
+(10) BroadcastHashJoin [codegen id : 9]
+Left keys [1]: [p_partkey#856]
+Right keys [1]: [ps_partkey#867]
+Join type: Inner
+Join condition: None
+
+(11) Project [codegen id : 9]
+Output [4]: [p_partkey#856, p_mfgr#857, ps_suppkey#868, ps_supplycost#869]
+Input [5]: [p_partkey#856, p_mfgr#857, ps_partkey#867, ps_suppkey#868, ps_supplycost#869]
+
+(12) Scan parquet spark_catalog.default.supplier
+Output [7]: [s_suppkey#860, s_name#861, s_address#862, s_nationkey#863, s_phone#864, s_acctbal#865, s_comment#866]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/sql_rewrite_spark_warehouse/supplier]
+PushedFilters: [IsNotNull(s_suppkey), IsNotNull(s_nationkey)]
+ReadSchema: struct<s_suppkey:int,s_name:string,s_address:string,s_nationkey:int,s_phone:string,s_acctbal:decimal(15,2),s_comment:string>
+
+(13) ColumnarToRow [codegen id : 2]
+Input [7]: [s_suppkey#860, s_name#861, s_address#862, s_nationkey#863, s_phone#864, s_acctbal#865, s_comment#866]
+
+(14) Filter [codegen id : 2]
+Input [7]: [s_suppkey#860, s_name#861, s_address#862, s_nationkey#863, s_phone#864, s_acctbal#865, s_comment#866]
+Condition : (isnotnull(s_suppkey#860) AND isnotnull(s_nationkey#863))
+
+(15) BroadcastExchange
+Input [7]: [s_suppkey#860, s_name#861, s_address#862, s_nationkey#863, s_phone#864, s_acctbal#865, s_comment#866]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, false] as bigint)),false), [plan_id=5591]
+
+(16) BroadcastQueryStage
+Output [7]: [s_suppkey#860, s_name#861, s_address#862, s_nationkey#863, s_phone#864, s_acctbal#865, s_comment#866]
+Arguments: 1
+
+(17) BroadcastHashJoin [codegen id : 9]
+Left keys [1]: [ps_suppkey#868]
+Right keys [1]: [s_suppkey#860]
+Join type: Inner
+Join condition: None
+
+(18) Project [codegen id : 9]
+Output [9]: [p_partkey#856, p_mfgr#857, ps_supplycost#869, s_name#861, s_address#862, s_nationkey#863, s_phone#864, s_acctbal#865, s_comment#866]
+Input [11]: [p_partkey#856, p_mfgr#857, ps_suppkey#868, ps_supplycost#869, s_suppkey#860, s_name#861, s_address#862, s_nationkey#863, s_phone#864, s_acctbal#865, s_comment#866]
+
+(19) Scan parquet spark_catalog.default.nation
+Output [3]: [n_nationkey#870, n_name#871, n_regionkey#872]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/sql_rewrite_spark_warehouse/nation]
+PushedFilters: [IsNotNull(n_nationkey), IsNotNull(n_regionkey)]
+ReadSchema: struct<n_nationkey:int,n_name:string,n_regionkey:int>
+
+(20) ColumnarToRow [codegen id : 3]
+Input [3]: [n_nationkey#870, n_name#871, n_regionkey#872]
+
+(21) Filter [codegen id : 3]
+Input [3]: [n_nationkey#870, n_name#871, n_regionkey#872]
+Condition : (isnotnull(n_nationkey#870) AND isnotnull(n_regionkey#872))
+
+(22) BroadcastExchange
+Input [3]: [n_nationkey#870, n_name#871, n_regionkey#872]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, false] as bigint)),false), [plan_id=5608]
+
+(23) BroadcastQueryStage
+Output [3]: [n_nationkey#870, n_name#871, n_regionkey#872]
+Arguments: 2
+
+(24) BroadcastHashJoin [codegen id : 9]
+Left keys [1]: [s_nationkey#863]
+Right keys [1]: [n_nationkey#870]
+Join type: Inner
+Join condition: None
+
+(25) Project [codegen id : 9]
+Output [10]: [p_partkey#856, p_mfgr#857, ps_supplycost#869, s_name#861, s_address#862, s_phone#864, s_acctbal#865, s_comment#866, n_name#871, n_regionkey#872]
+Input [12]: [p_partkey#856, p_mfgr#857, ps_supplycost#869, s_name#861, s_address#862, s_nationkey#863, s_phone#864, s_acctbal#865, s_comment#866, n_nationkey#870, n_name#871, n_regionkey#872]
+
+(26) Scan parquet spark_catalog.default.region
+Output [2]: [r_regionkey#873, r_name#874]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/sql_rewrite_spark_warehouse/region]
+PushedFilters: [IsNotNull(r_name), EqualTo(r_name,MIDDLE EAST), IsNotNull(r_regionkey)]
+ReadSchema: struct<r_regionkey:int,r_name:string>
+
+(27) ColumnarToRow [codegen id : 4]
+Input [2]: [r_regionkey#873, r_name#874]
+
+(28) Filter [codegen id : 4]
+Input [2]: [r_regionkey#873, r_name#874]
+Condition : ((isnotnull(r_name#874) AND (r_name#874 = MIDDLE EAST)) AND isnotnull(r_regionkey#873))
+
+(29) Project [codegen id : 4]
+Output [1]: [r_regionkey#873]
+Input [2]: [r_regionkey#873, r_name#874]
+
+(30) BroadcastExchange
+Input [1]: [r_regionkey#873]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, true] as bigint)),false), [plan_id=5627]
+
+(31) BroadcastQueryStage
+Output [1]: [r_regionkey#873]
+Arguments: 3
+
+(32) BroadcastHashJoin [codegen id : 9]
+Left keys [1]: [n_regionkey#872]
+Right keys [1]: [r_regionkey#873]
+Join type: Inner
+Join condition: None
+
+(33) Project [codegen id : 9]
+Output [9]: [p_partkey#856, p_mfgr#857, ps_supplycost#869, s_name#861, s_address#862, s_phone#864, s_acctbal#865, s_comment#866, n_name#871]
+Input [11]: [p_partkey#856, p_mfgr#857, ps_supplycost#869, s_name#861, s_address#862, s_phone#864, s_acctbal#865, s_comment#866, n_name#871, n_regionkey#872, r_regionkey#873]
+
+(34) Exchange
+Input [9]: [p_partkey#856, p_mfgr#857, ps_supplycost#869, s_name#861, s_address#862, s_phone#864, s_acctbal#865, s_comment#866, n_name#871]
+Arguments: hashpartitioning(p_partkey#856, ps_supplycost#869, 8), ENSURE_REQUIREMENTS, [plan_id=6164]
+
+(35) ShuffleQueryStage
+Output [9]: [p_partkey#856, p_mfgr#857, ps_supplycost#869, s_name#861, s_address#862, s_phone#864, s_acctbal#865, s_comment#866, n_name#871]
+Arguments: 9
+
+(36) AQEShuffleRead
+Input [9]: [p_partkey#856, p_mfgr#857, ps_supplycost#869, s_name#861, s_address#862, s_phone#864, s_acctbal#865, s_comment#866, n_name#871]
+Arguments: local
+
+(37) Scan parquet spark_catalog.default.partsupp
+Output [3]: [ps_partkey#931, ps_suppkey#932, ps_supplycost#933]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/sql_rewrite_spark_warehouse/partsupp]
+PushedFilters: [IsNotNull(ps_suppkey), IsNotNull(ps_partkey)]
+ReadSchema: struct<ps_partkey:int,ps_suppkey:int,ps_supplycost:decimal(15,2)>
+
+(38) ColumnarToRow [codegen id : 8]
+Input [3]: [ps_partkey#931, ps_suppkey#932, ps_supplycost#933]
+
+(39) Filter [codegen id : 8]
+Input [3]: [ps_partkey#931, ps_suppkey#932, ps_supplycost#933]
+Condition : (isnotnull(ps_suppkey#932) AND isnotnull(ps_partkey#931))
+
+(40) Scan parquet spark_catalog.default.supplier
+Output [2]: [s_suppkey#934, s_nationkey#937]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/sql_rewrite_spark_warehouse/supplier]
+PushedFilters: [IsNotNull(s_suppkey), IsNotNull(s_nationkey)]
+ReadSchema: struct<s_suppkey:int,s_nationkey:int>
+
+(41) ColumnarToRow [codegen id : 5]
+Input [2]: [s_suppkey#934, s_nationkey#937]
+
+(42) Filter [codegen id : 5]
+Input [2]: [s_suppkey#934, s_nationkey#937]
+Condition : (isnotnull(s_suppkey#934) AND isnotnull(s_nationkey#937))
+
+(43) BroadcastExchange
+Input [2]: [s_suppkey#934, s_nationkey#937]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, false] as bigint)),false), [plan_id=5687]
+
+(44) BroadcastQueryStage
+Output [2]: [s_suppkey#934, s_nationkey#937]
+Arguments: 4
+
+(45) BroadcastHashJoin [codegen id : 8]
+Left keys [1]: [ps_suppkey#932]
+Right keys [1]: [s_suppkey#934]
+Join type: Inner
+Join condition: None
+
+(46) Project [codegen id : 8]
+Output [3]: [ps_partkey#931, ps_supplycost#933, s_nationkey#937]
+Input [5]: [ps_partkey#931, ps_suppkey#932, ps_supplycost#933, s_suppkey#934, s_nationkey#937]
+
+(47) Scan parquet spark_catalog.default.nation
+Output [2]: [n_nationkey#941, n_regionkey#943]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/sql_rewrite_spark_warehouse/nation]
+PushedFilters: [IsNotNull(n_nationkey), IsNotNull(n_regionkey)]
+ReadSchema: struct<n_nationkey:int,n_regionkey:int>
+
+(48) ColumnarToRow [codegen id : 6]
+Input [2]: [n_nationkey#941, n_regionkey#943]
+
+(49) Filter [codegen id : 6]
+Input [2]: [n_nationkey#941, n_regionkey#943]
+Condition : (isnotnull(n_nationkey#941) AND isnotnull(n_regionkey#943))
+
+(50) BroadcastExchange
+Input [2]: [n_nationkey#941, n_regionkey#943]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, false] as bigint)),false), [plan_id=5704]
+
+(51) BroadcastQueryStage
+Output [2]: [n_nationkey#941, n_regionkey#943]
+Arguments: 5
+
+(52) BroadcastHashJoin [codegen id : 8]
+Left keys [1]: [s_nationkey#937]
+Right keys [1]: [n_nationkey#941]
+Join type: Inner
+Join condition: None
+
+(53) Project [codegen id : 8]
+Output [3]: [ps_partkey#931, ps_supplycost#933, n_regionkey#943]
+Input [5]: [ps_partkey#931, ps_supplycost#933, s_nationkey#937, n_nationkey#941, n_regionkey#943]
+
+(54) ReusedExchange [Reuses operator id: 30]
+Output [1]: [r_regionkey#944]
+
+(55) BroadcastQueryStage
+Output [1]: [r_regionkey#944]
+Arguments: 7
+
+(56) BroadcastHashJoin [codegen id : 8]
+Left keys [1]: [n_regionkey#943]
+Right keys [1]: [r_regionkey#944]
+Join type: Inner
+Join condition: None
+
+(57) Project [codegen id : 8]
+Output [2]: [ps_partkey#931, ps_supplycost#933]
+Input [4]: [ps_partkey#931, ps_supplycost#933, n_regionkey#943, r_regionkey#944]
+
+(58) HashAggregate [codegen id : 8]
+Input [2]: [ps_partkey#931, ps_supplycost#933]
+Keys [1]: [ps_partkey#931]
+Functions [1]: [partial_min(ps_supplycost#933)]
+Aggregate Attributes [1]: [min#951]
+Results [2]: [ps_partkey#931, min#952]
+
+(59) Exchange
+Input [2]: [ps_partkey#931, min#952]
+Arguments: hashpartitioning(ps_partkey#931, 8), ENSURE_REQUIREMENTS, [plan_id=6036]
+
+(60) ShuffleQueryStage
+Output [2]: [ps_partkey#931, min#952]
+Arguments: 8
+
+(61) AQEShuffleRead
+Input [2]: [ps_partkey#931, min#952]
+Arguments: coalesced
+
+(62) HashAggregate [codegen id : 10]
+Input [2]: [ps_partkey#931, min#952]
+Keys [1]: [ps_partkey#931]
+Functions [1]: [min(ps_supplycost#933)]
+Aggregate Attributes [1]: [min(ps_supplycost#933)#946]
+Results [2]: [ps_partkey#931, min(ps_supplycost#933)#946 AS min_supplycost#930]
+
+(63) Filter [codegen id : 10]
+Input [2]: [ps_partkey#931, min_supplycost#930]
+Condition : isnotnull(min_supplycost#930)
+
+(64) BroadcastExchange
+Input [2]: [ps_partkey#931, min_supplycost#930]
+Arguments: HashedRelationBroadcastMode(List(input[0, int, true], input[1, decimal(15,2), false]),false), [plan_id=6232]
+
+(65) BroadcastQueryStage
+Output [2]: [ps_partkey#931, min_supplycost#930]
+Arguments: 10
+
+(66) BroadcastHashJoin [codegen id : 11]
+Left keys [2]: [p_partkey#856, ps_supplycost#869]
+Right keys [2]: [ps_partkey#931, min_supplycost#930]
+Join type: Inner
+Join condition: None
+
+(67) Project [codegen id : 11]
+Output [8]: [s_acctbal#865, s_name#861, n_name#871, p_partkey#856, p_mfgr#857, s_address#862, s_phone#864, s_comment#866]
+Input [11]: [p_partkey#856, p_mfgr#857, ps_supplycost#869, s_name#861, s_address#862, s_phone#864, s_acctbal#865, s_comment#866, n_name#871, ps_partkey#931, min_supplycost#930]
+
+(68) TakeOrderedAndProject
+Input [8]: [s_acctbal#865, s_name#861, n_name#871, p_partkey#856, p_mfgr#857, s_address#862, s_phone#864, s_comment#866]
+Arguments: 100, [s_acctbal#865 DESC NULLS LAST, n_name#871 ASC NULLS FIRST, s_name#861 ASC NULLS FIRST, p_partkey#856 ASC NULLS FIRST], [s_acctbal#865, s_name#861, n_name#871, p_partkey#856, p_mfgr#857, s_address#862, s_phone#864, s_comment#866]
+
+(69) ResultQueryStage
+Output [8]: [s_acctbal#865, s_name#861, n_name#871, p_partkey#856, p_mfgr#857, s_address#862, s_phone#864, s_comment#866]
+Arguments: 11
+
+(70) Filter
+Input [4]: [p_partkey#856, p_mfgr#857, p_size#858, p_type#859]
+Condition : ((((isnotnull(p_size#858) AND isnotnull(p_type#859)) AND (p_size#858 = 26)) AND EndsWith(p_type#859, TIN)) AND isnotnull(p_partkey#856))
+
+(71) Project
+Output [2]: [p_partkey#856, p_mfgr#857]
+Input [4]: [p_partkey#856, p_mfgr#857, p_size#858, p_type#859]
+
+(72) BroadcastExchange
+Input [2]: [p_partkey#856, p_mfgr#857]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, true] as bigint)),false), [plan_id=5482]
+
+(73) Filter
+Input [3]: [ps_partkey#867, ps_suppkey#868, ps_supplycost#869]
+Condition : ((isnotnull(ps_partkey#867) AND isnotnull(ps_suppkey#868)) AND isnotnull(ps_supplycost#869))
+
+(74) BroadcastHashJoin
+Left keys [1]: [p_partkey#856]
+Right keys [1]: [ps_partkey#867]
+Join type: Inner
+Join condition: None
+
+(75) Project
+Output [4]: [p_partkey#856, p_mfgr#857, ps_suppkey#868, ps_supplycost#869]
+Input [5]: [p_partkey#856, p_mfgr#857, ps_partkey#867, ps_suppkey#868, ps_supplycost#869]
+
+(76) Filter
+Input [7]: [s_suppkey#860, s_name#861, s_address#862, s_nationkey#863, s_phone#864, s_acctbal#865, s_comment#866]
+Condition : (isnotnull(s_suppkey#860) AND isnotnull(s_nationkey#863))
+
+(77) BroadcastExchange
+Input [7]: [s_suppkey#860, s_name#861, s_address#862, s_nationkey#863, s_phone#864, s_acctbal#865, s_comment#866]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, false] as bigint)),false), [plan_id=5486]
+
+(78) BroadcastHashJoin
+Left keys [1]: [ps_suppkey#868]
+Right keys [1]: [s_suppkey#860]
+Join type: Inner
+Join condition: None
+
+(79) Project
+Output [9]: [p_partkey#856, p_mfgr#857, ps_supplycost#869, s_name#861, s_address#862, s_nationkey#863, s_phone#864, s_acctbal#865, s_comment#866]
+Input [11]: [p_partkey#856, p_mfgr#857, ps_suppkey#868, ps_supplycost#869, s_suppkey#860, s_name#861, s_address#862, s_nationkey#863, s_phone#864, s_acctbal#865, s_comment#866]
+
+(80) Filter
+Input [3]: [n_nationkey#870, n_name#871, n_regionkey#872]
+Condition : (isnotnull(n_nationkey#870) AND isnotnull(n_regionkey#872))
+
+(81) BroadcastExchange
+Input [3]: [n_nationkey#870, n_name#871, n_regionkey#872]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, false] as bigint)),false), [plan_id=5490]
+
+(82) BroadcastHashJoin
+Left keys [1]: [s_nationkey#863]
+Right keys [1]: [n_nationkey#870]
+Join type: Inner
+Join condition: None
+
+(83) Project
+Output [10]: [p_partkey#856, p_mfgr#857, ps_supplycost#869, s_name#861, s_address#862, s_phone#864, s_acctbal#865, s_comment#866, n_name#871, n_regionkey#872]
+Input [12]: [p_partkey#856, p_mfgr#857, ps_supplycost#869, s_name#861, s_address#862, s_nationkey#863, s_phone#864, s_acctbal#865, s_comment#866, n_nationkey#870, n_name#871, n_regionkey#872]
+
+(84) Filter
+Input [2]: [r_regionkey#873, r_name#874]
+Condition : ((isnotnull(r_name#874) AND (r_name#874 = MIDDLE EAST)) AND isnotnull(r_regionkey#873))
+
+(85) Project
+Output [1]: [r_regionkey#873]
+Input [2]: [r_regionkey#873, r_name#874]
+
+(86) BroadcastExchange
+Input [1]: [r_regionkey#873]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, true] as bigint)),false), [plan_id=5494]
+
+(87) BroadcastHashJoin
+Left keys [1]: [n_regionkey#872]
+Right keys [1]: [r_regionkey#873]
+Join type: Inner
+Join condition: None
+
+(88) Project
+Output [9]: [p_partkey#856, p_mfgr#857, ps_supplycost#869, s_name#861, s_address#862, s_phone#864, s_acctbal#865, s_comment#866, n_name#871]
+Input [11]: [p_partkey#856, p_mfgr#857, ps_supplycost#869, s_name#861, s_address#862, s_phone#864, s_acctbal#865, s_comment#866, n_name#871, n_regionkey#872, r_regionkey#873]
+
+(89) Exchange
+Input [9]: [p_partkey#856, p_mfgr#857, ps_supplycost#869, s_name#861, s_address#862, s_phone#864, s_acctbal#865, s_comment#866, n_name#871]
+Arguments: hashpartitioning(p_partkey#856, ps_supplycost#869, 8), ENSURE_REQUIREMENTS, [plan_id=5515]
+
+(90) Sort
+Input [9]: [p_partkey#856, p_mfgr#857, ps_supplycost#869, s_name#861, s_address#862, s_phone#864, s_acctbal#865, s_comment#866, n_name#871]
+Arguments: [p_partkey#856 ASC NULLS FIRST, ps_supplycost#869 ASC NULLS FIRST], false, 0
+
+(91) Filter
+Input [3]: [ps_partkey#931, ps_suppkey#932, ps_supplycost#933]
+Condition : (isnotnull(ps_suppkey#932) AND isnotnull(ps_partkey#931))
+
+(92) Filter
+Input [2]: [s_suppkey#934, s_nationkey#937]
+Condition : (isnotnull(s_suppkey#934) AND isnotnull(s_nationkey#937))
+
+(93) BroadcastExchange
+Input [2]: [s_suppkey#934, s_nationkey#937]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, false] as bigint)),false), [plan_id=5497]
+
+(94) BroadcastHashJoin
+Left keys [1]: [ps_suppkey#932]
+Right keys [1]: [s_suppkey#934]
+Join type: Inner
+Join condition: None
+
+(95) Project
+Output [3]: [ps_partkey#931, ps_supplycost#933, s_nationkey#937]
+Input [5]: [ps_partkey#931, ps_suppkey#932, ps_supplycost#933, s_suppkey#934, s_nationkey#937]
+
+(96) Filter
+Input [2]: [n_nationkey#941, n_regionkey#943]
+Condition : (isnotnull(n_nationkey#941) AND isnotnull(n_regionkey#943))
+
+(97) BroadcastExchange
+Input [2]: [n_nationkey#941, n_regionkey#943]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, false] as bigint)),false), [plan_id=5501]
+
+(98) BroadcastHashJoin
+Left keys [1]: [s_nationkey#937]
+Right keys [1]: [n_nationkey#941]
+Join type: Inner
+Join condition: None
+
+(99) Project
+Output [3]: [ps_partkey#931, ps_supplycost#933, n_regionkey#943]
+Input [5]: [ps_partkey#931, ps_supplycost#933, s_nationkey#937, n_nationkey#941, n_regionkey#943]
+
+(100) Scan parquet spark_catalog.default.region
+Output [2]: [r_regionkey#944, r_name#945]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/sql_rewrite_spark_warehouse/region]
+PushedFilters: [IsNotNull(r_name), EqualTo(r_name,MIDDLE EAST), IsNotNull(r_regionkey)]
+ReadSchema: struct<r_regionkey:int,r_name:string>
+
+(101) Filter
+Input [2]: [r_regionkey#944, r_name#945]
+Condition : ((isnotnull(r_name#945) AND (r_name#945 = MIDDLE EAST)) AND isnotnull(r_regionkey#944))
+
+(102) Project
+Output [1]: [r_regionkey#944]
+Input [2]: [r_regionkey#944, r_name#945]
+
+(103) BroadcastExchange
+Input [1]: [r_regionkey#944]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, true] as bigint)),false), [plan_id=5505]
+
+(104) BroadcastHashJoin
+Left keys [1]: [n_regionkey#943]
+Right keys [1]: [r_regionkey#944]
+Join type: Inner
+Join condition: None
+
+(105) Project
+Output [2]: [ps_partkey#931, ps_supplycost#933]
+Input [4]: [ps_partkey#931, ps_supplycost#933, n_regionkey#943, r_regionkey#944]
+
+(106) HashAggregate
+Input [2]: [ps_partkey#931, ps_supplycost#933]
+Keys [1]: [ps_partkey#931]
+Functions [1]: [partial_min(ps_supplycost#933)]
+Aggregate Attributes [1]: [min#951]
+Results [2]: [ps_partkey#931, min#952]
+
+(107) Exchange
+Input [2]: [ps_partkey#931, min#952]
+Arguments: hashpartitioning(ps_partkey#931, 8), ENSURE_REQUIREMENTS, [plan_id=5510]
+
+(108) HashAggregate
+Input [2]: [ps_partkey#931, min#952]
+Keys [1]: [ps_partkey#931]
+Functions [1]: [min(ps_supplycost#933)]
+Aggregate Attributes [1]: [min(ps_supplycost#933)#946]
+Results [2]: [ps_partkey#931, min(ps_supplycost#933)#946 AS min_supplycost#930]
+
+(109) Filter
+Input [2]: [ps_partkey#931, min_supplycost#930]
+Condition : isnotnull(min_supplycost#930)
+
+(110) Exchange
+Input [2]: [ps_partkey#931, min_supplycost#930]
+Arguments: hashpartitioning(ps_partkey#931, min_supplycost#930, 8), ENSURE_REQUIREMENTS, [plan_id=5516]
+
+(111) Sort
+Input [2]: [ps_partkey#931, min_supplycost#930]
+Arguments: [ps_partkey#931 ASC NULLS FIRST, min_supplycost#930 ASC NULLS FIRST], false, 0
+
+(112) SortMergeJoin
+Left keys [2]: [p_partkey#856, ps_supplycost#869]
+Right keys [2]: [ps_partkey#931, min_supplycost#930]
+Join type: Inner
+Join condition: None
+
+(113) Project
+Output [8]: [s_acctbal#865, s_name#861, n_name#871, p_partkey#856, p_mfgr#857, s_address#862, s_phone#864, s_comment#866]
+Input [11]: [p_partkey#856, p_mfgr#857, ps_supplycost#869, s_name#861, s_address#862, s_phone#864, s_acctbal#865, s_comment#866, n_name#871, ps_partkey#931, min_supplycost#930]
+
+(114) TakeOrderedAndProject
+Input [8]: [s_acctbal#865, s_name#861, n_name#871, p_partkey#856, p_mfgr#857, s_address#862, s_phone#864, s_comment#866]
+Arguments: 100, [s_acctbal#865 DESC NULLS LAST, n_name#871 ASC NULLS FIRST, s_name#861 ASC NULLS FIRST, p_partkey#856 ASC NULLS FIRST], [s_acctbal#865, s_name#861, n_name#871, p_partkey#856, p_mfgr#857, s_address#862, s_phone#864, s_comment#866]
+
+(115) AdaptiveSparkPlan
+Output [8]: [s_acctbal#865, s_name#861, n_name#871, p_partkey#856, p_mfgr#857, s_address#862, s_phone#864, s_comment#866]
+Arguments: isFinalPlan=true

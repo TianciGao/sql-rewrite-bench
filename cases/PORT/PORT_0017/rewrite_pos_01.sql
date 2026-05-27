@@ -1,0 +1,1 @@
+SELECT COUNT(t2.school) FROM frpm AS t1 INNER JOIN schools AS t2 ON t1.cdscode = t2.cdscode WHERE t2.county = 'Los Angeles' AND t2.charter = 0 AND (CAST(t1.fm_count AS DOUBLE PRECISION) * 100.0) / t1.enrollment_k12 < 0.18

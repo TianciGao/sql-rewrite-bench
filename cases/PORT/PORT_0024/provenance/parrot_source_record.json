@@ -1,0 +1,17 @@
+{
+  "case_id": "PORT_0024",
+  "draft_id": "PORT_DRAFT_0027",
+  "source_file_path": "datasets/raw/parrot/PARROT/benchmark/BIRD/mysql_res.json",
+  "source_record_index": 18,
+  "source_sql_field": "mysql",
+  "target_sql_field": "cracksql",
+  "source_record_subset": {
+    "mysql": "SELECT CAST( SUM( CASE WHEN `istextless` = 0 AND `isstoryspotlight` = 1 THEN 1 ELSE 0 END ) AS DOUBLE ) * 100 / COUNT( `id` ) FROM `cards`\n",
+    "cracksql": "SELECT CAST( SUM( CASE WHEN \"istextless\" = 0 AND \"isstoryspotlight\" = 1 THEN 1 ELSE 0 END ) AS DOUBLE PRECISION ) * 100 / COUNT( \"id\" ) FROM \"cards\"",
+    "result_preview": [
+      {
+        "CAST( SUM( CASE WHEN `istextless` = 0 AND `isstoryspotlight` = 1 THEN 1 ELSE 0 END ) AS DOUBLE ) * 100 / COUNT( `id` )": 0.18302770053852382
+      }
+    ]
+  }
+}

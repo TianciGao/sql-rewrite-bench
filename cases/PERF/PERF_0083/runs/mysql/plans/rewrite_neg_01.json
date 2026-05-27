@@ -1,0 +1,115 @@
+{
+  "query_block": {
+    "select_id": 1,
+    "cost_info": {
+      "query_cost": "2.65"
+    },
+    "nested_loop": [
+      {
+        "table": {
+          "table_name": "k",
+          "access_type": "ALL",
+          "rows_examined_per_scan": 1,
+          "rows_produced_per_join": 1,
+          "filtered": "100.00",
+          "cost_info": {
+            "read_cost": "0.25",
+            "eval_cost": "0.10",
+            "prefix_cost": "0.35",
+            "data_read_per_join": "16"
+          },
+          "used_columns": [
+            "id",
+            "keyword"
+          ],
+          "attached_condition": "(`bench`.`k`.`keyword` = 'marvel-cinematic-universe')"
+        }
+      },
+      {
+        "table": {
+          "table_name": "mk",
+          "access_type": "ALL",
+          "rows_examined_per_scan": 3,
+          "rows_produced_per_join": 1,
+          "filtered": "33.33",
+          "using_join_buffer": "hash join",
+          "cost_info": {
+            "read_cost": "0.27",
+            "eval_cost": "0.10",
+            "prefix_cost": "0.92",
+            "data_read_per_join": "16"
+          },
+          "used_columns": [
+            "keyword_id",
+            "movie_id"
+          ],
+          "attached_condition": "(`bench`.`mk`.`keyword_id` = `bench`.`k`.`id`)"
+        }
+      },
+      {
+        "table": {
+          "table_name": "ci",
+          "access_type": "ALL",
+          "rows_examined_per_scan": 3,
+          "rows_produced_per_join": 1,
+          "filtered": "33.33",
+          "using_join_buffer": "hash join",
+          "cost_info": {
+            "read_cost": "0.27",
+            "eval_cost": "0.10",
+            "prefix_cost": "1.48",
+            "data_read_per_join": "16"
+          },
+          "used_columns": [
+            "movie_id",
+            "person_id"
+          ],
+          "attached_condition": "(`bench`.`ci`.`movie_id` = `bench`.`mk`.`movie_id`)"
+        }
+      },
+      {
+        "table": {
+          "table_name": "t",
+          "access_type": "ALL",
+          "rows_examined_per_scan": 3,
+          "rows_produced_per_join": 1,
+          "filtered": "33.33",
+          "using_join_buffer": "hash join",
+          "cost_info": {
+            "read_cost": "0.48",
+            "eval_cost": "0.10",
+            "prefix_cost": "2.06",
+            "data_read_per_join": "24"
+          },
+          "used_columns": [
+            "id",
+            "production_year",
+            "title"
+          ],
+          "attached_condition": "((`bench`.`t`.`id` = `bench`.`mk`.`movie_id`) and (`bench`.`t`.`production_year` > 2010))"
+        }
+      },
+      {
+        "table": {
+          "table_name": "n",
+          "access_type": "ALL",
+          "rows_examined_per_scan": 3,
+          "rows_produced_per_join": 1,
+          "filtered": "33.33",
+          "using_join_buffer": "hash join",
+          "cost_info": {
+            "read_cost": "0.49",
+            "eval_cost": "0.10",
+            "prefix_cost": "2.65",
+            "data_read_per_join": "16"
+          },
+          "used_columns": [
+            "id",
+            "name"
+          ],
+          "attached_condition": "((`bench`.`n`.`id` = `bench`.`ci`.`person_id`) and (`bench`.`n`.`name` like 'Downey%Robert%'))"
+        }
+      }
+    ]
+  }
+}

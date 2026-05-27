@@ -1,0 +1,56 @@
+[
+  {
+    "Plan": {
+      "Node Type": "Hash Join",
+      "Parallel Aware": false,
+      "Async Capable": false,
+      "Join Type": "Inner",
+      "Startup Cost": 31.08,
+      "Total Cost": 58.90,
+      "Plan Rows": 38,
+      "Plan Width": 36,
+      "Inner Unique": false,
+      "Hash Cond": "(t1.driverid = t2.driverid)",
+      "Plans": [
+        {
+          "Node Type": "Seq Scan",
+          "Parent Relationship": "Outer",
+          "Parallel Aware": false,
+          "Async Capable": false,
+          "Relation Name": "results",
+          "Alias": "t1",
+          "Startup Cost": 0.00,
+          "Total Cost": 22.70,
+          "Plan Rows": 1264,
+          "Plan Width": 4,
+          "Filter": "(fastestlaptime IS NOT NULL)"
+        },
+        {
+          "Node Type": "Hash",
+          "Parent Relationship": "Inner",
+          "Parallel Aware": false,
+          "Async Capable": false,
+          "Startup Cost": 31.00,
+          "Total Cost": 31.00,
+          "Plan Rows": 6,
+          "Plan Width": 36,
+          "Plans": [
+            {
+              "Node Type": "Seq Scan",
+              "Parent Relationship": "Outer",
+              "Parallel Aware": false,
+              "Async Capable": false,
+              "Relation Name": "drivers",
+              "Alias": "t2",
+              "Startup Cost": 0.00,
+              "Total Cost": 31.00,
+              "Plan Rows": 6,
+              "Plan Width": 36,
+              "Filter": "(to_char((dob)::timestamp without time zone, 'YYYY'::text) = '1971'::text)"
+            }
+          ]
+        }
+      ]
+    }
+  }
+]

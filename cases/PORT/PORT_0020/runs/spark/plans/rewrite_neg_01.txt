@@ -1,0 +1,83 @@
+== Physical Plan ==
+AdaptiveSparkPlan (13)
++- TakeOrderedAndProject (12)
+   +- HashAggregate (11)
+      +- Exchange (10)
+         +- HashAggregate (9)
+            +- Project (8)
+               +- BroadcastHashJoin Inner BuildRight (7)
+                  :- Project (3)
+                  :  +- Filter (2)
+                  :     +- Scan parquet spark_catalog.port_0020_spark_plan_collection.match_tbl (1)
+                  +- BroadcastExchange (6)
+                     +- Filter (5)
+                        +- Scan parquet spark_catalog.port_0020_spark_plan_collection.league (4)
+
+
+(1) Scan parquet spark_catalog.port_0020_spark_plan_collection.match_tbl
+Output [4]: [league_id#29, season#30, home_team_goal#31, away_team_goal#32]
+Batched: true
+Location: InMemoryFileIndex [file:/home/tianci_gao/code/sql-rewrite-bench/cases/PORT/PORT_0020/runs/spark/plans/_tmp_spark_plan_collection/warehouse/port_0020_spark_plan_collection.db/match_tbl]
+PushedFilters: [IsNotNull(season), EqualTo(season,2015/2016), IsNotNull(league_id)]
+ReadSchema: struct<league_id:int,season:string,home_team_goal:int,away_team_goal:int>
+
+(2) Filter
+Input [4]: [league_id#29, season#30, home_team_goal#31, away_team_goal#32]
+Condition : ((isnotnull(season#30) AND (season#30 = 2015/2016)) AND isnotnull(league_id#29))
+
+(3) Project
+Output [3]: [league_id#29, home_team_goal#31, away_team_goal#32]
+Input [4]: [league_id#29, season#30, home_team_goal#31, away_team_goal#32]
+
+(4) Scan parquet spark_catalog.port_0020_spark_plan_collection.league
+Output [2]: [id#33, name#34]
+Batched: true
+Location: InMemoryFileIndex [file:/home/tianci_gao/code/sql-rewrite-bench/cases/PORT/PORT_0020/runs/spark/plans/_tmp_spark_plan_collection/warehouse/port_0020_spark_plan_collection.db/league]
+PushedFilters: [IsNotNull(id)]
+ReadSchema: struct<id:int,name:string>
+
+(5) Filter
+Input [2]: [id#33, name#34]
+Condition : isnotnull(id#33)
+
+(6) BroadcastExchange
+Input [2]: [id#33, name#34]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, false] as bigint)),false), [plan_id=125]
+
+(7) BroadcastHashJoin
+Left keys [1]: [league_id#29]
+Right keys [1]: [id#33]
+Join type: Inner
+Join condition: None
+
+(8) Project
+Output [3]: [home_team_goal#31, away_team_goal#32, name#34]
+Input [5]: [league_id#29, home_team_goal#31, away_team_goal#32, id#33, name#34]
+
+(9) HashAggregate
+Input [3]: [home_team_goal#31, away_team_goal#32, name#34]
+Keys [1]: [name#34]
+Functions [1]: [partial_sum((home_team_goal#31 + away_team_goal#32))]
+Aggregate Attributes [1]: [sum#43L]
+Results [2]: [name#34, sum#44L]
+
+(10) Exchange
+Input [2]: [name#34, sum#44L]
+Arguments: hashpartitioning(name#34, 1), ENSURE_REQUIREMENTS, [plan_id=130]
+
+(11) HashAggregate
+Input [2]: [name#34, sum#44L]
+Keys [1]: [name#34]
+Functions [1]: [sum((home_team_goal#31 + away_team_goal#32))]
+Aggregate Attributes [1]: [sum((home_team_goal#31 + away_team_goal#32))#41L]
+Results [2]: [name#34, sum((home_team_goal#31 + away_team_goal#32))#41L AS sum((home_team_goal + away_team_goal))#42L]
+
+(12) TakeOrderedAndProject
+Input [2]: [name#34, sum((home_team_goal + away_team_goal))#42L]
+Arguments: 1, [sum((home_team_goal + away_team_goal))#42L ASC NULLS FIRST], [name#34]
+
+(13) AdaptiveSparkPlan
+Output [1]: [name#34]
+Arguments: isFinalPlan=false
+
+

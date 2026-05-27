@@ -1,0 +1,17 @@
+{
+  "case_id": "PORT_0003",
+  "draft_id": "PORT_PARROT_DRAFT_0002",
+  "source_file_path": "datasets/raw/parrot/PARROT/benchmark/BIRD/pg_res.json",
+  "source_record_index": 3,
+  "source_sql_field": "pg",
+  "target_sql_field": "cracksql",
+  "source_record_subset": {
+    "pg": "SELECT \"gsoffered\" FROM \"schools\" ORDER BY ABS( \"longitude\" ) DESC NULLS LAST LIMIT 1\n",
+    "cracksql": "SELECT `gsoffered` FROM `schools` ORDER BY ABS(`longitude`) DESC LIMIT 1",
+    "result_preview": [
+      {
+        "gsoffered": "K-8"
+      }
+    ]
+  }
+}

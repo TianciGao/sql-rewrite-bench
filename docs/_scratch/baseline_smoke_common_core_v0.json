@@ -1,0 +1,138 @@
+{
+  "version": "v0",
+  "engine_scope": "postgres",
+  "plan_basis": "docs/_scratch/BASELINE_SMOKE_PLAN_COMMON_CORE_v0.md",
+  "cases": [
+    {
+      "case_id": "PERF_0006",
+      "pool": "performance",
+      "why_selected": "canonical governed analytical baseline; clean tri-engine evidence",
+      "caveat": "ordinary staged-not-admitted caveat only",
+      "smoke_role": "identity_check"
+    },
+    {
+      "case_id": "PERF_0008",
+      "pool": "performance",
+      "why_selected": "clean join/report representative; simple positive reference candidate",
+      "caveat": "ordinary staged-not-admitted caveat only",
+      "smoke_role": "positive_reference"
+    },
+    {
+      "case_id": "PERF_0013",
+      "pool": "performance",
+      "why_selected": "stable join/aggregate denominator with clean evidence",
+      "caveat": "ordinary staged-not-admitted caveat only",
+      "smoke_role": "negative_guard"
+    },
+    {
+      "case_id": "PERF_0017",
+      "pool": "performance",
+      "why_selected": "anchor-quality grouped reporting case; good LLM smoke target",
+      "caveat": "ordinary staged-not-admitted caveat only",
+      "smoke_role": "llm_candidate"
+    },
+    {
+      "case_id": "PERF_0024",
+      "pool": "performance",
+      "why_selected": "clean correlated-subquery coverage; good rule/tool target",
+      "caveat": "ordinary staged-not-admitted caveat only",
+      "smoke_role": "sqlglot_candidate"
+    },
+    {
+      "case_id": "PERF_0033",
+      "pool": "performance",
+      "why_selected": "clean governed TPC-DS starter; tests beyond TPC-H",
+      "caveat": "ordinary staged-not-admitted caveat only",
+      "smoke_role": "identity_check"
+    },
+    {
+      "case_id": "PERF_0054",
+      "pool": "performance",
+      "why_selected": "join-reorder coverage with clean evidence; useful for rewrite-sensitive smoke",
+      "caveat": "ordinary staged-not-admitted caveat only",
+      "smoke_role": "llm_candidate"
+    },
+    {
+      "case_id": "PORT_0004",
+      "pool": "portability",
+      "why_selected": "clean MySQL-reference datetime/type case; low-caveat portability anchor",
+      "caveat": "still PARROT-derived; staged-not-admitted",
+      "smoke_role": "identity_check"
+    },
+    {
+      "case_id": "PORT_0012",
+      "pool": "portability",
+      "why_selected": "dense PostgreSQL-reference datetime/type case; useful same-dialect and LLM smoke target",
+      "caveat": "still PARROT-derived; staged-not-admitted",
+      "smoke_role": "sqlglot_candidate"
+    },
+    {
+      "case_id": "PORT_0022",
+      "pool": "portability",
+      "why_selected": "clean datetime/type case on different schema; portability coverage without the heaviest endpoint caveats",
+      "caveat": "still PARROT-derived; staged-not-admitted",
+      "smoke_role": "llm_candidate"
+    },
+    {
+      "case_id": "CONS_0007",
+      "pool": "consistency",
+      "why_selected": "compact correlated EXISTS semantic baseline; easy negative-guard smoke",
+      "caveat": "semantic addendum case, not main PERF/PORT denominator",
+      "smoke_role": "negative_guard"
+    },
+    {
+      "case_id": "CONS_0012",
+      "pool": "consistency",
+      "why_selected": "clear LIMIT/OFFSET threshold rewrite; good positive-reference smoke",
+      "caveat": "semantic addendum case, not main PERF/PORT denominator",
+      "smoke_role": "positive_reference"
+    }
+  ],
+  "baselines": [
+    {
+      "baseline_id": "NATIVE_IDENTITY",
+      "smoke_role": "identity_check",
+      "enabled_by_default": true,
+      "requires_database": true,
+      "requires_llm": false,
+      "requires_sqlglot": false,
+      "required_adapter": "existing harness only"
+    },
+    {
+      "baseline_id": "HUMAN_REFERENCE_POSITIVE",
+      "smoke_role": "positive_reference",
+      "enabled_by_default": true,
+      "requires_database": true,
+      "requires_llm": false,
+      "requires_sqlglot": false,
+      "required_adapter": "existing harness only"
+    },
+    {
+      "baseline_id": "HARD_NEGATIVE_GUARD",
+      "smoke_role": "negative_guard",
+      "enabled_by_default": true,
+      "requires_database": true,
+      "requires_llm": false,
+      "requires_sqlglot": false,
+      "required_adapter": "existing checker path only"
+    },
+    {
+      "baseline_id": "SQLGLOT_OPT_SAME_DIALECT",
+      "smoke_role": "sqlglot_candidate",
+      "enabled_by_default": true,
+      "requires_database": false,
+      "requires_llm": false,
+      "requires_sqlglot": true,
+      "required_adapter": "SQLGlot CLI or Python adapter"
+    },
+    {
+      "baseline_id": "LLM_DIRECT_REWRITE_STRONG",
+      "smoke_role": "llm_candidate",
+      "enabled_by_default": true,
+      "requires_database": false,
+      "requires_llm": true,
+      "requires_sqlglot": false,
+      "required_adapter": "prompt template plus model call wrapper"
+    }
+  ]
+}

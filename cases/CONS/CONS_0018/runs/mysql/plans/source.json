@@ -1,0 +1,56 @@
+{
+  "query_block": {
+    "select_id": 1,
+    "cost_info": {
+      "query_cost": "0.55"
+    },
+    "table": {
+      "table_name": "d",
+      "access_type": "ALL",
+      "rows_examined_per_scan": 3,
+      "rows_produced_per_join": 3,
+      "filtered": "100.00",
+      "cost_info": {
+        "read_cost": "0.25",
+        "eval_cost": "0.30",
+        "prefix_cost": "0.55",
+        "data_read_per_join": "792"
+      },
+      "used_columns": [
+        "deptno",
+        "dname",
+        "loc"
+      ],
+      "attached_condition": "exists(/* select#2 */ select count(0) from `bench`.`emp` `e` where (`bench`.`d`.`deptno` = `bench`.`e`.`deptno`))",
+      "attached_subqueries": [
+        {
+          "dependent": true,
+          "cacheable": false,
+          "query_block": {
+            "select_id": 2,
+            "cost_info": {
+              "query_cost": "0.35"
+            },
+            "table": {
+              "table_name": "e",
+              "access_type": "ALL",
+              "rows_examined_per_scan": 1,
+              "rows_produced_per_join": 1,
+              "filtered": "100.00",
+              "cost_info": {
+                "read_cost": "0.25",
+                "eval_cost": "0.10",
+                "prefix_cost": "0.35",
+                "data_read_per_join": "288"
+              },
+              "used_columns": [
+                "deptno"
+              ],
+              "attached_condition": "(`bench`.`d`.`deptno` = `bench`.`e`.`deptno`)"
+            }
+          }
+        }
+      ]
+    }
+  }
+}

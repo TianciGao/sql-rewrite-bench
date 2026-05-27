@@ -1,0 +1,67 @@
+{
+  "query_block": {
+    "select_id": 1,
+    "cost_info": {
+      "query_cost": "0.70"
+    },
+    "nested_loop": [
+      {
+        "table": {
+          "table_name": "lineitem",
+          "access_type": "ALL",
+          "rows_examined_per_scan": 1,
+          "rows_produced_per_join": 1,
+          "filtered": "100.00",
+          "cost_info": {
+            "read_cost": "0.25",
+            "eval_cost": "0.10",
+            "prefix_cost": "0.35",
+            "data_read_per_join": "176"
+          },
+          "used_columns": [
+            "l_partkey",
+            "l_extendedprice",
+            "l_discount",
+            "l_quantity",
+            "l_shipmode",
+            "l_shipinstruct"
+          ],
+          "attached_condition": "((((`bench`.`lineitem`.`l_shipinstruct` = 'DELIVER IN PERSON') and (`bench`.`lineitem`.`l_quantity` >= 5.00) and (`bench`.`lineitem`.`l_quantity` <= 15.00) and (`bench`.`lineitem`.`l_shipmode` in ('AIR','AIR REG'))) or ((`bench`.`lineitem`.`l_shipinstruct` = 'DELIVER IN PERSON') and (`bench`.`lineitem`.`l_quantity` >= 17.00) and (`bench`.`lineitem`.`l_quantity` <= 27.00) and (`bench`.`lineitem`.`l_shipmode` in ('AIR','AIR REG'))) or ((`bench`.`lineitem`.`l_shipinstruct` = 'DELIVER IN PERSON') and (`bench`.`lineitem`.`l_quantity` >= 29.00) and (`bench`.`lineitem`.`l_quantity` <= 39.00) and (`bench`.`lineitem`.`l_shipmode` in ('AIR','AIR REG')))) and (`bench`.`lineitem`.`l_partkey` is not null))"
+        }
+      },
+      {
+        "table": {
+          "table_name": "part",
+          "access_type": "eq_ref",
+          "possible_keys": [
+            "PRIMARY"
+          ],
+          "key": "PRIMARY",
+          "used_key_parts": [
+            "p_partkey"
+          ],
+          "key_length": "4",
+          "ref": [
+            "bench.lineitem.l_partkey"
+          ],
+          "rows_examined_per_scan": 1,
+          "rows_produced_per_join": 1,
+          "filtered": "100.00",
+          "cost_info": {
+            "read_cost": "0.25",
+            "eval_cost": "0.10",
+            "prefix_cost": "0.70",
+            "data_read_per_join": "96"
+          },
+          "used_columns": [
+            "p_partkey",
+            "p_brand",
+            "p_container",
+            "p_size"
+          ],
+          "attached_condition": "(((`bench`.`lineitem`.`l_shipinstruct` = 'DELIVER IN PERSON') and (`bench`.`part`.`p_brand` = 'Brand#14') and (`bench`.`part`.`p_container` in ('SM CASE','SM BOX','SM PACK','SM PKG')) and (`bench`.`lineitem`.`l_quantity` >= 5.00) and (`bench`.`lineitem`.`l_quantity` <= 15.00) and (`bench`.`part`.`p_size` between 1 and 5) and (`bench`.`lineitem`.`l_shipmode` in ('AIR','AIR REG'))) or ((`bench`.`lineitem`.`l_shipinstruct` = 'DELIVER IN PERSON') and (`bench`.`part`.`p_brand` = 'Brand#13') and (`bench`.`part`.`p_container` in ('MED BAG','MED BOX','MED PKG','MED PACK')) and (`bench`.`lineitem`.`l_quantity` >= 17.00) and (`bench`.`lineitem`.`l_quantity` <= 27.00) and (`bench`.`part`.`p_size` between 1 and 10) and (`bench`.`lineitem`.`l_shipmode` in ('AIR','AIR REG'))) or ((`bench`.`lineitem`.`l_shipinstruct` = 'DELIVER IN PERSON') and (`bench`.`part`.`p_brand` = 'Brand#22') and (`bench`.`part`.`p_container` in ('LG CASE','LG BOX','LG PACK','LG PKG')) and (`bench`.`lineitem`.`l_quantity` >= 29.00) and (`bench`.`lineitem`.`l_quantity` <= 39.00) and (`bench`.`part`.`p_size` between 1 and 15) and (`bench`.`lineitem`.`l_shipmode` in ('AIR','AIR REG'))))"
+        }
+      }
+    ]
+  }
+}

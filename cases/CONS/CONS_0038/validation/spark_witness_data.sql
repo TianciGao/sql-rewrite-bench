@@ -1,0 +1,3 @@
+INSERT INTO EMP VALUES
+(15),
+(25);

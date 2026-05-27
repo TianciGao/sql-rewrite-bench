@@ -1,0 +1,107 @@
+{
+  "query_block": {
+    "select_id": 1,
+    "cost_info": {
+      "query_cost": "5.85"
+    },
+    "ordering_operation": {
+      "using_temporary_table": true,
+      "using_filesort": true,
+      "cost_info": {
+        "sort_cost": "4.00"
+      },
+      "nested_loop": [
+        {
+          "table": {
+            "table_name": "pt",
+            "access_type": "ALL",
+            "rows_examined_per_scan": 2,
+            "rows_produced_per_join": 2,
+            "filtered": "100.00",
+            "cost_info": {
+              "read_cost": "0.25",
+              "eval_cost": "0.20",
+              "prefix_cost": "0.45",
+              "data_read_per_join": "32"
+            },
+            "used_columns": [
+              "Id",
+              "Name"
+            ],
+            "attached_condition": "(`bench`.`pt`.`Id` is not null)"
+          }
+        },
+        {
+          "table": {
+            "table_name": "stats",
+            "access_type": "ref",
+            "possible_keys": [
+              "<auto_key0>"
+            ],
+            "key": "<auto_key0>",
+            "used_key_parts": [
+              "PostTypeId"
+            ],
+            "key_length": "5",
+            "ref": [
+              "bench.pt.Id"
+            ],
+            "rows_examined_per_scan": 2,
+            "rows_produced_per_join": 4,
+            "filtered": "100.00",
+            "cost_info": {
+              "read_cost": "1.00",
+              "eval_cost": "0.40",
+              "prefix_cost": "1.85",
+              "data_read_per_join": "160"
+            },
+            "used_columns": [
+              "PostTypeId",
+              "PostCount",
+              "AverageScore",
+              "AverageViewCount",
+              "ActiveUsers"
+            ],
+            "materialized_from_subquery": {
+              "using_temporary_table": true,
+              "dependent": false,
+              "cacheable": true,
+              "query_block": {
+                "select_id": 2,
+                "cost_info": {
+                  "query_cost": "4.65"
+                },
+                "grouping_operation": {
+                  "using_filesort": true,
+                  "cost_info": {
+                    "sort_cost": "4.00"
+                  },
+                  "table": {
+                    "table_name": "p",
+                    "access_type": "ALL",
+                    "rows_examined_per_scan": 4,
+                    "rows_produced_per_join": 4,
+                    "filtered": "100.00",
+                    "cost_info": {
+                      "read_cost": "0.25",
+                      "eval_cost": "0.40",
+                      "prefix_cost": "0.65",
+                      "data_read_per_join": "96"
+                    },
+                    "used_columns": [
+                      "Id",
+                      "PostTypeId",
+                      "Score",
+                      "ViewCount",
+                      "OwnerUserId"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

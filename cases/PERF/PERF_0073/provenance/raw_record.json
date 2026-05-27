@@ -1,0 +1,20 @@
+{
+  "case_id": "PERF_0073",
+  "source_id": "SRC_002",
+  "source_name": "TPC-DS",
+  "source_template": "query_templates/query28.tpl",
+  "materialization_tool": "datasets/raw/tpcds/DSGen-software-code-4.0.0/tools/dsqgen",
+  "materialization_basis": {
+    "COUNT": "1",
+    "QUALIFY": "Y",
+    "SCALE": "1",
+    "DIALECT": "ansi",
+    "LISTPRICE": "11/91/66/142/135/28",
+    "COUPONAMT": "460/1430/920/3054/14180/2513",
+    "WHOLESALECOST": "14/32/4/80/38/42",
+    "LIMIT": "100"
+  },
+  "raw_sql_file": "provenance/query28_instance_raw.sql",
+  "normalized_source_file": "source.sql",
+  "notes": "Raw SQL is dsqgen-produced. source.sql applies only PostgreSQL syntax normalization needed for witness execution."
+}

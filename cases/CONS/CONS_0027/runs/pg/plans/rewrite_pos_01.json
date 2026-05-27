@@ -1,0 +1,84 @@
+[
+  {
+    "Plan": {
+      "Node Type": "Result",
+      "Parallel Aware": false,
+      "Async Capable": false,
+      "Startup Cost": 7.63,
+      "Total Cost": 2486.03,
+      "Plan Rows": 255,
+      "Plan Width": 82,
+      "One-Time Filter": "((InitPlan 1).col1 AND (InitPlan 2).col1)",
+      "Plans": [
+        {
+          "Node Type": "Seq Scan",
+          "Parent Relationship": "InitPlan",
+          "Subplan Name": "InitPlan 1",
+          "Parallel Aware": false,
+          "Async Capable": false,
+          "Relation Name": "dept",
+          "Alias": "d",
+          "Startup Cost": 0.00,
+          "Total Cost": 14.10,
+          "Plan Rows": 410,
+          "Plan Width": 0
+        },
+        {
+          "Node Type": "Seq Scan",
+          "Parent Relationship": "InitPlan",
+          "Subplan Name": "InitPlan 2",
+          "Parallel Aware": false,
+          "Async Capable": false,
+          "Relation Name": "bonus",
+          "Alias": "b",
+          "Startup Cost": 0.00,
+          "Total Cost": 13.60,
+          "Plan Rows": 360,
+          "Plan Width": 0
+        },
+        {
+          "Node Type": "Seq Scan",
+          "Parent Relationship": "InitPlan",
+          "Subplan Name": "InitPlan 3",
+          "Parallel Aware": false,
+          "Async Capable": false,
+          "Relation Name": "dept",
+          "Alias": "d_1",
+          "Startup Cost": 0.00,
+          "Total Cost": 15.12,
+          "Plan Rows": 2,
+          "Plan Width": 0,
+          "Filter": "((loc)::text = 'NEW YORK'::text)"
+        },
+        {
+          "Node Type": "Seq Scan",
+          "Parent Relationship": "Outer",
+          "Parallel Aware": false,
+          "Async Capable": false,
+          "Relation Name": "emp",
+          "Alias": "e1",
+          "Startup Cost": 7.63,
+          "Total Cost": 2486.03,
+          "Plan Rows": 255,
+          "Plan Width": 82,
+          "Filter": "((InitPlan 3).col1 OR (ANY ((job)::text = (hashed SubPlan 5).col1)))",
+          "Plans": [
+            {
+              "Node Type": "Seq Scan",
+              "Parent Relationship": "SubPlan",
+              "Subplan Name": "SubPlan 5",
+              "Parallel Aware": false,
+              "Async Capable": false,
+              "Relation Name": "bonus",
+              "Alias": "b_1",
+              "Startup Cost": 0.00,
+              "Total Cost": 13.60,
+              "Plan Rows": 360,
+              "Plan Width": 32
+            }
+          ]
+        }
+      ]
+    }
+  }
+]

@@ -1,0 +1,148 @@
+== Physical Plan ==
+AdaptiveSparkPlan (8)
++- Project (7)
+   +- Filter (6)
+      +- BroadcastHashJoin ExistenceJoin(exists#87) BuildRight (5)
+         :- Filter (2)
+         :  +- Scan parquet spark_catalog.default.emp (1)
+         +- BroadcastExchange (4)
+            +- Scan parquet spark_catalog.default.bonus (3)
+
+
+(1) Scan parquet spark_catalog.default.emp
+Output [2]: [ename#50, job#51]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/cons_0027_spark_plan__0dx57fe/emp]
+ReadSchema: struct<ename:string,job:string>
+
+(2) Filter
+Input [2]: [ename#50, job#51]
+Condition : (isnotnull(Subquery subquery#69, [id=#133]) AND isnotnull(Subquery subquery#70, [id=#134]))
+
+(3) Scan parquet spark_catalog.default.bonus
+Output [1]: [job#81]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/cons_0027_spark_plan__0dx57fe/bonus]
+ReadSchema: struct<job:string>
+
+(4) BroadcastExchange
+Input [1]: [job#81]
+Arguments: HashedRelationBroadcastMode(List(input[0, string, true]),false), [plan_id=147]
+
+(5) BroadcastHashJoin
+Left keys [1]: [job#51]
+Right keys [1]: [job#81]
+Join type: ExistenceJoin(exists#87)
+Join condition: None
+
+(6) Filter
+Input [3]: [ename#50, job#51, exists#87]
+Condition : (isnotnull(Subquery subquery#71, [id=#131]) OR exists#87)
+
+(7) Project
+Output [1]: [ename#50]
+Input [3]: [ename#50, job#51, exists#87]
+
+(8) AdaptiveSparkPlan
+Output [1]: [ename#50]
+Arguments: isFinalPlan=false
+
+===== Subqueries =====
+
+Subquery:1 Hosting operator id = 6 Hosting Expression = Subquery subquery#71, [id=#131]
+AdaptiveSparkPlan (13)
++- CollectLimit (12)
+   +- Project (11)
+      +- Filter (10)
+         +- Scan parquet spark_catalog.default.dept (9)
+
+
+(9) Scan parquet spark_catalog.default.dept
+Output [1]: [loc#79]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/cons_0027_spark_plan__0dx57fe/dept]
+PushedFilters: [IsNotNull(loc), EqualTo(loc,NEW YORK)]
+ReadSchema: struct<loc:string>
+
+(10) Filter
+Input [1]: [loc#79]
+Condition : (isnotnull(loc#79) AND (loc#79 = NEW YORK))
+
+(11) Project
+Output [1]: [1 AS col#86]
+Input [1]: [loc#79]
+
+(12) CollectLimit
+Input [1]: [col#86]
+Arguments: 1
+
+(13) AdaptiveSparkPlan
+Output [1]: [col#86]
+Arguments: isFinalPlan=false
+
+Subquery:2 Hosting operator id = 2 Hosting Expression = Subquery subquery#69, [id=#133]
+AdaptiveSparkPlan (17)
++- CollectLimit (16)
+   +- Project (15)
+      +- Scan parquet spark_catalog.default.dept (14)
+
+
+(14) Scan parquet spark_catalog.default.dept
+Output: []
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/cons_0027_spark_plan__0dx57fe/dept]
+ReadSchema: struct<>
+
+(15) Project
+Output [1]: [1 AS col#84]
+Input: []
+
+(16) CollectLimit
+Input [1]: [col#84]
+Arguments: 1
+
+(17) AdaptiveSparkPlan
+Output [1]: [col#84]
+Arguments: isFinalPlan=false
+
+Subquery:3 Hosting operator id = 2 Hosting Expression = Subquery subquery#70, [id=#134]
+AdaptiveSparkPlan (21)
++- CollectLimit (20)
+   +- Project (19)
+      +- Scan parquet spark_catalog.default.bonus (18)
+
+
+(18) Scan parquet spark_catalog.default.bonus
+Output: []
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/cons_0027_spark_plan__0dx57fe/bonus]
+ReadSchema: struct<>
+
+(19) Project
+Output [1]: [1 AS col#85]
+Input: []
+
+(20) CollectLimit
+Input [1]: [col#85]
+Arguments: 1
+
+(21) AdaptiveSparkPlan
+Output [1]: [col#85]
+Arguments: isFinalPlan=false
+
+Subquery:4 Hosting operator id = 1 Hosting Expression = Subquery subquery#69, [id=#136]
+AdaptiveSparkPlan (17)
++- CollectLimit (16)
+   +- Project (15)
+      +- Scan parquet spark_catalog.default.dept (14)
+
+
+Subquery:5 Hosting operator id = 1 Hosting Expression = Subquery subquery#70, [id=#137]
+AdaptiveSparkPlan (21)
++- CollectLimit (20)
+   +- Project (19)
+      +- Scan parquet spark_catalog.default.bonus (18)
+
+
+
+

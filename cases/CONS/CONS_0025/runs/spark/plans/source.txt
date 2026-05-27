@@ -1,0 +1,57 @@
+== Physical Plan ==
+AdaptiveSparkPlan (9)
++- Project (8)
+   +- BroadcastHashJoin LeftSemi BuildRight (7)
+      :- Scan parquet spark_catalog.default.dept (1)
+      +- BroadcastExchange (6)
+         +- BroadcastNestedLoopJoin Inner BuildLeft (5)
+            :- BroadcastExchange (3)
+            :  +- Scan parquet spark_catalog.default.dept (2)
+            +- Scan parquet spark_catalog.default.dept (4)
+
+
+(1) Scan parquet spark_catalog.default.dept
+Output [2]: [deptno#13, dname#14]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/cons_0025_spark_plan_vl476_qe/dept]
+ReadSchema: struct<deptno:int,dname:string>
+
+(2) Scan parquet spark_catalog.default.dept
+Output [1]: [deptno#22]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/cons_0025_spark_plan_vl476_qe/dept]
+ReadSchema: struct<deptno:int>
+
+(3) BroadcastExchange
+Input [1]: [deptno#22]
+Arguments: IdentityBroadcastMode, [plan_id=39]
+
+(4) Scan parquet spark_catalog.default.dept
+Output [1]: [dname#17]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/cons_0025_spark_plan_vl476_qe/dept]
+ReadSchema: struct<dname:string>
+
+(5) BroadcastNestedLoopJoin
+Join type: Inner
+Join condition: None
+
+(6) BroadcastExchange
+Input [2]: [deptno#22, dname#17]
+Arguments: HashedRelationBroadcastMode(List(input[0, int, true], input[1, string, true]),false), [plan_id=42]
+
+(7) BroadcastHashJoin
+Left keys [2]: [deptno#13, dname#14]
+Right keys [2]: [deptno#22, dname#17]
+Join type: LeftSemi
+Join condition: None
+
+(8) Project
+Output [1]: [deptno#13]
+Input [2]: [deptno#13, dname#14]
+
+(9) AdaptiveSparkPlan
+Output [1]: [deptno#13]
+Arguments: isFinalPlan=false
+
+

@@ -1,0 +1,27 @@
+case_id: PERF_0054
+trial_version: "0.3"
+status: p0_taxonomy_hardened_draft
+candidate_primary_pool: performance
+dataset_line_candidate: common-core
+sql_feature_tags: []
+rewrite_opportunity_tags:
+  - join_reorder
+  - predicate_pushdown
+portability_tags:
+  - limit_fetch_gap
+workload_realism_tags:
+  - classic_analytical_baseline
+plan_operator_tags:
+  status: provisional_from_existing_pg_plan_artifacts
+  observed_in_postgres:
+    - scan
+    - join
+    - aggregate
+    - sort
+    - limit
+evidence_notes:
+  - source.sql and manifest.yaml were inspected for the bounded P0 hardening patch.
+  - Existing PostgreSQL plan artifacts summarized in manifest.yaml support the provisional plan operator tags.
+  - sql_feature_tags is intentionally an explicit empty list rather than a missing field because no current sql_feature_taxonomy v0.3 tag was strongly supported by the source SQL text.
+  - date_time_function was intentionally not tagged because the query uses calendar dimension columns rather than explicit date/time functions.
+  - This is not registry writeback and not a formal admission or review status change.

@@ -1,0 +1,30 @@
+[
+  {
+    "Plan": {
+      "Node Type": "Aggregate",
+      "Strategy": "Plain",
+      "Partial Mode": "Simple",
+      "Parallel Aware": false,
+      "Async Capable": false,
+      "Startup Cost": 21.04,
+      "Total Cost": 21.05,
+      "Plan Rows": 1,
+      "Plan Width": 8,
+      "Plans": [
+        {
+          "Node Type": "Seq Scan",
+          "Parent Relationship": "Outer",
+          "Parallel Aware": false,
+          "Async Capable": false,
+          "Relation Name": "customers",
+          "Alias": "customers",
+          "Startup Cost": 0.00,
+          "Total Cost": 21.00,
+          "Plan Rows": 4,
+          "Plan Width": 32,
+          "Filter": "(segment = 'SME'::text)"
+        }
+      ]
+    }
+  }
+]

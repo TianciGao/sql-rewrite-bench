@@ -1,0 +1,17 @@
+{
+  "case_id": "PORT_0007",
+  "draft_id": "PORT_PARROT_DRAFT_0001",
+  "source_file_path": "datasets/raw/parrot/PARROT/benchmark/BIRD/pg_res.json",
+  "source_record_index": 1,
+  "source_sql_field": "pg",
+  "target_sql_field": "cracksql",
+  "source_record_subset": {
+    "pg": "SELECT \"text\" FROM \"comments\" WHERE \"postid\" IN ( SELECT \"id\" FROM \"posts\" WHERE \"viewcount\" BETWEEN 100 AND 150 ) ORDER BY \"score\" DESC NULLS LAST LIMIT 1 \n",
+    "cracksql": "SELECT `text` FROM `comments` WHERE `postid` IN ( SELECT `id` FROM `posts` WHERE `viewcount` BETWEEN 100 AND 150 ) ORDER BY `score` DESC LIMIT 1",
+    "result_preview": [
+      {
+        "text": "Welcome to Cross Validated David P, for more information about the site and how to ask questions, you can check out the [FAQ](http://stats.stackexchange.com/faq). Is your question just about whether the calculation is right or wrong (it is wrong, with the numbers you give on your second line)?"
+      }
+    ]
+  }
+}

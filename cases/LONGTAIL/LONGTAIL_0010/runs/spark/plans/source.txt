@@ -1,0 +1,113 @@
+== Physical Plan ==
+AdaptiveSparkPlan (18)
++- Project (17)
+   +- Filter (16)
+      +- Window (15)
+         +- TakeOrderedAndProject (14)
+            +- HashAggregate (13)
+               +- Exchange (12)
+                  +- HashAggregate (11)
+                     +- HashAggregate (10)
+                        +- Exchange (9)
+                           +- HashAggregate (8)
+                              +- Expand (7)
+                                 +- Project (6)
+                                    +- BroadcastHashJoin LeftOuter BuildRight (5)
+                                       :- Scan parquet spark_catalog.default.users (1)
+                                       +- BroadcastExchange (4)
+                                          +- Filter (3)
+                                             +- Scan parquet spark_catalog.default.posts (2)
+
+
+(1) Scan parquet spark_catalog.default.users
+Output [2]: [Id#80, DisplayName#81]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/longtail_0010_spark_plan_yjnjzhj5/users]
+ReadSchema: struct<Id:int,DisplayName:string>
+
+(2) Scan parquet spark_catalog.default.posts
+Output [5]: [Id#82, OwnerUserId#83, PostTypeId#84, Score#85, ViewCount#86]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/longtail_0010_spark_plan_yjnjzhj5/posts]
+PushedFilters: [IsNotNull(OwnerUserId)]
+ReadSchema: struct<Id:int,OwnerUserId:int,PostTypeId:int,Score:int,ViewCount:int>
+
+(3) Filter
+Input [5]: [Id#82, OwnerUserId#83, PostTypeId#84, Score#85, ViewCount#86]
+Condition : isnotnull(OwnerUserId#83)
+
+(4) BroadcastExchange
+Input [5]: [Id#82, OwnerUserId#83, PostTypeId#84, Score#85, ViewCount#86]
+Arguments: HashedRelationBroadcastMode(List(cast(input[1, int, false] as bigint)),false), [plan_id=95]
+
+(5) BroadcastHashJoin
+Left keys [1]: [Id#80]
+Right keys [1]: [OwnerUserId#83]
+Join type: LeftOuter
+Join condition: None
+
+(6) Project
+Output [6]: [Id#80, DisplayName#81, Id#82, PostTypeId#84, Score#85, ViewCount#86]
+Input [7]: [Id#80, DisplayName#81, Id#82, OwnerUserId#83, PostTypeId#84, Score#85, ViewCount#86]
+
+(7) Expand
+Input [6]: [Id#80, DisplayName#81, Id#82, PostTypeId#84, Score#85, ViewCount#86]
+Arguments: [[Id#80, DisplayName#81, null, null, 0, Id#82, Score#85, ViewCount#86], [Id#80, DisplayName#81, CASE WHEN (PostTypeId#84 = 1) THEN Id#82 END, null, 1, null, null, null], [Id#80, DisplayName#81, null, CASE WHEN (PostTypeId#84 = 2) THEN Id#82 END, 2, null, null, null]], [Id#80, DisplayName#81, CASE WHEN (p.PostTypeId = 1) THEN p.Id END#97, CASE WHEN (p.PostTypeId = 2) THEN p.Id END#98, gid#96, p.Id#99, p.Score#100, p.ViewCount#101]
+
+(8) HashAggregate
+Input [8]: [Id#80, DisplayName#81, CASE WHEN (p.PostTypeId = 1) THEN p.Id END#97, CASE WHEN (p.PostTypeId = 2) THEN p.Id END#98, gid#96, p.Id#99, p.Score#100, p.ViewCount#101]
+Keys [5]: [Id#80, DisplayName#81, CASE WHEN (p.PostTypeId = 1) THEN p.Id END#97, CASE WHEN (p.PostTypeId = 2) THEN p.Id END#98, gid#96]
+Functions [5]: [partial_count(p.Id#99), partial_sum(p.Score#100), partial_sum(p.ViewCount#101), partial_avg(p.Score#100), partial_avg(p.ViewCount#101)]
+Aggregate Attributes [7]: [count#136L, sum#137L, sum#138L, sum#139, count#140L, sum#141, count#142L]
+Results [12]: [Id#80, DisplayName#81, CASE WHEN (p.PostTypeId = 1) THEN p.Id END#97, CASE WHEN (p.PostTypeId = 2) THEN p.Id END#98, gid#96, count#143L, sum#144L, sum#145L, sum#146, count#147L, sum#148, count#149L]
+
+(9) Exchange
+Input [12]: [Id#80, DisplayName#81, CASE WHEN (p.PostTypeId = 1) THEN p.Id END#97, CASE WHEN (p.PostTypeId = 2) THEN p.Id END#98, gid#96, count#143L, sum#144L, sum#145L, sum#146, count#147L, sum#148, count#149L]
+Arguments: hashpartitioning(Id#80, DisplayName#81, CASE WHEN (p.PostTypeId = 1) THEN p.Id END#97, CASE WHEN (p.PostTypeId = 2) THEN p.Id END#98, gid#96, 1), ENSURE_REQUIREMENTS, [plan_id=101]
+
+(10) HashAggregate
+Input [12]: [Id#80, DisplayName#81, CASE WHEN (p.PostTypeId = 1) THEN p.Id END#97, CASE WHEN (p.PostTypeId = 2) THEN p.Id END#98, gid#96, count#143L, sum#144L, sum#145L, sum#146, count#147L, sum#148, count#149L]
+Keys [5]: [Id#80, DisplayName#81, CASE WHEN (p.PostTypeId = 1) THEN p.Id END#97, CASE WHEN (p.PostTypeId = 2) THEN p.Id END#98, gid#96]
+Functions [5]: [count(p.Id#99), sum(p.Score#100), sum(p.ViewCount#101), avg(p.Score#100), avg(p.ViewCount#101)]
+Aggregate Attributes [5]: [count(p.Id#99)#45L, sum(p.Score#100)#48L, sum(p.ViewCount#101)#49L, avg(p.Score#100)#50, avg(p.ViewCount#101)#51]
+Results [10]: [Id#80, DisplayName#81, CASE WHEN (p.PostTypeId = 1) THEN p.Id END#97, CASE WHEN (p.PostTypeId = 2) THEN p.Id END#98, gid#96, count(p.Id#99)#45L AS count(p.Id)#102L, sum(p.Score#100)#48L AS sum(p.Score)#104L, sum(p.ViewCount#101)#49L AS sum(p.ViewCount)#106L, avg(p.Score#100)#50 AS avg(p.Score)#108, avg(p.ViewCount#101)#51 AS avg(p.ViewCount)#110]
+
+(11) HashAggregate
+Input [10]: [Id#80, DisplayName#81, CASE WHEN (p.PostTypeId = 1) THEN p.Id END#97, CASE WHEN (p.PostTypeId = 2) THEN p.Id END#98, gid#96, count(p.Id)#102L, sum(p.Score)#104L, sum(p.ViewCount)#106L, avg(p.Score)#108, avg(p.ViewCount)#110]
+Keys [2]: [Id#80, DisplayName#81]
+Functions [7]: [partial_first(count(p.Id)#102L, true) FILTER (WHERE (gid#96 = 0)), partial_count(CASE WHEN (p.PostTypeId = 1) THEN p.Id END#97) FILTER (WHERE (gid#96 = 1)), partial_count(CASE WHEN (p.PostTypeId = 2) THEN p.Id END#98) FILTER (WHERE (gid#96 = 2)), partial_first(sum(p.Score)#104L, true) FILTER (WHERE (gid#96 = 0)), partial_first(sum(p.ViewCount)#106L, true) FILTER (WHERE (gid#96 = 0)), partial_first(avg(p.Score)#108, true) FILTER (WHERE (gid#96 = 0)), partial_first(avg(p.ViewCount)#110, true) FILTER (WHERE (gid#96 = 0))]
+Aggregate Attributes [12]: [first#112L, valueSet#113, count#114L, count#115L, first#116L, valueSet#117, first#118L, valueSet#119, first#120, valueSet#121, first#122, valueSet#123]
+Results [14]: [Id#80, DisplayName#81, first#124L, valueSet#125, count#126L, count#127L, first#128L, valueSet#129, first#130L, valueSet#131, first#132, valueSet#133, first#134, valueSet#135]
+
+(12) Exchange
+Input [14]: [Id#80, DisplayName#81, first#124L, valueSet#125, count#126L, count#127L, first#128L, valueSet#129, first#130L, valueSet#131, first#132, valueSet#133, first#134, valueSet#135]
+Arguments: hashpartitioning(Id#80, DisplayName#81, 1), ENSURE_REQUIREMENTS, [plan_id=105]
+
+(13) HashAggregate
+Input [14]: [Id#80, DisplayName#81, first#124L, valueSet#125, count#126L, count#127L, first#128L, valueSet#129, first#130L, valueSet#131, first#132, valueSet#133, first#134, valueSet#135]
+Keys [2]: [Id#80, DisplayName#81]
+Functions [7]: [first(count(p.Id)#102L, true), count(CASE WHEN (p.PostTypeId = 1) THEN p.Id END#97), count(CASE WHEN (p.PostTypeId = 2) THEN p.Id END#98), first(sum(p.Score)#104L, true), first(sum(p.ViewCount)#106L, true), first(avg(p.Score)#108, true), first(avg(p.ViewCount)#110, true)]
+Aggregate Attributes [7]: [first(count(p.Id)#102L) ignore nulls#103L, count(CASE WHEN (p.PostTypeId = 1) THEN p.Id END#97)#46L, count(CASE WHEN (p.PostTypeId = 2) THEN p.Id END#98)#47L, first(sum(p.Score)#104L) ignore nulls#105L, first(sum(p.ViewCount)#106L) ignore nulls#107L, first(avg(p.Score)#108) ignore nulls#109, first(avg(p.ViewCount)#110) ignore nulls#111]
+Results [9]: [Id#80 AS UserId#87, DisplayName#81, coalesce(first(count(p.Id)#102L) ignore nulls#103L, 0) AS TotalPosts#88L, count(CASE WHEN (p.PostTypeId = 1) THEN p.Id END#97)#46L AS TotalQuestions#89L, count(CASE WHEN (p.PostTypeId = 2) THEN p.Id END#98)#47L AS TotalAnswers#90L, first(sum(p.Score)#104L) ignore nulls#105L AS TotalScore#91L, first(sum(p.ViewCount)#106L) ignore nulls#107L AS TotalViews#92L, first(avg(p.Score)#108) ignore nulls#109 AS AvgScore#93, first(avg(p.ViewCount)#110) ignore nulls#111 AS AvgViews#94]
+
+(14) TakeOrderedAndProject
+Input [9]: [UserId#87, DisplayName#81, TotalPosts#88L, TotalQuestions#89L, TotalAnswers#90L, TotalScore#91L, TotalViews#92L, AvgScore#93, AvgViews#94]
+Arguments: 10, [TotalPosts#88L DESC NULLS LAST], [UserId#87, DisplayName#81, TotalPosts#88L, TotalQuestions#89L, TotalAnswers#90L, TotalScore#91L, TotalViews#92L, AvgScore#93, AvgViews#94]
+
+(15) Window
+Input [9]: [UserId#87, DisplayName#81, TotalPosts#88L, TotalQuestions#89L, TotalAnswers#90L, TotalScore#91L, TotalViews#92L, AvgScore#93, AvgViews#94]
+Arguments: [row_number() windowspecdefinition(TotalPosts#88L DESC NULLS LAST, specifiedwindowframe(RowFrame, unboundedpreceding$(), currentrow$())) AS rank_value#95], [TotalPosts#88L DESC NULLS LAST]
+
+(16) Filter
+Input [10]: [UserId#87, DisplayName#81, TotalPosts#88L, TotalQuestions#89L, TotalAnswers#90L, TotalScore#91L, TotalViews#92L, AvgScore#93, AvgViews#94, rank_value#95]
+Condition : (rank_value#95 <= 10)
+
+(17) Project
+Output [9]: [UserId#87, DisplayName#81, TotalPosts#88L, TotalQuestions#89L, TotalAnswers#90L, TotalScore#91L, TotalViews#92L, AvgScore#93, AvgViews#94]
+Input [10]: [UserId#87, DisplayName#81, TotalPosts#88L, TotalQuestions#89L, TotalAnswers#90L, TotalScore#91L, TotalViews#92L, AvgScore#93, AvgViews#94, rank_value#95]
+
+(18) AdaptiveSparkPlan
+Output [9]: [UserId#87, DisplayName#81, TotalPosts#88L, TotalQuestions#89L, TotalAnswers#90L, TotalScore#91L, TotalViews#92L, AvgScore#93, AvgViews#94]
+Arguments: isFinalPlan=false
+
+

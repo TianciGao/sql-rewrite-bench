@@ -1,0 +1,156 @@
+== Physical Plan ==
+AdaptiveSparkPlan (26)
++- == Final Plan ==
+   ResultQueryStage (16)
+   +- * HashAggregate (15)
+      +- ShuffleQueryStage (14), Statistics(sizeInBytes=216.0 B, rowCount=3)
+         +- Exchange (13)
+            +- * HashAggregate (12)
+               +- * Project (11)
+                  +- * BroadcastHashJoin Inner BuildRight (10)
+                     :- * Project (4)
+                     :  +- * Filter (3)
+                     :     +- * ColumnarToRow (2)
+                     :        +- Scan parquet spark_catalog.default.lineitem (1)
+                     +- BroadcastQueryStage (9), Statistics(sizeInBytes=1024.1 KiB, rowCount=2)
+                        +- BroadcastExchange (8)
+                           +- * Filter (7)
+                              +- * ColumnarToRow (6)
+                                 +- Scan parquet spark_catalog.default.part (5)
++- == Initial Plan ==
+   HashAggregate (25)
+   +- Exchange (24)
+      +- HashAggregate (23)
+         +- Project (22)
+            +- BroadcastHashJoin Inner BuildRight (21)
+               :- Project (18)
+               :  +- Filter (17)
+               :     +- Scan parquet spark_catalog.default.lineitem (1)
+               +- BroadcastExchange (20)
+                  +- Filter (19)
+                     +- Scan parquet spark_catalog.default.part (5)
+
+
+(1) Scan parquet spark_catalog.default.lineitem
+Output [4]: [l_partkey#684, l_extendedprice#685, l_discount#686, l_shipdate#687]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/sql_rewrite_spark_warehouse/lineitem]
+PushedFilters: [IsNotNull(l_shipdate), GreaterThanOrEqual(l_shipdate,1997-03-01), LessThan(l_shipdate,1997-05-01), IsNotNull(l_partkey)]
+ReadSchema: struct<l_partkey:int,l_extendedprice:decimal(15,2),l_discount:decimal(15,2),l_shipdate:date>
+
+(2) ColumnarToRow [codegen id : 2]
+Input [4]: [l_partkey#684, l_extendedprice#685, l_discount#686, l_shipdate#687]
+
+(3) Filter [codegen id : 2]
+Input [4]: [l_partkey#684, l_extendedprice#685, l_discount#686, l_shipdate#687]
+Condition : (((isnotnull(l_shipdate#687) AND (l_shipdate#687 >= 1997-03-01)) AND (l_shipdate#687 < 1997-05-01)) AND isnotnull(l_partkey#684))
+
+(4) Project [codegen id : 2]
+Output [3]: [l_partkey#684, l_extendedprice#685, l_discount#686]
+Input [4]: [l_partkey#684, l_extendedprice#685, l_discount#686, l_shipdate#687]
+
+(5) Scan parquet spark_catalog.default.part
+Output [2]: [p_partkey#688, p_type#689]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/sql_rewrite_spark_warehouse/part]
+PushedFilters: [IsNotNull(p_partkey)]
+ReadSchema: struct<p_partkey:int,p_type:string>
+
+(6) ColumnarToRow [codegen id : 1]
+Input [2]: [p_partkey#688, p_type#689]
+
+(7) Filter [codegen id : 1]
+Input [2]: [p_partkey#688, p_type#689]
+Condition : isnotnull(p_partkey#688)
+
+(8) BroadcastExchange
+Input [2]: [p_partkey#688, p_type#689]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, false] as bigint)),false), [plan_id=3210]
+
+(9) BroadcastQueryStage
+Output [2]: [p_partkey#688, p_type#689]
+Arguments: 0
+
+(10) BroadcastHashJoin [codegen id : 2]
+Left keys [1]: [l_partkey#684]
+Right keys [1]: [p_partkey#688]
+Join type: Inner
+Join condition: None
+
+(11) Project [codegen id : 2]
+Output [3]: [l_extendedprice#685, l_discount#686, p_type#689]
+Input [5]: [l_partkey#684, l_extendedprice#685, l_discount#686, p_partkey#688, p_type#689]
+
+(12) HashAggregate [codegen id : 2]
+Input [3]: [l_extendedprice#685, l_discount#686, p_type#689]
+Keys: []
+Functions [2]: [partial_sum(CASE WHEN StartsWith(p_type#689, PROMO) THEN (l_extendedprice#685 * (1 - l_discount#686)) ELSE 0.0000 END), partial_sum((l_extendedprice#685 * (1 - l_discount#686)))]
+Aggregate Attributes [4]: [sum#740, isEmpty#741, sum#742, isEmpty#743]
+Results [4]: [sum#744, isEmpty#745, sum#746, isEmpty#747]
+
+(13) Exchange
+Input [4]: [sum#744, isEmpty#745, sum#746, isEmpty#747]
+Arguments: SinglePartition, ENSURE_REQUIREMENTS, [plan_id=3265]
+
+(14) ShuffleQueryStage
+Output [4]: [sum#744, isEmpty#745, sum#746, isEmpty#747]
+Arguments: 1
+
+(15) HashAggregate [codegen id : 3]
+Input [4]: [sum#744, isEmpty#745, sum#746, isEmpty#747]
+Keys: []
+Functions [2]: [sum(CASE WHEN StartsWith(p_type#689, PROMO) THEN (l_extendedprice#685 * (1 - l_discount#686)) ELSE 0.0000 END), sum((l_extendedprice#685 * (1 - l_discount#686)))]
+Aggregate Attributes [2]: [sum(CASE WHEN StartsWith(p_type#689, PROMO) THEN (l_extendedprice#685 * (1 - l_discount#686)) ELSE 0.0000 END)#738, sum((l_extendedprice#685 * (1 - l_discount#686)))#739]
+Results [1]: [((100.00 * sum(CASE WHEN StartsWith(p_type#689, PROMO) THEN (l_extendedprice#685 * (1 - l_discount#686)) ELSE 0.0000 END)#738) / sum((l_extendedprice#685 * (1 - l_discount#686)))#739) AS promo_revenue#737]
+
+(16) ResultQueryStage
+Output [1]: [promo_revenue#737]
+Arguments: 2
+
+(17) Filter
+Input [4]: [l_partkey#684, l_extendedprice#685, l_discount#686, l_shipdate#687]
+Condition : (((isnotnull(l_shipdate#687) AND (l_shipdate#687 >= 1997-03-01)) AND (l_shipdate#687 < 1997-05-01)) AND isnotnull(l_partkey#684))
+
+(18) Project
+Output [3]: [l_partkey#684, l_extendedprice#685, l_discount#686]
+Input [4]: [l_partkey#684, l_extendedprice#685, l_discount#686, l_shipdate#687]
+
+(19) Filter
+Input [2]: [p_partkey#688, p_type#689]
+Condition : isnotnull(p_partkey#688)
+
+(20) BroadcastExchange
+Input [2]: [p_partkey#688, p_type#689]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, false] as bigint)),false), [plan_id=3180]
+
+(21) BroadcastHashJoin
+Left keys [1]: [l_partkey#684]
+Right keys [1]: [p_partkey#688]
+Join type: Inner
+Join condition: None
+
+(22) Project
+Output [3]: [l_extendedprice#685, l_discount#686, p_type#689]
+Input [5]: [l_partkey#684, l_extendedprice#685, l_discount#686, p_partkey#688, p_type#689]
+
+(23) HashAggregate
+Input [3]: [l_extendedprice#685, l_discount#686, p_type#689]
+Keys: []
+Functions [2]: [partial_sum(CASE WHEN StartsWith(p_type#689, PROMO) THEN (l_extendedprice#685 * (1 - l_discount#686)) ELSE 0.0000 END), partial_sum((l_extendedprice#685 * (1 - l_discount#686)))]
+Aggregate Attributes [4]: [sum#740, isEmpty#741, sum#742, isEmpty#743]
+Results [4]: [sum#744, isEmpty#745, sum#746, isEmpty#747]
+
+(24) Exchange
+Input [4]: [sum#744, isEmpty#745, sum#746, isEmpty#747]
+Arguments: SinglePartition, ENSURE_REQUIREMENTS, [plan_id=3185]
+
+(25) HashAggregate
+Input [4]: [sum#744, isEmpty#745, sum#746, isEmpty#747]
+Keys: []
+Functions [2]: [sum(CASE WHEN StartsWith(p_type#689, PROMO) THEN (l_extendedprice#685 * (1 - l_discount#686)) ELSE 0.0000 END), sum((l_extendedprice#685 * (1 - l_discount#686)))]
+Aggregate Attributes [2]: [sum(CASE WHEN StartsWith(p_type#689, PROMO) THEN (l_extendedprice#685 * (1 - l_discount#686)) ELSE 0.0000 END)#738, sum((l_extendedprice#685 * (1 - l_discount#686)))#739]
+Results [1]: [((100.00 * sum(CASE WHEN StartsWith(p_type#689, PROMO) THEN (l_extendedprice#685 * (1 - l_discount#686)) ELSE 0.0000 END)#738) / sum((l_extendedprice#685 * (1 - l_discount#686)))#739) AS promo_revenue#737]
+
+(26) AdaptiveSparkPlan
+Output [1]: [promo_revenue#737]
+Arguments: isFinalPlan=true

@@ -1,0 +1,17 @@
+{
+  "case_id": "PORT_0006",
+  "draft_id": "PORT_PARROT_DRAFT_0011",
+  "source_file_path": "datasets/raw/parrot/PARROT/benchmark/BIRD/mysql_res.json",
+  "source_record_index": 22,
+  "source_sql_field": "mysql",
+  "target_sql_field": "cracksql",
+  "source_record_subset": {
+    "mysql": "SELECT CAST( SUM( `status` = 'C' ) AS DOUBLE ) * 100 / COUNT( `account_id` ) FROM `loan` WHERE `amount` < 100000 \n",
+    "cracksql": "SELECT CAST( COUNT( CASE WHEN \"status\" = 'C' THEN 1 END ) AS DOUBLE PRECISION ) * 100 / COUNT( \"account_id\" ) FROM \"loan\" WHERE \"amount\" < 100000",
+    "result_preview": [
+      {
+        "CAST( SUM( `status` = 'C' ) AS DOUBLE ) * 100 / COUNT( `account_id` )": 46.885245901639344
+      }
+    ]
+  }
+}

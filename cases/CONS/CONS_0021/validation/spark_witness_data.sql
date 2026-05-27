@@ -1,0 +1,3 @@
+INSERT INTO t0 VALUES (1, 1), (2, 1), (3, 9);
+INSERT INTO t1 VALUES (1, 0, 10), (2, 0, 20);
+INSERT INTO t2 VALUES (5, 1, 7), (2, 8, 30);

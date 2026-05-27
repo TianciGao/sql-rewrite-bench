@@ -1,0 +1,158 @@
+== Physical Plan ==
+AdaptiveSparkPlan (26)
++- Project (25)
+   +- Filter (24)
+      +- SortMergeJoin LeftOuter (23)
+         :- Sort (4)
+         :  +- Exchange (3)
+         :     +- Filter (2)
+         :        +- Scan parquet spark_catalog.default.emp (1)
+         +- Sort (22)
+            +- Exchange (21)
+               +- HashAggregate (20)
+                  +- Exchange (19)
+                     +- HashAggregate (18)
+                        +- Project (17)
+                           +- BroadcastNestedLoopJoin LeftOuter BuildRight (16)
+                              :- BroadcastNestedLoopJoin Inner BuildLeft (11)
+                              :  :- BroadcastExchange (9)
+                              :  :  +- HashAggregate (8)
+                              :  :     +- Exchange (7)
+                              :  :        +- HashAggregate (6)
+                              :  :           +- Scan parquet spark_catalog.default.emp (5)
+                              :  +- Scan parquet spark_catalog.default.bonus (10)
+                              +- BroadcastExchange (15)
+                                 +- Project (14)
+                                    +- Filter (13)
+                                       +- Scan parquet spark_catalog.default.dept (12)
+
+
+(1) Scan parquet spark_catalog.default.emp
+Output [3]: [empno#61, sal#66, comm#67]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/cons_0028_spark_plan_rh9wpo_b/emp]
+PushedFilters: [IsNotNull(comm)]
+ReadSchema: struct<empno:int,sal:decimal(10,2),comm:decimal(10,2)>
+
+(2) Filter
+Input [3]: [empno#61, sal#66, comm#67]
+Condition : isnotnull(comm#67)
+
+(3) Exchange
+Input [3]: [empno#61, sal#66, comm#67]
+Arguments: hashpartitioning(coalesce(sal#66, 0.00), isnull(sal#66), 1), ENSURE_REQUIREMENTS, [plan_id=125]
+
+(4) Sort
+Input [3]: [empno#61, sal#66, comm#67]
+Arguments: [coalesce(sal#66, 0.00) ASC NULLS FIRST, isnull(sal#66) ASC NULLS FIRST], false, 0
+
+(5) Scan parquet spark_catalog.default.emp
+Output [1]: [sal#66]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/cons_0028_spark_plan_rh9wpo_b/emp]
+ReadSchema: struct<sal:decimal(10,2)>
+
+(6) HashAggregate
+Input [1]: [sal#66]
+Keys [1]: [sal#66]
+Functions: []
+Aggregate Attributes: []
+Results [1]: [sal#66]
+
+(7) Exchange
+Input [1]: [sal#66]
+Arguments: hashpartitioning(sal#66, 1), ENSURE_REQUIREMENTS, [plan_id=110]
+
+(8) HashAggregate
+Input [1]: [sal#66]
+Keys [1]: [sal#66]
+Functions: []
+Aggregate Attributes: []
+Results [1]: [sal#66 AS sal#81]
+
+(9) BroadcastExchange
+Input [1]: [sal#81]
+Arguments: IdentityBroadcastMode, [plan_id=113]
+
+(10) Scan parquet spark_catalog.default.bonus
+Output [1]: [sal#72]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/cons_0028_spark_plan_rh9wpo_b/bonus]
+ReadSchema: struct<sal:decimal(10,2)>
+
+(11) BroadcastNestedLoopJoin
+Join type: Inner
+Join condition: None
+
+(12) Scan parquet spark_catalog.default.dept
+Output [1]: [deptno#74]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/cons_0028_spark_plan_rh9wpo_b/dept]
+PushedFilters: [IsNotNull(deptno), EqualTo(deptno,10)]
+ReadSchema: struct<deptno:int>
+
+(13) Filter
+Input [1]: [deptno#74]
+Condition : (isnotnull(deptno#74) AND (deptno#74 = 10))
+
+(14) Project
+Output: []
+Input [1]: [deptno#74]
+
+(15) BroadcastExchange
+Input: []
+Arguments: IdentityBroadcastMode, [plan_id=116]
+
+(16) BroadcastNestedLoopJoin
+Join type: LeftOuter
+Join condition: (sal#72 > sal#81)
+
+(17) Project
+Output [1]: [sal#81]
+Input [2]: [sal#81, sal#72]
+
+(18) HashAggregate
+Input [1]: [sal#81]
+Keys [1]: [sal#81]
+Functions [1]: [partial_count(1)]
+Aggregate Attributes [1]: [count#84L]
+Results [2]: [sal#81, count#85L]
+
+(19) Exchange
+Input [2]: [sal#81, count#85L]
+Arguments: hashpartitioning(sal#81, 1), ENSURE_REQUIREMENTS, [plan_id=121]
+
+(20) HashAggregate
+Input [2]: [sal#81, count#85L]
+Keys [1]: [sal#81]
+Functions [1]: [count(1)]
+Aggregate Attributes [1]: [count(1)#69L]
+Results [3]: [count(1)#69L AS count(1)#79L, sal#81, true AS alwaysTrue#82]
+
+(21) Exchange
+Input [3]: [count(1)#79L, sal#81, alwaysTrue#82]
+Arguments: hashpartitioning(coalesce(sal#81, 0.00), isnull(sal#81), 1), ENSURE_REQUIREMENTS, [plan_id=126]
+
+(22) Sort
+Input [3]: [count(1)#79L, sal#81, alwaysTrue#82]
+Arguments: [coalesce(sal#81, 0.00) ASC NULLS FIRST, isnull(sal#81) ASC NULLS FIRST], false, 0
+
+(23) SortMergeJoin
+Left keys [2]: [coalesce(sal#66, 0.00), isnull(sal#66)]
+Right keys [2]: [coalesce(sal#81, 0.00), isnull(sal#81)]
+Join type: LeftOuter
+Join condition: None
+
+(24) Filter
+Input [6]: [empno#61, sal#66, comm#67, count(1)#79L, sal#81, alwaysTrue#82]
+Condition : (cast(comm#67 as decimal(22,2)) > if (isnull(alwaysTrue#82)) 0.00 else cast(count(1)#79L as decimal(22,2)))
+
+(25) Project
+Output [2]: [empno#61, sal#66]
+Input [6]: [empno#61, sal#66, comm#67, count(1)#79L, sal#81, alwaysTrue#82]
+
+(26) AdaptiveSparkPlan
+Output [2]: [empno#61, sal#66]
+Arguments: isFinalPlan=false
+
+

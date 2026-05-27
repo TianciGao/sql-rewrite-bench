@@ -1,0 +1,209 @@
+taxonomy_name: portability_taxonomy
+version: '0.3'
+status: draft_for_freeze
+scope:
+  engines:
+  - spark
+  - postgres
+  - mysql
+  applies_to:
+  - source_sql
+  - rewrite_sql
+  - portability_case
+  intent: 'Capture cross-dialect and cross-engine compatibility risks that matter for Spark / PostgreSQL / MySQL rewrites and translation-style evaluation.
+
+    '
+design_principles:
+- Tags should describe portability risk, not generic SQL complexity.
+- Use when semantics or syntax may differ across engines.
+- A portability tag may coexist with SQL feature or rewrite-opportunity tags.
+- Prefer naming the concrete portability risk source and risk stage.
+tag_schema:
+  required_fields:
+  - tag_id
+  - label
+  - definition
+  - engines_supported
+  - examples
+  - notes
+  optional_fields:
+  - related_tags
+  - risk_stage
+  - report_bucket
+  - review_hints
+tags:
+- tag_id: identifier_quoting
+  label: Identifier Quoting Difference
+  definition: Portability depends on quoting rules for identifiers, reserved keywords, or case sensitivity.
+  engines_supported:
+    spark: true
+    postgres: true
+    mysql: true
+  examples:
+  - SELECT `col` FROM t
+  - SELECT "col" FROM t
+  notes: Important when normalizing query text across engines.
+  report_bucket: identifier
+  risk_stage: parser
+  review_hints: Use when parsing or identifier resolution differs because of quoting/case rules.
+- tag_id: null_semantics_gap
+  label: NULL Semantics Gap
+  definition: Query behavior may differ because of NULL handling, null-safe equality, or ordering semantics.
+  engines_supported:
+    spark: true
+    postgres: true
+    mysql: true
+  examples:
+  - a <=> b
+  - NULLS FIRST / NULLS LAST
+  notes: Frequently relevant for portability and hard negatives.
+  report_bucket: null_semantics
+  risk_stage: result_semantics
+  review_hints: Use when NULL-safe comparison, NULL ordering, or three-valued logic could change results.
+- tag_id: boolean_semantics_gap
+  label: Boolean Semantics Gap
+  definition: Portability depends on engine-specific boolean typing, coercion, or truth-value handling.
+  engines_supported:
+    spark: true
+    postgres: true
+    mysql: partial
+  examples:
+  - WHERE some_bool_col
+  - TRUE/FALSE typed expressions
+  notes: MySQL behavior may rely on numeric coercion.
+  report_bucket: boolean_semantics
+  risk_stage: result_semantics
+  review_hints: Use when boolean typing/coercion differs materially across engines.
+- tag_id: datetime_semantics_gap
+  label: Date-Time Semantics Gap
+  definition: Query uses date/time functions or timestamp behavior that differ across engines.
+  engines_supported:
+    spark: true
+    postgres: true
+    mysql: true
+  examples:
+  - date_trunc
+  - date_format
+  - interval arithmetic
+  notes: Tag even if SQL surface also uses date_time_function.
+  report_bucket: datetime
+  risk_stage: multiple
+  review_hints: Use when date/time functions or timestamp semantics differ in syntax or results.
+- tag_id: string_function_gap
+  label: String Function Gap
+  definition: Query relies on string functions whose names, semantics, or regex behavior differ across engines.
+  engines_supported:
+    spark: true
+    postgres: true
+    mysql: true
+  examples:
+  - regexp_replace
+  - substring / substr variants
+  - split / regexp_extract
+  notes: One of the most common portability surfaces.
+  report_bucket: string_function
+  risk_stage: multiple
+  review_hints: Use when function names, regex semantics, or text behavior differ.
+- tag_id: type_semantics_gap
+  label: Type Semantics Gap
+  definition: Portability depends on type coercion, cast syntax, or numeric/string conversion behavior.
+  engines_supported:
+    spark: true
+    postgres: true
+    mysql: true
+  examples:
+  - CAST(x AS ...)
+  - implicit numeric/string coercion
+  notes: Often relevant to both parser acceptance and result consistency.
+  report_bucket: type_semantics
+  risk_stage: multiple
+  review_hints: Use when casts or implicit coercions may parse or evaluate differently.
+- tag_id: limit_fetch_gap
+  label: LIMIT / FETCH Semantics Gap
+  definition: Query depends on engine-specific row-limiting syntax or semantics.
+  engines_supported:
+    spark: true
+    postgres: true
+    mysql: true
+  examples:
+  - LIMIT n
+  - FETCH FIRST n ROWS ONLY
+  notes: Important for cross-engine normalization.
+  report_bucket: limit_fetch
+  risk_stage: parser
+  review_hints: Use when row-limiting syntax or semantics differ across target engines.
+- tag_id: grouping_feature_gap
+  label: Advanced Grouping Feature Gap
+  definition: Portability depends on support differences for GROUPING SETS, ROLLUP, CUBE, or grouping metadata.
+  engines_supported:
+    spark: true
+    postgres: true
+    mysql: partial
+  examples:
+  - GROUP BY ROLLUP (...)
+  - GROUPING SETS (...)
+  notes: Use together with SQL feature tag grouping_sets.
+  report_bucket: grouping_feature
+  risk_stage: execution
+  review_hints: Use when GROUPING SETS / ROLLUP / CUBE support or semantics differ.
+- tag_id: outer_join_support_gap
+  label: Outer Join Support / Syntax Gap
+  definition: Portability depends on outer join syntax or support differences, especially FULL OUTER JOIN.
+  engines_supported:
+    spark: true
+    postgres: true
+    mysql: partial
+  examples:
+  - FULL OUTER JOIN
+  notes: Important for deciding common-core vs extended cases.
+  report_bucket: join_support
+  risk_stage: execution
+  review_hints: Use especially for FULL OUTER JOIN and other engine-sensitive outer-join cases.
+- tag_id: recursive_cte_support_gap
+  label: Recursive CTE Support Gap
+  definition: Portability depends on recursive CTE behavior or support differences across engines.
+  engines_supported:
+    spark: partial
+    postgres: true
+    mysql: true
+  examples:
+  - WITH RECURSIVE ...
+  notes: Often determines whether a candidate remains in v1 common-core or moves to extended backlog.
+  report_bucket: cte_support
+  risk_stage: execution
+  review_hints: Use when recursive CTE support or execution behavior is an issue.
+- tag_id: set_operation_gap
+  label: Set Operation Semantics Gap
+  definition: Portability depends on support or semantics differences for UNION / INTERSECT / EXCEPT-style operations.
+  engines_supported:
+    spark: 'yes'
+    postgres: 'yes'
+    mysql: partial
+  examples:
+  - INTERSECT
+  - EXCEPT
+  - UNION DISTINCT behavior
+  notes: Useful when standard set-operation families are not uniformly supported or normalized.
+  report_bucket: set_operation
+  risk_stage: multiple
+  review_hints: Use when set-operation availability or duplicate-handling semantics differ across engines.
+- tag_id: engine_specific_syntax_gap
+  label: Engine-specific Syntax Gap
+  definition: Query relies on syntax accepted by one engine family but not by another, beyond the more specific portability tags above.
+  engines_supported:
+    spark: partial
+    postgres: partial
+    mysql: partial
+  examples:
+  - engine-specific hints
+  - non-portable clause syntax
+  - vendor-only syntactic shortcuts
+  notes: Use as a residual portability risk when a more specific tag is not the right fit.
+  report_bucket: engine_specific_syntax
+  risk_stage: parser
+  review_hints: Use sparingly; prefer a more specific portability tag whenever possible.
+allowed_risk_stages:
+- parser
+- execution
+- result_semantics
+- multiple

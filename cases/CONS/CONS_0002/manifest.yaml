@@ -31,6 +31,22 @@ required_tables:
 
 features:
   - correlated_subquery
+tags:
+  sql_feature:
+    primary: [correlated_subquery, subquery_in_from]
+    secondary: []
+  rewrite_opportunity:
+    primary: [subquery_decorrelation]
+    secondary: []
+  plan_operator:
+    present: []
+    delta_relevant: []
+  workload_realism:
+    source_inherited: []
+    case_specific: []
+  portability:
+    confirmed: []
+    suspected: []
 
 status:
   seed_localized: true

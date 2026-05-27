@@ -1,0 +1,17 @@
+{
+  "case_id": "PORT_0014",
+  "draft_id": "PORT_DRAFT_0015",
+  "source_file_path": "datasets/raw/parrot/PARROT/benchmark/BIRD/mysql_res.json",
+  "source_record_index": 25,
+  "source_sql_field": "mysql",
+  "target_sql_field": "cracksql",
+  "source_record_subset": {
+    "mysql": "SELECT SUM( `currency` = 'CZK' ) - SUM( `currency` = 'EUR' ) FROM `customers` WHERE `segment` = 'SME'",
+    "cracksql": "SELECT COUNT(CASE WHEN \"currency\" = 'CZK' THEN 1 END) - COUNT(CASE WHEN \"currency\" = 'EUR' THEN 1 END) FROM \"customers\" WHERE \"segment\" = 'SME'",
+    "result_preview": [
+      {
+        "SUM( `currency` = 'CZK' ) - SUM( `currency` = 'EUR' )": "23505"
+      }
+    ]
+  }
+}

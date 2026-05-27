@@ -2,15 +2,14 @@
 -- Strategy: factor the repeated prefix and average-account-balance filters into CTEs while preserving the no-order condition.
 -- Equivalence is not yet proven.
 
-with eligible_prefixes(cntrycode) as (
-    values
-        ('19'),
-        ('29'),
-        ('21'),
-        ('25'),
-        ('16'),
-        ('10'),
-        ('14')
+with eligible_prefixes as (
+    select '19' as cntrycode
+    union all select '29'
+    union all select '21'
+    union all select '25'
+    union all select '16'
+    union all select '10'
+    union all select '14'
 ),
 eligible_avg as (
     select

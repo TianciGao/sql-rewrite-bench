@@ -1,0 +1,20 @@
+== Physical Plan ==
+* Project (3)
++- * ColumnarToRow (2)
+   +- Scan parquet spark_catalog.default.emp (1)
+
+
+(1) Scan parquet spark_catalog.default.emp
+Output [2]: [EMPNO#12L, MGR#13L]
+Batched: true
+Location: InMemoryFileIndex [file:/tmp/cons_0035_spark_plan_zdmgvsea/emp]
+ReadSchema: struct<EMPNO:bigint,MGR:bigint>
+
+(2) ColumnarToRow [codegen id : 1]
+Input [2]: [EMPNO#12L, MGR#13L]
+
+(3) Project [codegen id : 1]
+Output [2]: [EMPNO#12L, CASE WHEN isnotnull(MGR#13L) THEN 1 ELSE 0 END AS CASE WHEN (MGR IS NOT NULL) THEN 1 ELSE 0 END#20]
+Input [2]: [EMPNO#12L, MGR#13L]
+
+

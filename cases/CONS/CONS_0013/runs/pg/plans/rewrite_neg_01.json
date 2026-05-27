@@ -1,0 +1,55 @@
+[
+  {
+    "Plan": {
+      "Node Type": "Hash Join",
+      "Parallel Aware": false,
+      "Async Capable": false,
+      "Join Type": "Anti",
+      "Startup Cost": 18.93,
+      "Total Cost": 44.86,
+      "Plan Rows": 696,
+      "Plan Width": 4,
+      "Inner Unique": false,
+      "Hash Cond": "(b1.deptno = a.deptno)",
+      "Plans": [
+        {
+          "Node Type": "Seq Scan",
+          "Parent Relationship": "Outer",
+          "Parallel Aware": false,
+          "Async Capable": false,
+          "Relation Name": "b",
+          "Alias": "b1",
+          "Startup Cost": 0.00,
+          "Total Cost": 17.10,
+          "Plan Rows": 710,
+          "Plan Width": 4
+        },
+        {
+          "Node Type": "Hash",
+          "Parent Relationship": "Inner",
+          "Parallel Aware": false,
+          "Async Capable": false,
+          "Startup Cost": 18.88,
+          "Total Cost": 18.88,
+          "Plan Rows": 4,
+          "Plan Width": 4,
+          "Plans": [
+            {
+              "Node Type": "Seq Scan",
+              "Parent Relationship": "Outer",
+              "Parallel Aware": false,
+              "Async Capable": false,
+              "Relation Name": "a",
+              "Alias": "a",
+              "Startup Cost": 0.00,
+              "Total Cost": 18.88,
+              "Plan Rows": 4,
+              "Plan Width": 4,
+              "Filter": "((ename)::text = 'WARD'::text)"
+            }
+          ]
+        }
+      ]
+    }
+  }
+]
